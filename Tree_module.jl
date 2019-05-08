@@ -1,7 +1,7 @@
 #=
 my_tree:
 - Julia version: 1.0.1
-- Author: Johannes
+- Author: erathorn
 - Date: 2019-05-07
 =#
 
