@@ -74,7 +74,6 @@ function create_tree_from_leaves(leaf_nodes::Vector{Int})::Node
     # shuffle the node list to get a random tree
     Random.shuffle!(my_node_list)
 
-
     while length(my_node_list) != 1
         # get two nodes
         # create a new mother node to which the two first nodes are added as children
@@ -153,8 +152,8 @@ function tree_height(root::Node)::Float64
             if temp > max_len
                 max_len = temp
             end # if
-        end
-    end
+        end # end if
+    end # end for
     return max_len
 end # function tree_height
 
