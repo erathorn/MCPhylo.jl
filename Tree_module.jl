@@ -13,7 +13,9 @@ using Markdown
 using Random
 using Distributions
 
-export create_tree_from_leaves, post_order, tree_length, tree_height, path_length
+export create_tree_from_leaves, post_order, tree_length, tree_height,
+       path_length, get_leaves
+
 
 """
     Node
@@ -113,6 +115,7 @@ function post_order(root::Node, traversal::Vector{Node})::Vector{Node}
    return traversal
 end # function post_order
 
+
 """
     post_order(root:Node)::Vector{Node}
 
@@ -120,11 +123,11 @@ This function does post order traversal. It is meant as a wrapper. Only the root
 node needs to be supplied.
 """
 function post_order(root::Node)::Vector{Node}
-    t = [root]
+    t::Vector{Node} = []
     post_order(root, t)
-    popfirst!(t)
     return t
 end # function post_order
+
 
 """
     tree_length(root::Node)::Float64
@@ -138,6 +141,7 @@ function tree_length(root::Node)::Float64
     end # for
     return l
 end # function tree_length
+
 
 """
     tree_height(root::Node)::Float64
@@ -156,6 +160,7 @@ function tree_height(root::Node)::Float64
     end # end for
     return max_len
 end # function tree_height
+
 
 """
     path_length(ancestor::Node, descendant::Node)::Float64
@@ -204,5 +209,37 @@ function set_binary!(root::Node)
     end # if
 end # function set_binary
 
+
+"""
+    get_leaves(root::Node)::Vector{Node}
+
+Get all the leaves of this Node. It is meant as a wrapper, only the root node
+needs to be supplied
+"""
+function get_leaves(root::Node)::Vector{Node}
+    leave_list::Vector{Node} = []
+    get_leaves(root, leave_list)
+    return leave_list
+
+end # function get_leaves
+
+
+"""
+    get_leaves(root::Node, leave_list::Vector{Node})::Vector{Node}
+
+Get all the leaves of a node. All leaves of this node are visited using a
+recursive application of the
+`get_leaves(root::Node, leave_list::Vector{Node})::Vector{Node}` function
+"""
+function get_leaves(root::Node, leave_list::Vector{Node})::Vector{Node}
+    if root.nchild == 0
+        push!(leave_list, root)
+    else
+        for child in root.child
+            get_leaves(child, leave_list)
+        end # for
+    end # if
+    return leave_list
+end # function get_leaves
 
 end # module my_tree
