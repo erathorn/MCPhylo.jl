@@ -6,8 +6,10 @@ tester:
 =#
 
 
-include("./Tree_module.jl")
-using .Tree_module
-using DataFrames
+include("my_module.jl")
+using .M
 
-this_tree = Tree_module.create_tree_from_leaves([1,2,3,4,5])
+
+this_tree = M.create_tree_from_leaves([1,2,3,4,5])
+
+M.to_df(this_tree)
