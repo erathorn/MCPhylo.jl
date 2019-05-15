@@ -66,7 +66,7 @@ function remove_child!(mother_node::Node, index::Int)
     if index == 1
         return popfirst!(mother_node.child)
     else
-        return pop(mother_node.child)
+        return pop!(mother_node.child)
     end # end if
 end # function
 
