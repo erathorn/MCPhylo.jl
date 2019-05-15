@@ -14,7 +14,7 @@ using Random
 using Distributions
 
 export create_tree_from_leaves, post_order, tree_length, tree_height,
-       path_length, get_leaves, Node, add_child!, set_binary!
+       path_length, get_leaves, Node, add_child!, set_binary!, remove_child!
 
 
 """
@@ -43,7 +43,7 @@ Node() = Node(Int64[],Float64[], Node[], 0, true, 0.0, "0")
 
 
 """
-    add_child(mother_node, child)
+    add_child(mother_node::Node, child::Node)
 
 This function adds a child to the mother node.
 The arity of the mother node is increased by `1` and the root
@@ -54,6 +54,22 @@ function add_child!(mother_node::Node, child::Node)
     mother_node.nchild += 1
     child.root = false
 end # function add_child
+
+"""
+    remove_child!(mother_node::Node, index::int)Node
+
+This function removes a child from the list of nodes which are daughters of this
+node. The removed node is returned.
+"""
+function remove_child!(mother_node::Node, index::Int)
+    mother_node.nchild -= 1
+    if index == 1
+        return popfirst!(mother_node.child)
+    else
+        return pop(mother_node.child)
+    end # end if
+end # function
+
 
 
 """
