@@ -6,10 +6,10 @@ tester:
 =#
 
 
-include("my_module.jl")
-using .M
+include("Tree_Module.jl")
+using .Tree_Module
+using DataFrames
 
+this_tree = Tree_Module.create_tree_from_leaves([1,2,3,4,5])
 
-this_tree = M.create_tree_from_leaves([1,2,3,4,5])
-
-M.to_df(this_tree)
+my_df = Tree_Module.Converter.to_df(this_tree)
