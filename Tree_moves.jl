@@ -5,7 +5,7 @@ using Markdown
 using Random
 using Distributions
 
-using ..Tree_Basics: Node, post_order, set_binary!, add_child!, remove_child!, random_node
+using ..Tree_Basics: Node, post_order, set_binary!, add_child!, remove_child!, random_node, move!
 
 export NNI!
 
@@ -82,12 +82,7 @@ function slide!(root::Node)
     child::Node = target.child[rand([1,2])]
 
     # calculate and set new values
-    total::Float64 = target.inc_length + child.inc_length
-    fp::Float64 = total*proportion
-    sp::Float64 = total-fp
-
-    target.inc_length = fp
-    child.inc_length = sp
+    move!(target, child, proportion)
 
 end # function slide!
 
@@ -114,13 +109,7 @@ function swing!(root::Node)
     child2 = target.child[2]
 
     # calculate and set new values
-    total::Float64 = child1.inc_length + child2.inc_length
-    fp::Float64 = total*proportion
-    sp::Float64 = total-fp
-
-    child1.inc_length = fp
-    child2.inc_length = sp
-
+    move!(child1, child2, proportion)
 end # function swing!
 
 end # module Tree_moves

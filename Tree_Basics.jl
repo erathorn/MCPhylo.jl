@@ -15,7 +15,7 @@ using Distributions
 
 export create_tree_from_leaves, post_order, tree_length, tree_height,
        path_length, get_leaves, Node, add_child!, set_binary!, remove_child!,
-       random_node
+       random_node, move!
 
 
 """
@@ -270,6 +270,21 @@ function random_node(root::Node)::Node
     return rand(post_order_trav)
 end # function random_node
 
+"""
+    move!(node1::Node, node2::Node, proportion::Float64)
+
+This function moves node1 along the path specified through the incoming edges of node1 and node2
+according to the proportion.
+"""
+function move!(node1::Node, node2::Node, proportion::Float64)
+    total::Float64 = node1.inc_length + node2.inc_length
+    fp::Float64 = total*proportion
+    sp::Float64 = total-fp
+
+    node1.inc_length = fp
+    node2.inc_length = sp
+
+end # function move!
 
 
 end # module my_tree
