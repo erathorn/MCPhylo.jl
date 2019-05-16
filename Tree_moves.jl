@@ -91,5 +91,36 @@ function slide!(root::Node)
 
 end # function slide!
 
+"""
+    swing!(root::Node)
+
+This function performs a swing node. A random non-leave node is selected and
+moved along the path specified by its two children.
+"""
+function swing!(root::Node)
+    target::Node = Node(1.0, [0.0], Node[], 0, true, 0.0, "0")
+    while true
+        target = random_node(root)
+        # check if target is not a leave and that its grand daughters are also
+        # no leaves
+        if target.nchild != 0
+            break
+        end # if
+    end # end while
+
+    proportion::Float64 = randn(Uniform(0,1))
+
+    child1 = target.child[1]
+    child2 = target.child[2]
+
+    # calculate and set new values
+    total::Float64 = child1.inc_length + child2.inc_length
+    fp::Float64 = total*proportion
+    sp::Float64 = total-fp
+
+    child1.inc_length = fp
+    child2.inc_length = sp
+
+end # function swing!
 
 end # module Tree_moves
