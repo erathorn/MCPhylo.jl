@@ -5,7 +5,7 @@ using DataFrames
 using Markdown
 using ..Tree_Basics: Node, post_order, set_binary!, add_child!
 
-export to_df, from_df
+export to_df, from_df, to_newick
 
 
 """
@@ -72,5 +72,19 @@ function from_df(df::DataFrame)::Node
     set_binary!(node)
     return node
 end # function from_df
+
+function to_newick(node::Node)::String
+    ret_str = ""
+    if node.nchild == 0
+        return string(node.name)*":"*string(node.inc_length)
+    else
+        ret_str *= "(" *to_newick(node.child[1])* "," *to_newick(node.child[2])*")"*string(node.name)*":"*string(node.inc_length)
+    end # if
+    if node.root == true
+        return ret_str*";"
+    else
+        return ret_str
+    end # if
+end # function
 
 end # module Converter

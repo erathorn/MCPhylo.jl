@@ -7,7 +7,7 @@ using Distributions
 
 using ..Tree_Basics: Node, post_order, set_binary!, add_child!, remove_child!, random_node, move!
 
-export NNI!
+export NNI!, slide!, swing!
 
 """
     NNI!(root::Node)
@@ -76,7 +76,7 @@ function slide!(root::Node)
     end # end while
 
     # proportion of slide move is randomly selected
-    proportion::Float64 = randn(Uniform(0,1))
+    proportion::Float64 = rand(Uniform(0,1))
 
     # pick a random child
     child::Node = target.child[rand([1,2])]
@@ -102,7 +102,7 @@ function swing!(root::Node)
         end # if
     end # end while
 
-    proportion::Float64 = randn(Uniform(0,1))
+    proportion::Float64 = rand(Uniform(0,1))
 
     child1 = target.child[1]
     child2 = target.child[2]
