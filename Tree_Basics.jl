@@ -258,4 +258,17 @@ function get_leaves(root::Node, leave_list::Vector{Node})::Vector{Node}
     return leave_list
 end # function get_leaves
 
+
+"""
+    random_node(root::Node)::Node
+
+This function returns a random node from the tree.
+"""
+function random_node(root::Node)::Node
+    post_order_trav = post_order(root)
+    return rand(post_order_trav)
+end # function random_node
+
+
+
 end # module my_tree
