@@ -96,8 +96,7 @@ function swing!(root::Node)
     target::Node = Node(1.0, [0.0], Node[], 0, true, 0.0, "0")
     while true
         target = random_node(root)
-        # check if target is not a leave and that its grand daughters are also
-        # no leaves
+        # check if target is not a leave
         if target.nchild != 0
             break
         end # if

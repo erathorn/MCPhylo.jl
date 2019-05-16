@@ -273,8 +273,8 @@ end # function random_node
 """
     move!(node1::Node, node2::Node, proportion::Float64)
 
-This function moves node1 along the path specified through the incoming edges of node1 and node2
-according to the proportion.
+Change the incomming length of node1 and node2 while keeping there combined length
+constant.
 """
 function move!(node1::Node, node2::Node, proportion::Float64)
     total::Float64 = node1.inc_length + node2.inc_length
@@ -286,5 +286,37 @@ function move!(node1::Node, node2::Node, proportion::Float64)
 
 end # function move!
 
+"""
+    find_by_name(node_name::Float64, root::Node)::Node
+
+This function tries to find the node which is specified by the name `node_name`.
+If there are multiple nodes with this name, the first is returned. If there is no
+such node an Error is thrown.
+"""
+function find_by_name(node_name::Float64, root::Node)::Node
+    all_nodes = post_order(root)
+    for node in all_nodes
+        if node.name == node_name
+            return node
+        end # if
+    end # for
+    throw("The node $node_name is not in the tree.")
+end # function find_by_name
+
+"""
+    find_by_binary(node_binary::String, root::Node)::Node
+
+This function tries to find the node which is specified by the binary
+represenation `node_binary`. If there is no such node an Error is thrown.
+"""
+function find_by_binary(node_binary::String, root::Node)::Node
+    all_nodes = post_order(root)
+    for node in all_nodes
+        if node.binary == node_binary
+            return node
+        end # if
+    end # for
+    throw("The node $node_binary is not in the tree.")
+end # function find_by_binary
 
 end # module my_tree
