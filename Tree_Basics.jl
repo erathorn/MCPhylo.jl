@@ -14,7 +14,8 @@ using Random
 using Distributions
 
 export create_tree_from_leaves, post_order, tree_length, tree_height,
-       path_length, get_leaves, Node, add_child!, set_binary!, remove_child!
+       path_length, get_leaves, Node, add_child!, set_binary!, remove_child!,
+       random_node
 
 
 """
