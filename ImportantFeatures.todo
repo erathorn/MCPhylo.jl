@@ -5,7 +5,6 @@ This is a list of important features which should be added to the Package
 Tree Functionionality:
   ☐ Nexus support
   ☐ Node names as strings
-  ☐ Use metaprogramming to create multiple search Functionionalities
   ☐ RSPR tree move
   ☐ Parser for newick trees
   ☐ Check if support for non binary trees is necessary, or even networks
@@ -13,3 +12,8 @@ Tree Functionionality:
 
 General Features:
   ☐ Macros for model definition
+  ☐ Automate export of automatically generated functoins
+
+＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿
+Archive:
+  ✔ Use metaprogramming to create multiple search Functionionalities @done(2019-05-21 14:16) @project(Tree Functionionality)
