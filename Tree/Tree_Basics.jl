@@ -20,7 +20,7 @@ export create_tree_from_leaves, post_order, tree_length, tree_height,
 
 
 #TODO: Node names as strings
-#TODO: Automate export of automatically genereated functions
+#TODO: Automate export of automatically genereated funtions
 
 """
     Node
@@ -289,14 +289,15 @@ function move!(node1::Node, node2::Node, proportion::Float64)
 
 end # function move!
 
-"""
-
-This part creates functions which enable the search for different nodes in the
-tree. It is possible to look for a node via its name, its binary representation
-or to find the root.
-This functionality can be extended by adding more fields to the nodes and the
-meta programmming part here.
-"""
+#"""
+# proper Markdown comments are not possible
+#
+#This part creates functions which enable the search for different nodes in the
+#tree. It is possible to look for a node via its name, its binary representation
+#or to find the root.
+#This functionality can be extended by adding more fields to the nodes and the
+#meta programmming part here.
+#"""
 for (sym, my_type) in [(:binary, :String), (:name, :Float64), (:root ,:Bool)]
     # extend the list to look for more fields in the node
     @eval function $(Symbol(string("find_by_$sym")))(tree::Node, identifier::$my_type)::Node
