@@ -35,7 +35,7 @@ stored in the node.
 """
 mutable struct Node
     name::Float64
-    data::Vector{Float64}
+    data::Array{Float64}
     child::Vector{Node}
     nchild::Int
     root::Bool
