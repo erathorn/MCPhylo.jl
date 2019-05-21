@@ -13,14 +13,15 @@ using Markdown
 using Random
 using Distributions
 
+
 export create_tree_from_leaves, post_order, tree_length, tree_height,
        path_length, get_leaves, Node, add_child!, set_binary!, remove_child!,
-       random_node, move!
+       random_node, move!, find_by_name, find_by_binary, find_by_root
 
 
 #TODO: Node names as strings
+#TODO: Automate export of automatically genereated functions
 
-#TODO: Meta Programming for search functionality
 """
     Node
 
@@ -289,37 +290,30 @@ function move!(node1::Node, node2::Node, proportion::Float64)
 end # function move!
 
 """
-    find_by_name(node_name::Float64, root::Node)::Node
 
-This function tries to find the node which is specified by the name `node_name`.
-If there are multiple nodes with this name, the first is returned. If there is no
-such node an Error is thrown.
+This part creates functions which enable the search for different nodes in the
+tree. It is possible to look for a node via its name, its binary representation
+or to find the root.
+This functionality can be extended by adding more fields to the nodes and the
+meta programmming part here.
 """
-function find_by_name(node_name::Float64, root::Node)::Node
-    all_nodes = post_order(root)
-    for node in all_nodes
-        if node.name == node_name
-            return node
-        end # if
-    end # for
-    throw("The node $node_name is not in the tree.")
-end # function find_by_name
+for (sym, my_type) in [(:binary, :String), (:name, :Float64), (:root ,:Bool)]
+    # extend the list to look for more fields in the node
+    @eval function $(Symbol(string("find_by_$sym")))(tree::Node, identifier::$my_type)::Node
+        # create each function and make it so it only accepts the correct type
+        local all_nodes = post_order(tree) # make sure all_nodes only belongs to this function
+        for node in all_nodes
+            if node.$sym == identifier
+                # return the node if it is found
+                return node
+            end # if
+        end # for
+        # the node is not found. Therefore throw an error!
+        throw("The node identified by $identifier is not in the tree.")
+    end # function
+end
 
-"""
-    find_by_binary(node_binary::String, root::Node)::Node
 
-This function tries to find the node which is specified by the binary
-represenation `node_binary`. If there is no such node an Error is thrown.
-"""
-function find_by_binary(node_binary::String, root::Node)::Node
-    all_nodes = post_order(root)
-    for node in all_nodes
-        if node.binary == node_binary
-            return node
-        end # if
-    end # for
-    throw("The node $node_binary is not in the tree.")
-end # function find_by_binary
 
 
 

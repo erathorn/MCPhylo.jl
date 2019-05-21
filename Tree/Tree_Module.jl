@@ -9,7 +9,7 @@ using .Tree_moves
 
 export create_tree_from_leaves, post_order, tree_length, tree_height,
        path_length, get_leaves, to_df, Node, add_child!, remove_child!, NNI!,
-       slide!, swing!, to_newick
+       slide!, swing!, to_newick, find_by_name, find_by_binary, find_by_root
 
 
 end # Tree_Module
