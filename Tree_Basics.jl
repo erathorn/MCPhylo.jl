@@ -18,6 +18,9 @@ export create_tree_from_leaves, post_order, tree_length, tree_height,
        random_node, move!
 
 
+#TODO: Node names as strings
+
+#TODO: Meta Programming for search functionality
 """
     Node
 
@@ -144,7 +147,6 @@ function post_order(root::Node)::Vector{Node}
     post_order(root, t)
     return t
 end # function post_order
-
 
 """
     tree_length(root::Node)::Float64
@@ -318,5 +320,9 @@ function find_by_binary(node_binary::String, root::Node)::Node
     end # for
     throw("The node $node_binary is not in the tree.")
 end # function find_by_binary
+
+
+
+
 
 end # module my_tree

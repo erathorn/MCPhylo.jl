@@ -1,0 +1,15 @@
+This is a list of important features which should be added to the Package
+  If the module for the feature already exists consider adding a TODO in the
+  resepective file
+
+Tree Functionionality:
+  ☐ Nexus support
+  ☐ Node names as strings
+  ☐ Use metaprogramming to create multiple search Functionionalities
+  ☐ RSPR tree move
+  ☐ Parser for newick trees
+  ☐ Check if support for non binary trees is necessary, or even networks
+  ☐ Check if a more general datatype for the node data is needed
+
+General Features:
+  ☐ Macros for model definition
