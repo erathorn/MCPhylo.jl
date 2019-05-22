@@ -6,7 +6,10 @@ using ..Tree_Module
 include("../Substitution/SubstitutionMat.jl")
 using ..SubstitutionMat: exponentiate_binary
 
+<<<<<<< HEAD
 # TODO: Look into Parallelizing it
+=======
+>>>>>>> 394b950e973d95ed7cd59984eed0aacda1aab011
 """
     FelsensteinFunction(tree_postorder::Vector{Node}, pi::Float64, rates::Vector{Float64})
 
