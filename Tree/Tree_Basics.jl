@@ -80,7 +80,7 @@ end # function
 """
     create_tree_from_leaves(leaf_nodes::Vector{T})::Node
 
-This function creates a binary tree from a list of leaf nodes.
+This function creates a  random binary tree from a list of leaf nodes.
 The root node as access point for the tree is returned.
 """
 function create_tree_from_leaves(leaf_nodes::Vector{Int})::Node
