@@ -14,6 +14,11 @@ General Features:
   ☐ Macros for model definition
   ☐ Automate export of automatically generated functoins
 
+Likelihood Computation:
+  ☐ make sure likelihood calculation can be done in parallel
+
+Prior Distributions:
+  ☐ make prior and constraint checking general
 ＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿
 Archive:
   ✔ Use metaprogramming to create multiple search Functionionalities @done(2019-05-21 14:16) @project(Tree Functionionality)

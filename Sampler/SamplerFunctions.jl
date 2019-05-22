@@ -17,7 +17,7 @@ old value and the standard deviation of this distribution is specified in `sd`.
 """
 function SampleVector!(parameters::Vector{Float64}, ind::Integer, sd::Float64, lower::Float64, upper::Float64)
         my_value::Float64 = parameters[ind]
-        sampling_dist = Distributions.Normal(my_value, sd)
+        sampling_dist = Distributions.TruncatedNormal(my_value, sd, lower, upper)
         while true
                 new_value = rand(sampling_dist)
                 if lower<= new_value <= upper
@@ -26,7 +26,8 @@ function SampleVector!(parameters::Vector{Float64}, ind::Integer, sd::Float64, l
                 end # if
         end # while
 
-        return Distributions.logpdf(Distributions.Normal(parameters[ind],sd))-Distributions.logpdf(Distributions.Normal(my_value,sd))
+        return Distributions.logpdf(Distributions.TruncatedNormal(parameters[ind],sd, lower, upper), my_value)-
+        Distributions.logpdf(Distributions.TruncatedNormal(my_value,sd, lower, upper), parameters[ind])
 end # function SampleVector
 
 """
@@ -41,17 +42,17 @@ old value and the standard deviation of this distribution is specified in `sd`.
 Additionally, this function makes sure that the sum of the values in `parameters`
 remains unchanged. The sum of the parameter values is specified in `ov_sum`.
 """
-function SampleVectorAdjusted!(parameters::Vector{Float64}, ind::Integer, sd::Float64, lower::Float64, upper::Float64, ov_sum::Float64)
+function SampleVectorAdjusted!(parameters::Vector{Float64}, ind::Int64, sd::Float64, lower::Float64, upper::Float64, ov_sum::Float64)
         my_value::Float64 = parameters[ind]
-        sampling_dist = Distributions.Normal(my_value, sd)
-        sample::Bool = true
-        while sample
+        sampling_dist = Distributions.TruncatedNormal(my_value, sd, lower, upper)
+
+        while true
                 new_value = rand(sampling_dist)
                 if lower<= new_value <= upper
-                        scale = (ov_sum-new_value)/(ov_sum-new_value)
+                        scale = (ov_sum-new_value)/(ov_sum-my_value)
+                        println(scale)
                         parameters[ind] = new_value
-                        sample = false
-                        for i in 1:len(parameters)
+                        for i in 1:length(parameters)
                                 if i != ind
                                         parameters[i] *= scale
                                 end # if
@@ -59,7 +60,8 @@ function SampleVectorAdjusted!(parameters::Vector{Float64}, ind::Integer, sd::Fl
                         break
                 end # if
         end # while
-        return Distributions.logpdf(Distributions.Normal(new,sd))-Distributions.logpdf(Distributions.Normal(my_value,sd))
+        return Distributions.logpdf(Distributions.TruncatedNormal(parameters[ind],sd, lower, upper), my_value)-
+        Distributions.logpdf(Distributions.TruncatedNormal(my_value,sd, lower, upper), parameters[ind])
 end # function
 
 end  # modul SamplerFunctions
