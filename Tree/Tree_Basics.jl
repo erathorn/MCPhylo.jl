@@ -19,7 +19,6 @@ export create_tree_from_leaves, post_order, tree_length, tree_height,
        random_node, move!, find_by_name, find_by_binary, find_by_root
 
 
-#TODO: Node names as strings
 #TODO: Automate export of automatically genereated funtions
 
 """
@@ -34,7 +33,7 @@ stored in the node.
 * `binary` specifies the path from the root to the Node. `1` and `0` represent left and right turns respectively.
 """
 mutable struct Node
-    name::Float64
+    name::String
     data::Array{Float64}
     child::Vector{Node}
     nchild::Int
@@ -44,7 +43,7 @@ mutable struct Node
 end # struct Node
 
 
-Node() = Node(Int64[],Float64[], Node[], 0, true, 0.0, "0")
+Node() = Node(String[],Float64[], Node[], 0, true, 0.0, "0")
 
 
 """
@@ -83,7 +82,7 @@ end # function
 This function creates a  random binary tree from a list of leaf nodes.
 The root node as access point for the tree is returned.
 """
-function create_tree_from_leaves(leaf_nodes::Vector{Int})::Node
+function create_tree_from_leaves(leaf_nodes::Vector{String})::Node
     my_node_list::Array{Node} = []
 
     # first create a list of leaf nodes
@@ -105,7 +104,7 @@ function create_tree_from_leaves(leaf_nodes::Vector{Int})::Node
         first_child.inc_length = rand(Uniform(0,1))
         second_child::Node = pop!(my_node_list)
         second_child.inc_length = rand(Uniform(0,1))
-        curr_node::Node = Node(temp_name, [0.0], Node[], 0, true, 0.0, "0")
+        curr_node::Node = Node(string(temp_name), [0.0], Node[], 0, true, 0.0, "0")
         add_child!(curr_node, first_child)
         add_child!(curr_node, second_child)
         push!(my_node_list, curr_node)
@@ -298,7 +297,7 @@ end # function move!
 #This functionality can be extended by adding more fields to the nodes and the
 #meta programmming part here.
 #"""
-for (sym, my_type) in [(:binary, :String), (:name, :Float64), (:root ,:Bool)]
+for (sym, my_type) in [(:binary, :String), (:name, :String), (:root ,:Bool)]
     # extend the list to look for more fields in the node
     @eval function $(Symbol(string("find_by_$sym")))(tree::Node, identifier::$my_type)::Node
         # create each function and make it so it only accepts the correct type

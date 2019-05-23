@@ -49,7 +49,7 @@ binary tree is stored in the matrix. No checks are performed.
 """
 function from_df(df::DataFrame)::Node
 
-    node_list::Vector{Node} = [Node(parse(Float64, String(i)), [0.0], Node[], 0, true, 0.0, "0") for i in names(df)]
+    node_list::Vector{Node} = [Node(String(i) , [0.0], Node[], 0, true, 0.0, "0") for i in names(df)]
 
     for (col_index, col) in enumerate(eachcol(df))
         for (row_index, entry) in enumerate(col)
