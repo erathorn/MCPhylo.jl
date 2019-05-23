@@ -16,6 +16,7 @@ General Features:
 
 Likelihood Computation:
   ☐ make sure likelihood calculation can be done in parallel
+  ☐ Dealing with missing character values
 
 Prior Distributions:
   ☐ make prior and constraint checking general
