@@ -3,11 +3,12 @@ This is a list of important features which should be added to the Package
   resepective file
 
 Tree Functionionality:
-  ☐ Nexus support
+  ☐ Nexus support for outputting trees
   ☐ RSPR tree move
   ☐ Parser for newick trees
   ☐ Check if support for non binary trees is necessary, or even networks
   ☐ Check if a more general datatype for the node data is needed
+  ☐ data containers need appropriate size for internal nodes
 
 General Features:
   ☐ Macros for model definition

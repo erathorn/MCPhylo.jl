@@ -3,9 +3,14 @@ module NexusParser
 using Markdown
 using DataFrames
 
-export ParseNexus
+include("../Tree/Tree_Module.jl")
+using ..Tree_Module
 
+export ParseNexus, make_tree_with_data
+
+# TODO: Assign proper size to inner nodes.
 """
+    ParseNexus(filename::String)
 
 This function parses a NEXUS file which stores the input for the MCMC compuation.
 The file should follow the conventions used for MrBayes.
@@ -19,13 +24,9 @@ function ParseNexus(filename::String)
         throw("$filename is not a Nexus file!")
     end # if
 
-    println(typeof(content))
-    println(content[2])
     while true
         line = popfirst!(content)
-        println(typeof(line))
         if line == "BEGIN DATA;"
-            println("Here")
             # here comes the important information, so break the loop
             break
         end #if
@@ -34,8 +35,14 @@ function ParseNexus(filename::String)
     ntax, nchar, gap, missing_representation = extract_meta_info(content)
     df = create_nexusdf(content)
     return ntax, nchar, gap, missing_representation, df
-end # function
+end # function ParseNexus
 
+"""
+    extract_meta_info(content::Array{String})
+
+This function extracts some meta information from the content of the nexus file.
+It "eats-up" the stack
+"""
 function extract_meta_info(content::Array{String})
     lct::Int64 = 0
     ntax::Int64 = 0
@@ -75,6 +82,11 @@ function extract_meta_info(content::Array{String})
     return ntax, nchar, gap, missing_representation
 end # function extract_meta_info
 
+"""
+    create_nexusdf(filecontent::Array{String})::DataFrame
+
+This function creates a DataFrame of the acutal data.
+"""
 function create_nexusdf(filecontent::Array{String})::DataFrame
     df = DataFrame(Language=String[], Data=String[])
     while true
@@ -88,8 +100,39 @@ function create_nexusdf(filecontent::Array{String})::DataFrame
         end # if
     end # while
     return df
-end # function
+end # function create_nexusdf
 
+"""
+    make_tree_with_data(filename::String)::Node
+
+This function creates a tree where the terminal nodes get the data specified in
+the NEXUS file.
+"""
+function make_tree_with_data(filename::String)::Node
+    # get all the information from the NEXUS file
+    n_tax, nc, gap, miss, df = ParseNexus(filename)
+
+    # create random tree
+    new_tree = Tree_Module.create_tree_from_leaves(df[:Language])
+
+    # iterate through the data frame and get the node information
+    for row in eachrow(df)
+        data_vec = zeros(Float64, (2, nc))
+        for (ind, i) in enumerate(row.Data)
+            if i == '0'
+                data_vec[1,ind] = 1.0
+            elseif i == '1'
+                data_vec[2,ind] = 1.0
+            else
+                data_vec[1, ind] = 2.0
+                data_vec[2, ind] = 2.0
+            end # if
+        end # for
+        node = Tree_Module.find_by_name(new, row.Language)
+        node.data = data_vec
+    end # for
+    return new_tree
+end # function make_tree_with_data
 
 
 
