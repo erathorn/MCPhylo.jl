@@ -10,7 +10,7 @@ export exponentiate_binary
 This function returns the expontiatied matrix for the restriction site model.
 Following Felsenstein 1981
 """
-function exponentiate_binary(pi::Float64, t::Float64, r::Float64)::Array{Float64}
+function exponentiate_binary(pi::Number, t::Float64, r::Float64)::Array{Float64}
     # calculate some auxiliary variables
     ext::Float64 = exp(-t*r)
     ext_::Float64 = 1.0-ext
