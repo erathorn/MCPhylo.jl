@@ -82,12 +82,12 @@ end # function
 This function creates a  random binary tree from a list of leaf nodes.
 The root node as access point for the tree is returned.
 """
-function create_tree_from_leaves(leaf_nodes::Vector{String})::Node
+function create_tree_from_leaves(leaf_nodes::Vector{String}, node_size::Int64 = 1)::Node
     my_node_list::Array{Node} = []
 
     # first create a list of leaf nodes
     for node_name in leaf_nodes
-        push!(my_node_list, Node(node_name, [0.0], Node[], 0, true, 0.0, "0"))
+        push!(my_node_list, Node(node_name, zeros(Float64, (2, node_size)), Node[], 0, true, 0.0, "0"))
     end # for
 
     # Internal nodes are created using integers as names.
@@ -104,7 +104,7 @@ function create_tree_from_leaves(leaf_nodes::Vector{String})::Node
         first_child.inc_length = rand(Uniform(0,1))
         second_child::Node = pop!(my_node_list)
         second_child.inc_length = rand(Uniform(0,1))
-        curr_node::Node = Node(string(temp_name), [0.0], Node[], 0, true, 0.0, "0")
+        curr_node::Node = Node(string(temp_name), zeros(Float64, (2, node_size)), Node[], 0, true, 0.0, "0")
         add_child!(curr_node, first_child)
         add_child!(curr_node, second_child)
         push!(my_node_list, curr_node)

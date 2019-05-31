@@ -4,11 +4,11 @@ using Markdown
 using DataFrames
 
 include("../Tree/Tree_Module.jl")
-using ..Tree_Module
+using ..Tree_Module: Node, find_by_name, create_tree_from_leaves
 
 export ParseNexus, make_tree_with_data
 
-# TODO: Assign proper size to inner nodes.
+
 """
     ParseNexus(filename::String)
 
@@ -19,7 +19,7 @@ function ParseNexus(filename::String)
     open(filename, "r") do file
         global content = readlines(file)
     end # do
-    println(content[1])
+
     if content[1] != "#NEXUS"
         throw("$filename is not a Nexus file!")
     end # if
@@ -108,12 +108,12 @@ end # function create_nexusdf
 This function creates a tree where the terminal nodes get the data specified in
 the NEXUS file.
 """
-function make_tree_with_data(filename::String)::Node
+function make_tree_with_data(filename::String)#::Tree_Module.Node
     # get all the information from the NEXUS file
     n_tax, nc, gap, miss, df = ParseNexus(filename)
 
     # create random tree
-    new_tree = Tree_Module.create_tree_from_leaves(df[:Language])
+    new_tree = create_tree_from_leaves(df[:Language], nc)
 
     # iterate through the data frame and get the node information
     for row in eachrow(df)
@@ -124,11 +124,11 @@ function make_tree_with_data(filename::String)::Node
             elseif i == '1'
                 data_vec[2,ind] = 1.0
             else
-                data_vec[1, ind] = 2.0
-                data_vec[2, ind] = 2.0
+                data_vec[1, ind] = 1.0
+                data_vec[2, ind] = 1.0
             end # if
         end # for
-        node = Tree_Module.find_by_name(new, row.Language)
+        node = find_by_name(new_tree, row.Language)
         node.data = data_vec
     end # for
     return new_tree

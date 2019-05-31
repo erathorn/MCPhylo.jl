@@ -8,7 +8,7 @@ Tree Functionionality:
   ☐ Parser for newick trees
   ☐ Check if support for non binary trees is necessary, or even networks
   ☐ Check if a more general datatype for the node data is needed
-  ☐ data containers need appropriate size for internal nodes
+  ✔ data containers need appropriate size for internal nodes @done(2019-05-31 16:01) @project(Tree Functionionality)
 
 General Features:
   ☐ Macros for model definition
