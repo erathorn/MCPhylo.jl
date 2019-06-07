@@ -14,57 +14,54 @@ extensions = quote
     import Distributions: minimum, maximum, logpdf, pdf
 
     ## Type declaration
-    mutable struct NewUnivarDist <: ContinuousUnivariateDistribution
+    mutable struct PhyloDist <: ContinuousUnivariateDistribution
         my_tree::Array
-        pi::Number
+        pi::Real
     end
-    minimum(d::NewUnivarDist) = -Inf
-    maximum(d::NewUnivarDist) = Inf
+    minimum(d::PhyloDist) = -Inf
+    maximum(d::PhyloDist) = Inf
 
-    function logpdf(d::NewUnivarDist)
-        LikelihoodCalculator.FelsensteinFunction(my_tree, pi)
+    function logpdf(d::PhyloDist, x::Real)
+        LikelihoodCalculator.FelsensteinFunction(d.my_tree, d.pi)
     end
 
-    function pdf(d::NewUnivarDist)
-        exp(logpdf(d))
-    end
+    
 end
 
 include("./Tree/Tree_Module.jl")
 include("./Substitution/SubstitutionMat.jl")
-
-include("./Sampler/SamplerFunctions.jl")
 include("./Parser/ParseNexus.jl")
 using .Tree_Module
-
 using .SubstitutionMat
-using .SamplerFunctions
 using .NexusParser
+include("./Likelhood/LikelihoodCalculator.jl")
+using .LikelihoodCalculator
 using DataFrames
 using Mamba
-using Distributions
+
 
 eval(extensions)
 
-this_tree = NexusParser.make_tree_with_data("./local/IE_Contemporary_Full.nex")
+this_tree = NexusParser.make_tree_with_data("./local/development.nex")
 
-data = Dict{Symbol, Any}(
-  :mtree => Tree_Module.post_order(this_tree))
+    
+my_data = Dict{Symbol, Any}(
+  :mtree => Tree_Module.post_order(NexusParser.make_tree_with_data("./local/development.nex")))
 
 
 
 model = Model(
     y = Stochastic(1,
-    (mtree, pi) -> begin UnivariateDistribution[NewUnivarDist(mtree, pi)] end, false
+    (mtree, pi) -> begin UnivariateDistribution[PhyloDist(mtree, pi)] end
     ),
     pi = Stochastic(
-    () -> Uniform()
+    () -> Truncated(Uniform(0.0,1.0), 0.0, 1.0)
     ) )
 
-inits = [ Dict(:mtree => data[:mtree], :pi=> 0.1, :y => [-1000])]
+inits = [ Dict(:mtree => my_data[:mtree], :pi=> rand(Uniform(0,1)), :y => [-1000000000])]
 
-scheme = [Slice(:pi, 0.2)]
+scheme = [Slice(:pi, 0.05)]
 
 setsamplers!(model, scheme)
 
-sim = mcmc(model, data, inits, 10000, burnin=2500)
+sim = mcmc(model, my_data, inits, 1000, burnin=200, chains=1)
