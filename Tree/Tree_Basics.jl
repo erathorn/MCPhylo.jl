@@ -34,9 +34,9 @@ stored in the node.
 """
 mutable struct Node
     name::String
-    data::Array{Float64}
+    data::Array{Float64,2}
     child::Vector{Node}
-    nchild::Int
+    nchild::Int64
     root::Bool
     inc_length::Float64
     binary::String
@@ -83,7 +83,7 @@ This function creates a  random binary tree from a list of leaf nodes.
 The root node as access point for the tree is returned.
 """
 function create_tree_from_leaves(leaf_nodes::Vector{String}, node_size::Int64 = 1)::Node
-    my_node_list::Array{Node} = []
+    my_node_list::Array{Node,1} = []
 
     # first create a list of leaf nodes
     for node_name in leaf_nodes
