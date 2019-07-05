@@ -272,6 +272,7 @@ function random_node(root::Node)::Node
     return rand(post_order_trav)
 end # function random_node
 
+
 """
     move!(node1::Node, node2::Node, proportion::Float64)
 
@@ -287,6 +288,41 @@ function move!(node1::Node, node2::Node, proportion::Float64)
     node2.inc_length = sp
 
 end # function move!
+
+
+"""
+    get_branchlength_vector(post_order::Vector{Node})::Vector{Float64}
+
+Return a vector of branch lenghts.
+"""
+function get_branchlength_vector!(post_order::Vector{Node})::Vector{Float64}
+    return [n.inc_length for n in post_order]
+end # function get_branchlength_vector
+
+
+"""
+    get_branchlength_vector!(root::Node)::Vector{Float64}
+
+Return a vector of branch lenghts.
+"""
+function get_branchlength_vector!(root::Node)::Vector{Float64}
+    return get_branchlength_vector(post_order(root))
+
+end # function get_branchlength_vector
+
+
+"""
+    set_branchlength_vector!(post_order::Vector{Node}, blenvec::Vector{Float64})::Node
+
+This function sets the branch lengths of a tree to the values specified in blenvec.
+"""
+function set_branchlength_vector!(post_order::Vector{Node}, blenvec::Vector{Float64})::Node
+    @assert size(post_order) == size(blenvec)
+    for (ind,node) in enumerate(post_order)
+        node.inc_length = blenvec[ind]
+    return last(post_order)
+end # function set_branchlength_vector!
+
 
 #"""
 # proper Markdown comments are not possible
