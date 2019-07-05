@@ -7,16 +7,16 @@ my_tree:
 
 
 
-module Tree_Basics
+#module Tree_Basics
 
-using Markdown
-using Random
-using Distributions
+#using Markdown
+#using Random
+#using Distributions
 
 
-export create_tree_from_leaves, post_order, tree_length, tree_height,
-       path_length, get_leaves, Node, add_child!, set_binary!, remove_child!,
-       random_node, move!, find_by_name, find_by_binary, find_by_root
+#export create_tree_from_leaves, post_order, tree_length, tree_height,
+#       path_length, get_leaves, Node, add_child!, set_binary!, remove_child!,
+#       random_node, move!, find_by_name, find_by_binary, find_by_root, get_branchlength_vector!
 
 
 #TODO: Automate export of automatically genereated funtions
@@ -307,7 +307,6 @@ Return a vector of branch lenghts.
 """
 function get_branchlength_vector!(root::Node)::Vector{Float64}
     return get_branchlength_vector(post_order(root))
-
 end # function get_branchlength_vector
 
 
@@ -399,4 +398,4 @@ end
 
 
 
-end # module my_tree
+#end # module my_tree

@@ -1,11 +1,3 @@
-module Converter
-
-include("./Tree_Basics.jl")
-using DataFrames
-using Markdown
-using ..Tree_Basics: Node, post_order, set_binary!, add_child!
-
-export to_df, from_df, to_newick
 
 #TODO: Nexus support
 #TODO: Newick parser
@@ -75,6 +67,11 @@ function from_df(df::DataFrame)::Node
     return node
 end # function from_df
 
+"""
+    to_newick(node::Node)::String
+
+creates a newick represnetation of the tree.
+"""
 function to_newick(node::Node)::String
     ret_str = ""
     if node.nchild == 0
@@ -88,7 +85,3 @@ function to_newick(node::Node)::String
         return ret_str
     end # if
 end # function
-
-
-
-end # module Converter

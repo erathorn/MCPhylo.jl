@@ -38,6 +38,8 @@ using .SubstitutionMat
 using .NexusParser
 include("./Likelihood/LikelihoodCalculator.jl")
 using .LikelihoodCalculator
+include("./Likelihood/Prior.jl")
+using .Prior
 using Mamba
 
 
@@ -47,21 +49,28 @@ this_tree = NexusParser.make_tree_with_data("./local/development.nex")
 
 
 my_data = Dict{Symbol, Any}(
-  :mtree => Tree_Module.post_order(NexusParser.make_tree_with_data("./local/development.nex")))
+  :mtree => Tree_Module.post_order(NexusParser.make_tree_with_data("./local/development.nex")),
+  :blenvec=> Tree_Module.get_branchlength_vector!(:mtree))
 
 
 
 model = Model(
     y = Stochastic(1,
-    (mtree, mypi) ->
+    (mtree, mypi, blenvec) ->
     begin UnivariateDistribution[
-        PhyloDist(mtree, mypi)]
+        mtree_po = Tree_Module.set_branchlength_vector!(mtree, blenvec)
+        PhyloDist(mtree_po, mypi)]
     end,
 
     ),
     mypi = Stochastic(
     () -> Truncated(Uniform(0.0,1.0), 0.0, 1.0)
     ),
+    blenvec = Stocastic(size(:blenvec),
+    () ->
+
+
+    )
     #rates = Stochastic(1,
     #()-> Dirichlet(ones(3132))
     #)
@@ -76,6 +85,3 @@ scheme = [Slice(:mypi, 0.05)]
 setsamplers!(model, scheme)
 
 sim = mcmc(model, my_data, inits, 500, burnin=1, chains=1)
-
-
-x::Array{Float64, (2,2)} = [1. 2.; 1. 2.]

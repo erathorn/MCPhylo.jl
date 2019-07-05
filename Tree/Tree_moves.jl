@@ -1,13 +1,3 @@
-module Tree_moves
-
-include("./Tree_Basics.jl")
-using Markdown
-using Random
-using Distributions
-
-using ..Tree_Basics: Node, post_order, set_binary!, add_child!, remove_child!, random_node, move!
-
-export NNI!, slide!, swing!
 
 #TODO: RSPR
 """
@@ -111,5 +101,3 @@ function swing!(root::Node)
     # calculate and set new values
     move!(child1, child2, proportion)
 end # function swing!
-
-end # module Tree_moves
