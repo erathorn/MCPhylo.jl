@@ -312,16 +312,60 @@ end # function get_branchlength_vector
 
 
 """
-    set_branchlength_vector!(post_order::Vector{Node}, blenvec::Vector{Float64})::Node
+    set_branchlength_vector!(post_order::Vector{Node}, blenvec::Vector{Float64})::Vector{Node}
 
 This function sets the branch lengths of a tree to the values specified in blenvec.
 """
-function set_branchlength_vector!(post_order::Vector{Node}, blenvec::Vector{Float64})::Node
+function set_branchlength_vector!(post_order::Vector{Node}, blenvec::Vector{Float64})::Vector{Node}
     @assert size(post_order) == size(blenvec)
     for (ind,node) in enumerate(post_order)
         node.inc_length = blenvec[ind]
-    return last(post_order)
+    end # for
+    return post_order
 end # function set_branchlength_vector!
+
+
+"""
+    set_branchlength_vector!(root::Node, blenvec::Vector{Float64})::Node
+
+This function sets the branch lengths of a tree to the values specified in blenvec.
+"""
+function set_branchlength_vector!(root::Node, blenvec::Vector{Float64})::Node
+    return last(set_branchlength_vector!(post_order(root), blenvec))
+end # function set_branchlength_vector!
+
+
+"""
+    get_sum_seperate_length!(root::Node)::Vector{Float64}
+
+This function gets the sum of the branch lengths of the internal branches and the
+branches leading to the leave nodes.
+"""
+function get_sum_seperate_length!(root::Node)::Vector{Float64}
+    return get_sum_seperate_length!(post_order(root))
+end # function get_sum_seperate_length!
+
+
+"""
+    get_sum_seperate_length!(root::Node)::Vector{Float64}
+
+This function gets the sum of the branch lengths of the internal branches and the
+branches leading to the leave nodes.
+"""
+function get_sum_seperate_length!(post_order::Vector{Node})::Vector{Float64}
+    res_int::Float64 = 0.0
+    res_leave::Float64 = 0.0
+    for node in post_order
+        if node.nchild != 0
+            # internal branches
+            res_int += node.inc_length
+        else
+            # branches leading to leaves
+            res_leave += node.inc_length
+        end # if
+    end # for
+    return [res_int, res_leave]
+end # function get_sum_seperate_length!
 
 
 #"""
