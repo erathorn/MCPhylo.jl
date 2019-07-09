@@ -306,7 +306,7 @@ end # function get_branchlength_vector
 Return a vector of branch lenghts.
 """
 function get_branchlength_vector!(root::Node)::Vector{Float64}
-    return get_branchlength_vector(post_order(root))
+    return get_branchlength_vector!(post_order(root))
 end # function get_branchlength_vector
 
 
@@ -315,7 +315,7 @@ end # function get_branchlength_vector
 
 This function sets the branch lengths of a tree to the values specified in blenvec.
 """
-function set_branchlength_vector!(post_order::Vector{Node}, blenvec::Vector{Float64})::Vector{Node}
+function set_branchlength_vector!(post_order::Vector{Node}, blenvec)::Vector{Node}
     @assert size(post_order) == size(blenvec)
     for (ind,node) in enumerate(post_order)
         node.inc_length = blenvec[ind]

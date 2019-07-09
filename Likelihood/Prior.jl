@@ -3,7 +3,8 @@ module Prior
 using Markdown
 using SpecialFunctions
 using Distributions
-
+include("../Tree/Tree_Module.jl")
+using .Tree_Module
 
 import Distributions: length, insupport, _logpdf
 
@@ -18,14 +19,17 @@ mutable struct CompoundDirichlet <: ContinuousMultivariateDistribution
     a::Float64
     beta::Float64
     c::Float64
-    n_term::Float64
+    tree::Node
+
 end # struct
 
-length(d::CompoundDirichlet) = 2# * d.n_term - 3.0
+length(d::CompoundDirichlet) = length(Tree_Module.post_order(d.tree))
 
 function _logpdf(d::CompoundDirichlet, x::AbstractVector{T}) where {T<:Real}
-    blen_int::Float64 = x[1]
-    blen_leave::Float64 = x[2]
+    Tree_Module.set_branchlength_vector(d.tree, x)
+    xn = Tree_Module.get_sum_seperate_length!(d.tree)
+    blen_int::Float64 = xn[1]
+    blen_leave::Float64 = xn[2]
     t_l::Float64 = blen_int+blen_leave
     n_int::Float64 = d.n_term-3.0
     ln1::Float64 = (d.a-1.0)*blen_leave + (d.a*d.c-1.0)*blen_int

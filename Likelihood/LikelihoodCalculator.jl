@@ -4,7 +4,8 @@ using Markdown
 include("../Tree/Tree_Module.jl")
 using ..Tree_Module
 include("../Substitution/SubstitutionMat.jl")
-import ..SubstitutionMat: exponentiate_binary
+
+import .SubstitutionMat: exponentiate_binary
 
 # TODO: Look into Parallelizing it
 """

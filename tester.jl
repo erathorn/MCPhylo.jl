@@ -31,13 +31,13 @@ end
 
 
 include("./Tree/Tree_Module.jl")
-include("./Substitution/SubstitutionMat.jl")
+#include("./Substitution/SubstitutionMat.jl")
 include("./Parser/ParseNexus.jl")
 using .Tree_Module
-using .SubstitutionMat
+#using .SubstitutionMat
 using .NexusParser
-include("./Likelihood/LikelihoodCalculator.jl")
-using .LikelihoodCalculator
+#include("./Likelihood/LikelihoodCalculator.jl")
+#using .LikelihoodCalculator
 include("./Likelihood/Prior.jl")
 using .Prior
 using Mamba
@@ -49,16 +49,17 @@ this_tree = NexusParser.make_tree_with_data("./local/development.nex")
 
 
 my_data = Dict{Symbol, Any}(
-  :mtree => Tree_Module.post_order(NexusParser.make_tree_with_data("./local/development.nex")),
-  :blenvec=> Tree_Module.get_branchlength_vector!(:mtree))
-
+  :mtree => Tree_Module.post_order(NexusParser.make_tree_with_data("./local/development.nex")))
+my_data[:blenvec_s] = length(my_data[:mtree])
+my_data[:blenvec] = Tree_Module.get_branchlength_vector!(my_data[:mtree])
 
 
 model = Model(
     y = Stochastic(1,
-    (mtree, mypi, blenvec) ->
-    begin UnivariateDistribution[
-        mtree_po = Tree_Module.set_branchlength_vector!(mtree, blenvec)
+    (mtree_po, mypi) ->
+    begin
+
+        UnivariateDistribution[
         PhyloDist(mtree_po, mypi)]
     end,
 
@@ -66,10 +67,14 @@ model = Model(
     mypi = Stochastic(
     () -> Truncated(Uniform(0.0,1.0), 0.0, 1.0)
     ),
-    blenvec = Stocastic(size(:blenvec),
-    () ->
+    blenvec = Stochastic(1,
+        (mtree) -> Prior.CompoundDirichlet(1.0,1.0,0.100,1.0,length(Tree_Module.get_leaves(last(mtree))))
 
 
+    ),
+    mtree_po = Logical(
+    (mtree, blenvec) -> Tree_Module.set_branchlength_vector!(mtree, blenvec),
+    false
     )
     #rates = Stochastic(1,
     #()-> Dirichlet(ones(3132))
@@ -77,11 +82,19 @@ model = Model(
      )
 inivals = rand(Uniform(0,1),size(this_tree.data)[2])
 inivals =inivals./sum(inivals)
-inits = [ Dict(:mtree => my_data[:mtree], :mypi=> 0.5, :y => [-500000], :rates=>inivals)]
+
+inits = [ Dict(
+    :mtree => my_data[:mtree],
+    :mypi=> 0.5, :y => [-500000],
+    :rates=>inivals,
+    :blenvec=>Tree_Module.get_branchlength_vector!(my_data[:mtree]))]
 
 #scheme = [Slice(:mypi, 0.05), SliceSimplex(:rates)]
-scheme = [Slice(:mypi, 0.05)]
+scheme = [Slice(:mypi, 0.05),
+            Slice(:blenvec, 0.02)]
 
 setsamplers!(model, scheme)
+
+
 
 sim = mcmc(model, my_data, inits, 500, burnin=1, chains=1)
