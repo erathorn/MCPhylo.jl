@@ -239,6 +239,21 @@ end #function path_length
 
 
 """
+    get_sister(root::Node, node::Node)::Node
+
+This function gets the sister of `node`. It does so by looking for the respective
+binary representation of the sister.
+"""
+function get_sister(root::Node, node::Node)::Node
+    if last(node.binary) == '0'
+        return find_by_binary(root, string(chop(node.binary), "1"))
+    else
+        return find_by_binary(root, string(chop(node.binary), "0"))
+    end # for
+end # function
+
+
+"""
     set_binary!(root::Node)
 
 Assign a binary representation to each node, which specifies the path from the
