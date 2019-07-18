@@ -148,6 +148,37 @@ function post_order(root::Node)::Vector{Node}
     return t
 end # function post_order
 
+
+"""
+    pre_order(root::Node, traversal::Vector{Node})::Vector{Node}
+
+This function performs a pre order traversal through the tree. It is assumed that `root` is the
+root of the tree. Thus, if `root` is not the root, the subtree defined by the root `root` is
+used for the pre order traversal.
+"""
+function pre_order!(root::Node, traversal::Vector{Node})::Vector{Node}
+    push!(traversal, root)
+    if root.nchild != 0
+        for index in 1:root.nchild
+             pre_order(root.child[index], traversal)
+        end # for
+    end # if
+    return traversal
+end # function pre_order!
+
+
+"""
+    pre_order(root:Node)::Vector{Node}
+
+This function does pre order traversal. It is meant as a wrapper. Only the root
+node needs to be supplied.
+"""
+function pre_order!(root::Node)::Vector{Node}
+    t::Vector{Node} = []
+    pre_order(root, t)
+    return t
+end # function pre_order!
+
 """
     tree_length(root::Node)::Float64
 
