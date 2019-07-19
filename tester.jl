@@ -49,18 +49,17 @@ this_tree = NexusParser.make_tree_with_data("./local/development.nex")
 
 
 my_data = Dict{Symbol, Any}(
-  :mtree => Tree_Module.post_order(NexusParser.make_tree_with_data("./local/development.nex")))
-my_data[:blenvec_s] = length(my_data[:mtree])
+  :mtree => NexusParser.make_tree_with_data("./local/development.nex"))
 my_data[:blenvec] = Tree_Module.get_branchlength_vector!(my_data[:mtree])
 
 
 model = Model(
     y = Stochastic(1,
-    (mtree_po, mypi) ->
+    (mtree, blenvec, mypi) ->
     begin
 
         UnivariateDistribution[
-        PhyloDist(mtree_po, mypi)]
+        PhyloDist(Tree_Module.set_branchlength_vector!(mtree, blenvec), mypi)]
     end,
 
     ),
@@ -68,14 +67,14 @@ model = Model(
     () -> Truncated(Uniform(0.0,1.0), 0.0, 1.0)
     ),
     blenvec = Stochastic(1,
-        (mtree) -> Prior.CompoundDirichlet(1.0,1.0,0.100,1.0,length(Tree_Module.get_leaves(last(mtree))))
+        (mtree) -> Prior.CompoundDirichlet(1.0,1.0,0.100,1.0,mtree)
 
 
-    ),
-    mtree_po = Logical(
-    (mtree, blenvec) -> Tree_Module.set_branchlength_vector!(mtree, blenvec),
-    false
-    )
+    )#,
+    #mtree_po = Logical(
+    #(mtree, blenvec) -> Tree_Module.set_branchlength_vector!(mtree, blenvec),
+    #false
+    #)
     #rates = Stochastic(1,
     #()-> Dirichlet(ones(3132))
     #)

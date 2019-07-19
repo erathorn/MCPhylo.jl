@@ -1,10 +1,3 @@
-module Prior
-
-using Markdown
-using SpecialFunctions
-using Distributions
-include("../Tree/Tree_Module.jl")
-using .Tree_Module
 
 import Distributions: length, insupport, _logpdf
 
@@ -65,9 +58,9 @@ function _logpdf(d::BirthDeath, t::AbstractVector{T}) where {T<:Real}
     numerator::Float64 = (d.rho*(d.lambd-d.mu))/(d.rho*d.lambd + (d.lambd*(1.0-d.rho)-d.mu)*exp(d.mu-d.lambd))
     denum::Float64 = d.rho*(d.lambd-d.mu)
     vt1::Float64 = log(1.0-((denum*exp(d.mu-d.lambd))/(d.rho * numerator)))
-    f::Float64 = log((2.0**(s-1.0))/(factorial(s)*(s-1.0)))
+    f::Float64 = log((2.0^(s-1.0))/(factorial(s)*(s-1.0)))
     for i in t
-        f += (d.lambd+(1.0-d.rho)+2.0*(denum-numerator))+(d.mu-d.lambd)*i)-vt1
+        f += ((d.lambd+(1.0-d.rho)+2.0*(denum-numerator))+(d.mu-d.lambd)*i)-vt1
     end # for
     return f
 end # function
@@ -103,5 +96,3 @@ function _logpdf(d::BirthDeathSimplified, t::AbstractVector{T}) where {T<:Real}
     end # for
     return f
 end # function
-
-end  # module Prior

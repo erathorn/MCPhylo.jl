@@ -1,12 +1,3 @@
-module NexusParser
-
-using Markdown
-using DataFrames
-
-include("../Tree/Tree_Module.jl")
-using ..Tree_Module: Node, find_by_name, create_tree_from_leaves
-
-export ParseNexus, make_tree_with_data
 
 
 """
@@ -133,8 +124,3 @@ function make_tree_with_data(filename::String)#::Tree_Module.Node
     end # for
     return new_tree
 end # function make_tree_with_data
-
-
-
-
-end  # module NexusParser

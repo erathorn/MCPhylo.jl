@@ -1,9 +1,3 @@
-module SubstitutionMat
-
-using Markdown
-
-export exponentiate_binary
-
 """
     exponentiate_binary(pi::Float64, t::float::64, r::Float64)::Array{Float64,2}
 
@@ -22,5 +16,3 @@ function exponentiate_binary(pi_::Number, t::Float64, r::Float64)::Array{Float64
     return [ext+v_ w_;
             v_ ext+w_]
 end # function
-
-end # moduel SubstitutionMat
