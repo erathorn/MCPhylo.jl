@@ -20,6 +20,10 @@ Likelihood Computation:
 
 Prior Distributions:
   ☐ make prior and constraint checking general
+
+Utils:
+  ☐ Make Utlis SIMD work with larger structures --> Careful Timing necessary
+
 ＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿
 Archive:
   ✔ Node names as strings @done(2019-05-23 16:58) @project(Tree Functionionality)

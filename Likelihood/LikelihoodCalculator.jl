@@ -29,7 +29,7 @@ function FelsensteinFunction(tree_postorder::Vector{Node}, pi_::Number, rates::V
     return res#sum(log.(rdata.*[pi_, 1.0-pi_]))
 end # function
 
-function CondLikeInternal(node::Node, pi_::Number, rates::Vector{Float64}, n_c::Int64)::Array{Float64}
+function CondLikeInternal(node::Node, pi_::Number, rates::Vector{Float64}, n_c::Int64)::Nothing
     @assert size(node.child)[1] == 2
     @assert size(rates)[1] == n_c
     left_daughter::Node = node.child[1]
@@ -59,32 +59,44 @@ end # function
 
 function GradiantLog(tree_preorder::Vector{Node}, pi_::Number)
     root::Node = tree_preorder[1]
-    Up::Array{Float64,3} = zeros(length(tree_preorder)+1, size(root.data)[1], size(root.data)[2])
+    n_c::Int64 = size(root.data)[2]
+    Up::Array{Float64,3} = ones(length(tree_preorder)+1, size(root.data)[1], n_c)
     Grad_ll::Array{Float64} = zeros(length(tree_preorder))
     for node in tree_preorder
         if node.binary == "1"
             # this is the root
-            Up[1,1,:] = pi_
-            Up[1,2,:] = 1.0-pi_
+            @inbounds for i in 1:n_c
+                Up[node.num,1,i] = pi_
+                Up[node.num,2,i] = 1.0-pi_
+            end # for
         else
-            sister::Node = Tree_Module.get_sister(root, node)
-            node_ind::Int = parse(Int, node.binary, base=2)
-            sister_ind::Int = parse(Int, sister.binary, base=2)
-            Up[node_ind,:,:].*=Up[sister_ind,:,:]
-            Up[node_ind,:,:].*=Up[node_ind,:,:]
+            sister::Node = get_sister(root, node)
+            mother::Node = get_mother(root, node)
+            node_ind::Int64 = node.num
 
-            my_mat::Array{Float64,2} = exponentiate_binary(pi_, node.inc_length, r)
+            Up[node_ind,:,:] = pointwise_mat(Up[node_ind,:,:], sister.data, n_c)
+            Up[node_ind,:,:] = pointwise_mat(Up[node_ind,:,:], Up[mother.num,:,:], n_c)
+            #Up[node_ind,:,:].*=sister.data
+            #Up[node_ind,:,:].*=Up[parse(Int, mother.binary, base=2),:,:]
 
-            a::Array{Float64,1} = node.data[1,:].*my_mat[1,1] .+ node.data[2,:].*my_mat[2,1]
-            b::Array{Float64,1} = node.data[1,:].*my_mat[1,2] .+ node.data[2,:].*my_mat[2,2]
+            my_mat::Array{Float64,2} = exponentiate_binary(pi_, node.inc_length, 1.0)
 
-            gradient::Array{Float64,1} = Up[node_ind,1,:].*a .+ Up[node_ind,2,:].b
+            #a::Array{Float64,1} = node.data[1,:].*my_mat[1,1] .+ node.data[2,:].*my_mat[2,1]
+            #b::Array{Float64,1} = node.data[1,:].*my_mat[1,2] .+ node.data[2,:].*my_mat[2,2]
+            a::Array{Float64,1} = my_dot(node.data, my_mat[:,1], n_c)
+            b::Array{Float64,1} = my_dot(node.data, my_mat[:,2], n_c)
 
-            Up[node_ind,1,:] = Up[node_ind,1,:].*my_mat[1,2] + Up[node_ind,2,:].*my_mat[2,2]
-            Up[node_ind,2,:] = Up[node_ind,1,:].*my_mat[1,1] + Up[node_ind,2,:].*my_mat[2,1]
+            #gradient::Array{Float64,1} = Up[node_ind,1,:].*a .+ Up[node_ind,2,:].*b
+            gradient::Array{Float64,1} = pointwise_vec(Up[node_ind,1,:],a, n_c) .+ pointwise_vec(Up[node_ind,2,:],b,n_c)
 
-            d = sum(Up[node_ind,:,:].*node.data, dims=1)
-            gradient ./= d
+            #Up[node_ind,1,:] = Up[node_ind,1,:].*my_mat[1,2] + Up[node_ind,2,:].*my_mat[2,2]
+            #Up[node_ind,2,:] = Up[node_ind,1,:].*my_mat[1,1] + Up[node_ind,2,:].*my_mat[2,1]
+            Up[node_ind,1,:] = my_dot(Up[node_ind,:,:], my_mat[:,2], n_c)
+            Up[node_ind,2,:] = my_dot(Up[node_ind,:,:], my_mat[:,1], n_c)
+
+            #d = sum(Up[node_ind,:,:].*node.data, dims=1)
+            d = sum(pointwise_mat(Up[node_ind,:,:],node.data, n_c), dims=1)
+            gradient ./= d[1,:]
             Grad_ll[node_ind] = sum(gradient)
 
             if node.nchild == 0

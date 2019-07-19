@@ -40,10 +40,11 @@ mutable struct Node
     root::Bool
     inc_length::Float64
     binary::String
+    num::Int64
 end # struct Node
 
 
-Node() = Node(String[],Float64[], Node[], 0, true, 0.0, "0")
+Node() = Node(String[],Float64[], Node[], 0, true, 0.0, "0", 0)
 
 
 """
@@ -87,7 +88,7 @@ function create_tree_from_leaves(leaf_nodes::Vector{String}, node_size::Int64 = 
 
     # first create a list of leaf nodes
     for node_name in leaf_nodes
-        push!(my_node_list, Node(node_name, zeros(Float64, (2, node_size)), Node[], 0, true, 0.0, "0"))
+        push!(my_node_list, Node(node_name, zeros(Float64, (2, node_size)), Node[], 0, true, 0.0, "0", 0))
     end # for
 
     # Internal nodes are created using integers as names.
@@ -104,7 +105,7 @@ function create_tree_from_leaves(leaf_nodes::Vector{String}, node_size::Int64 = 
         first_child.inc_length = rand(Uniform(0,1))
         second_child::Node = pop!(my_node_list)
         second_child.inc_length = rand(Uniform(0,1))
-        curr_node::Node = Node(string(temp_name), zeros(Float64, (2, node_size)), Node[], 0, true, 0.0, "0")
+        curr_node::Node = Node(string(temp_name), zeros(Float64, (2, node_size)), Node[], 0, true, 0.0, "0", 0)
         add_child!(curr_node, first_child)
         add_child!(curr_node, second_child)
         push!(my_node_list, curr_node)
@@ -113,6 +114,7 @@ function create_tree_from_leaves(leaf_nodes::Vector{String}, node_size::Int64 = 
     end # while
     root = pop!(my_node_list)
     set_binary!(root)
+    number_nodes!(root)
 
     return root
 end # function create_tree_from_leaves
@@ -156,7 +158,7 @@ This function performs a pre order traversal through the tree. It is assumed tha
 root of the tree. Thus, if `root` is not the root, the subtree defined by the root `root` is
 used for the pre order traversal.
 """
-function pre_order!(root::Node, traversal::Vector{Node})::Vector{Node}
+function pre_order(root::Node, traversal::Vector{Node})::Vector{Node}
     push!(traversal, root)
     if root.nchild != 0
         for index in 1:root.nchild
@@ -173,7 +175,7 @@ end # function pre_order!
 This function does pre order traversal. It is meant as a wrapper. Only the root
 node needs to be supplied.
 """
-function pre_order!(root::Node)::Vector{Node}
+function pre_order(root::Node)::Vector{Node}
     t::Vector{Node} = []
     pre_order(root, t)
     return t
@@ -254,6 +256,16 @@ end # function
 
 
 """
+    get_mother(root::Node, node::Node)::Node
+
+This function gets the mother of `node`. It does so by looking for the respective
+binary representation of the mother node.
+"""
+function get_mother(root::Node, node::Node)::Node
+    return find_by_binary(root, string(chop(node.binary)))
+end # function
+
+"""
     set_binary!(root::Node)
 
 Assign a binary representation to each node, which specifies the path from the
@@ -273,6 +285,17 @@ function set_binary!(root::Node)
         set_binary!(right)
     end # if
 end # function set_binary
+
+"""
+    number_nodes!(root::Node)::Nothing
+
+This function assigns a unique, sequential number to each node.
+"""
+function number_nodes!(root::Node)::Nothing
+    for (index, value) in enumerate(post_order(root))
+        value.num = index
+    end # for
+end # fuction number_nodes
 
 
 """

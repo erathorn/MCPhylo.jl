@@ -16,6 +16,8 @@ include("./Parser/ParseNexus.jl")
 
 include("./Substitution/SubstitutionMat.jl")
 
+include("./Utils/SIMD_Mat.jl")
+
 include("./Likelihood/LikelihoodCalculator.jl")
 include("./Likelihood/Prior.jl")
 
