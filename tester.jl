@@ -8,14 +8,13 @@ tester:
 extensions = quote
 
     ## Load needed packages and import methods to be extended
-    include("./Likelihood/LikelihoodCalculator.jl")
-    using .LikelihoodCalculator
+
     using Distributions
     import Distributions: minimum, maximum, logpdf
 
     ## Type declaration
     mutable struct PhyloDist <: ContinuousUnivariateDistribution
-        my_tree::Array
+        my_tree::PhyloJul.Node
         mypi::Real
         #rates::Array
     end
@@ -24,33 +23,26 @@ extensions = quote
 
     function logpdf(d::PhyloDist, x::Real)
         rates = ones(3132)
-        return LikelihoodCalculator.FelsensteinFunction(d.my_tree, d.mypi, rates,3132)
+
+        return PhyloJul.FelsensteinFunction(PhyloJul.post_order(d.my_tree), d.mypi, rates,3132)
     end
 
 end
+include("PhyloJul.jl")
+using .PhyloJul
 
-
-include("./Tree/Tree_Module.jl")
-#include("./Substitution/SubstitutionMat.jl")
-include("./Parser/ParseNexus.jl")
-using .Tree_Module
-#using .SubstitutionMat
-using .NexusParser
-#include("./Likelihood/LikelihoodCalculator.jl")
-#using .LikelihoodCalculator
-include("./Likelihood/Prior.jl")
-using .Prior
 using Mamba
 
 
 eval(extensions)
 
-this_tree = NexusParser.make_tree_with_data("./local/development.nex")
+this_tree = PhyloJul.make_tree_with_data("./local/development.nex")
 
 
 my_data = Dict{Symbol, Any}(
-  :mtree => NexusParser.make_tree_with_data("./local/development.nex"))
-my_data[:blenvec] = Tree_Module.get_branchlength_vector!(my_data[:mtree])
+  :mtree => PhyloJul.make_tree_with_data("./local/development.nex"))
+
+my_data[:blenvec] = PhyloJul.get_branchlength_vector!(my_data[:mtree])
 
 
 model = Model(
@@ -59,7 +51,7 @@ model = Model(
     begin
 
         UnivariateDistribution[
-        PhyloDist(Tree_Module.set_branchlength_vector!(mtree, blenvec), mypi)]
+        PhyloDist(PhyloJul.set_branchlength_vector!(mtree, blenvec), mypi)]
     end,
 
     ),
@@ -67,7 +59,7 @@ model = Model(
     () -> Truncated(Uniform(0.0,1.0), 0.0, 1.0)
     ),
     blenvec = Stochastic(1,
-        (mtree) -> Prior.CompoundDirichlet(1.0,1.0,0.100,1.0,mtree)
+        (mtree) -> PhyloJul.CompoundDirichlet(1.0,1.0,0.100,1.0,mtree)
 
 
     )#,
@@ -86,7 +78,7 @@ inits = [ Dict(
     :mtree => my_data[:mtree],
     :mypi=> 0.5, :y => [-500000],
     :rates=>inivals,
-    :blenvec=>Tree_Module.get_branchlength_vector!(my_data[:mtree]))]
+    :blenvec=>PhyloJul.get_branchlength_vector!(my_data[:mtree]))]
 
 #scheme = [Slice(:mypi, 0.05), SliceSimplex(:rates)]
 scheme = [Slice(:mypi, 0.05),

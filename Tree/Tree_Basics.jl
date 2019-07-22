@@ -398,7 +398,7 @@ end # function set_branchlength_vector!
 
 This function sets the branch lengths of a tree to the values specified in blenvec.
 """
-function set_branchlength_vector!(root::Node, blenvec::Vector{Float64})::Node
+function set_branchlength_vector!(root::Node, blenvec)::Node
     return last(set_branchlength_vector!(post_order(root), blenvec))
 end # function set_branchlength_vector!
 

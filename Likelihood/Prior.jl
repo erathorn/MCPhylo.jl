@@ -16,18 +16,19 @@ mutable struct CompoundDirichlet <: ContinuousMultivariateDistribution
 
 end # struct
 
-length(d::CompoundDirichlet) = length(Tree_Module.post_order(d.tree))
+length(d::CompoundDirichlet) = length(post_order(d.tree))
 
 function _logpdf(d::CompoundDirichlet, x::AbstractVector{T}) where {T<:Real}
-    Tree_Module.set_branchlength_vector(d.tree, x)
-    xn = Tree_Module.get_sum_seperate_length!(d.tree)
+    set_branchlength_vector!(d.tree, x)
+    xn = get_sum_seperate_length!(d.tree)
     blen_int::Float64 = xn[1]
     blen_leave::Float64 = xn[2]
     t_l::Float64 = blen_int+blen_leave
-    n_int::Float64 = d.n_term-3.0
+    n_term::Float64 = length(get_leaves(d.tree))
+    n_int::Float64 = n_term-3.0
     ln1::Float64 = (d.a-1.0)*blen_leave + (d.a*d.c-1.0)*blen_int
-    ln2::Float64 = (d.alpha-d.a*d.n_term-d.a*d.c*n_int)*log(t_l)- d.beta*t_l
-    ln3::Float64 = (d.alpha*log(d.beta))-log(gamma(d.alpha))+log(gamma(d.a*d.n_term+d.a*d.c*n_int))-d.n_term*log(gamma(d.beta))-n_int*log(gamma(d.beta*d.a))
+    ln2::Float64 = (d.alpha-d.a*n_term-d.a*d.c*n_int)*log(t_l)- d.beta*t_l
+    ln3::Float64 = (d.alpha*log(d.beta))-log(gamma(d.alpha))+log(gamma(d.a*n_term+d.a*d.c*n_int))-n_term*log(gamma(d.beta))-n_int*log(gamma(d.beta*d.a))
     return ln1+ln2+ln3
 end # function _logpdf
 

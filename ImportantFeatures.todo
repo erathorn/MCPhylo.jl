@@ -13,10 +13,11 @@ Tree Functionionality:
 General Features:
   ☐ Macros for model definition
   ☐ Automate export of automatically generated functoins
+  ☐ Phylo should be a model subtype of a Mamba model
 
 Likelihood Computation:
   ☐ make sure likelihood calculation can be done in parallel
-  ☐ Dealing with missing character values
+  ✔ Dealing with missing character values @done(2019-07-22 11:14) @project(Likelihood Computation)
 
 Prior Distributions:
   ☐ make prior and constraint checking general
