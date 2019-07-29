@@ -3,10 +3,17 @@
 
 
 """
+<<<<<<< HEAD
     create_tree_from_leaves(leaf_nodes::Vector{String})::Array{Float64}
 
 This function creates a  random binary tree from a list of leaf nodes.
 The matrix representing the tree structure gets returned
+=======
+    create_tree_from_leaves(leaf_nodes::Vector{T})::Node
+
+This function creates a  random binary tree from a list of leaf nodes.
+The root node as access point for the tree is returned.
+>>>>>>> a8cfc49b14726372fd2ca8cb54e152b898362c05
 """
 function create_tree_from_leaves_mat(leaf_nodes::Vector{String})::Array{Float64}
 
@@ -39,6 +46,7 @@ function create_tree_from_leaves_mat(leaf_nodes::Vector{String})::Array{Float64}
     return my_node_mat
 end # function create_tree_from_leaves
 
+<<<<<<< HEAD
 """
     function get_neighbours(vec::Array{Float64,1})::Array{Int64}
 
@@ -48,12 +56,16 @@ is supplied as argument, the daughter nodes are returned, otherwise the mother n
 The function is equiped the with @inline decorator, since it will be used quite
 frequently. This should improve speed.
 """
+=======
+
+>>>>>>> a8cfc49b14726372fd2ca8cb54e152b898362c05
 @inline function get_neighbours(vec::Array{Float64,1})::Array{Int64}
     l::Int64 = size(vec)[1]
     r::Array{Float64} = []
     @inbounds for i in 1:l
         if vec[i] > 0.0
             push!(r, i)
+<<<<<<< HEAD
         end # if
     end # for
     return r
@@ -64,11 +76,19 @@ end # get_neighbours
 
 This function returns the root node of the tree speciefied through the matrix.
 """
+=======
+        end
+    end
+    return r
+end
+
+>>>>>>> a8cfc49b14726372fd2ca8cb54e152b898362c05
 function find_root(mat::Array{Float64,2})::Int64
     l::Int64 = size(mat)[1]
     for i in 1:l
         if length(get_neighbours(mat[:,i])) == 0
             return i
+<<<<<<< HEAD
         end # if
     end # for
     return ErrorException("No root node found")
@@ -82,10 +102,19 @@ This function performs a post order traversal through the tree. It is assumed th
 root of the tree. Thus, if `root` is not the root, the subtree defined by the root `root` is
 used for the post order traversal.
 """
+=======
+        end
+    end
+    return ErrorException("No root node found")
+end
+
+
+>>>>>>> a8cfc49b14726372fd2ca8cb54e152b898362c05
 function post_order(mat::Array{Float64,2}, node::Int64, traversal::Array{Int64, 1})::Array{Int64}
 
     for i in get_neighbours(mat[node, :])
         post_order(mat, i, traversal)
+<<<<<<< HEAD
     end # for
     push!(traversal, node)
     return traversal
@@ -97,10 +126,18 @@ end # post_order
 
 This function performs a post order traversal through the tree.
 """
+=======
+    end
+    push!(traversal, node)
+    return traversal
+end
+
+>>>>>>> a8cfc49b14726372fd2ca8cb54e152b898362c05
 function post_order(mat::Array{Float64, 2})::Array{Int64}
     root::Int64 = find_root(mat)
     traversal::Array{Int64,1} = []
     return post_order(mat, root, traversal)
+<<<<<<< HEAD
 end # post_order
 
 
@@ -111,10 +148,15 @@ This function performs a pre order traversal through the tree. It is assumed tha
 root of the tree. Thus, if `root` is not the root, the subtree defined by the root `root` is
 used for the pre order traversal.
 """
+=======
+end
+
+>>>>>>> a8cfc49b14726372fd2ca8cb54e152b898362c05
 function pre_order(mat::Array{Float64,2}, node::Int64, traversal::Array{Int64, 1})::Array{Int64}
     push!(traversal, node)
     for i in get_neighbours(mat[node, :])
         post_order(mat, i, traversal)
+<<<<<<< HEAD
     end # for
     return traversal
 end # pre_order
@@ -125,10 +167,17 @@ end # pre_order
 
 This function performs a post order traversal through the tree.
 """
+=======
+    end
+    return traversal
+end
+
+>>>>>>> a8cfc49b14726372fd2ca8cb54e152b898362c05
 function pre_order(mat::Array{Float64, 2})::Array{Int64}
     root::Int64 = find_root(mat)
     traversal::Array{Int64,1} = []
     return post_order(mat, root, traversal)
+<<<<<<< HEAD
 end # pre_order
 
 
@@ -145,12 +194,19 @@ tree_length(mat::Array{Float64,2}) = sum(mat)
 
 get all the leaves of the tree specified by mat.
 """
+=======
+end
+
+tree_length(mat::Array{Float64,2}) = sum(mat)
+
+>>>>>>> a8cfc49b14726372fd2ca8cb54e152b898362c05
 function get_leaves(mat::Array{Float64,2})::Array{Int64,1}
     l::Int64 = size(mat)[1]
     leaves::Array{Int64, 1} = []
     for i in 1:l
         if length(get_neighbours(mat[i,:])) == 0
             push!(leaves, i)
+<<<<<<< HEAD
         end # if
     end # for
     return leaves
@@ -162,11 +218,19 @@ end # get_leaves
 
 get the mother node of the node supplied as an argument in the tree specied by mat.
 """
+=======
+        end
+    end
+    return leaves
+end
+
+>>>>>>> a8cfc49b14726372fd2ca8cb54e152b898362c05
 function get_mother(mat::Array{Float64,2}, node::Int64)::Int64
     l::Int64 = size(mat)[1]
     for i in 1:l
         if mat[i,node] > 0
             return i
+<<<<<<< HEAD
         end # if
     end # for
     return ErrorException("No mother node found for node $node")
@@ -179,6 +243,13 @@ end # get_mother
 This function gets the sum of the branch lengths of the internal branches and the
 branches leading to the leave nodes.
 """
+=======
+        end
+    end
+    return ErrorException("No mother node found for node $node")
+end
+
+>>>>>>> a8cfc49b14726372fd2ca8cb54e152b898362c05
 function get_sum_seperate_length!(mat::Array{Float64,2})::Vector{Float64}
     leaves::Array{Int64} = get_leaves(mat)
     l::Int64 = size(mat)[1]
@@ -197,6 +268,7 @@ function get_sum_seperate_length!(mat::Array{Float64,2})::Vector{Float64}
 end # function get_sum_seperate_length!
 
 
+<<<<<<< HEAD
 """
     make_tree_with_data_mat(filename::String)
 
@@ -204,6 +276,9 @@ This function creates a tree where the terminal nodes get the data specified in
 the NEXUS file.
 """
 function make_tree_with_data_mat(filename::String)
+=======
+function make_tree_with_data_mat(filename::String)#::Tree_Module.Node
+>>>>>>> a8cfc49b14726372fd2ca8cb54e152b898362c05
     # get all the information from the NEXUS file
     n_tax, nc, gap, miss, df = ParseNexus(filename)
 
