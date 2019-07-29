@@ -101,3 +101,52 @@ function swing!(root::Node)
     # calculate and set new values
     move!(child1, child2, proportion)
 end # function swing!
+
+
+"""
+    NNI(mat::Array{Float64,2})::nothing
+
+documentation
+"""
+function NNI!(mat::Array{Float64,2})::Array{Float64,2}
+    leaves::Array{Float64,1} = get_leaves(mat)
+    l::Int64 = size(mat)[1]
+
+    target::Int64 = 0
+
+    while true
+        target = rand(collect(1:l))
+        if !(target in leaves)
+            if length(intersect!(vec(get_neighbours(mat[target,:])), vec(leaves))) == 0
+                break
+            end
+        end
+    end
+
+    ac = []
+    ch::Array{Int64} = get_neighbours(mat[target,:])
+    for c in 1:2
+        push!(ac, get_neighbours(mat[ch[c],:]))
+    end
+
+    if rand([true,false])
+        # swap ac[1,1] with ac[2, 1]
+        swap_cols(mat, ac[1][1], ac[2][1])
+    else
+        # swap ac[1,2] with ac[2, 1]
+        swap_cols(mat, ac[1][2], ac[2][1])
+    end
+
+    return mat
+
+end # function
+
+
+function swap_cols(mat::Array{Float64, 2}, ind::Int64, jnd::Int64)
+    l::Int64 = size(mat)[1]
+    @assert (1 <= ind <= l) && (1 <= jnd <= l)
+    @inbounds for i in 1:l
+        mat[i,ind], mat[i,jnd] = mat[i,jnd], mat[i,ind]
+    end
+    return mat
+end

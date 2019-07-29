@@ -12,19 +12,19 @@ mutable struct CompoundDirichlet <: ContinuousMultivariateDistribution
     a::Float64
     beta::Float64
     c::Float64
-    tree::Node
+    #tree::Node
 
 end # struct
 
-length(d::CompoundDirichlet) = length(post_order(d.tree))
+length(d::CompoundDirichlet) = 1
 
-function _logpdf(d::CompoundDirichlet, x::AbstractVector{T}) where {T<:Real}
-    set_branchlength_vector!(d.tree, x)
-    xn = get_sum_seperate_length!(d.tree)
+function _logpdf(d::CompoundDirichlet, x::T) where {T<:TreeVariate}
+
+    xn = get_sum_seperate_length!(x)
     blen_int::Float64 = xn[1]
     blen_leave::Float64 = xn[2]
     t_l::Float64 = blen_int+blen_leave
-    n_term::Float64 = length(get_leaves(d.tree))
+    n_term::Float64 = length(get_leaves(x))
     n_int::Float64 = n_term-3.0
     ln1::Float64 = (d.a-1.0)*blen_leave + (d.a*d.c-1.0)*blen_int
     ln2::Float64 = (d.alpha-d.a*n_term-d.a*d.c*n_int)*log(t_l)- d.beta*t_l
@@ -32,8 +32,8 @@ function _logpdf(d::CompoundDirichlet, x::AbstractVector{T}) where {T<:Real}
     return ln1+ln2+ln3
 end # function _logpdf
 
-function insupport(d::CompoundDirichlet, x::AbstractVector{T}) where {T<:Real}
-    length(d) == length(x) && all(isfinite.(x)) && all(0 .<= x)
+function insupport(d::CompoundDirichlet, x::T) where {T<:TreeVariate}
+    length(d) == length(x) && all(isfinite.(get_branchlength_vector!(x))) && all(0 .< get_branchlength_vector!(x))
 end # function insupport
 
 

@@ -5,20 +5,6 @@ my_tree:
 - Date: 2019-05-07
 =#
 
-
-
-#module Tree_Basics
-
-#using Markdown
-#using Random
-#using Distributions
-
-
-#export create_tree_from_leaves, post_order, tree_length, tree_height,
-#       path_length, get_leaves, Node, add_child!, set_binary!, remove_child!,
-#       random_node, move!, find_by_name, find_by_binary, find_by_root, get_branchlength_vector!
-
-
 #TODO: Automate export of automatically genereated funtions
 
 """
@@ -32,19 +18,9 @@ stored in the node.
 * `inc_length` specifies the length of the incomming branch.
 * `binary` specifies the path from the root to the Node. `1` and `0` represent left and right turns respectively.
 """
-mutable struct Node
-    name::String
-    data::Array{Float64,2}
-    child::Vector{Node}
-    nchild::Int64
-    root::Bool
-    inc_length::Float64
-    binary::String
-    num::Int64
-end # struct Node
 
 
-Node() = Node(String[],Float64[], Node[], 0, true, 0.0, "0", 0)
+
 
 
 """
@@ -88,7 +64,8 @@ function create_tree_from_leaves(leaf_nodes::Vector{String}, node_size::Int64 = 
 
     # first create a list of leaf nodes
     for node_name in leaf_nodes
-        push!(my_node_list, Node(node_name, zeros(Float64, (2, node_size)), Node[], 0, true, 0.0, "0", 0))
+        nn =  Node(node_name, zeros(Float64, (2, node_size)), Node[], 0, true, 0.0, "0", 0)
+        push!(my_node_list,nn)
     end # for
 
     # Internal nodes are created using integers as names.
