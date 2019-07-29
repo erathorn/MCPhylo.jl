@@ -14,7 +14,7 @@ extensions = quote
 
     ## Type declaration
     mutable struct PhyloDist <: ContinuousUnivariateDistribution
-        my_tree::PhyloJul.Node
+        my_tree::PhyloJul.TreeVariate
         mypi::Real
         #rates::Array
     end
@@ -35,6 +35,10 @@ using Mamba
 
 
 eval(extensions)
+
+tt, data_arr, df = PhyloJul.make_tree_with_data_mat("./local/IE_Contemporary_Full.nex")
+PhyloJul.find_root(tt)
+
 
 this_tree = PhyloJul.make_tree_with_data("./local/development.nex")
 
@@ -58,10 +62,8 @@ model = Model(
     mypi = Stochastic(
     () -> Truncated(Uniform(0.0,1.0), 0.0, 1.0)
     ),
-    blenvec = Stochastic(1,
-        (mtree) -> PhyloJul.CompoundDirichlet(1.0,1.0,0.100,1.0,mtree)
-
-
+    mtree = PhyloJul.StochasticTree(
+        () -> PhyloJul.CompoundDirichlet(1.0,1.0,0.100,1.0)
     )#,
     #mtree_po = Logical(
     #(mtree, blenvec) -> Tree_Module.set_branchlength_vector!(mtree, blenvec),
@@ -75,17 +77,33 @@ inivals = rand(Uniform(0,1),size(this_tree.data)[2])
 inivals =inivals./sum(inivals)
 
 inits = [ Dict(
-    :mtree => my_data[:mtree],
+    :mtree => [my_data[:mtree]],
     :mypi=> 0.5, :y => [-500000],
     :rates=>inivals,
     :blenvec=>PhyloJul.get_branchlength_vector!(my_data[:mtree]))]
 
 #scheme = [Slice(:mypi, 0.05), SliceSimplex(:rates)]
 scheme = [Slice(:mypi, 0.05),
-            Slice(:blenvec, 0.02)]
-
+            #Slice(:blenvec, 0.02),
+             PhyloJul.ProbPathHMCSampler(:mtree, 5,5.0)]
+t = PhyloJul.ProbPathHMCSampler(:mtree, 5,5.0)
+s = Slice(:mypi, 0.05)
 setsamplers!(model, scheme)
 
-
+PhyloJul.ProbPathHMCTune
 
 sim = mcmc(model, my_data, inits, 500, burnin=1, chains=1)
+
+
+
+
+
+
+
+pptune = PhyloJul.ProbPathHMCTune(5,5.0)
+
+t = PhyloJul.SamplerVariateP(this_tree, pptune)
+
+ms = PhyloJul.SamplerVariateP(this_tree, pptune)
+
+PhyloJul.sample!(ms)

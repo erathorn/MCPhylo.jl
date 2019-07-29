@@ -6,14 +6,18 @@ Tree Functionionality:
   ☐ Nexus support for outputting trees
   ☐ RSPR tree move
   ☐ Parser for newick trees
-  ☐ Check if support for non binary trees is necessary, or even networks
-  ☐ Check if a more general datatype for the node data is needed
+  ✔ Check if support for non binary trees is necessary, or even networks @done(2019-07-29 17:31) @project(Tree Functionionality)
+  ✔ Check if a more general datatype for the node data is needed @done(2019-07-29 17:31) @project(Tree Functionionality)
+  ☐ Trees need to be rewritten in matrix format
   ✔ data containers need appropriate size for internal nodes @done(2019-05-31 16:01) @project(Tree Functionionality)
 
 General Features:
   ☐ Macros for model definition
   ☐ Automate export of automatically generated functoins
-  ☐ Phylo should be a model subtype of a Mamba model
+  ✔ Phylo should be a model subtype of a Mamba model - NOT POSSIBLE AS OF YET @done(2019-07-29 17:31) @project(General Features)
+  ✔ setmonitor for TreeStochastic - NOT POSSIBLE AS OF YET  @done(2019-07-29 17:31) @project(General Features)
+  ☐ If trees are in matrix format check if gpu can be leveraged
+  ☐ Use matrix size as parameter and declare it constant (allows inlining)
 
 Likelihood Computation:
   ☐ make sure likelihood calculation can be done in parallel
