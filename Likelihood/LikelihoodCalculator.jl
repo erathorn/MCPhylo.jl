@@ -29,6 +29,67 @@ function FelsensteinFunction(tree_postorder::Vector{Node}, pi_::Number, rates::V
     return res#sum(log.(rdata.*[pi_, 1.0-pi_]))
 end # function
 
+"""
+    FelsensteinFunction(tree_postorder::Vector{Node}, pi::Float64, rates::Vector{Float64})
+
+This function calculates the log-likelihood of an evolutiuonary model using the
+Felsensteins pruning algorithm.
+"""
+function FelsensteinFunction(tree::Array{Float64,2}, data::Array{Float64,3}, mypi_::Number, rates::Vector{Float64}, n_c::Int64)::Float64
+    tree_postorder::Vector{Int64} = post_order(tree)
+    leaves::Vector{Int64} = get_leaves(tree)
+    for node in tree_postorder
+        if !(node in leaves)
+            CondLikeInternal(tree, node, data, mypi_, rates, n_c)
+        end # if
+    end # for
+    root::Int64 = find_root(tree)
+    # sum the two rows
+    #rdata::Array{Float64,2}=data[root,:,:]
+    res::Float64 = 0.0
+    _pi_::Float64 = log(1.0-mypi_)
+    _lpi_::Float64 = log(mypi_)
+    @inbounds for ind in 1:n_c
+        res +=(log(data[1,ind, root])+ _lpi_) + (log(data[2,ind, root])+ _pi_)
+
+        #rdata[1, ind] *pi_
+        #rdata[2, ind] *=_pi_
+    end
+
+    return res#sum(log.(rdata.*[pi_, 1.0-pi_]))
+end # function
+
+function CondLikeInternal(tree::Array{Float64}, node::Int64, data::Array{Float64}, pi_::Number, rates::Vector{Float64}, n_c::Int64)::Nothing
+    @assert size(rates)[1] == n_c
+    children::Vector{Int64} = get_neighbours(tree[node,:])
+    left_daughter::Int64 = children[1]
+    right_daughter::Int64 = children[2]
+    linc::Float64 = tree[node, left_daughter]
+    rinc::Float64 = tree[node, right_daughter]
+    #@inbounds left_daughter_data::Array{Float64,2} = data[1:2, 1:n_c, left_daughter]
+    #@inbounds right_daughter_data::Array{Float64,2} = data[1:2, 1:n_c, right_daughter]
+
+    # use the inbounds decorator to enable SIMD
+    # SIMD greatly improves speed!!!
+    @inbounds for ind in 1:n_c
+        @inbounds r::Float64 = rates[ind]
+        left_mat::Array{Float64,2} = exponentiate_binary(pi_, linc, r)
+        right_mat::Array{Float64,2} = exponentiate_binary(pi_, rinc, r)
+
+        @inbounds a::Float64 = data[1,ind, left_daughter]*left_mat[1,1] + data[2,ind, left_daughter]*left_mat[2,1]
+        @inbounds b::Float64 = data[1,ind, left_daughter]*left_mat[1,2] + data[2,ind, left_daughter]*left_mat[2,2]
+        @inbounds c::Float64 = data[1,ind, right_daughter]*right_mat[1,1] + data[2,ind, right_daughter]*right_mat[2,1]
+        @inbounds d::Float64 = data[1,ind, right_daughter]*right_mat[1,2] + data[2,ind, right_daughter]*right_mat[2,2]
+
+        @inbounds data[1,ind, node] = a*c
+        @inbounds data[2,ind, node] = b*d
+
+    end # for
+end # function
+
+
+
+
 function CondLikeInternal(node::Node, pi_::Number, rates::Vector{Float64}, n_c::Int64)::Nothing
     @assert size(node.child)[1] == 2
     @assert size(rates)[1] == n_c

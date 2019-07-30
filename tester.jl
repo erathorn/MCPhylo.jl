@@ -38,7 +38,7 @@ eval(extensions)
 
 tt, data_arr, df = PhyloJul.make_tree_with_data_mat("./local/IE_Contemporary_Full.nex")
 PhyloJul.find_root(tt)
-
+PhyloJul.FelsensteinFunction(tt, data_arr,0.5, ones(3132),3132)
 
 this_tree = PhyloJul.make_tree_with_data("./local/development.nex")
 

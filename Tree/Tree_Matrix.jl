@@ -50,7 +50,7 @@ frequently. This should improve speed.
 """
 @inline function get_neighbours(vec::Array{Float64,1})::Array{Int64}
     l::Int64 = size(vec)[1]
-    r::Array{Float64} = []
+    r::Vector{Int64} = []
     @inbounds for i in 1:l
         if vec[i] > 0.0
             push!(r, i)
@@ -82,7 +82,7 @@ This function performs a post order traversal through the tree. It is assumed th
 root of the tree. Thus, if `root` is not the root, the subtree defined by the root `root` is
 used for the post order traversal.
 """
-function post_order(mat::Array{Float64,2}, node::Int64, traversal::Array{Int64, 1})::Array{Int64}
+function post_order(mat::Array{Float64,2}, node::Int64, traversal::Vector{Int64})::Vector{Int64}
 
     for i in get_neighbours(mat[node, :])
         post_order(mat, i, traversal)
@@ -97,9 +97,9 @@ end # post_order
 
 This function performs a post order traversal through the tree.
 """
-function post_order(mat::Array{Float64, 2})::Array{Int64}
+function post_order(mat::Array{Float64, 2})::Vector{Int64}
     root::Int64 = find_root(mat)
-    traversal::Array{Int64,1} = []
+    traversal::Vector{Int64} = []
     return post_order(mat, root, traversal)
 end # post_order
 
@@ -111,7 +111,7 @@ This function performs a pre order traversal through the tree. It is assumed tha
 root of the tree. Thus, if `root` is not the root, the subtree defined by the root `root` is
 used for the pre order traversal.
 """
-function pre_order(mat::Array{Float64,2}, node::Int64, traversal::Array{Int64, 1})::Array{Int64}
+function pre_order(mat::Array{Float64,2}, node::Int64, traversal::Vector{Int64})::Vector{Int64}
     push!(traversal, node)
     for i in get_neighbours(mat[node, :])
         post_order(mat, i, traversal)
@@ -125,9 +125,9 @@ end # pre_order
 
 This function performs a post order traversal through the tree.
 """
-function pre_order(mat::Array{Float64, 2})::Array{Int64}
+function pre_order(mat::Array{Float64, 2})::Vector{Int64}
     root::Int64 = find_root(mat)
-    traversal::Array{Int64,1} = []
+    traversal::Vector{Int64} = []
     return post_order(mat, root, traversal)
 end # pre_order
 
@@ -145,9 +145,9 @@ tree_length(mat::Array{Float64,2}) = sum(mat)
 
 get all the leaves of the tree specified by mat.
 """
-function get_leaves(mat::Array{Float64,2})::Array{Int64,1}
+function get_leaves(mat::Array{Float64,2})::Vector{Int64}
     l::Int64 = size(mat)[1]
-    leaves::Array{Int64, 1} = []
+    leaves::Vector{Int64} = []
     for i in 1:l
         if length(get_neighbours(mat[i,:])) == 0
             push!(leaves, i)
@@ -180,7 +180,7 @@ This function gets the sum of the branch lengths of the internal branches and th
 branches leading to the leave nodes.
 """
 function get_sum_seperate_length!(mat::Array{Float64,2})::Vector{Float64}
-    leaves::Array{Int64} = get_leaves(mat)
+    leaves::Vector{Int64} = get_leaves(mat)
     l::Int64 = size(mat)[1]
     res_int::Float64 = 0.0
     res_leave::Float64 = 0.0
@@ -210,18 +210,18 @@ function make_tree_with_data_mat(filename::String)
     # create random tree
     new_tree = create_tree_from_leaves_mat(df[:Language])
     l = size(new_tree)[1]
-    data_arr::Array{Float64,3} = zeros(n_tax, 2, nc)
+    data_arr::Array{Float64,3} = zeros(2, nc, l)
 
     for (lind, row) in enumerate(eachrow(df))
 
         for (ind, i) in enumerate(row.Data)
             if i == '0'
-                data_arr[lind,1,ind] = 1.0
+                data_arr[1,ind,lind] = 1.0
             elseif i == '1'
-                data_arr[lind,2,ind] = 1.0
+                data_arr[2,ind, lind] = 1.0
             else
-                data_arr[lind,1, ind] = 1.0
-                data_arr[lind,2, ind] = 1.0
+                data_arr[1, ind, lind] = 1.0
+                data_arr[2, ind, lind] = 1.0
             end # if
         end # for
     end
