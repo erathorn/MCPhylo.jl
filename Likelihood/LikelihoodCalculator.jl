@@ -169,3 +169,65 @@ function GradiantLog(tree_preorder::Vector{Node}, pi_::Number)
     return Grad_ll
 
 end # function
+
+
+function GradiantLog(tree::Array{Float64,2}, data::Array{Float64,3}, pi_::Number)
+    root::Int64 = find_root(tree)
+    tree_preorder = pre_order(tree)
+    n_c::Int64 = size(data)[2]
+    leaves::Vector = get_leaves(tree)
+
+    Up::Array{Float64,3} = ones(length(tree_preorder)+1, size(data)[1], n_c)
+    Grad_ll::Array{Float64} = zeros(length(tree_preorder))
+    for node in tree_preorder
+        if node==root
+            # this is the root
+            @inbounds for i in 1:n_c
+                Up[node,1,i] = pi_
+                Up[node,2,i] = 1.0-pi_
+            end # for
+        else
+            mother::Int64 = get_mother(tree, node)
+            n::Vector = get_neighbours(tree[mother,:])
+            sister::Int64 = 0
+            for i in n
+                if i != node
+                    sister = i
+                end
+            end
+
+
+            Up[node,:,:] = pointwise_mat(Up[node,:,:], data[:,:,sister], n_c)
+            Up[node,:,:] = pointwise_mat(Up[node,:,:], Up[mother,:,:], n_c)
+            #Up[node_ind,:,:].*=sister.data
+            #Up[node_ind,:,:].*=Up[parse(Int, mother.binary, base=2),:,:]
+
+            my_mat::Array{Float64,2} = exponentiate_binary(pi_, tree[mother, node], 1.0)
+
+            #a::Array{Float64,1} = node.data[1,:].*my_mat[1,1] .+ node.data[2,:].*my_mat[2,1]
+            #b::Array{Float64,1} = node.data[1,:].*my_mat[1,2] .+ node.data[2,:].*my_mat[2,2]
+            a::Array{Float64,1} = my_dot(data[:,:,node], my_mat[:,1], n_c)
+            b::Array{Float64,1} = my_dot(data[:,:,node], my_mat[:,2], n_c)
+
+            #gradient::Array{Float64,1} = Up[node_ind,1,:].*a .+ Up[node_ind,2,:].*b
+            gradient::Array{Float64,1} = pointwise_vec(Up[node,1,:],a, n_c) .+ pointwise_vec(Up[node,2,:],b,n_c)
+
+            #Up[node_ind,1,:] = Up[node_ind,1,:].*my_mat[1,2] + Up[node_ind,2,:].*my_mat[2,2]
+            #Up[node_ind,2,:] = Up[node_ind,1,:].*my_mat[1,1] + Up[node_ind,2,:].*my_mat[2,1]
+            Up[node,1,:] = my_dot(Up[node,:,:], my_mat[:,2], n_c)
+            Up[node,2,:] = my_dot(Up[node,:,:], my_mat[:,1], n_c)
+
+            #d = sum(Up[node_ind,:,:].*node.data, dims=1)
+            d = sum(pointwise_mat(Up[node,:,:],data[:,:,node], n_c), dims=1)
+            gradient ./= d[1,:]
+            Grad_ll[node] = sum(gradient)
+
+            if node in leaves
+                scaler = sum(Up[node,:,:], dims=1)
+                Up[node,:,:] ./= scaler
+            end # if
+        end # if
+    end # for
+    return Grad_ll
+
+end # function
