@@ -18,7 +18,7 @@ end # struct
 
 length(d::CompoundDirichlet) = 1
 
-function _logpdf(d::CompoundDirichlet, x::T) where {T<:TreeVariate}
+function _logpdf(d::CompoundDirichlet, x::AbstractArray{T}) where {T<:Real}
 
     xn = get_sum_seperate_length!(x)
     blen_int::Float64 = xn[1]
@@ -32,7 +32,7 @@ function _logpdf(d::CompoundDirichlet, x::T) where {T<:TreeVariate}
     return ln1+ln2+ln3
 end # function _logpdf
 
-function insupport(d::CompoundDirichlet, x::T) where {T<:TreeVariate}
+function insupport(d::CompoundDirichlet, x::AbstractArray{T}) where {T<:Real}
     length(d) == length(x) && all(isfinite.(get_branchlength_vector!(x))) && all(0 .< get_branchlength_vector!(x))
 end # function insupport
 

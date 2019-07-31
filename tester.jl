@@ -14,7 +14,7 @@ extensions = quote
 
     ## Type declaration
     mutable struct PhyloDist <: ContinuousUnivariateDistribution
-        my_tree::PhyloJul.TreeVariate
+        my_tree
         mypi::Real
         #rates::Array
     end

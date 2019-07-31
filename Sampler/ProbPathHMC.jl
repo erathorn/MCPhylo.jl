@@ -2,6 +2,16 @@
 
 
 
+mutable struct ProbPathHMCTune <: SamplerTune
+    n_leap::Int64
+    stepsz::Float64
+
+    ProbPathHMCTune() = new()
+
+    ProbPathHMCTune(n_leap::Int64, stpesz::Float64) = new(n_leap::Int64, stpesz::Float64)
+end # mutable struct
+
+
 
 function SamplerVariate{T}(x::Symbol, pargs...;kargs...) where T<:ProbPathHMCTune
     println("here")
@@ -23,57 +33,10 @@ function ProbPathHMCSampler(params, pargs...; dtype::Symbol=:forward)
 end
 
 
-function sample!(v::SamplerVariateP)
-    tune::ProbPathHMCTune = v.tune # this is the ProbPathHMCTune info
-    tree::Node = v.value
-    blens_v = get_branchlength_vector(tree)
-    blens_copy = blens_v[:]
-    curr_U = FelsensteinFunction(post_order(tree), )
-    probM = randn(length(blens_copy))
-    currM = probM
-    curH = curr_U.+ 0.5*sum(curM.*curM)
-    probB = blens_copy
+function sample!(tree::Array{Float64}, data_array::Array{Float64,3}, n_leap::Int64, stepsz::Float64, mypi::Float64, n_c::Int64, priordist::T) where {T<:ContinuousMultivariateDistribution}
 
-    NNI_attempts = 0
-    ref_attempts = 0
+    curr_U = LogPost(tree, false, delta, rates, n_c, data_array, mypi, priordist)
 
-    for i in 1:tune.n_leap
-        tune.stepsz/2.0
-        probM = probM.-GradiantLog(pre_order(v), v.pi_).*tune.stepsz/2.0
-
-
-    end
-
-
-
-
-
-end # function
-
-
-function refraction(v, probB, probM)
-    tmpB = probB.+ probM.*v.tune.stepsz
-    ref_time::Flaot64 = 0.0
-    NNI_attempts = 0
-    ref_attempts = 0
-
-    while min(tmpB) <= 0
-        timelist = tmpB/abs(probM)
-        ref_index = argmin(timelist)
-        probB = probB .+ (v.tune.stepsz-ref_time+timelist[ref_index]).*probM
-        probM[ref_index] *= -1
-        ref_attempts += 1
-
-    end
-
-end
-
-
-
-
-function sample!(tree::Array{Float64}, data_array::Array{Float64,3}, n_leap::Int64, stepsz::Float64, mypi::Float64, n_c::Int64)
-
-    curr_U = FelsensteinFunction_vec(tree, data_array, mypi, rates, n_c)
     probM = randn(size(tree)[1])
     currM = probM
     curH = curr_U.+ 0.5*sum(curM.*curM)
@@ -86,12 +49,29 @@ function sample!(tree::Array{Float64}, data_array::Array{Float64,3}, n_leap::Int
 
     for i in 1:tune.n_leap
         tune.stepsz/2.0
-        probM = probM.-GradiantLog(pre_order(v), v.pi_).*tune.stepsz/2.0
-        refraction(tree_c, )
+        probM = probM.-GradiantLog(tree_c, data_array, mypi).-logpdf(priordist, probB)
+        step_nn_att, step_ref_att = refraction(tree_c, probB, probM, stepsz, surrogate)
+        NNI_attempts += step_nn_att
+        ref_attempts += step_ref_att
+
+        set_branchlength_vector(tree_c, probB)
+
+        probM = probM .- stepsz/2.0 .* (GradiantLog(tree_c, data_array, mypi).-logpdf(priordist, probB))
 
     end
 
+    probU = LogPost(tree_c, false, delta, rates, n_c, data, mypi, priordist)
+    probH = propU + 0.5 * sum(propM.*probM)
 
+    ratio = currH - probH
+
+    if ratio >= min(0, log(randn(Uniform(0,1))))
+        # successfull
+        return
+    else
+        # not successfull
+        return
+    end
 
 
 
@@ -102,7 +82,7 @@ end # function
 
 documentation
 """
-function refraction(tree::Array{Float64,2}, probB::Vector{Float64}, probM::Vector{Float64}, stepsz::Float64, surrogate::bool)
+function refraction(tree::Array{Float64,2}, probB::Vector{Float64}, probM::Vector{Float64}, stepsz::Float64, surrogate::Bool)
     leaves::Vector{Int64} = get_leaves(tree)
     tmpB = probB .+ stepsz.*probM
     ref_time = 0
@@ -116,14 +96,14 @@ function refraction(tree::Array{Float64,2}, probB::Vector{Float64}, probM::Vecto
         ref_attempts += 1
         if !(ref_index in leaves)
             # do something
-            if surrogate is true
-                U_before_nni = LogPost(...)
+            if surrogate == true
+                U_before_nni = LogPost(tree, surrogate, delta, rates, n_c, data_array, mypi, priordist)
 
                 tree_copy = deepcopy(tree)
                 tmp_NNI_made = NNI!(tree, ref_index)
 
                 if tmp_NNI_made != 0
-                    U_after_NNI = LogPost(...)
+                    U_after_NNI = LogPost(tree, surrogate, delta, rates, n_c, data_array, mypi, priordist)
                     delta_U = U_after_NNI - U_before_nni
 
                     if probM[ref_index]^2 >=2*delta_U
@@ -141,4 +121,34 @@ function refraction(tree::Array{Float64,2}, probB::Vector{Float64}, probM::Vecto
         tmpB = probB .+ (stepsz-ref_time) .* probM
     end
     return NNI_attempts, ref_attempts
+end # function
+
+
+"""
+    molifier(x::Float64, delta::Float64)::Float64
+
+documentation
+"""
+function molifier(x::Float64, delta::Float64)::Float64
+    if x >= delta
+        return delta
+    else
+        return 1.0/(2.0/delta) * (x*x+delta*delta)
+    end
+end # function
+
+
+"""
+    LogPost(tree::Array{Float64,2}, blens::Vector{Float64}, scale::Float64)
+
+documentation
+"""
+function LogPost(tree::Array{Float64,2}, surrogate::Bool, delta::Float64,
+    rates, n_c, data, mypi, priordist::T) where {T<:ContinuousMultivariateDistribution}
+    blens = get_branchlength_vector(tree)
+    if surrogate
+        blens = [molifier(i, delta) for i in blens]
+        tree = set_branchlength_vector(tree, blens)
+    end
+    FelsensteinFunction(tree, data, mypi, rates, n_c)-logpdf(priordist, blens)
 end # function

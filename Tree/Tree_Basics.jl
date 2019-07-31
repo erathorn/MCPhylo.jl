@@ -19,6 +19,31 @@ stored in the node.
 * `binary` specifies the path from the root to the Node. `1` and `0` represent left and right turns respectively.
 """
 
+mutable struct Node
+    name::String
+    data::Array{Float64,2}
+    child::Vector{Node}
+    nchild::Int64
+    root::Bool
+    inc_length::Float64
+    binary::String
+    num::Int64
+
+    Node() = new("",zeros(Float64,(1,2)), Node[], 0, true, 0.0, "0", 0)
+
+    function Node(n::String, d::Array{Float64,2}, c::Vector{Node}, n_c::Int64, r::Bool, inc::Float64, b::String, num::Int64)
+        mn = Node()
+        mn.name = n
+        mn.data = d
+        mn.child = c
+        mn.nchild = n_c
+        mn.root = r
+        mn.inc_length = inc
+        mn.binary = b
+        mn.num = num
+        return mn
+    end
+end # struct Node
 
 
 
