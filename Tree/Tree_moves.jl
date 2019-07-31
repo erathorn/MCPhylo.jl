@@ -150,3 +150,39 @@ function swap_cols(mat::Array{Float64, 2}, ind::Int64, jnd::Int64)
     end
     return mat
 end
+
+
+"""
+    NNI(mat::Array{Float64,2})::nothing
+
+documentation
+"""
+function NNI!(mat::Array{Float64,2}, target::Int64)::Int64
+    leaves::Array{Float64,1} = get_leaves(mat)
+    l::Int64 = size(mat)[1]
+
+
+    if target in leaves
+        if length(intersect!(vec(get_neighbours(mat[target,:])), vec(leaves))) != 0
+            return 0
+        end
+    end
+
+
+    ac = []
+    ch::Array{Int64} = get_neighbours(mat[target,:])
+    for c in 1:2
+        push!(ac, get_neighbours(mat[ch[c],:]))
+    end
+
+    if rand([true,false])
+        # swap ac[1,1] with ac[2, 1]
+        swap_cols(mat, ac[1][1], ac[2][1])
+    else
+        # swap ac[1,2] with ac[2, 1]
+        swap_cols(mat, ac[1][2], ac[2][1])
+    end
+
+    return 1
+
+end # function

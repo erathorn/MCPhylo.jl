@@ -59,6 +59,8 @@ function FelsensteinFunction(tree::Array{Float64,2}, data::Array{Float64,3}, myp
     return res#sum(log.(rdata.*[pi_, 1.0-pi_]))
 end # function
 
+
+
 function CondLikeInternal(tree::Array{Float64}, node::Int64, data::Array{Float64}, pi_::Number, rates::Vector{Float64}, n_c::Int64)::Nothing
     @assert size(rates)[1] == n_c
     children::Vector{Int64} = get_neighbours(tree[node,:])

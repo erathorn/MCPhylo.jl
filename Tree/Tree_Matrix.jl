@@ -198,6 +198,35 @@ end # function get_sum_seperate_length!
 
 
 """
+    get_branchlength_vector(mat::Array{Float64,2})::Vector{Float64}
+
+documentation
+"""
+function get_branchlength_vector(mat::Array{Float64,2})::Vector{Float64}
+    return sum(mat, 1)
+end # function
+
+"""
+    set_branchlength_vector(mat::Array{Float64,2}, b_lens::Vector{Float64})::Array{Float64}
+
+documentation
+"""
+function set_branchlength_vector(mat::Array{Float64,2}, b_lens::Vector{Float64})::Array{Float64}
+    l = size(mat)[1]
+
+    for i in 1:l
+        for j in 1:l
+            if mat[j,i] != 0
+                mat[j,i] = b_lens[i]
+            end
+        end
+    end
+    return mat
+    
+end # function
+
+
+"""
     make_tree_with_data_mat(filename::String)
 
 This function creates a tree where the terminal nodes get the data specified in
