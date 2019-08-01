@@ -64,7 +64,7 @@ end # get_neighbours
 
 This function returns the root node of the tree speciefied through the matrix.
 """
-function find_root(mat::Array{Float64,2})::Int64
+function find_root(mat::DenseArray{T})::Int64 where {T<:Float64}
     l::Int64 = size(mat)[1]
     for i in 1:l
         if length(get_neighbours(mat[:,i])) == 0
@@ -82,7 +82,7 @@ This function performs a post order traversal through the tree. It is assumed th
 root of the tree. Thus, if `root` is not the root, the subtree defined by the root `root` is
 used for the post order traversal.
 """
-function post_order(mat::Array{Float64,2}, node::Int64, traversal::Vector{Int64})::Vector{Int64}
+function post_order(mat::DenseArray{T}, node::Int64, traversal::Vector{Int64})::Vector{Int64} where {T<:Float64}
 
     for i in get_neighbours(mat[node, :])
         post_order(mat, i, traversal)
@@ -97,12 +97,11 @@ end # post_order
 
 This function performs a post order traversal through the tree.
 """
-function post_order(mat::Array{Float64, 2})::Vector{Int64}
+function post_order(mat::DenseArray{T})::Vector{Int64} where {T<:Float64}
     root::Int64 = find_root(mat)
     traversal::Vector{Int64} = []
     return post_order(mat, root, traversal)
 end # post_order
-
 
 """
     pre_order(mat::Array{Float64,2}, node::Int64, traversal::Array{Int64, 1})::Array{Int64}
@@ -145,7 +144,7 @@ tree_length(mat::Array{Float64,2}) = sum(mat)
 
 get all the leaves of the tree specified by mat.
 """
-function get_leaves(mat::Array{Float64,2})::Vector{Int64}
+function get_leaves(mat::DenseArray{T})::Vector{Int64} where {T<:Float64}
     l::Int64 = size(mat)[1]
     leaves::Vector{Int64} = []
     for i in 1:l
@@ -179,12 +178,14 @@ end # get_mother
 This function gets the sum of the branch lengths of the internal branches and the
 branches leading to the leave nodes.
 """
-function get_sum_seperate_length!(mat::Array{Float64,2})::Vector{Float64}
+function get_sum_seperate_length!(mat::DenseArray{T})::Vector{Float64} where {T<:Float64}
     leaves::Vector{Int64} = get_leaves(mat)
     l::Int64 = size(mat)[1]
     res_int::Float64 = 0.0
     res_leave::Float64 = 0.0
+
     for i in 1:l
+    
         if i in leaves
             # branches leading to leaves
             res_leave += sum(mat[:,i])
@@ -202,8 +203,8 @@ end # function get_sum_seperate_length!
 
 documentation
 """
-function get_branchlength_vector(mat::Array{Float64,2})::Vector{Float64}
-    return sum(mat, 1)
+function get_branchlength_vector(mat::DenseArray{T})::Vector{Float64} where {T<:Float64}
+    return sum(mat, dims=1)[1,:]
 end # function
 
 """
@@ -222,7 +223,7 @@ function set_branchlength_vector(mat::Array{Float64,2}, b_lens::Vector{Float64})
         end
     end
     return mat
-    
+
 end # function
 
 

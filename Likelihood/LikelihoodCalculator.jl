@@ -35,7 +35,7 @@ end # function
 This function calculates the log-likelihood of an evolutiuonary model using the
 Felsensteins pruning algorithm.
 """
-function FelsensteinFunction(tree::Array{Float64,2}, data::Array{Float64,3}, mypi_::Number, rates::Vector{Float64}, n_c::Int64)::Float64
+function FelsensteinFunction(tree::DenseArray{T}, data::Array{Float64,3}, mypi_::Number, rates::Vector{Float64}, n_c::Int64)::Float64 where {T<:Float64}
     tree_postorder::Vector{Int64} = post_order(tree)
     leaves::Vector{Int64} = get_leaves(tree)
     for node in tree_postorder
@@ -61,7 +61,7 @@ end # function
 
 
 
-function CondLikeInternal(tree::Array{Float64}, node::Int64, data::Array{Float64}, pi_::Number, rates::Vector{Float64}, n_c::Int64)::Nothing
+function CondLikeInternal(tree::DenseArray{T}, node::Int64, data::Array{Float64}, pi_::Number, rates::Vector{Float64}, n_c::Int64)::Nothing where {T<:Float64}
     @assert size(rates)[1] == n_c
     children::Vector{Int64} = get_neighbours(tree[node,:])
     left_daughter::Int64 = children[1]

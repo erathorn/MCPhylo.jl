@@ -16,6 +16,7 @@ extensions = quote
     mutable struct PhyloDist <: ContinuousUnivariateDistribution
         my_tree
         mypi::Real
+        data::Array
         #rates::Array
     end
     minimum(d::PhyloDist) = -Inf
@@ -24,7 +25,7 @@ extensions = quote
     function logpdf(d::PhyloDist, x::Real)
         rates = ones(3132)
 
-        return PhyloJul.FelsensteinFunction(PhyloJul.post_order(d.my_tree), d.mypi, rates,3132)
+        return PhyloJul.FelsensteinFunction(d.my_tree, d.data, d.mypi, rates,3132)
     end
 
 end
@@ -38,32 +39,30 @@ eval(extensions)
 
 tt, data_arr, df = PhyloJul.make_tree_with_data_mat("./local/IE_Contemporary_Full.nex")
 
-PhyloJul.FelsensteinFunction(tt, data_arr,0.5, ones(3132),3132)
-PhyloJul.GradiantLog(tt, data_arr, 0.5)
-this_tree = PhyloJul.make_tree_with_data("./local/development.nex")
-
 
 my_data = Dict{Symbol, Any}(
-  :mtree => PhyloJul.make_tree_with_data("./local/development.nex"))
+  :mtree => tt,
+  :data =>data_arr)
 
-my_data[:blenvec] = PhyloJul.get_branchlength_vector!(my_data[:mtree])
+
 
 
 model = Model(
     y = Stochastic(1,
-    (mtree, blenvec, mypi) ->
+    (mtree, mypi, data) ->
     begin
 
         UnivariateDistribution[
-        PhyloDist(PhyloJul.set_branchlength_vector!(mtree, blenvec), mypi)]
+        PhyloDist(mtree, mypi, data)]
     end,
 
     ),
     mypi = Stochastic(
     () -> Truncated(Uniform(0.0,1.0), 0.0, 1.0)
     ),
-    mtree = PhyloJul.StochasticTree(
-        () -> PhyloJul.CompoundDirichlet(1.0,1.0,0.100,1.0)
+    mtree = Stochastic(2,
+        () -> PhyloJul.CompoundDirichlet(1.0,1.0,0.100,1.0),
+        false
     )#,
     #mtree_po = Logical(
     #(mtree, blenvec) -> Tree_Module.set_branchlength_vector!(mtree, blenvec),
@@ -73,37 +72,85 @@ model = Model(
     #()-> Dirichlet(ones(3132))
     #)
      )
-inivals = rand(Uniform(0,1),size(this_tree.data)[2])
+inivals = rand(Uniform(0,1),3132)
 inivals =inivals./sum(inivals)
 
 inits = [ Dict(
-    :mtree => [my_data[:mtree]],
-    :mypi=> 0.5, :y => [-500000],
-    :rates=>inivals,
-    :blenvec=>PhyloJul.get_branchlength_vector!(my_data[:mtree]))]
+    :mtree => my_data[:mtree],
+    :mypi=> 0.5,
+    :y => [-500000],
+    :rates=>inivals)]
 
 #scheme = [Slice(:mypi, 0.05), SliceSimplex(:rates)]
 scheme = [Slice(:mypi, 0.05),
             #Slice(:blenvec, 0.02),
              PhyloJul.ProbPathHMCSampler(:mtree, 5,5.0)]
-t = PhyloJul.ProbPathHMCSampler(:mtree, 5,5.0)
-s = Slice(:mypi, 0.05)
+
 setsamplers!(model, scheme)
 
-PhyloJul.ProbPathHMCTune
 
 sim = mcmc(model, my_data, inits, 500, burnin=1, chains=1)
 
 
 
+salm = Dict{Symbol, Any}(
+  :y => reshape(
+    [15, 21, 29, 16, 18, 21, 16, 26, 33, 27, 41, 60, 33, 38, 41, 20, 27, 42],
+    3, 6),
+  :x => [0, 10, 33, 100, 333, 1000],
+  :plate => 3,
+  :dose => 6
+)
 
 
+## Model Specification
+model = Model(
+
+  y = Stochastic(2,
+    (alpha, beta, gamma, x, lambda) ->
+      UnivariateDistribution[(
+        mu = exp(alpha + beta * log(x[j] + 10) + gamma * x[j] + lambda[i, j]);
+        Poisson(mu)) for i in 1:3, j in 1:6
+      ],
+    false
+  ),
+
+  alpha = Stochastic(
+    () -> Normal(0, 1000)
+  ),
+
+  beta = Stochastic(
+    () -> Normal(0, 1000)
+  ),
+
+  gamma = Stochastic(
+    () -> Normal(0, 1000)
+  ),
+
+  lambda = Stochastic(2,
+    s2 -> Normal(0, sqrt(s2)),
+    false
+  ),
+
+  s2 = Stochastic(
+    () -> InverseGamma(0.001, 0.001)
+  )
+
+)
 
 
-pptune = PhyloJul.ProbPathHMCTune(5,5.0)
+## Initial Values
+inits = [
+  Dict(:y => salm[:y], :alpha => 0, :beta => 0, :gamma => 0, :s2 => 10,
+       :lambda => zeros(3, 6))
+]
 
-t = PhyloJul.SamplerVariateP(this_tree, pptune)
+## Sampling Scheme
+scheme = [Slice([:alpha, :beta, :gamma], [1.0, 1.0, 0.1]),
+          AMWG([:lambda, :s2], 0.1)]
+setsamplers!(model, scheme)
 
-ms = PhyloJul.SamplerVariateP(this_tree, pptune)
 
-PhyloJul.sample!(ms)
+## MCMC Simulations
+sim = mcmc(model, salm, inits, 10000, burnin=2500, thin=2, chains=1)
+describe(sim)

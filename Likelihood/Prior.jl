@@ -7,7 +7,7 @@ This structure implememts the CompoundDirichlet distribution described4
 in Zhang, Rannala and Yang 2012. (DOI:10.1093/sysbio/sys030)
 """
 ## Type declaration
-mutable struct CompoundDirichlet <: ContinuousMultivariateDistribution
+mutable struct CompoundDirichlet <: ContinuousUnivariateDistribution
     alpha::Float64
     a::Float64
     beta::Float64
@@ -16,7 +16,8 @@ mutable struct CompoundDirichlet <: ContinuousMultivariateDistribution
 
 end # struct
 
-length(d::CompoundDirichlet) = 1
+length(d::CompoundDirichlet) = 23409
+Base.size(d::CompoundDirichlet) = (153,153)
 
 function _logpdf(d::CompoundDirichlet, x::AbstractArray{T}) where {T<:Real}
 
