@@ -19,6 +19,8 @@ include("./Tree/Tree_Matrix.jl")
 include("./Parser/ParseNexus.jl")
 
 include("./Sampler/ProbPathHMC.jl")
+include("./Sampler/PhyloHMC_Functions.jl")
+
 
 include("./Substitution/SubstitutionMat.jl")
 
