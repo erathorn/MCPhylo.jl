@@ -47,30 +47,19 @@ my_data = Dict{Symbol, Any}(
 
 
 
-model = Model(
+model =  Model(
     y = Stochastic(1,
     (mtree, mypi, data) ->
     begin
-
         UnivariateDistribution[
         PhyloDist(mtree, mypi, data)]
     end,
-
     ),
     mypi = Stochastic(
     () -> Truncated(Uniform(0.0,1.0), 0.0, 1.0)
     ),
-    mtree = Stochastic(2,
-        () -> PhyloJul.CompoundDirichlet(1.0,1.0,0.100,1.0),
-        false
-    )#,
-    #mtree_po = Logical(
-    #(mtree, blenvec) -> Tree_Module.set_branchlength_vector!(mtree, blenvec),
-    #false
-    #)
-    #rates = Stochastic(1,
-    #()-> Dirichlet(ones(3132))
-    #)
+    mtree = PhyloJul.Stochastic(2,() -> PhyloJul.CompoundDirichlet(1.0,1.0,0.100,1.0),(false, false))
+
      )
 inivals = rand(Uniform(0,1),3132)
 inivals =inivals./sum(inivals)
