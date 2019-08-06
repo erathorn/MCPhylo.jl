@@ -1,6 +1,6 @@
 #################### Dependent ####################
 
-const depfxargs = [(:model, Mamba.Model)]
+const depfxargs = [(:model, MCPhylo.Model)]
 
 
 #################### Base Methods ####################

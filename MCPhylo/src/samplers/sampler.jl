@@ -1,6 +1,6 @@
 #################### Sampler ####################
 
-const samplerfxargs = [(:model, Mamba.Model), (:block, Integer)]
+const samplerfxargs = [(:model, MCPhylo.Model), (:block, Integer)]
 
 
 #################### Types and Constructors ####################

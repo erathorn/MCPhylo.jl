@@ -1,15 +1,6 @@
 
 
-mutable struct treevariate{N} <: ArrayVariate{N}
-    value::Array{Float64, N}
-    symbol::Symbol
-    monitor::Vector{Int}
-    eval::Function
-    sources::Vector{Symbol}
-    targets::Vector{Symbol}
-    distr::Mamba.DistributionStruct
 
-end
 
 mutable struct ProbPathHMCTune <: SamplerTune
     n_leap::Int64
@@ -51,13 +42,13 @@ end
 
 function Stochastic(d::Integer, f::Function, monitor::Tuple)
     value = Array{Float64}(undef, fill(0, d)...)
-    fx, src = Mamba.modelfxsrc(Mamba.depfxargs, f)
+    fx, src = modelfxsrc(depfxargs, f)
     s = TreeVariate(value, :nothing, Int[], fx, src, Symbol[],
-                      Mamba.NullUnivariateDistribution())
+                      NullUnivariateDistribution(), "ab")
     setmonitor!(s, monitor[1], monitor[2])
 end
 
-function setmonitor!(d::TreeVariate, monitor::Bool, target)
+function setmonitor!(d::TreeVariate, monitor::Bool, target::AbstractString)
     println("here")
 
     d.file = target
