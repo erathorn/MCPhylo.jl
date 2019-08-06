@@ -25,19 +25,19 @@ extensions = quote
     function logpdf(d::PhyloDist, x::Real)
         rates = ones(3132)
 
-        return PhyloJul.FelsensteinFunction(d.my_tree, d.data, d.mypi, rates,3132)
+        return MCPhylo.FelsensteinFunction(d.my_tree, d.data, d.mypi, rates,3132)
     end
-
 end
-include("PhyloJul.jl")
-using .PhyloJul
+#include("./myMamba.jl")
+#using .myMamba
+include("./MCPhylo/src/MCPhylo.jl")
+using .MCPhylo
 
-using Mamba
+
 
 
 eval(extensions)
-
-tt, data_arr, df = PhyloJul.make_tree_with_data_mat("./local/IE_Contemporary_Full.nex")
+tt, data_arr, df = MCPhylo.make_tree_with_data_mat("./local/IE_Contemporary_Full.nex")
 
 
 my_data = Dict{Symbol, Any}(
@@ -58,7 +58,8 @@ model =  Model(
     mypi = Stochastic(
     () -> Truncated(Uniform(0.0,1.0), 0.0, 1.0)
     ),
-    mtree = PhyloJul.Stochastic(2,() -> PhyloJul.CompoundDirichlet(1.0,1.0,0.100,1.0),(false, false))
+    mtree = Stochastic(2,
+    () -> MCPhylo.CompoundDirichlet(1.0,1.0,0.100,1.0),(false,"false"))
 
      )
 inivals = rand(Uniform(0,1),3132)
@@ -73,7 +74,7 @@ inits = [ Dict(
 #scheme = [Slice(:mypi, 0.05), SliceSimplex(:rates)]
 scheme = [Slice(:mypi, 0.05),
             #Slice(:blenvec, 0.02),
-             PhyloJul.ProbPathHMCSampler(:mtree, 5,5.0)]
+             MCPhylo.ProbPathHMCSampler(:mtree, 5,5.0)]
 
 setsamplers!(model, scheme)
 

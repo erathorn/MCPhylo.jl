@@ -41,7 +41,7 @@ end
 
 
 function Stochastic(d::Integer, f::Function, monitor::Tuple)
-    value = Array{Float64}(undef, fill(0, d)...)
+    value = Array{Float64}(undef, fill(0, 2)...)
     fx, src = modelfxsrc(depfxargs, f)
     s = TreeVariate(value, :nothing, Int[], fx, src, Symbol[],
                       NullUnivariateDistribution(), "ab")
@@ -52,5 +52,17 @@ function setmonitor!(d::TreeVariate, monitor::Bool, target::AbstractString)
     println("here")
 
     d.file = target
+    d.monitor = [1,2]
     d
 end
+
+"""
+    setinits!(d::TreeVariate, m::model, x::Array)
+
+documentation
+"""
+function setinits!(d::TreeVariate, m::Model, x::Array)
+    d.value = x
+    d.distr = eval(m)
+    setmonitor!(d, d.monitor)
+end # function

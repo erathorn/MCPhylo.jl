@@ -70,6 +70,7 @@ abstract type ArrayVariate{N} <: DenseArray{Float64, N} end
 const AbstractVariate = Union{ScalarVariate, ArrayVariate}
 const VectorVariate = ArrayVariate{1}
 const MatrixVariate = ArrayVariate{2}
+#const TreeVariate = ArrayVariate{2}
 
 
 #################### Distribution Types ####################
@@ -131,8 +132,8 @@ mutable struct TreeVariate{N} <: ArrayVariate{N}
 end
 
 const AbstractLogical = Union{ScalarLogical, ArrayLogical}
-const AbstractStochastic = Union{ScalarStochastic, ArrayStochastic, TreeVariate}
-const AbstractDependent = Union{AbstractLogical, AbstractStochastic}
+const AbstractStochastic = Union{ScalarStochastic, ArrayStochastic}
+const AbstractDependent = Union{AbstractLogical, AbstractStochastic}#, TreeVariate}
 
 
 #################### Sampler Types ####################
