@@ -5,14 +5,14 @@ const depfxargs = [(:model, MCPhylo.Model)]
 
 #################### Base Methods ####################
 
-function Base.show(io::IO, d::AbstractDependent)
+function Base.show(io::IO, d::AnyDependent)
   msg = string(ifelse(isempty(d.monitor), "An un", "A "),
                "monitored node of type \"", summary(d), "\"\n")
   print(io, msg)
   show(io, d.value)
 end
 
-function showall(io::IO, d::AbstractDependent)
+function showall(io::IO, d::AnyDependent)
   show(io, d)
   print(io, "\nFunction:\n")
   show(io, "text/plain", first(code_typed(d.eval)))

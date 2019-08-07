@@ -66,11 +66,12 @@ ElementOrVector{T} = Union{T, Vector{T}}
 
 abstract type ScalarVariate <: Real end
 abstract type ArrayVariate{N} <: DenseArray{Float64, N} end
+abstract type TreeVariate <: Any end
 
 const AbstractVariate = Union{ScalarVariate, ArrayVariate}
 const VectorVariate = ArrayVariate{1}
 const MatrixVariate = ArrayVariate{2}
-#const TreeVariate = ArrayVariate{2}
+
 
 
 #################### Distribution Types ####################
@@ -120,21 +121,20 @@ mutable struct ArrayStochastic{N} <: ArrayVariate{N}
   distr::DistributionStruct
 end
 
-mutable struct TreeVariate{N} <: ArrayVariate{N}
-    value::Array{Float64, N}
+mutable struct TreeStochastic{N} <: TreeVariate
+    value::Array{Float64,N}
     symbol::Symbol
     monitor::Vector{Int}
     eval::Function
     sources::Vector{Symbol}
     targets::Vector{Symbol}
     distr::DistributionStruct
-    file::AbstractString
 end
 
 const AbstractLogical = Union{ScalarLogical, ArrayLogical}
 const AbstractStochastic = Union{ScalarStochastic, ArrayStochastic}
 const AbstractDependent = Union{AbstractLogical, AbstractStochastic}#, TreeVariate}
-
+const AnyDependent = Union{AbstractDependent, TreeStochastic}
 
 #################### Sampler Types ####################
 

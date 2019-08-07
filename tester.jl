@@ -48,19 +48,14 @@ my_data = Dict{Symbol, Any}(
 
 
 model =  Model(
-    y = Stochastic(1,
+    y = Stochastic(
     (mtree, mypi, data) ->
     begin
-        UnivariateDistribution[
-        PhyloDist(mtree, mypi, data)]
+        UnivariateDistribution[PhyloDist(mtree, mypi, data)]
     end,
     ),
-    mypi = Stochastic(
-    () -> Truncated(Uniform(0.0,1.0), 0.0, 1.0)
-    ),
-    mtree = Stochastic(2,
-    () -> MCPhylo.CompoundDirichlet(1.0,1.0,0.100,1.0),(false,"false"))
-
+    mypi = Stochastic(() -> Truncated(Uniform(0.0,1.0), 0.0, 1.0)),
+    mtree = Stochastic(2,() -> MCPhylo.CompoundDirichlet(1.0,1.0,0.100,1.0),true,"tree")
      )
 inivals = rand(Uniform(0,1),3132)
 inivals =inivals./sum(inivals)

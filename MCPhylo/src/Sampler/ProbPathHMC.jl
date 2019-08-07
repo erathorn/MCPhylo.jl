@@ -40,18 +40,17 @@ function sample!(v::ProbPathHMCTune, tree ,data, mypi, distr)
 end
 
 
-function Stochastic(d::Integer, f::Function, monitor::Tuple)
+function Stochastic(d::Integer, f::Function, monitor::Bool, my::AbstractString)
     value = Array{Float64}(undef, fill(0, 2)...)
     fx, src = modelfxsrc(depfxargs, f)
-    s = TreeVariate(value, :nothing, Int[], fx, src, Symbol[],
-                      NullUnivariateDistribution(), "ab")
-    setmonitor!(s, monitor[1], monitor[2])
+    s = TreeStochastic(value, :nothing, Int[], fx, src, Symbol[],
+                      NullUnivariateDistribution())
+    setmonitor!(s, monitor)
 end
 
-function setmonitor!(d::TreeVariate, monitor::Bool, target::AbstractString)
+function setmonitor!(d::TreeStochastic, monitor::Bool)
     println("here")
 
-    d.file = target
     d.monitor = [1,2]
     d
 end
@@ -61,8 +60,8 @@ end
 
 documentation
 """
-function setinits!(d::TreeVariate, m::Model, x::Array)
+function setinits!(d::TreeStochastic, m::Model, x::Array)
     d.value = x
-    d.distr = eval(m)
+    d.distr = d.eval(m)
     setmonitor!(d, d.monitor)
 end # function

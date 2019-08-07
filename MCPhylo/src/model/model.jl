@@ -2,12 +2,13 @@
 
 #################### Constructors ####################
 
+
 function Model(; iter::Integer=0, burnin::Integer=0,
                samplers::Vector{Sampler}=Sampler[], nodes...)
+
   nodedict = Dict{Symbol, Any}()
   for (key, value) in nodes
-    isa(value, TreeVariate) |
-    isa(value, AbstractDependent) ||
+    isa(value, TreeVariate)|| isa(value, AbstractDependent) ||
       throw(ArgumentError("nodes are not all Dependent types"))
     node = deepcopy(value)
     node.symbol = key
