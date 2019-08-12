@@ -61,9 +61,9 @@ end # function
 
 
 
-function CondLikeInternal(tree, node::Int64, data::Array{Float64}, pi_::Number, rates::Vector{Float64}, n_c::Int64)::Nothing
+function CondLikeInternal(tree::Array{Float64,2}, node::Int64, data::Array{Float64}, pi_::Number, rates::Vector{Float64}, n_c::Int64)::Nothing
     @assert size(rates)[1] == n_c
-    
+
     children::Vector{Int64} = get_neighbours(tree[node,:])
     left_daughter::Int64 = children[1]
     right_daughter::Int64 = children[2]
@@ -174,34 +174,37 @@ function GradiantLog(tree_preorder::Vector{Node}, pi_::Number)
 end # function
 
 
-function GradiantLog(tree::Array{Float64,2}, data::Array{Float64,3}, pi_::Number)
+function GradiantLog(tree::Array{Float64,2}, data::Array{Float64,3}, pi_::Number, n_c::Int64)
     root::Int64 = find_root(tree)
-    tree_preorder = pre_order(tree)
-    n_c::Int64 = size(data)[2]
+    tree_preorder::Array{Int64,1} = pre_order(tree)
+    second_dim::Int64 = size(data)[1]
     leaves::Vector = get_leaves(tree)
 
-    Up::Array{Float64,3} = ones(length(tree_preorder)+1, size(data)[1], n_c)
+
+    Up::Array{Float64,3} = ones(length(tree_preorder)+1, second_dim, n_c)
     Grad_ll::Array{Float64} = zeros(length(tree_preorder))
     for node in tree_preorder
+        curr_arr::Array{Float64,2} = @view Up[node,1:second_dim,1:n_c]
         if node==root
             # this is the root
             @inbounds for i in 1:n_c
-                Up[node,1,i] = pi_
-                Up[node,2,i] = 1.0-pi_
+                curr_arr[1,i] = pi_
+                curr_arr[2,i] = 1.0-pi_
             end # for
         else
             mother::Int64 = get_mother(tree, node)
             n::Vector = get_neighbours(tree[mother,:])
             sister::Int64 = 0
-            for i in n
-                if i != node
-                    sister = i
-                end
-            end
+            sister = (n[1] == node) ? n[1] : n[2]
+            #for i in n
+            #    if i != node
+            #        sister = i
+            #    end
+            #end
 
 
-            Up[node,:,:] = pointwise_mat(Up[node,:,:], data[:,:,sister], n_c)
-            Up[node,:,:] = pointwise_mat(Up[node,:,:], Up[mother,:,:], n_c)
+            pointwise_mat!(curr_arr[:,:], data[:,:,sister], n_c)
+            pointwise_mat!(curr_arr[:,:], Up[mother,:,:], n_c)
             #Up[node_ind,:,:].*=sister.data
             #Up[node_ind,:,:].*=Up[parse(Int, mother.binary, base=2),:,:]
 
@@ -209,25 +212,31 @@ function GradiantLog(tree::Array{Float64,2}, data::Array{Float64,3}, pi_::Number
 
             #a::Array{Float64,1} = node.data[1,:].*my_mat[1,1] .+ node.data[2,:].*my_mat[2,1]
             #b::Array{Float64,1} = node.data[1,:].*my_mat[1,2] .+ node.data[2,:].*my_mat[2,2]
-            a::Array{Float64,1} = my_dot(data[:,:,node], my_mat[:,1], n_c)
-            b::Array{Float64,1} = my_dot(data[:,:,node], my_mat[:,2], n_c)
+            @inbounds a::Array{Float64,1} = my_dot(data[:,:,node], my_mat[:,1], n_c)
+            @inbounds b::Array{Float64,1} = my_dot(data[:,:,node], my_mat[:,2], n_c)
 
             #gradient::Array{Float64,1} = Up[node_ind,1,:].*a .+ Up[node_ind,2,:].*b
-            gradient::Array{Float64,1} = pointwise_vec(Up[node,1,:],a, n_c) .+ pointwise_vec(Up[node,2,:],b,n_c)
+            @inbounds gradient::Array{Float64,1} = pointwise_vec(curr_arr[1,:],a, n_c) .+ pointwise_vec(curr_arr[2,:],b,n_c)
 
             #Up[node_ind,1,:] = Up[node_ind,1,:].*my_mat[1,2] + Up[node_ind,2,:].*my_mat[2,2]
             #Up[node_ind,2,:] = Up[node_ind,1,:].*my_mat[1,1] + Up[node_ind,2,:].*my_mat[2,1]
-            Up[node,1,:] = my_dot(Up[node,:,:], my_mat[:,2], n_c)
-            Up[node,2,:] = my_dot(Up[node,:,:], my_mat[:,1], n_c)
+            @inbounds curr_arr[1,:] = my_dot(curr_arr[:,:], my_mat[:,2], n_c)
+            @inbounds curr_arr[2,:] = my_dot(curr_arr[:,:], my_mat[:,1], n_c)
 
             #d = sum(Up[node_ind,:,:].*node.data, dims=1)
-            d = sum(pointwise_mat(Up[node,:,:],data[:,:,node], n_c), dims=1)
+            d = sum(pointwise_mat(curr_arr[:,:],data[:,:,node], n_c), dims=1)
+
             gradient ./= d[1,:]
+
             Grad_ll[node] = sum(gradient)
 
             if node in leaves
-                scaler = sum(Up[node,:,:], dims=1)
-                Up[node,:,:] ./= scaler
+                @inbounds for i in 1:n_c
+                    scaler::Float64 = Up[node,1,i] + Up[node,2,i]
+                    curr_arr[1,i] /= scaler
+                    curr_arr[2,i] /= scaler
+                end # for
+                #curr_arr[:,:] ./= scaler
             end # if
         end # if
     end # for

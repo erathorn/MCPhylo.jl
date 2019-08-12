@@ -1,11 +1,19 @@
 
-function pointwise_mat(arr1::Array{Float64,2},arr2::Array{Float64,2}, n_c::Int64)::Array{Float64}
+function pointwise_mat(arr1::Array{Float64,2},arr2::Array{Float64,2}, n_c::Int64)::Array{Float64,2}
     out::Array{Float64,2} = zeros(size(arr1))
     @inbounds for i in 1:n_c
         out[1,i] = arr1[1,i] * arr2[1,i]
         out[2,i] = arr1[2,i] * arr2[2,i]
     end # for
     return out
+end # function pointwise_mat
+
+
+function pointwise_mat!(arr1::Array{Float64,2},arr2::Array{Float64,2}, n_c::Int64)
+    @inbounds for i in 1:n_c
+        arr1[1,i] = arr1[1,i] * arr2[1,i]
+        arr1[2,i] = arr1[2,i] * arr2[2,i]
+    end # for
 end # function pointwise_mat
 
 function pointwise_vec(arr1::Array{Float64,1},arr2::Array{Float64,1}, n_c::Int64)::Array{Float64}

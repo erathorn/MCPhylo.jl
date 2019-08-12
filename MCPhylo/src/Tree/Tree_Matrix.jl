@@ -48,7 +48,7 @@ is supplied as argument, the daughter nodes are returned, otherwise the mother n
 The function is equiped the with @inline decorator, since it will be used quite
 frequently. This should improve speed.
 """
-@inline function get_neighbours(vec::Array{Float64,1})::Array{Int64}
+function get_neighbours(vec::Array{Float64,1})::Array{Int64}
     l::Int64 = size(vec)[1]
     r::Vector{Int64} = []
     @inbounds for i in 1:l

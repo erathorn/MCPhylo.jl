@@ -18,14 +18,14 @@ function my_sample!(tree::Array, data_array::Array{Float64,3}, n_leap::Int64, st
 
     for i in 1:n_leap
         stepsz/2.0
-        probM = probM.-stepsz/2.0 .* GradiantLog(tree_c, data_array, mypi).-_logpdf(priordist, tree_c)
+        probM = probM.-stepsz/2.0 .* GradiantLog(tree_c, data_array, mypi, n_c).-_logpdf(priordist, tree_c)
         step_nn_att, step_ref_att = refraction(tree_c, probB, probM, stepsz, surrogate, n_c, data_array, delta, rates, priordist, mypi)
         NNI_attempts += step_nn_att
         ref_attempts += step_ref_att
 
         set_branchlength_vector(tree_c, probB)
 
-        probM = probM .- stepsz/2.0 .* (GradiantLog(tree_c, data_array, mypi).-_logpdf(priordist, tree_c))
+        probM = probM .- stepsz/2.0 .* (GradiantLog(tree_c, data_array, mypi, n_c).-_logpdf(priordist, tree_c))
 
     end
 
