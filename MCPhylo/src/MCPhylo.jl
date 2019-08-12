@@ -133,7 +133,7 @@ end
 
 const AbstractLogical = Union{ScalarLogical, ArrayLogical}
 const AbstractStochastic = Union{ScalarStochastic, ArrayStochastic}
-const AbstractDependent = Union{AbstractLogical, AbstractStochastic}#, TreeVariate}
+const AbstractDependent = Union{AbstractLogical, AbstractStochastic, TreeStochastic}
 const AnyDependent = Union{AbstractDependent, TreeStochastic}
 
 #################### Sampler Types ####################

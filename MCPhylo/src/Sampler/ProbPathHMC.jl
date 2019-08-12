@@ -22,7 +22,7 @@ function ProbPathHMCSampler(params, pargs...; dtype::Symbol=:forward)
 
         #block = SamplingBlock(model, block, true)
         v = ProbPathHMCTune(pargs...)
-        println(size(model.nodes[:data]))
+        
         #t = ProbPathVariate(model[model.samplers[block].params[1]], v)
         #SamplerVariate(v)
         #t = ProbPathVariate(v)
@@ -34,9 +34,8 @@ function ProbPathHMCSampler(params, pargs...; dtype::Symbol=:forward)
 end
 
 function sample!(v::ProbPathHMCTune, tree ,data, mypi, distr)
-    println("here")
     n_c = size(data)[2]
-    my_sample!(tree, data, v.n_leap, v.stepsz, mypi, n_c, distr)
+    my_sample!(tree.value, data, v.n_leap, v.stepsz, mypi, n_c, distr)
 end
 
 
@@ -49,8 +48,6 @@ function Stochastic(d::Integer, f::Function, monitor::Bool, my::AbstractString)
 end
 
 function setmonitor!(d::TreeStochastic, monitor::Bool)
-    println("here")
-
     d.monitor = [1,2]
     d
 end
@@ -65,3 +62,20 @@ function setinits!(d::TreeStochastic, m::Model, x::Array)
     d.distr = d.eval(m)
     setmonitor!(d, d.monitor)
 end # function
+
+
+function relistlength(d::TreeStochastic, v::SubArray, w::Bool)
+
+    ms = size(d.distr)
+    rs = reshape(v, ms)
+    (rs, length(d.distr))
+end
+
+function update!(d::TreeStochastic, m::Model)
+    d.distr = d.eval(m)
+    d
+end
+
+function names(d::TreeStochastic, nodekey::Symbol)
+    AbstractString["Tree height", "Tree length"]
+end

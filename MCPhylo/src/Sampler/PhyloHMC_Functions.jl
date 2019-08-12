@@ -1,6 +1,5 @@
 
-function my_sample!(tree::ArrayStochastic{2}, data_array::Array{Float64,3}, n_leap::Int64, stepsz::Float64, mypi::Number, n_c::Int64, priordist)
-    println("now I am here")
+function my_sample!(tree::Array, data_array::Array{Float64,3}, n_leap::Int64, stepsz::Float64, mypi::Number, n_c::Int64, priordist)
     delta = 0.01
     rates = ones(n_c)
     surrogate=true

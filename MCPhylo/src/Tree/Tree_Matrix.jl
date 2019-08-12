@@ -59,6 +59,10 @@ frequently. This should improve speed.
     return r
 end # get_neighbours
 
+function find_root(t::TreeStochastic)
+    find_root(t.value)
+end # function
+
 """
     find_root(mat::Array{Float64,2})::Int64
 
@@ -74,6 +78,10 @@ function find_root(mat::DenseArray{T})::Int64 where {T<:Float64}
     return ErrorException("No root node found")
 end # find_root
 
+
+function post_order(t::TreeStochastic)
+    post_order(t.value)
+end # function
 
 """
     post_order(mat::Array{Float64,2}, node::Int64, traversal::Array{Int64, 1})::Array{Int64}
@@ -138,6 +146,11 @@ Return the entire tree length.
 """
 tree_length(mat::Array{Float64,2}) = sum(mat)
 
+tree_length(t::TreeStochastic) = tree_length(t.value)
+
+function get_leaves(t::TreeStochastic)
+    get_leaves(t.value)
+end # function
 
 """
     get_leaves(mat::Array{Float64,2})::Array{Int64,1}
@@ -171,7 +184,9 @@ function get_mother(mat::Array{Float64,2}, node::Int64)::Int64
     return ErrorException("No mother node found for node $node")
 end # get_mother
 
-
+function get_sum_seperate_length!(t::TreeStochastic)
+    get_sum_seperate_length!(t.value)
+end # function
 """
     get_sum_seperate_length!(mat::Array{Float64,2})::Vector{Float64}
 
@@ -185,7 +200,7 @@ function get_sum_seperate_length!(mat::DenseArray{T})::Vector{Float64} where {T<
     res_leave::Float64 = 0.0
 
     for i in 1:l
-    
+
         if i in leaves
             # branches leading to leaves
             res_leave += sum(mat[:,i])
@@ -197,7 +212,9 @@ function get_sum_seperate_length!(mat::DenseArray{T})::Vector{Float64} where {T<
     return [res_int, res_leave]
 end # function get_sum_seperate_length!
 
-
+function get_branchlength_vector(t::TreeStochastic)
+    get_branchlength_vector(t.value)
+end # function
 """
     get_branchlength_vector(mat::Array{Float64,2})::Vector{Float64}
 
