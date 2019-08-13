@@ -69,9 +69,35 @@ inits = [ Dict(
 #scheme = [Slice(:mypi, 0.05), SliceSimplex(:rates)]
 scheme = [Slice(:mypi, 0.05),
             #Slice(:blenvec, 0.02),
-             MCPhylo.ProbPathHMCSampler(:mtree, 5,5.0)]
+             MCPhylo.ProbPathHMCSampler(:mtree, 3.0,2.0)]
 
 setsamplers!(model, scheme)
 
 
-sim = mcmc(model, my_data, inits, 500, burnin=1, chains=1)
+sim = mcmc(model, my_data, inits, 200, burnin=50, chains=1)
+
+using Profile
+using ProfileView
+using Serialization
+function benchmark()
+    # Any setup code goes here.
+
+    # Run once, to force compilation.
+    println("======================= First run:")
+    #srand(666)
+    @time mcmc(model, my_data, inits, 2, burnin=1, chains=1)
+
+    # Run a second time, with profiling.
+    println("\n\n======================= Second run:")
+    #srand(666)
+    Profile.init(delay=10.01)
+    Profile.clear()
+    Profile.clear_malloc_data()
+    @profile @time mcmc(model, my_data, inits, 10, burnin=1, chains=1)
+
+    # Write profile results to profile.bin.
+    r = Profile.retrieve()
+    f = open("profile.bin", "w")
+    Serialization.serialize(f, r)
+    close(f)
+end

@@ -5,3 +5,5 @@ test/*
 !test/REQUIRE
 tmp/
 usr/
+*.bin
+ProfileVtune.jl

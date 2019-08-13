@@ -3,12 +3,12 @@
 
 
 mutable struct ProbPathHMCTune <: SamplerTune
-    n_leap::Int64
+    n_leap::Float64
     stepsz::Float64
 
     ProbPathHMCTune() = new()
 
-    ProbPathHMCTune(n_leap::Int64, stpesz::Float64) = new(n_leap::Int64, stpesz::Float64)
+    ProbPathHMCTune(n_leap::Float64, stpesz::Float64) = new(n_leap::Float64, stpesz::Float64)
 end # mutable struct
 
 const ProbPathVariate = SamplerVariate{ProbPathHMCTune}
@@ -22,7 +22,7 @@ function ProbPathHMCSampler(params, pargs...; dtype::Symbol=:forward)
 
         #block = SamplingBlock(model, block, true)
         v = ProbPathHMCTune(pargs...)
-        
+
         #t = ProbPathVariate(model[model.samplers[block].params[1]], v)
         #SamplerVariate(v)
         #t = ProbPathVariate(v)

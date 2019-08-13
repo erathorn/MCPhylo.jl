@@ -74,7 +74,7 @@ function CondLikeInternal(tree::Array{Float64,2}, node::Int64, data::Array{Float
 
     # use the inbounds decorator to enable SIMD
     # SIMD greatly improves speed!!!
-    @inbounds for ind in 1:n_c
+    @simd for ind in 1:n_c
         @inbounds r::Float64 = rates[ind]
         left_mat::Array{Float64,2} = exponentiate_binary(pi_, linc, r)
         right_mat::Array{Float64,2} = exponentiate_binary(pi_, rinc, r)
@@ -86,8 +86,8 @@ function CondLikeInternal(tree::Array{Float64,2}, node::Int64, data::Array{Float
 
         @inbounds data[1,ind, node] = a*c
         @inbounds data[2,ind, node] = b*d
-
     end # for
+    nothing
 end # function
 
 
@@ -183,6 +183,9 @@ function GradiantLog(tree::Array{Float64,2}, data::Array{Float64,3}, pi_::Number
 
     Up::Array{Float64,3} = ones(length(tree_preorder)+1, second_dim, n_c)
     Grad_ll::Array{Float64} = zeros(length(tree_preorder))
+    a = Vector{Float64}(undef, n_c)
+    b = Vector{Float64}(undef, n_c)
+    gradient = Vector{Float64}(undef, n_c)
     for node in tree_preorder
         curr_arr::Array{Float64,2} = @view Up[node,1:second_dim,1:n_c]
         if node==root
@@ -196,11 +199,6 @@ function GradiantLog(tree::Array{Float64,2}, data::Array{Float64,3}, pi_::Number
             n::Vector = get_neighbours(tree[mother,:])
             sister::Int64 = 0
             sister = (n[1] == node) ? n[1] : n[2]
-            #for i in n
-            #    if i != node
-            #        sister = i
-            #    end
-            #end
 
 
             pointwise_mat!(curr_arr[:,:], data[:,:,sister], n_c)
@@ -212,11 +210,11 @@ function GradiantLog(tree::Array{Float64,2}, data::Array{Float64,3}, pi_::Number
 
             #a::Array{Float64,1} = node.data[1,:].*my_mat[1,1] .+ node.data[2,:].*my_mat[2,1]
             #b::Array{Float64,1} = node.data[1,:].*my_mat[1,2] .+ node.data[2,:].*my_mat[2,2]
-            @inbounds a::Array{Float64,1} = my_dot(data[:,:,node], my_mat[:,1], n_c)
-            @inbounds b::Array{Float64,1} = my_dot(data[:,:,node], my_mat[:,2], n_c)
+            my_dot(data[:,:,node], my_mat[:,1], a)
+            my_dot(data[:,:,node], my_mat[:,2], b)
 
             #gradient::Array{Float64,1} = Up[node_ind,1,:].*a .+ Up[node_ind,2,:].*b
-            @inbounds gradient::Array{Float64,1} = pointwise_vec(curr_arr[1,:],a, n_c) .+ pointwise_vec(curr_arr[2,:],b,n_c)
+            pointwise_vec(curr_arr,a,b, gradient)
 
             #Up[node_ind,1,:] = Up[node_ind,1,:].*my_mat[1,2] + Up[node_ind,2,:].*my_mat[2,2]
             #Up[node_ind,2,:] = Up[node_ind,1,:].*my_mat[1,1] + Up[node_ind,2,:].*my_mat[2,1]
@@ -231,10 +229,10 @@ function GradiantLog(tree::Array{Float64,2}, data::Array{Float64,3}, pi_::Number
             Grad_ll[node] = sum(gradient)
 
             if node in leaves
-                @inbounds for i in 1:n_c
-                    scaler::Float64 = Up[node,1,i] + Up[node,2,i]
-                    curr_arr[1,i] /= scaler
-                    curr_arr[2,i] /= scaler
+                @simd for i in 1:n_c
+                    @inbounds scaler::Float64 = Up[node,1,i] + Up[node,2,i]
+                    @inbounds curr_arr[1,i] /= scaler
+                    @inbounds curr_arr[2,i] /= scaler
                 end # for
                 #curr_arr[:,:] ./= scaler
             end # if
