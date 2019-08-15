@@ -75,7 +75,13 @@ function mcmc_worker!(args::Vector)
   for i in window
     sample!(m)
     if i > burnin && (i - burnin) % thin == 0
-      sim[i, :, 1] = unlist(m, true)
+      v = unlist(m, true)
+      u = []
+      push!(u, v[1])
+      push!(u, v[2][1])
+      push!(u, v[2][2])
+      push!(u, v[3])
+      sim[i, :, 1] = u#unlist(m, true)
     end
     next!(meter)
   end

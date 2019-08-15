@@ -79,3 +79,7 @@ end
 function names(d::TreeStochastic, nodekey::Symbol)
     AbstractString["Tree height", "Tree length"]
 end
+
+function unlist(d::TreeStochastic)
+    tree_height(d.value), tree_length(d.value)
+end

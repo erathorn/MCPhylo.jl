@@ -243,6 +243,58 @@ function set_branchlength_vector(mat::Array{Float64,2}, b_lens::Vector{Float64})
 
 end # function
 
+function find_lca(mat::Array{Float64,2}, node1::Int64, node2::Int64)::Int64
+    root = find_root(mat)
+    if node1 == root || node2 == root
+        return root
+    end
+    node1_stack = []
+    node = node1
+    while node != root
+        push!(node1_stack, node)
+        node = get_mother(mat, node)
+    end
+    node = node2
+    while node != root
+        if node in node1_stack
+            return node
+        end
+        node = get_mother(mat, node)
+    end
+    return -Inf#ErrorException("No LCA found for node $node1 and node $node2")
+end
+
+function path_length(mat::Array{Float64,2}, node1::Int64, node2::Int64)::Float64
+    lca = find_lca(mat::Array{Float64,2}, node1::Int64, node2::Int64)
+    pl = 0.0
+    node = node1
+    while node != lca
+        mother = get_mother(mat, node)
+        pl += mat[mother, node]
+        node = mother
+    end
+    node = node2
+    while node != lca
+        mother = get_mother(mat, node)
+        pl += mat[mother, node]
+        node = mother
+    end
+    return pl
+end
+
+function tree_height(mat::Array{Float64})::Float64
+    th = -Inf
+    leaves = get_leaves(mat)
+    root = find_root(mat)
+    for i=eachindex(leaves)
+        pl = path_length(mat, leaves[i], root)
+        if pl > th
+            th = pl
+        end
+    end
+    return th
+end
+
 
 """
     make_tree_with_data_mat(filename::String)
