@@ -255,7 +255,7 @@ function make_tree_with_data_mat(filename::String)
     n_tax, nc, gap, miss, df = ParseNexus(filename)
 
     # create random tree
-    new_tree = create_tree_from_leaves_mat(df[:Language])
+    new_tree = create_tree_from_leaves_mat(df[!,:Language])
     l = size(new_tree)[1]
     data_arr::Array{Float64,3} = zeros(2, nc, l)
 

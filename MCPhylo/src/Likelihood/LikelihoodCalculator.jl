@@ -38,7 +38,8 @@ Felsensteins pruning algorithm.
 function FelsensteinFunction(tree::Array, data::Array{Float64,3}, mypi_::Number, rates::Vector{Float64}, n_c::Int64)::Float64
     tree_postorder::Vector{Int64} = post_order(tree)
     leaves::Vector{Int64} = get_leaves(tree)
-    for node in tree_postorder
+    for node_ind=eachindex(tree_postorder)
+        @inbounds node::Int64 = tree_postorder[node_ind]
         if !(node in leaves)
             CondLikeInternal(tree, node, data, mypi_, rates, n_c)
         end # if
@@ -49,7 +50,7 @@ function FelsensteinFunction(tree::Array, data::Array{Float64,3}, mypi_::Number,
     res::Float64 = 0.0
     _pi_::Float64 = log(1.0-mypi_)
     _lpi_::Float64 = log(mypi_)
-    @inbounds for ind in 1:n_c
+    @simd for ind in 1:n_c
         res +=(log(data[1,ind, root])+ _lpi_) + (log(data[2,ind, root])+ _pi_)
 
         #rdata[1, ind] *pi_
@@ -65,29 +66,45 @@ function CondLikeInternal(tree::Array{Float64,2}, node::Int64, data::Array{Float
     @assert size(rates)[1] == n_c
 
     children::Vector{Int64} = get_neighbours(tree[node,:])
-    left_daughter::Int64 = children[1]
-    right_daughter::Int64 = children[2]
-    linc::Float64 = tree[node, left_daughter]
-    rinc::Float64 = tree[node, right_daughter]
+    @inbounds left_daughter::Int64 = children[1]
+    @inbounds right_daughter::Int64 = children[2]
+    @inbounds linc::Float64 = tree[node, left_daughter]
+    @inbounds rinc::Float64 = tree[node, right_daughter]
     #@inbounds left_daughter_data::Array{Float64,2} = data[1:2, 1:n_c, left_daughter]
     #@inbounds right_daughter_data::Array{Float64,2} = data[1:2, 1:n_c, right_daughter]
 
     # use the inbounds decorator to enable SIMD
     # SIMD greatly improves speed!!!
-    @simd for ind in 1:n_c
+    left_mat = Array{Float64,2}(undef, 2,2)
+    right_mat = Array{Float64,2}(undef, 2,2)
+    @simd for ind=eachindex(rates)
         @inbounds r::Float64 = rates[ind]
-        left_mat::Array{Float64,2} = exponentiate_binary(pi_, linc, r)
-        right_mat::Array{Float64,2} = exponentiate_binary(pi_, rinc, r)
 
-        @inbounds a::Float64 = data[1,ind, left_daughter]*left_mat[1,1] + data[2,ind, left_daughter]*left_mat[2,1]
-        @inbounds b::Float64 = data[1,ind, left_daughter]*left_mat[1,2] + data[2,ind, left_daughter]*left_mat[2,2]
-        @inbounds c::Float64 = data[1,ind, right_daughter]*right_mat[1,1] + data[2,ind, right_daughter]*right_mat[2,1]
-        @inbounds d::Float64 = data[1,ind, right_daughter]*right_mat[1,2] + data[2,ind, right_daughter]*right_mat[2,2]
+        @fastmath ext::Float64 = exp(-linc*r)
+        ext_::Float64 = 1.0-ext
+        p_::Float64 = 1.0-pi_
+        v_::Float64 = ext_*pi_
+        w_::Float64 = ext_*p_
+        v1::Float64 = ext+v_
+        v2::Float64 = ext+w_
+
+        @inbounds a::Float64 = data[1,ind, left_daughter]*v1 + data[2,ind, left_daughter]*v_
+        @inbounds b::Float64 = data[1,ind, left_daughter]*w_ + data[2,ind, left_daughter]*v2
+
+        @fastmath ext = exp(-rinc*r)
+        ext_ = 1.0-ext
+        v_ = ext_*pi_
+        w_ = ext_*p_
+        v1 = ext+v_
+        v2 = ext+w_
+
+        @inbounds c::Float64 = data[1,ind, right_daughter]*v1 + data[2,ind, right_daughter]*v_
+        @inbounds d::Float64 = data[1,ind, right_daughter]*w_ + data[2,ind, right_daughter]*v2
 
         @inbounds data[1,ind, node] = a*c
         @inbounds data[2,ind, node] = b*d
     end # for
-    nothing
+    #nothing
 end # function
 
 
