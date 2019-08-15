@@ -74,7 +74,9 @@ scheme = [Slice(:mypi, 0.05),
 setsamplers!(model, scheme)
 
 
-sim = mcmc(model, my_data, inits, 200, burnin=50, chains=1)
+sim = mcmc(model, my_data, inits, 250, burnin=50, chains=1)
+
+describe(sim)
 
 using Profile
 using ProfileView
