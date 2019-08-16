@@ -26,21 +26,32 @@ function ProbPathHMCSampler(params, pargs...; dtype::Symbol=:forward)
         #t = ProbPathVariate(model[model.samplers[block].params[1]], v)
         #SamplerVariate(v)
         #t = ProbPathVariate(v)
-        sample!(v, model.nodes[:mtree], model.nodes[:data], model.nodes[:mypi], model.nodes[:mtree].distr)
+        sample!(v, model)
         #println(v)
         #relist(block, v)
     end # function samplerfx
     Sampler(params, samplerfx, ProbPathHMCTune())
 end
 
-function sample!(v::ProbPathHMCTune, tree ,data, mypi, distr)
+function sample!(v::ProbPathHMCTune, model::Model)
+    tree = model.nodes[:mtree]
+    mypi = model.nodes[:mypi]
+    distr = model.nodes[:mtree].distr
     n_c = size(data)[2]
-    my_sample!(tree.value, data, v.n_leap, v.stepsz, mypi, n_c, distr)
+    nt = my_sample!(tree.value, v.n_leap, v.stepsz, mypi, n_c, distr)
+    tree.value = nt
+    v
 end
 
+macro promote_treevariate(V)
+  quote
+    Base.promote_rule(::Type{$(esc(V))}, ::Type{T}) where T<:Real = Float64
+  end
+end
+@promote_treevariate TreeVariate
 
-function Stochastic(d::Integer, f::Function, monitor::Bool, my::AbstractString)
-    value = Array{Float64}(undef, fill(0, 2)...)
+function Stochastic(d::AbstractString, f::Function, monitor::Union{Bool, Vector{Int}}=true)
+    value = Node()
     fx, src = modelfxsrc(depfxargs, f)
     s = TreeStochastic(value, :nothing, Int[], fx, src, Symbol[],
                       NullUnivariateDistribution())

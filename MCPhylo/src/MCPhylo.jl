@@ -57,6 +57,46 @@ import StatsBase: autocor, autocov, countmap, counts, describe, predict,
 include("distributions/pdmats2.jl")
 using .PDMats2
 
+
+
+"""
+    Node
+
+This data type holds the basic Node structure. The type T is used to specify the type of the data
+stored in the node.
+
+* If `nchild` is `0` the Node is a leaf node.
+* If `root` is `False` the Node is a child of another node.
+* `inc_length` specifies the length of the incomming branch.
+* `binary` specifies the path from the root to the Node. `1` and `0` represent left and right turns respectively.
+"""
+
+mutable struct Node
+    name::String
+    data::Array{Float64,2}
+    child::Vector{Node}
+    nchild::Int64
+    root::Bool
+    inc_length::Float64
+    binary::String
+    num::Int64
+
+    Node() = new("",zeros(Float64,(1,2)), Node[], 0, true, 0.0, "0", 0)
+
+    function Node(n::String, d::Array{Float64,2}, c::Vector{Node}, n_c::Int64, r::Bool, inc::Float64, b::String, num::Int64)
+        mn = Node()
+        mn.name = n
+        mn.data = d
+        mn.child = c
+        mn.nchild = n_c
+        mn.root = r
+        mn.inc_length = inc
+        mn.binary = b
+        mn.num = num
+        return mn
+    end
+end # struct Node
+
 #################### Types ####################
 
 ElementOrVector{T} = Union{T, Vector{T}}
@@ -68,7 +108,7 @@ abstract type ScalarVariate <: Real end
 abstract type ArrayVariate{N} <: DenseArray{Float64, N} end
 abstract type TreeVariate <: Any end
 
-const AbstractVariate = Union{ScalarVariate, ArrayVariate}
+const AbstractVariate = Union{ScalarVariate, ArrayVariate, TreeVariate}
 const VectorVariate = ArrayVariate{1}
 const MatrixVariate = ArrayVariate{2}
 
@@ -121,8 +161,8 @@ mutable struct ArrayStochastic{N} <: ArrayVariate{N}
   distr::DistributionStruct
 end
 
-mutable struct TreeStochastic{N} <: TreeVariate
-    value::Array{Float64,N}
+mutable struct TreeStochastic <: TreeVariate
+    value::Node
     symbol::Symbol
     monitor::Vector{Int}
     eval::Function
@@ -132,9 +172,9 @@ mutable struct TreeStochastic{N} <: TreeVariate
 end
 
 const AbstractLogical = Union{ScalarLogical, ArrayLogical}
-const AbstractStochastic = Union{ScalarStochastic, ArrayStochastic}
-const AbstractDependent = Union{AbstractLogical, AbstractStochastic, TreeStochastic}
-const AnyDependent = Union{AbstractDependent, TreeStochastic}
+const AbstractStochastic = Union{ScalarStochastic, ArrayStochastic, TreeStochastic}
+const AbstractDependent = Union{AbstractLogical, AbstractStochastic}
+#const AnyDependent = Union{AbstractDependent, TreeStochastic}
 
 #################### Sampler Types ####################
 
@@ -288,6 +328,7 @@ export
   ArrayLogical,
   ArrayStochastic,
   ArrayVariate,
+  TreeVariate,
   Chains,
   Logical,
   MatrixVariate,
@@ -300,8 +341,7 @@ export
   ScalarStochastic,
   ScalarVariate,
   Stochastic,
-  VectorVariate,
-  TreeVariate
+  VectorVariate
 
 export
   BDiagNormal,

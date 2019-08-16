@@ -8,9 +8,9 @@ function Model(; iter::Integer=0, burnin::Integer=0,
 
   nodedict = Dict{Symbol, Any}()
   for (key, value) in nodes
-    isa(value, TreeVariate)|| isa(value, AbstractDependent) ||
-      throw(ArgumentError("nodes are not all Dependent types"))
+    isa(value, AbstractDependent) || throw(ArgumentError("nodes are not all Dependent types"))
     node = deepcopy(value)
+    isa(key, Symbol) || throw(ArgumentError("Something is wrong here"))
     node.symbol = key
     nodedict[key] = node
   end

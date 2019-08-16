@@ -41,19 +41,32 @@ function CondLikeInternal(node::Node, pi_::Number, rates::Vector{Float64}, n_c::
 
     # use the inbounds decorator to enable SIMD
     # SIMD greatly improves speed!!!
-    @inbounds for ind in 1:n_c
-        r::Float64 = rates[ind]
-        left_mat::Array{Float64,2} = exponentiate_binary(pi_, linc, r)
-        right_mat::Array{Float64,2} = exponentiate_binary(pi_, rinc, r)
+    @simd for ind=eachindex(rates)
+        @inbounds r::Float64 = rates[ind]
 
-        a::Float64 = left_daughter_data[1,ind]*left_mat[1,1] + left_daughter_data[2,ind]*left_mat[2,1]
-        b::Float64 = left_daughter_data[1,ind]*left_mat[1,2] + left_daughter_data[2,ind]*left_mat[2,2]
-        c::Float64 = right_daughter_data[1,ind]*right_mat[1,1] + right_daughter_data[2,ind]*right_mat[2,1]
-        d::Float64 = right_daughter_data[1,ind]*right_mat[1,2] + right_daughter_data[2,ind]*right_mat[2,2]
+        @fastmath ext::Float64 = exp(-linc*r)
+        ext_::Float64 = 1.0-ext
+        p_::Float64 = 1.0-pi_
+        v_::Float64 = ext_*pi_
+        w_::Float64 = ext_*p_
+        v1::Float64 = ext+v_
+        v2::Float64 = ext+w_
 
-        node.data[1,ind] = a*c
-        node.data[2,ind] = b*d
+        @inbounds a::Float64 = data[1,ind, left_daughter]*v1 + data[2,ind, left_daughter]*v_
+        @inbounds b::Float64 = data[1,ind, left_daughter]*w_ + data[2,ind, left_daughter]*v2
 
+        @fastmath ext = exp(-rinc*r)
+        ext_ = 1.0-ext
+        v_ = ext_*pi_
+        w_ = ext_*p_
+        v1 = ext+v_
+        v2 = ext+w_
+
+        @inbounds c::Float64 = data[1,ind, right_daughter]*v1 + data[2,ind, right_daughter]*v_
+        @inbounds d::Float64 = data[1,ind, right_daughter]*w_ + data[2,ind, right_daughter]*v2
+
+        @inbounds data[1,ind, node] = a*c
+        @inbounds data[2,ind, node] = b*d
     end # for
 end # function
 

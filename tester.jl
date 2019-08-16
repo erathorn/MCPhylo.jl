@@ -38,10 +38,10 @@ using .MCPhylo
 
 eval(extensions)
 tt, data_arr, df = MCPhylo.make_tree_with_data_mat("./local/IE_Contemporary_Full.nex")
-
+mt = MCPhylo.make_tree_with_data("./local/IE_Contemporary_Full.nex")
 
 my_data = Dict{Symbol, Any}(
-  :mtree => tt,
+  :mtree => mt,
   :data =>data_arr)
 
 
@@ -55,7 +55,7 @@ model =  Model(
     end,
     ),
     mypi = Stochastic(() -> Truncated(Uniform(0.0,1.0), 0.0, 1.0)),
-    mtree = Stochastic(2,() -> MCPhylo.CompoundDirichlet(1.0,1.0,0.100,1.0),true,"tree")
+    mtree = MCPhylo.StochasticT("t", () -> MCPhylo.CompoundDirichlet(1.0,1.0,0.100,1.0), true)
      )
 inivals = rand(Uniform(0,1),3132)
 inivals =inivals./sum(inivals)

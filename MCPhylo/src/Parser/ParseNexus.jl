@@ -104,7 +104,7 @@ function make_tree_with_data(filename::String)#::Tree_Module.Node
     n_tax, nc, gap, miss, df = ParseNexus(filename)
 
     # create random tree
-    new_tree = create_tree_from_leaves(df[:Language], nc)
+    new_tree = create_tree_from_leaves(df[!,:Language], nc)
 
     # iterate through the data frame and get the node information
     for row in eachrow(df)
