@@ -274,7 +274,8 @@ include("Substitution/SubstitutionMat.jl")
 
 include("Utils/SIMD_Mat.jl")
 
-include("Likelihood/LikelihoodCalculator.jl")
+include("Likelihood/LikelihoodCalculator_Matrix.jl")
+include("Likelihood/LikelihoodCalculator_Node.jl")
 include("Likelihood/Prior.jl")
 #################### Exports ####################
 
