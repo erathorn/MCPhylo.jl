@@ -1,11 +1,11 @@
 
-function my_sample!(tree::Node, n_leap::Float64, stepsz::Float64, mypi::Number, n_c::Int64, priordist::Distribution)
+function my_sample!(tree::Node, n_leap::Float64, stepsz::Float64, mypi::Number, n_c::Number, priordist::Distribution)
     delta = 0.01
     rates = ones(n_c)
     surrogate=true
     curr_U = LogPost(tree, false, delta, rates, n_c, mypi, priordist)
 
-    probM = randn(size(tree)[1])
+    probM = randn(size(post_order(tree))[1])
     currM = deepcopy(probM)
     currH = curr_U.+ 0.5*sum(currM.*currM)
     blens = get_branchlength_vector(tree)
@@ -14,11 +14,11 @@ function my_sample!(tree::Node, n_leap::Float64, stepsz::Float64, mypi::Number, 
     NNI_attempts = 0.0
     ref_attempts = 0.0
 
-    tree_c::Array{Float64,2}=deepcopy(tree)
+    tree_c::Node=deepcopy(tree)
 
     for i in 1:n_leap
 
-        probM = probM.-stepsz/2.0 .* GradiantLog(tree_c, mypi, n_c).-_logpdf(priordist, tree_c)
+        probM = probM.-stepsz/2.0 .* GradiantLog(pre_order(tree_c), mypi).-_logpdf(priordist, tree_c)
         step_nn_att, step_ref_att = refraction(tree_c, probB, probM, stepsz, surrogate, n_c, delta, rates, priordist, mypi)
         NNI_attempts += step_nn_att
         ref_attempts += step_ref_att
@@ -107,7 +107,7 @@ function LogPost(tree::Node, surrogate::Bool, delta::Float64, rates::Vector{Floa
     blens = get_branchlength_vector(tree)
     if surrogate
         blens = [molifier(i, delta) for i in blens]
-        tree = set_branchlength_vector(tree, blens)
+        tree = set_branchlength_vector!(tree, blens)
     end
-    FelsensteinFunction(tree, mypi, rates, n_c)-_logpdf(priordist, tree)
+    FelsensteinFunction(post_order(tree), mypi, rates, n_c)-_logpdf(priordist, tree)
 end # function

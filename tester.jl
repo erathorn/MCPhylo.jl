@@ -24,8 +24,8 @@ extensions = quote
 
     function logpdf(d::PhyloDist, x::Real)
         rates = ones(3132)
-
-        return MCPhylo.FelsensteinFunction(d.my_tree.value, d.data, d.mypi, rates,3132)
+        mt = MCPhylo.post_order(d.my_tree.value)
+        return MCPhylo.FelsensteinFunction(mt, d.mypi, rates,3132)
     end
 end
 #include("./myMamba.jl")
@@ -55,7 +55,7 @@ model =  Model(
     end,
     ),
     mypi = Stochastic(() -> Truncated(Uniform(0.0,1.0), 0.0, 1.0)),
-    mtree = MCPhylo.StochasticT("t", () -> MCPhylo.CompoundDirichlet(1.0,1.0,0.100,1.0), true)
+    mtree = MCPhylo.Stochastic("t", () -> MCPhylo.CompoundDirichlet(1.0,1.0,0.100,1.0), true)
      )
 inivals = rand(Uniform(0,1),3132)
 inivals =inivals./sum(inivals)

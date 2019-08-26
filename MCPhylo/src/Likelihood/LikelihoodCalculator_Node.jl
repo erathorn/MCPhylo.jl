@@ -52,8 +52,8 @@ function CondLikeInternal(node::Node, pi_::Number, rates::Vector{Float64}, n_c::
         v1::Float64 = ext+v_
         v2::Float64 = ext+w_
 
-        @inbounds a::Float64 = data[1,ind, left_daughter]*v1 + data[2,ind, left_daughter]*v_
-        @inbounds b::Float64 = data[1,ind, left_daughter]*w_ + data[2,ind, left_daughter]*v2
+        @inbounds a::Float64 = left_daughter_data[1,ind]*v1 + left_daughter_data[2,ind]*v_
+        @inbounds b::Float64 = left_daughter_data[1,ind]*w_ + left_daughter_data[2,ind]*v2
 
         @fastmath ext = exp(-rinc*r)
         ext_ = 1.0-ext
@@ -62,11 +62,11 @@ function CondLikeInternal(node::Node, pi_::Number, rates::Vector{Float64}, n_c::
         v1 = ext+v_
         v2 = ext+w_
 
-        @inbounds c::Float64 = data[1,ind, right_daughter]*v1 + data[2,ind, right_daughter]*v_
-        @inbounds d::Float64 = data[1,ind, right_daughter]*w_ + data[2,ind, right_daughter]*v2
+        @inbounds c::Float64 = right_daughter_data[1,ind]*v1 + right_daughter_data[2,ind]*v_
+        @inbounds d::Float64 = right_daughter_data[1,ind]*w_ + right_daughter_data[2,ind]*v2
 
-        @inbounds data[1,ind, node] = a*c
-        @inbounds data[2,ind, node] = b*d
+        @inbounds node.data[1,ind] = a*c
+        @inbounds node.data[2,ind] = b*d
     end # for
 end # function
 
@@ -100,7 +100,7 @@ function GradiantLog(tree_preorder::Vector{Node}, pi_::Number)
             b::Array{Float64,1} = my_dot(node.data, my_mat[:,2], n_c)
 
             #gradient::Array{Float64,1} = Up[node_ind,1,:].*a .+ Up[node_ind,2,:].*b
-            gradient::Array{Float64,1} = pointwise_vec(Up[node_ind,1,:],a, n_c) .+ pointwise_vec(Up[node_ind,2,:],b,n_c)
+            gradient::Array{Float64,1} = pointwise_vec(Up[node_ind,1,:],a) .+ pointwise_vec(Up[node_ind,2,:],b)
 
             #Up[node_ind,1,:] = Up[node_ind,1,:].*my_mat[1,2] + Up[node_ind,2,:].*my_mat[2,2]
             #Up[node_ind,2,:] = Up[node_ind,1,:].*my_mat[1,1] + Up[node_ind,2,:].*my_mat[2,1]

@@ -193,8 +193,6 @@ function path_length(ancestor::Node, descendant::Node)::Float64
     l::Float64 = 0
 
     for  i in descendant.binary[length(ancestor.binary)+1:end]
-        println(i)
-        println(typeof(i))
         if i == '0'
             ancestor = ancestor.child[2]
         else
@@ -330,7 +328,7 @@ end # function move!
 
 Return a vector of branch lenghts.
 """
-function get_branchlength_vector!(post_order::Vector{Node})::Vector{Float64}
+function get_branchlength_vector(post_order::Vector{Node})::Vector{Float64}
     return [n.inc_length for n in post_order]
 end # function get_branchlength_vector
 
@@ -340,8 +338,8 @@ end # function get_branchlength_vector
 
 Return a vector of branch lenghts.
 """
-function get_branchlength_vector!(root::Node)::Vector{Float64}
-    return get_branchlength_vector!(post_order(root))
+function get_branchlength_vector(root::Node)::Vector{Float64}
+    return get_branchlength_vector(post_order(root))
 end # function get_branchlength_vector
 
 

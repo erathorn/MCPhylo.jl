@@ -7,3 +7,4 @@ tmp/
 usr/
 *.bin
 ProfileVtune.jl
+local/

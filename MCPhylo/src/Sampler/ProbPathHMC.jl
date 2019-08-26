@@ -37,8 +37,8 @@ function sample!(v::ProbPathHMCTune, model::Model)
     tree = model.nodes[:mtree]
     mypi = model.nodes[:mypi]
     distr = model.nodes[:mtree].distr
-    n_c = size(data)[2]
-    nt = my_sample!(tree.value, v.n_leap, v.stepsz, mypi, n_c, distr)
+    #n_c = tree.value.data[2]
+    nt = my_sample!(tree.value, v.n_leap, v.stepsz, mypi, 3132, distr)
     tree.value = nt
     v
 end
@@ -75,12 +75,12 @@ function setinits!(d::TreeStochastic, m::Model, x::Array)
 end # function
 
 
-function relistlength(d::TreeStochastic, v::SubArray, w::Bool)
-
-    ms = size(d.distr)
-    rs = reshape(v, ms)
-    (rs, length(d.distr))
-end
+#function relistlength(d::TreeStochastic, v::SubArray, w::Bool)
+#
+#    ms = size(d.distr)
+#    rs = reshape(v, ms)
+#    (rs, length(d.distr))
+#end
 
 function update!(d::TreeStochastic, m::Model)
     d.distr = d.eval(m)
@@ -93,4 +93,8 @@ end
 
 function unlist(d::TreeStochastic)
     tree_height(d.value), tree_length(d.value)
+end
+
+function unlist(s::AbstractStochastic, x::Node, transform::Bool=false)
+    s.value
 end

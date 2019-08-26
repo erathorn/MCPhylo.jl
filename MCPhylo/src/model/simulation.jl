@@ -131,7 +131,7 @@ function relist(m::Model, x::AbstractArray{T}, block::Integer=0,
 end
 
 function relist(m::Model, x::AbstractArray{T},
-                nodekeys::Vector{Symbol}, transform::Bool=false) where {T<:Real}
+                nodekeys::Vector{Symbol}, transform::Bool=false) where {T<:Any}
   values = Dict{Symbol,Any}()
   N = length(x)
   offset = 0
@@ -145,8 +145,9 @@ function relist(m::Model, x::AbstractArray{T},
   values
 end
 
+
 function relist!(m::Model, x::AbstractArray{T}, block::Integer=0,
-                 transform::Bool=false) where {T<:Real}
+                 transform::Bool=false) where {T<:Any}
   nodekeys = keys(m, :block, block)
   values = relist(m, x, nodekeys, transform)
   for key in nodekeys

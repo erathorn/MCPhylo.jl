@@ -212,9 +212,16 @@ struct ModelGraph
 end
 
 struct ModelState
-  value::Vector{Float64}
+  value::Vector{Any}
   tune::Vector{Any}
 end
+
+#struct ModelState
+#  value::Vector{Node}
+#  tune::Vector{Any}
+#end
+
+
 
 mutable struct Model
   nodes::Dict{Symbol, Any}
@@ -307,7 +314,9 @@ include("Tree/Tree_Matrix.jl")
 include("Parser/ParseNexus.jl")
 
 include("Sampler/ProbPathHMC.jl")
+include("Sampler/ProbPathHMC_Node.jl")
 include("Sampler/PhyloHMC_Functions.jl")
+include("Sampler/PhyloHMC_Functions_Node.jl")
 
 
 include("Substitution/SubstitutionMat.jl")
