@@ -58,24 +58,24 @@ function NNI!(root::Node, target::Node)::Int64
     end
 
     mother::Node = get_mother(root, target)
-    
-    if rand([1,2]) == 1
-        child1 = remove_child!(mother, 1)
-        child2 = remove_child!(mother, 1)
 
-        gchild1 = remove_child!(target, 1)
-        gchild2 = remove_child!(target, 1)
+    if rand([1,2]) == 1
+        child1 = remove_child!(mother, true)
+        child2 = remove_child!(mother, false)
+
+        gchild1 = remove_child!(target, true)
+        gchild2 = remove_child!(target, false)
     else
-        child1 = remove_child!(mother, 2)
-        child2 = remove_child!(mother, 1)
-        gchild1 = remove_child!(target, 1)
-        gchild2 = remove_child!(target, 1)
+        child1 = remove_child!(mother, false)
+        child2 = remove_child!(mother, true)
+        gchild1 = remove_child!(target, true)
+        gchild2 = remove_child!(target, false)
     end # if
 
-    add_child!(target, child1)
-    add_child!(target, gchild1)
-    add_child!(child1, child2)
-    add_child!(child1, gchild2)
+    add_child!(target, child1, true)
+    add_child!(target, gchild1, false)
+    add_child!(mother, child2, true)
+    add_child!(mother, gchild2, false)
 
     set_binary!(root)
 

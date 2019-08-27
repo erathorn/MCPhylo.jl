@@ -7,7 +7,21 @@ my_tree:
 
 #TODO: Automate export of automatically genereated funtions
 
+#function Base.show(io::IO, d::Node)
+#  #msg = string("Node \"", d.name, "\"\n")
+#  print(io, "Node")
+#  show(io, string(d.name))
+#end
 
+function showall(io::IO, d::Node)
+  show(io, d)
+  print(io, "\nNode:\n")
+  show(io, "text/plain", d.name)
+  print(io, "\n\n#children:\n")
+  show(io, d.nchild)
+  print(io, "\n\nbinary:\n")
+  show(io, d.binary)
+end
 
 
 
@@ -19,8 +33,13 @@ This function adds a child to the mother node.
 The arity of the mother node is increased by `1` and the root
 status of the child is set to `False`.
 """
-function add_child!(mother_node::Node, child::Node)
-    push!(mother_node.child, child)
+function add_child!(mother_node::Node, child::Node, left::Bool)
+    if left
+        mother_node.lchild = child
+    else
+        mother_node.rchild = child
+    end
+    #push!(mother_node.child, child)
     mother_node.nchild += 1
     child.root = false
 end # function add_child
@@ -41,6 +60,26 @@ function remove_child!(mother_node::Node, index::Int)
 end # function
 
 
+"""
+    remove_child!(mother_node::Node, index::int)Node
+
+This function removes a child from the list of nodes which are daughters of this
+node. The removed node is returned.
+"""
+function remove_child!(mother_node::Node, left::Bool)::Node
+    if left
+        rv = mother_node.lchild
+        mother_node.lchild = missing
+    else
+        rv = mother_node.rchild
+        mother_node.rchild = missing
+    end # end if
+    mother_node.nchild -= 1
+    return rv
+end # function
+
+
+
 
 """
     create_tree_from_leaves(leaf_nodes::Vector{T})::Node
@@ -53,7 +92,7 @@ function create_tree_from_leaves(leaf_nodes::Vector{String}, node_size::Int64 = 
 
     # first create a list of leaf nodes
     for node_name in leaf_nodes
-        nn =  Node(node_name, zeros(Float64, (2, node_size)), Node[], 0, true, 0.0, "0", 0)
+        nn =  Node(node_name, zeros(Float64, (2, node_size)), missing, missing, 0, true, 0.0, "0", 0)
         push!(my_node_list,nn)
     end # for
 
@@ -71,9 +110,9 @@ function create_tree_from_leaves(leaf_nodes::Vector{String}, node_size::Int64 = 
         first_child.inc_length = rand(Uniform(0,1))
         second_child::Node = pop!(my_node_list)
         second_child.inc_length = rand(Uniform(0,1))
-        curr_node::Node = Node(string(temp_name), zeros(Float64, (2, node_size)), Node[], 0, true, 0.0, "0", 0)
-        add_child!(curr_node, first_child)
-        add_child!(curr_node, second_child)
+        curr_node::Node = Node(string(temp_name), zeros(Float64, (2, node_size)), missing, missing, 0, true, 0.0, "0", 0)
+        add_child!(curr_node, first_child, true)
+        add_child!(curr_node, second_child, false)
         push!(my_node_list, curr_node)
         temp_name += 1
         Random.shuffle!(my_node_list)
@@ -95,9 +134,8 @@ used for the post order traversal.
 """
 function post_order(root::Node, traversal::Vector{Node})::Vector{Node}
    if root.nchild != 0
-       for index in 1:root.nchild
-            post_order(root.child[index], traversal)
-       end # for
+        post_order(root.lchild, traversal)
+        post_order(root.rchild, traversal)
    end # if
    push!(traversal, root)
    return traversal
@@ -127,9 +165,8 @@ used for the pre order traversal.
 function pre_order(root::Node, traversal::Vector{Node})::Vector{Node}
     push!(traversal, root)
     if root.nchild != 0
-        for index in 1:root.nchild
-             pre_order(root.child[index], traversal)
-        end # for
+        pre_order(root.lchild, traversal)
+        pre_order(root.rchild, traversal)
     end # if
     return traversal
 end # function pre_order!
@@ -194,9 +231,9 @@ function path_length(ancestor::Node, descendant::Node)::Float64
 
     for  i in descendant.binary[length(ancestor.binary)+1:end]
         if i == '0'
-            ancestor = ancestor.child[2]
+            ancestor = ancestor.rchild
         else
-            ancestor = ancestor.child[1]
+            ancestor = ancestor.lchild
         end # if
         l += ancestor.inc_length
     end # for
@@ -237,12 +274,12 @@ root to this node via the binary representation of the node.
 A left turn is a 1 in binary and a right turn a 0.
 """
 function set_binary!(root::Node)
-    if root.root == true
+    if root.root
         root.binary = "1"
     end # if
     if root.nchild != 0
-        left::Node = root.child[1]
-        right::Node = root.child[2]
+        left::Node = root.lchild
+        right::Node = root.rchild
         left.binary = string(root.binary, "1")
         right.binary = string(root.binary, "0")
         set_binary!(left)
@@ -269,29 +306,10 @@ Get all the leaves of this Node. It is meant as a wrapper, only the root node
 needs to be supplied
 """
 function get_leaves(root::Node)::Vector{Node}
-    leave_list::Vector{Node} = []
-    get_leaves(root, leave_list)
+    leave_list::Vector{Node} = [i for i in post_order(root) if i.nchild == 0]
+    #get_leaves(root, leave_list)
     return leave_list
 
-end # function get_leaves
-
-
-"""
-    get_leaves(root::Node, leave_list::Vector{Node})::Vector{Node}
-
-Get all the leaves of a node. All leaves of this node are visited using a
-recursive application of the
-`get_leaves(root::Node, leave_list::Vector{Node})::Vector{Node}` function
-"""
-function get_leaves(root::Node, leave_list::Vector{Node})::Vector{Node}
-    if root.nchild == 0
-        push!(leave_list, root)
-    else
-        for child in root.child
-            get_leaves(child, leave_list)
-        end # for
-    end # if
-    return leave_list
 end # function get_leaves
 
 
@@ -329,7 +347,11 @@ end # function move!
 Return a vector of branch lenghts.
 """
 function get_branchlength_vector(post_order::Vector{Node})::Vector{Float64}
-    return [n.inc_length for n in post_order]
+    out = Vector{Float64}(undef, length(post_order))
+    for i in eachindex(post_order)
+        out[post_order[i].num] = post_order[i].inc_length
+    end
+    return out
 end # function get_branchlength_vector
 
 
@@ -350,8 +372,8 @@ This function sets the branch lengths of a tree to the values specified in blenv
 """
 function set_branchlength_vector!(post_order::Vector{Node}, blenvec)::Vector{Node}
     @assert size(post_order) == size(blenvec)
-    for (ind,node) in enumerate(post_order)
-        node.inc_length = blenvec[ind]
+    for node in post_order
+        node.inc_length = blenvec[node.num]
     end # for
     return post_order
 end # function set_branchlength_vector!
@@ -409,7 +431,7 @@ end # function get_sum_seperate_length!
 #This functionality can be extended by adding more fields to the nodes and the
 #meta programmming part here.
 #"""
-for (sym, my_type) in [(:binary, :String), (:name, :String), (:root ,:Bool)]
+for (sym, my_type) in [(:binary, :String), (:name, :String), (:root ,:Bool), (:num, :Int64)]
     # extend the list to look for more fields in the node
     @eval function $(Symbol(string("find_by_$sym")))(tree::Node, identifier::$my_type)::Node
         # create each function and make it so it only accepts the correct type
