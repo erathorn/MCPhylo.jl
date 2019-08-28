@@ -36,8 +36,10 @@ status of the child is set to `False`.
 function add_child!(mother_node::Node, child::Node, left::Bool)
     if left
         mother_node.lchild = child
+        child.mother = mother_node
     else
         mother_node.rchild = child
+        child.mother = mother_node
     end
     #push!(mother_node.child, child)
     mother_node.nchild += 1
@@ -45,19 +47,35 @@ function add_child!(mother_node::Node, child::Node, left::Bool)
 end # function add_child
 
 """
-    remove_child!(mother_node::Node, index::int)Node
+    add_child(mother_node::Node, child::Node)
 
-This function removes a child from the list of nodes which are daughters of this
-node. The removed node is returned.
+This function adds a child to the mother node.
+The arity of the mother node is increased by `1` and the root
+status of the child is set to `False`.
 """
-function remove_child!(mother_node::Node, index::Int)
-    mother_node.nchild -= 1
-    if index == 1
-        return popfirst!(mother_node.child)
+function add_child!(mother_node::Node, child::Node)
+    if ismissing(mother_node.lchild)
+        println("add left")
+        println(mother_node.lchild)
+        mother_node.lchild = child
+        child.mother = mother_node
+        println(mother_node.lchild.name)
+    elseif ismissing(mother_node.rchild)
+        println("add right")
+        println(mother_node.rchild)
+        mother_node.rchild = child
+        child.mother = mother_node
+        println(mother_node.rchild.name)
     else
-        return pop!(mother_node.child)
-    end # end if
-end # function
+        throw("The node $mother_node already has two children.")
+    end
+    #add_child!(mother_node, child, id)
+    mother_node.nchild += 1
+    child.root = false
+    println("here")
+    println(mother_node.lchild.name)
+    println(mother_node.rchild.name)
+end # function add_child
 
 
 """
@@ -70,13 +88,38 @@ function remove_child!(mother_node::Node, left::Bool)::Node
     if left
         rv = mother_node.lchild
         mother_node.lchild = missing
+        rv.mother = missing
     else
         rv = mother_node.rchild
         mother_node.rchild = missing
+        rv.mother = missing
     end # end if
     mother_node.nchild -= 1
     return rv
 end # function
+
+"""
+    remove_child!(mother_node::Node, index::int)Node
+
+This function removes a child from the list of nodes which are daughters of this
+node. The removed node is returned.
+"""
+function remove_child!(mother_node::Node, child::Node)::Node
+    if mother_node.lchild == child
+        mother_node.lchild = missing
+        child.mother = missing
+
+    elseif mother_node.rchild == child
+        mother_node.rchild = missing
+        child.mother = missing
+    else
+        # the node is not found. Therefore throw an error!
+        throw("The node $child is not a child of $mother_node.")
+    end # end if
+    mother_node.nchild -= 1
+    return child
+end # function
+
 
 
 
@@ -92,7 +135,7 @@ function create_tree_from_leaves(leaf_nodes::Vector{String}, node_size::Int64 = 
 
     # first create a list of leaf nodes
     for node_name in leaf_nodes
-        nn =  Node(node_name, zeros(Float64, (2, node_size)), missing, missing, 0, true, 0.0, "0", 0)
+        nn =  Node(node_name, zeros(Float64, (2, node_size)),missing, missing, missing, 0, true, 0.0, "0", 0)
         push!(my_node_list,nn)
     end # for
 
@@ -110,7 +153,7 @@ function create_tree_from_leaves(leaf_nodes::Vector{String}, node_size::Int64 = 
         first_child.inc_length = rand(Uniform(0,1))
         second_child::Node = pop!(my_node_list)
         second_child.inc_length = rand(Uniform(0,1))
-        curr_node::Node = Node(string(temp_name), zeros(Float64, (2, node_size)), missing, missing, 0, true, 0.0, "0", 0)
+        curr_node::Node = Node(string(temp_name), zeros(Float64, (2, node_size)), missing, missing, missing, 0, true, 0.0, "0", 0)
         add_child!(curr_node, first_child, true)
         add_child!(curr_node, second_child, false)
         push!(my_node_list, curr_node)
@@ -184,6 +227,25 @@ function pre_order(root::Node)::Vector{Node}
     return t
 end # function pre_order!
 
+function newick(root::Node)
+    newickstring = newick(root, "")
+    newickstring = string(newickstring, ";")
+    return newickstring
+end
+function newick(root::Node, newickstring::AbstractString)
+    if root.nchild != 0
+        newickstring = string(newickstring, "(")
+        newickstring = newick(root.lchild, newickstring)
+        newickstring = string(newickstring, ",")
+        newickstring = newick(root.rchild, newickstring)
+        newickstring = string(newickstring, ")")
+        newickstring = string(newickstring, root.name)
+        return newickstring
+    else
+        return string(newickstring, root.name)
+    end
+end
+
 """
     tree_length(root::Node)::Float64
 
@@ -247,12 +309,13 @@ end #function path_length
 This function gets the sister of `node`. It does so by looking for the respective
 binary representation of the sister.
 """
-function get_sister(root::Node, node::Node)::Node
-    if last(node.binary) == '0'
-        return find_by_binary(root, string(chop(node.binary), "1"))
+function get_sister(node::Node)::Node
+    mother = node.mother
+    if node == mother.lchild
+        return mother.rchild
     else
-        return find_by_binary(root, string(chop(node.binary), "0"))
-    end # for
+        return mother.lchild
+    end # if
 end # function
 
 
@@ -262,8 +325,8 @@ end # function
 This function gets the mother of `node`. It does so by looking for the respective
 binary representation of the mother node.
 """
-function get_mother(root::Node, node::Node)::Node
-    return find_by_binary(root, string(chop(node.binary)))
+function get_mother(node::Node)::Node
+    return node.mother
 end # function
 
 """
@@ -347,9 +410,11 @@ end # function move!
 Return a vector of branch lenghts.
 """
 function get_branchlength_vector(post_order::Vector{Node})::Vector{Float64}
-    out = Vector{Float64}(undef, length(post_order))
+    out = zeros(length(post_order))
     for i in eachindex(post_order)
-        out[post_order[i].num] = post_order[i].inc_length
+        if !post_order[i].root
+            out[post_order[i].num]= post_order[i].inc_length
+        end
     end
     return out
 end # function get_branchlength_vector

@@ -74,20 +74,24 @@ stored in the node.
 mutable struct Node
     name::String
     data::Array{Float64,2}
-    child::Vector{Node}
+    mother::Union{Node, Missing}
+    lchild::Union{Node, Missing}
+    rchild::Union{Node, Missing}
     nchild::Int64
     root::Bool
     inc_length::Float64
     binary::String
     num::Int64
 
-    Node() = new("",zeros(Float64,(1,2)), Node[], 0, true, 0.0, "0", 0)
-
-    function Node(n::String, d::Array{Float64,2}, c::Vector{Node}, n_c::Int64, r::Bool, inc::Float64, b::String, num::Int64)
+    #Node() = new("",zeros(Float64,(1,2)), nothing, nothing, 0, true, 0.0, "0", 0)
+    Node() = new()
+    function Node(n::String, d::Array{Float64,2}, m::Union{Node, Missing},c1::Union{Node, Missing},c2::Union{Node, Missing} , n_c::Int64, r::Bool, inc::Float64, b::String, num::Int64)
         mn = Node()
         mn.name = n
         mn.data = d
-        mn.child = c
+        mn.mother = m
+        mn.lchild = c1
+        mn.rchild = c2
         mn.nchild = n_c
         mn.root = r
         mn.inc_length = inc

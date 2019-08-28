@@ -50,35 +50,32 @@ end # function NNI!
 
 documentation
 """
-function NNI!(root::Node, target::Node)::Int64
-
+function NNI!(root::Node, target::Node)
+    
     if target.nchild == 0 || target.root
         return 0
         #end
     end
 
-    mother::Node = get_mother(root, target)
+
+    parent::Node = get_mother(target)
+    sister = get_sister(target)
+
 
     if rand([1,2]) == 1
-        child1 = remove_child!(mother, true)
-        child2 = remove_child!(mother, false)
-
-        gchild1 = remove_child!(target, true)
-        gchild2 = remove_child!(target, false)
+        ychild = remove_child!(target, true)
     else
-        child1 = remove_child!(mother, false)
-        child2 = remove_child!(mother, true)
-        gchild1 = remove_child!(target, true)
-        gchild2 = remove_child!(target, false)
+        ychild = remove_child!(target, false)
     end # if
 
-    add_child!(target, child1, true)
-    add_child!(target, gchild1, false)
-    add_child!(mother, child2, true)
-    add_child!(mother, gchild2, false)
+    xchild = remove_child!(parent, sister)
+
+
+    add_child!(target, xchild)
+    add_child!(parent, ychild)
+
 
     set_binary!(root)
-
 
     return 1
 
