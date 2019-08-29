@@ -7,11 +7,13 @@ my_tree:
 
 #TODO: Automate export of automatically genereated funtions
 
-#function Base.show(io::IO, d::Node)
-#  #msg = string("Node \"", d.name, "\"\n")
-#  print(io, "Node")
-#  show(io, string(d.name))
-#end
+function Base.summary(io::IO, d::Node)
+    summary(io, d.name)
+end
+
+function Base.show(io::IO, d::Node)
+    show(io, d.name)
+end
 
 function showall(io::IO, d::Node)
   show(io, d)

@@ -17,7 +17,7 @@ using Markdown
 using DataFrames
 using Random
 
-import Base: Matrix, names
+import Base: Matrix, names, summary
 import Compose: Context, context, cm, gridstack, inch, MeasureOrNumber, mm, pt, px
 import LinearAlgebra: cholesky, dot
 import Statistics: cor
@@ -84,7 +84,7 @@ mutable struct Node
     num::Int64
 
     #Node() = new("",zeros(Float64,(1,2)), nothing, nothing, 0, true, 0.0, "0", 0)
-    Node() = new()
+    Node() = new("noname")
     function Node(n::String, d::Array{Float64,2}, m::Union{Node, Missing},c1::Union{Node, Missing},c2::Union{Node, Missing} , n_c::Int64, r::Bool, inc::Float64, b::String, num::Int64)
         mn = Node()
         mn.name = n
@@ -193,7 +193,7 @@ end
 abstract type SamplerTune end
 
 struct SamplerVariate{T<:SamplerTune} <: VectorVariate
-  value::Vector{Float64}
+  value::Union{Vector{Float64}, Vector{Node}}
   tune::T
 
   function SamplerVariate{T}(x::AbstractVector, tune::T) where T<:SamplerTune
@@ -202,7 +202,11 @@ struct SamplerVariate{T<:SamplerTune} <: VectorVariate
   end
 
   function SamplerVariate{T}(x::AbstractVector, pargs...; kargs...) where T<:SamplerTune
-    value = convert(Vector{Float64}, x)
+    if !isa(x[1], Node)
+      value = convert(Vector{Float64}, x)
+    else
+      value = convert(Vector{Node}, x)
+    end
     new{T}(value, T(value, pargs...; kargs...))
   end
 end
@@ -219,12 +223,6 @@ struct ModelState
   value::Vector{Any}
   tune::Vector{Any}
 end
-
-#struct ModelState
-#  value::Vector{Node}
-#  tune::Vector{Any}
-#end
-
 
 
 mutable struct Model
