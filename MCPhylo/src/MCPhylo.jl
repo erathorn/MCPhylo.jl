@@ -16,6 +16,7 @@ using Showoff: showoff
 using Markdown
 using DataFrames
 using Random
+using CSV
 
 import Base: Matrix, names, summary
 import Compose: Context, context, cm, gridstack, inch, MeasureOrNumber, mm, pt, px
@@ -245,6 +246,7 @@ struct Chains <: AbstractChains
   range::StepRange{Int, Int}
   names::Vector{AbstractString}
   chains::Vector{Int}
+  trees::Array{Node, 3}
 end
 
 struct ModelChains <: AbstractChains
@@ -252,8 +254,8 @@ struct ModelChains <: AbstractChains
   range::StepRange{Int, Int}
   names::Vector{AbstractString}
   chains::Vector{Int}
+  trees::Array{Node, 3}
   model::Model
-  
 end
 
 

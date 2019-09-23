@@ -6,13 +6,15 @@ function Chains(iters::Integer, params::Integer;
                start::Integer=1, thin::Integer=1, chains::Integer=1,
                names::Vector{T}=AbstractString[]) where {T<:AbstractString}
   value = Array{Float64}(undef, length(start:thin:iters), params, chains)
+  value2 = Array{Node}(undef, length(start:thin:iters), 1, chains)
   fill!(value, NaN)
-  Chains(value, start=start, thin=thin, names=names)
+  Chains(value, value2, start=start, thin=thin, names=names)
 end
 
-function Chains(value::Array{T, 3};
+function Chains(value::Array{T, 3},
+                value2::Array{W,3};
                start::Integer=1, thin::Integer=1,
-               names::Vector{U}=AbstractString[], chains::Vector{V}=Int[]) where {T<:Real, U<:AbstractString, V<:Integer}
+               names::Vector{U}=AbstractString[], chains::Vector{V}=Int[]) where {T<:Real, U<:AbstractString, V<:Integer, W<:Node}
   n, p, m = size(value)
 
   if isempty(names)
@@ -28,7 +30,7 @@ function Chains(value::Array{T, 3};
   end
 
   v = convert(Array{Float64, 3}, value)
-  Chains(v, range(start, step=thin, length=n), AbstractString[names...], Int[chains...])
+  Chains(v, range(start, step=thin, length=n), AbstractString[names...], Int[chains...], value2)
 end
 
 function Chains(value::Matrix{T};
@@ -162,7 +164,8 @@ function cat3(c1::AbstractChains, args::AbstractChains...)
     throw(ArgumentError("chain names differ"))
 
   value = cat(c1.value, map(c -> c.value, args)..., dims=3)
-  Chains(value, start=first(range), thin=step(range), names=names)
+  value2 = cat(c1.trees, map(c -> c.value, args)..., dims=3)
+  Chains(value, value2, start=first(range), thin=step(range), names=names)
 end
 
 Base.hcat(c1::AbstractChains, args::AbstractChains...) = cat(c1, args..., dims=2)

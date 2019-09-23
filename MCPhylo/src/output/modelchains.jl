@@ -3,7 +3,7 @@
 #################### Constructors ####################
 
 function ModelChains(c::Chains, m::Model)
-  ModelChains(c.value, c.range, c.names, c.chains, m)
+  ModelChains(c.value, c.range, c.names, c.chains, c.trees, m)
 end
 
 

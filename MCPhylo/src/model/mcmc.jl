@@ -76,6 +76,7 @@ function mcmc_worker!(args::Vector)
     sample!(m)
     if i > burnin && (i - burnin) % thin == 0
       sim[i, :, 1] = unlist(m, true)
+      sim.trees[i,1,1] = m[:mtree].value
     end
     next!(meter)
   end

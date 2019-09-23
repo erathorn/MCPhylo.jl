@@ -73,7 +73,7 @@ end
 
 #scheme = [Slice(:mypi, 0.05), SliceSimplex(:rates)]
 scheme = [MCPhylo.ProbPathHMCSampler(:mtree, 3.0,2.0, 0.001, my_func),
-        #Slice(:mypi, 0.05)
+         Slice(:mypi, 0.05)
             #Slice(:blenvec, 0.02),
              ]
 
@@ -86,7 +86,7 @@ setsamplers!(model, scheme)
 
 sim = mcmc(model, my_data, inits, 250, burnin=0, chains=1)
 
-MCPhylo.to_file(sim, "here")
+MCPhylo.to_file(sim, "")
 
 
 

@@ -53,43 +53,43 @@ function sample!(v::ProbPathVariate, block, logf::Function, gradf::Function)
 
     @assert length(a) == 1
 
-    #ll = logf(v) # log likelihood of the model, including the prior
+    ll = logf(v) # log likelihood of the model, including the prior
 
-    #prior = logpdf(block.model, a, false) # log of the prrior
+    prior = logpdf(block.model, a, false) # log of the prrior
 
 
-    #tree = block.model[a[1]]
+    tree = block.model[a[1]]
 
-    #probM = randn(size(post_order(tree))[1])
+    probM = randn(size(post_order(tree))[1])
 
-    #currM = deepcopy(probM)
-    #currH = ll.+ 0.5*sum(currM.*currM)
-    #blens = get_branchlength_vector(tree)
-    #probB = deepcopy(blens)
+    currM = deepcopy(probM)
+    currH = ll.+ 0.5*sum(currM.*currM)
+    blens = get_branchlength_vector(tree)
+    probB = deepcopy(blens)
 
-    #for i in 1:n_leap
-#
-#        fac = scale_factor(v, delta)
-#        molify!(v, delta)
-#        probM = probM.-stepsz/2.0 .* ((gradf(v).-logpdf(block.model, a, false)).*fac)
-#
-#        step_nn_att, step_ref_att = refraction(v, probB, probM, true, logf)
-#
-#
-#        set_branchlength_vector!(v.value[1], probB)
-#        probM = probM .- stepsz/2.0 .* ((gradf(v).-logpdf(block.model, a, false)).*fac)
-#    end
+    for i in 1:n_leap
 
-    #probU::Float64 = logf(v)
-    #probH = probU + 0.5 * sum(probM.*probM)
+        fac = scale_factor(v, delta)
+        molify!(v, delta)
+        probM = probM.-stepsz/2.0 .* ((gradf(v).-logpdf(block.model, a, false)).*fac)
 
-    #ratio = currH - probH
+        step_nn_att, step_ref_att = refraction(v, probB, probM, true, logf)
 
-    #if ratio <= min(0, log(rand(Uniform(0,1))))
-    #    # not successfull
-    #    v.value[1] = x1
-    #end
-    #set_binary!(v.value[1])
+
+        set_branchlength_vector!(v.value[1], probB)
+        probM = probM .- stepsz/2.0 .* ((gradf(v).-logpdf(block.model, a, false)).*fac)
+    end
+
+    probU::Float64 = logf(v)
+    probH = probU + 0.5 * sum(probM.*probM)
+
+    ratio = currH - probH
+
+    if ratio <= min(0, log(rand(Uniform(0,1))))
+        # not successfull
+        v.value[1] = x1
+    end
+    set_binary!(v.value[1])
 
     v
 end
