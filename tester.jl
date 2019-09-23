@@ -55,7 +55,7 @@ model =  Model(
         UnivariateDistribution[PhyloDist(mtree, mypi, data)]
     end,
     ),
-    mypi = Stochastic(() -> Truncated(Uniform(0.0,1.0), 0.0, 1.0)),
+    mypi = Stochastic( () -> Truncated(Uniform(0.0,1.0), 0.0, 1.0)),
     mtree = Stochastic("t", () -> MCPhylo.CompoundDirichlet(1.0,1.0,0.100,1.0))
      )
 inivals = rand(Uniform(0,1),3132)
@@ -73,7 +73,7 @@ end
 
 #scheme = [Slice(:mypi, 0.05), SliceSimplex(:rates)]
 scheme = [MCPhylo.ProbPathHMCSampler(:mtree, 3.0,2.0, 0.001, my_func),
-        Slice(:mypi, 0.05)
+        #Slice(:mypi, 0.05)
             #Slice(:blenvec, 0.02),
              ]
 
@@ -84,9 +84,9 @@ setsamplers!(model, scheme)
 
 
 
-sim = mcmc(model, my_data, inits, 250, burnin=50, chains=1)
+sim = mcmc(model, my_data, inits, 250, burnin=0, chains=1)
 
-
+MCPhylo.to_file(sim, "here")
 
 
 

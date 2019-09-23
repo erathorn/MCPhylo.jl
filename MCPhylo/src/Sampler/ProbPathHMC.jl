@@ -29,24 +29,14 @@ function ProbPathHMCSampler(params, pargs...; dtype::Symbol=:forward)
 
     samplerfx = function(model::Model, block::Integer)
 
-        #println(model[model.samplers[block].params[1]])
-
         block = SamplingBlock(model, block, true)
         v = SamplerVariate(block, pargs...)
-        #v = ProbPathHMCTune(pargs...)
 
-        #t = ProbPathVariate(model[model.samplers[block].params[1]], v)
-        #SamplerVariate(v)
-        #t = ProbPathVariate(v)
-        sample!(v, block, x -> mlogpdf!(block, x), x-> gradf!(block, x))
-        #println(v)
+        sample!(v, block, x -> logpdf!(block, x), x-> gradf!(block, x))
+
         relist(block, v)
     end # function samplerfx
     Sampler(params, samplerfx, ProbPathHMCTune(pargs...))
-end
-
-function sample!(v::ProbPathVariate, model::Model)
-    throw("HERE")
 end
 
 function sample!(v::ProbPathVariate, block, logf::Function, gradf::Function)
@@ -63,56 +53,52 @@ function sample!(v::ProbPathVariate, block, logf::Function, gradf::Function)
 
     @assert length(a) == 1
 
-    ll = logf(v) # log likelihood of the model, including the prior
-    #grad =gradf(v).-logpdf(block.model, a, false)
+    #ll = logf(v) # log likelihood of the model, including the prior
+
+    #prior = logpdf(block.model, a, false) # log of the prrior
 
 
+    #tree = block.model[a[1]]
 
-    prior = logpdf(block.model, a, false) # log of the prrior
+    #probM = randn(size(post_order(tree))[1])
 
+    #currM = deepcopy(probM)
+    #currH = ll.+ 0.5*sum(currM.*currM)
+    #blens = get_branchlength_vector(tree)
+    #probB = deepcopy(blens)
 
-    tree = block.model[a[1]]
+    #for i in 1:n_leap
+#
+#        fac = scale_factor(v, delta)
+#        molify!(v, delta)
+#        probM = probM.-stepsz/2.0 .* ((gradf(v).-logpdf(block.model, a, false)).*fac)
+#
+#        step_nn_att, step_ref_att = refraction(v, probB, probM, true, logf)
+#
+#
+#        set_branchlength_vector!(v.value[1], probB)
+#        probM = probM .- stepsz/2.0 .* ((gradf(v).-logpdf(block.model, a, false)).*fac)
+#    end
 
-    probM = randn(size(post_order(tree))[1])
+    #probU::Float64 = logf(v)
+    #probH = probU + 0.5 * sum(probM.*probM)
 
-    currM = deepcopy(probM)
-    currH = ll.+ 0.5*sum(currM.*currM)
-    blens = get_branchlength_vector(tree)
-    probB = deepcopy(blens)
+    #ratio = currH - probH
 
-    #tree_c::Node=deepcopy(tree)
-
-    for i in 1:n_leap
-        #println("in n_leap")
-        fac = scale_factor(v, delta)
-        molify!(v, delta)
-        probM = probM.-stepsz/2.0 .* ((gradf(v).-logpdf(block.model, a, false)).*fac)
-
-        step_nn_att, step_ref_att = refraction(v, probB, probM, true, delta, logf)
-
-
-        set_branchlength_vector!(v.value[1], probB)
-        probM = probM .- stepsz/2.0 .* ((gradf(v).-logpdf(block.model, a, false)).*fac)
-    end
-
-    probU::Float64 = logf(v)
-    probH = probU + 0.5 * sum(probM.*probM)
-
-    ratio = currH - probH
-
-    if ratio <= min(0, log(rand(Uniform(0,1))))
-        # not successfull
-        v.value[1] = x1
-    end
-    set_binary!(v.value[1])
+    #if ratio <= min(0, log(rand(Uniform(0,1))))
+    #    # not successfull
+    #    v.value[1] = x1
+    #end
+    #set_binary!(v.value[1])
 
     v
 end
 
 
-function refraction(v::ProbPathVariate, probB::Vector{Float64}, probM::Vector{Float64}, surrogate::Bool, delta::Float64, logf::Function)
-    # surrogate is true
+function refraction(v::ProbPathVariate, probB::Vector{Float64}, probM::Vector{Float64}, surrogate::Bool, logf::Function)
+
     stepsz = v.tune.stepsz
+    delta = v.tune.delta
 
     postorder = post_order(v.value[1]) # post order and probB are in the same order
 
@@ -131,8 +117,7 @@ function refraction(v::ProbPathVariate, probB::Vector{Float64}, probM::Vector{Fl
         if !(postorder[ref_index].nchild == 0)
 
             if surrogate
-                #blens = [molifier(i, delta) for i in get_branchlength_vector(v.value[1])]
-                #set_branchlength_vector!(v.value[1], blens)
+
                 molify!(v, delta)
                 U_before_nni::Float64 = logf(v)
 
@@ -208,14 +193,6 @@ function gradlogpdf!(m::Model, x::AbstractVector{T}, block::Integer=0,
   GradiantLog(pre_order(x.value[1]), m.nodes[:mypi])
 end
 
-
-#macro promote_treevariate(V)
-#  quote
-#    Base.promote_rule(::Type{$(esc(V))}, ::Type{T}) where T<:Real = Float64
-#  end
-#end
-#@promote_treevariate TreeVariate
-
 function Stochastic(d::AbstractString, f::Function, monitor::Union{Bool, Vector{Int}}=true)
     value = Node()
     fx, src = modelfxsrc(depfxargs, f)
@@ -240,14 +217,6 @@ function setinits!(d::TreeStochastic, m::Model, x::Array)
     setmonitor!(d, d.monitor)
 end # function
 
-
-#function relistlength(d::TreeStochastic, v::SubArray, w::Bool)
-#
-#    ms = size(d.distr)
-#    rs = reshape(v, ms)
-#    (rs, length(d.distr))
-#end
-
 function update!(d::TreeStochastic, m::Model)
     d.distr = d.eval(m)
     d
@@ -258,7 +227,8 @@ function names(d::TreeStochastic, nodekey::Symbol)
 end
 
 function unlist(d::TreeStochastic)
-    tree_height(d.value), tree_length(d.value)
+    y = tree_height(d.value), tree_length(d.value)
+    collect(y)
 end
 
 function unlist(s::AbstractStochastic, x::Node, transform::Bool=false)

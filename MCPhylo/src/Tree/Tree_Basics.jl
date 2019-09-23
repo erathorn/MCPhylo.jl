@@ -261,7 +261,6 @@ This function calculates the tree height.
 """
 function tree_height(root::Node)::Float64
     max_len = -Inf
-    println(post_order(root))
     for node in post_order(root)
         if node.nchild == 0
             temp = path_length(root, node)

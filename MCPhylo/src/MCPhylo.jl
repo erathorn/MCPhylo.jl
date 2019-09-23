@@ -253,6 +253,7 @@ struct ModelChains <: AbstractChains
   names::Vector{AbstractString}
   chains::Vector{Int}
   model::Model
+  
 end
 
 
@@ -324,6 +325,7 @@ include("Sampler/PhyloHMC_Functions_Node.jl")
 include("Substitution/SubstitutionMat.jl")
 
 include("Utils/SIMD_Mat.jl")
+include("Utils/FileIO.jl")
 
 include("Likelihood/LikelihoodCalculator_Matrix.jl")
 include("Likelihood/LikelihoodCalculator_Node.jl")
