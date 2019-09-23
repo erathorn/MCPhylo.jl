@@ -44,6 +44,45 @@ function NNI!(root::Node)
 
 end # function NNI!
 
+
+"""
+    NNI(mat::Array{Float64,2})::nothing
+
+documentation
+"""
+function NNI!(root::Node, target::Node)
+    
+    if target.nchild == 0 || target.root
+        return 0
+        #end
+    end
+
+
+    parent::Node = get_mother(target)
+    sister = get_sister(target)
+
+
+    if rand([1,2]) == 1
+        ychild = remove_child!(target, true)
+    else
+        ychild = remove_child!(target, false)
+    end # if
+
+    xchild = remove_child!(parent, sister)
+
+
+    add_child!(target, xchild)
+    add_child!(parent, ychild)
+
+
+    set_binary!(root)
+
+    return 1
+
+end # function
+
+
+
 """
     slide!(root::Node)
 
@@ -183,7 +222,7 @@ function NNI!(mat::Array{Float64,2}, target::Int64)::Int64
         # swap ac[1,2] with ac[2, 1]
         swap_cols(mat, ac[1][2], ac[2][1])
     end
-    
+
     return 1
 
 end # function

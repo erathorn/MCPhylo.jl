@@ -5,8 +5,8 @@
 This function calculates the log-likelihood of an evolutiuonary model using the
 Felsensteins pruning algorithm.
 """
-function FelsensteinFunction(tree_postorder::Vector{Node}, pi_::Number, rates::Vector{Float64}, n_c::Int64)::Float64
-
+function FelsensteinFunction(tree_postorder::Vector{Node}, pi_::Number, rates::Vector{Float64})::Float64
+    n_c = size(tree_postorder[1].data)[2]
     for node in tree_postorder
         if node.nchild !== 0
             CondLikeInternal(node, pi_, rates, n_c)
@@ -30,10 +30,10 @@ end # function
 
 
 function CondLikeInternal(node::Node, pi_::Number, rates::Vector{Float64}, n_c::Int64)::Nothing
-    @assert size(node.child)[1] == 2
+    #@assert size(node.child)[1] == 2
     @assert size(rates)[1] == n_c
-    left_daughter::Node = node.child[1]
-    right_daughter::Node = node.child[2]
+    left_daughter::Node = node.lchild
+    right_daughter::Node = node.rchild
     linc::Float64 = left_daughter.inc_length
     rinc::Float64 = right_daughter.inc_length
     left_daughter_data::Array{Float64,2} = left_daughter.data
@@ -41,19 +41,32 @@ function CondLikeInternal(node::Node, pi_::Number, rates::Vector{Float64}, n_c::
 
     # use the inbounds decorator to enable SIMD
     # SIMD greatly improves speed!!!
-    @inbounds for ind in 1:n_c
-        r::Float64 = rates[ind]
-        left_mat::Array{Float64,2} = exponentiate_binary(pi_, linc, r)
-        right_mat::Array{Float64,2} = exponentiate_binary(pi_, rinc, r)
+    @simd for ind=eachindex(rates)
+        @inbounds r::Float64 = rates[ind]
 
-        a::Float64 = left_daughter_data[1,ind]*left_mat[1,1] + left_daughter_data[2,ind]*left_mat[2,1]
-        b::Float64 = left_daughter_data[1,ind]*left_mat[1,2] + left_daughter_data[2,ind]*left_mat[2,2]
-        c::Float64 = right_daughter_data[1,ind]*right_mat[1,1] + right_daughter_data[2,ind]*right_mat[2,1]
-        d::Float64 = right_daughter_data[1,ind]*right_mat[1,2] + right_daughter_data[2,ind]*right_mat[2,2]
+        @fastmath ext::Float64 = exp(-linc*r)
+        ext_::Float64 = 1.0-ext
+        p_::Float64 = 1.0-pi_
+        v_::Float64 = ext_*pi_
+        w_::Float64 = ext_*p_
+        v1::Float64 = ext+v_
+        v2::Float64 = ext+w_
 
-        node.data[1,ind] = a*c
-        node.data[2,ind] = b*d
+        @inbounds a::Float64 = left_daughter_data[1,ind]*v1 + left_daughter_data[2,ind]*v_
+        @inbounds b::Float64 = left_daughter_data[1,ind]*w_ + left_daughter_data[2,ind]*v2
 
+        @fastmath ext = exp(-rinc*r)
+        ext_ = 1.0-ext
+        v_ = ext_*pi_
+        w_ = ext_*p_
+        v1 = ext+v_
+        v2 = ext+w_
+
+        @inbounds c::Float64 = right_daughter_data[1,ind]*v1 + right_daughter_data[2,ind]*v_
+        @inbounds d::Float64 = right_daughter_data[1,ind]*w_ + right_daughter_data[2,ind]*v2
+
+        @inbounds node.data[1,ind] = a*c
+        @inbounds node.data[2,ind] = b*d
     end # for
 end # function
 
@@ -70,8 +83,8 @@ function GradiantLog(tree_preorder::Vector{Node}, pi_::Number)
                 Up[node.num,2,i] = 1.0-pi_
             end # for
         else
-            sister::Node = get_sister(root, node)
-            mother::Node = get_mother(root, node)
+            sister::Node = get_sister(node)
+            mother::Node = get_mother(node)
             node_ind::Int64 = node.num
 
             Up[node_ind,:,:] = pointwise_mat(Up[node_ind,:,:], sister.data, n_c)
@@ -87,7 +100,7 @@ function GradiantLog(tree_preorder::Vector{Node}, pi_::Number)
             b::Array{Float64,1} = my_dot(node.data, my_mat[:,2], n_c)
 
             #gradient::Array{Float64,1} = Up[node_ind,1,:].*a .+ Up[node_ind,2,:].*b
-            gradient::Array{Float64,1} = pointwise_vec(Up[node_ind,1,:],a, n_c) .+ pointwise_vec(Up[node_ind,2,:],b,n_c)
+            gradient::Array{Float64,1} = pointwise_vec(Up[node_ind,1,:],a) .+ pointwise_vec(Up[node_ind,2,:],b)
 
             #Up[node_ind,1,:] = Up[node_ind,1,:].*my_mat[1,2] + Up[node_ind,2,:].*my_mat[2,2]
             #Up[node_ind,2,:] = Up[node_ind,1,:].*my_mat[1,1] + Up[node_ind,2,:].*my_mat[2,1]

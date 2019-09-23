@@ -17,7 +17,7 @@ using Markdown
 using DataFrames
 using Random
 
-import Base: Matrix, names
+import Base: Matrix, names, summary
 import Compose: Context, context, cm, gridstack, inch, MeasureOrNumber, mm, pt, px
 import LinearAlgebra: cholesky, dot
 import Statistics: cor
@@ -57,6 +57,50 @@ import StatsBase: autocor, autocov, countmap, counts, describe, predict,
 include("distributions/pdmats2.jl")
 using .PDMats2
 
+
+
+"""
+    Node
+
+This data type holds the basic Node structure. The type T is used to specify the type of the data
+stored in the node.
+
+* If `nchild` is `0` the Node is a leaf node.
+* If `root` is `False` the Node is a child of another node.
+* `inc_length` specifies the length of the incomming branch.
+* `binary` specifies the path from the root to the Node. `1` and `0` represent left and right turns respectively.
+"""
+
+mutable struct Node
+    name::String
+    data::Array{Float64,2}
+    mother::Union{Node, Missing}
+    lchild::Union{Node, Missing}
+    rchild::Union{Node, Missing}
+    nchild::Int64
+    root::Bool
+    inc_length::Float64
+    binary::String
+    num::Int64
+
+    #Node() = new("",zeros(Float64,(1,2)), nothing, nothing, 0, true, 0.0, "0", 0)
+    Node() = new("noname")
+    function Node(n::String, d::Array{Float64,2}, m::Union{Node, Missing},c1::Union{Node, Missing},c2::Union{Node, Missing} , n_c::Int64, r::Bool, inc::Float64, b::String, num::Int64)
+        mn = Node()
+        mn.name = n
+        mn.data = d
+        mn.mother = m
+        mn.lchild = c1
+        mn.rchild = c2
+        mn.nchild = n_c
+        mn.root = r
+        mn.inc_length = inc
+        mn.binary = b
+        mn.num = num
+        return mn
+    end
+end # struct Node
+
 #################### Types ####################
 
 ElementOrVector{T} = Union{T, Vector{T}}
@@ -68,7 +112,7 @@ abstract type ScalarVariate <: Real end
 abstract type ArrayVariate{N} <: DenseArray{Float64, N} end
 abstract type TreeVariate <: Any end
 
-const AbstractVariate = Union{ScalarVariate, ArrayVariate}
+const AbstractVariate = Union{ScalarVariate, ArrayVariate, TreeVariate}
 const VectorVariate = ArrayVariate{1}
 const MatrixVariate = ArrayVariate{2}
 
@@ -121,8 +165,8 @@ mutable struct ArrayStochastic{N} <: ArrayVariate{N}
   distr::DistributionStruct
 end
 
-mutable struct TreeStochastic{N} <: TreeVariate
-    value::Array{Float64,N}
+mutable struct TreeStochastic <: TreeVariate
+    value::Node
     symbol::Symbol
     monitor::Vector{Int}
     eval::Function
@@ -132,9 +176,9 @@ mutable struct TreeStochastic{N} <: TreeVariate
 end
 
 const AbstractLogical = Union{ScalarLogical, ArrayLogical}
-const AbstractStochastic = Union{ScalarStochastic, ArrayStochastic}
-const AbstractDependent = Union{AbstractLogical, AbstractStochastic, TreeStochastic}
-const AnyDependent = Union{AbstractDependent, TreeStochastic}
+const AbstractStochastic = Union{ScalarStochastic, ArrayStochastic, TreeStochastic}
+const AbstractDependent = Union{AbstractLogical, AbstractStochastic}
+#const AnyDependent = Union{AbstractDependent, TreeStochastic}
 
 #################### Sampler Types ####################
 
@@ -149,7 +193,7 @@ end
 abstract type SamplerTune end
 
 struct SamplerVariate{T<:SamplerTune} <: VectorVariate
-  value::Vector{Float64}
+  value::Union{Vector{Float64}, Vector{Node}}
   tune::T
 
   function SamplerVariate{T}(x::AbstractVector, tune::T) where T<:SamplerTune
@@ -158,7 +202,11 @@ struct SamplerVariate{T<:SamplerTune} <: VectorVariate
   end
 
   function SamplerVariate{T}(x::AbstractVector, pargs...; kargs...) where T<:SamplerTune
-    value = convert(Vector{Float64}, x)
+    if !isa(x[1], Node)
+      value = convert(Vector{Float64}, x)
+    else
+      value = convert(Vector{Node}, x)
+    end
     new{T}(value, T(value, pargs...; kargs...))
   end
 end
@@ -172,9 +220,10 @@ struct ModelGraph
 end
 
 struct ModelState
-  value::Vector{Float64}
+  value::Vector{Any}
   tune::Vector{Any}
 end
+
 
 mutable struct Model
   nodes::Dict{Symbol, Any}
@@ -267,7 +316,9 @@ include("Tree/Tree_Matrix.jl")
 include("Parser/ParseNexus.jl")
 
 include("Sampler/ProbPathHMC.jl")
+include("Sampler/ProbPathHMC_Node.jl")
 include("Sampler/PhyloHMC_Functions.jl")
+include("Sampler/PhyloHMC_Functions_Node.jl")
 
 
 include("Substitution/SubstitutionMat.jl")
@@ -288,6 +339,7 @@ export
   ArrayLogical,
   ArrayStochastic,
   ArrayVariate,
+  TreeVariate,
   Chains,
   Logical,
   MatrixVariate,
@@ -300,8 +352,7 @@ export
   ScalarStochastic,
   ScalarVariate,
   Stochastic,
-  VectorVariate,
-  TreeVariate
+  VectorVariate
 
 export
   BDiagNormal,

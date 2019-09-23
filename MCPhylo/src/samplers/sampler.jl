@@ -28,6 +28,11 @@ function SamplerVariate(x::AbstractVector{U}, tune::T) where {T<:SamplerTune, U<
   SamplerVariate{T}(x, tune)
 end
 
+function SamplerVariate(x::AbstractVector{U}, tune::T) where {T<:SamplerTune, U<:Node}
+  SamplerVariate{T}(x, tune)
+end
+
+
 function SamplerVariate(block::SamplingBlock, pargs...; kargs...)
   m = block.model
   SamplerVariate(unlist(block), m.samplers[block.index], m.iter, pargs...;
@@ -45,6 +50,19 @@ function SamplerVariate(x::AbstractVector{U},
   end
   v
 end
+
+function SamplerVariate(x::AbstractVector{U},
+                        s::Sampler{T}, iter::Integer,
+                        pargs...; kargs...) where {T<:SamplerTune, U<:Node}
+  if iter == 1
+    v = SamplerVariate{T}(x, pargs...; kargs...)
+    s.tune = v.tune
+  else
+    v = SamplerVariate(x, s.tune)
+  end
+  v
+end
+
 
 
 #################### Base Methods ####################
@@ -99,6 +117,10 @@ function gradlogpdf!(block::SamplingBlock, x::AbstractArray{T},
 end
 
 function logpdf!(block::SamplingBlock, x::AbstractArray{T}) where {T<:Real}
+  logpdf!(block.model, x, block.index, block.transform)
+end
+
+function logpdf!(block::SamplingBlock, x::AbstractArray{T}) where {T<:Node}
   logpdf!(block.model, x, block.index, block.transform)
 end
 

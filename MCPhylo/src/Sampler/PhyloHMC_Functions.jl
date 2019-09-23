@@ -97,19 +97,6 @@ function refraction(tree::Array{Float64,2}, probB::Vector{Float64}, probM::Vecto
 end # function
 
 
-"""
-    molifier(x::Float64, delta::Float64)::Float64
-
-documentation
-"""
-function molifier(x::Float64, delta::Float64)::Float64
-    if x >= delta
-        return delta
-    else
-        return 1.0/(2.0/delta) * (x*x+delta*delta)
-    end
-end # function
-
 
 """
     LogPost(tree::Array{Float64,2}, blens::Vector{Float64}, scale::Float64)

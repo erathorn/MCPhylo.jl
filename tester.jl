@@ -3,6 +3,7 @@ tester:
 - Julia version: 1.0.1
 - Author: erathorn
 - Date: 2019-05-07
+
 =#
 
 extensions = quote
@@ -24,8 +25,8 @@ extensions = quote
 
     function logpdf(d::PhyloDist, x::Real)
         rates = ones(3132)
-
-        return MCPhylo.FelsensteinFunction(d.my_tree.value, d.data, d.mypi, rates,3132)
+        mt = MCPhylo.post_order(d.my_tree.value)
+        return MCPhylo.FelsensteinFunction(mt, d.mypi, rates)
     end
 end
 #include("./myMamba.jl")
@@ -37,11 +38,11 @@ using .MCPhylo
 
 
 eval(extensions)
-tt, data_arr, df = MCPhylo.make_tree_with_data_mat("./local/IE_Contemporary_Full.nex")
-
+tt, data_arr, df = MCPhylo.make_tree_with_data_mat("./local/development.nex")
+mt = MCPhylo.make_tree_with_data("./local/development.nex")
 
 my_data = Dict{Symbol, Any}(
-  :mtree => tt,
+  :mtree => mt,
   :data =>data_arr)
 
 
@@ -55,7 +56,7 @@ model =  Model(
     end,
     ),
     mypi = Stochastic(() -> Truncated(Uniform(0.0,1.0), 0.0, 1.0)),
-    mtree = Stochastic(2,() -> MCPhylo.CompoundDirichlet(1.0,1.0,0.100,1.0),true,"tree")
+    mtree = Stochastic("t", () -> MCPhylo.CompoundDirichlet(1.0,1.0,0.100,1.0))
      )
 inivals = rand(Uniform(0,1),3132)
 inivals =inivals./sum(inivals)
@@ -66,15 +67,40 @@ inits = [ Dict(
     :y => [-500000],
     :rates=>inivals)]
 
+function my_func()
+    println("myfunc")
+end
+
 #scheme = [Slice(:mypi, 0.05), SliceSimplex(:rates)]
-scheme = [Slice(:mypi, 0.05),
+scheme = [MCPhylo.ProbPathHMCSampler(:mtree, 3.0,2.0, 0.001, my_func),
+        Slice(:mypi, 0.05)
             #Slice(:blenvec, 0.02),
-             MCPhylo.ProbPathHMCSampler(:mtree, 3.0,2.0)]
+             ]
 
 setsamplers!(model, scheme)
+#setinputs!(model, my_data)
+#MCPhylo.setinits!(model, inits)
+
+
 
 
 sim = mcmc(model, my_data, inits, 250, burnin=50, chains=1)
+
+
+
+
+
+epsilon = 0.1
+L = 50
+
+theta1 = HMCVariate([0.0, 0.0, 0.0], epsilon, L, my_func)
+
+
+
+
+
+
+
 
 describe(sim)
 

@@ -17,7 +17,7 @@ mutable struct CompoundDirichlet <: ContinuousUnivariateDistribution
 end # struct
 
 length(d::CompoundDirichlet) = 23409
-Base.size(d::CompoundDirichlet) = (153,153)
+Base.size(d::CompoundDirichlet) = 1#(153,153)
 
 function _logpdf(d::CompoundDirichlet, x::AbstractArray{T}) where {T<:Real}
 
@@ -29,6 +29,11 @@ function _logpdf(d::CompoundDirichlet, x::AbstractArray{T}) where {T<:Real}
     n_int::Float64 = n_term-3.0
     ln1::Float64 = (d.a-1.0)*blen_leave + (d.a*d.c-1.0)*blen_int
     ln2::Float64 = (d.alpha-d.a*n_term-d.a*d.c*n_int)*log(t_l)- d.beta*t_l
+    v1 = (d.alpha*log(d.beta))
+    v2 = log(gamma(d.alpha))
+    v3 = log(gamma(d.a*n_term+d.a*d.c*n_int))
+    v4 = n_term*log(gamma(d.beta))
+    v5 = n_int*log(gamma(d.beta*d.a))
     ln3::Float64 = (d.alpha*log(d.beta))-log(gamma(d.alpha))+log(gamma(d.a*n_term+d.a*d.c*n_int))-n_term*log(gamma(d.beta))-n_int*log(gamma(d.beta*d.a))
     return ln1+ln2+ln3
 end # function _logpdf
@@ -36,6 +41,37 @@ end # function _logpdf
 function insupport(d::CompoundDirichlet, x::AbstractArray{T}) where {T<:Real}
     length(d) == length(x) && all(isfinite.(get_branchlength_vector!(x))) && all(0 .< get_branchlength_vector!(x))
 end # function insupport
+
+
+
+function _logpdf(d::CompoundDirichlet, x::Node)
+
+    xn = get_sum_seperate_length!(x)
+    blen_int::Float64 = xn[1]
+    blen_leave::Float64 = xn[2]
+    t_l::Float64 = blen_int+blen_leave
+    n_term::Float64 = length(get_leaves(x))
+    n_int::Float64 = n_term-3.0
+    ln1::Float64 = (d.a-1.0)*blen_leave + (d.a*d.c-1.0)*blen_int
+    ln2::Float64 = (d.alpha-d.a*n_term-d.a*d.c*n_int)*log(t_l)- d.beta*t_l
+    v1 = (d.alpha*log(d.beta))
+    v2 = log(gamma(d.alpha))
+    v3 = log(gamma(d.a*n_term+d.a*d.c*n_int))
+    v4 = n_term*log(gamma(d.beta))
+    v5 = n_int*log(gamma(d.beta*d.a))
+    ln3::Float64 = (d.alpha*log(d.beta))-log(gamma(d.alpha))+log(gamma(d.a*n_term+d.a*d.c*n_int))-n_term*log(gamma(d.beta))-n_int*log(gamma(d.beta*d.a))
+    return ln1+ln2+ln3
+end # function _logpdf
+
+function insupport(d::CompoundDirichlet, x::Node)
+    all(isfinite.(get_branchlength_vector(x))) && all(0 .<= get_branchlength_vector(x))
+end # function insupport
+
+
+function logpdf_sub(d::ContinuousUnivariateDistribution, x::Node, transform::Bool)
+    insupport(d, x) ? _logpdf(d, x) : -Inf
+end
+
 
 
 """
