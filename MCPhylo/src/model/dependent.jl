@@ -5,22 +5,6 @@ const depfxargs = [(:model, MCPhylo.Model)]
 
 #################### Base Methods ####################
 
-#function Base.show(io::IO, d::AnyDependent)
-#  msg = string(ifelse(isempty(d.monitor), "An un", "A "),
-#               "monitored node of type \"", summary(d), "\"\n")
-#  print(io, msg)
-#  show(io, d.value)
-#end
-
-#function showall(io::IO, d::AnyDependent)
-#  show(io, d)
-#  print(io, "\nFunction:\n")
-#  show(io, "text/plain", first(code_typed(d.eval)))
-#  print(io, "\n\nSource Nodes:\n")
-#  show(io, d.sources)
-#  print(io, "\n\nTarget Nodes:\n")
-#  show(io, d.targets)
-#end
 
 dims(d::AbstractDependent) = size(d)
 
@@ -156,6 +140,15 @@ function Stochastic(d::Integer, f::Function,
                       NullUnivariateDistribution())
   setmonitor!(s, monitor)
 end
+
+function Stochastic(d::AbstractString, f::Function, monitor::Union{Bool, Vector{Int}}=true)
+    value = Node()
+    fx, src = modelfxsrc(depfxargs, f)
+    s = TreeStochastic(value, :nothing, Int[], fx, src, Symbol[],
+                      NullUnivariateDistribution())
+    setmonitor!(s, monitor)
+end
+
 
 ScalarStochastic(x::T) where T <: Real = x
 

@@ -57,26 +57,18 @@ status of the child is set to `False`.
 """
 function add_child!(mother_node::Node, child::Node)
     if ismissing(mother_node.lchild)
-        println("add left")
-        println(mother_node.lchild)
         mother_node.lchild = child
         child.mother = mother_node
-        println(mother_node.lchild.name)
     elseif ismissing(mother_node.rchild)
-        println("add right")
-        println(mother_node.rchild)
         mother_node.rchild = child
         child.mother = mother_node
-        println(mother_node.rchild.name)
+
     else
         throw("The node $mother_node already has two children.")
     end
     #add_child!(mother_node, child, id)
     mother_node.nchild += 1
     child.root = false
-    println("here")
-    println(mother_node.lchild.name)
-    println(mother_node.rchild.name)
 end # function add_child
 
 
@@ -269,6 +261,7 @@ This function calculates the tree height.
 """
 function tree_height(root::Node)::Float64
     max_len = -Inf
+    println(post_order(root))
     for node in post_order(root)
         if node.nchild == 0
             temp = path_length(root, node)
@@ -292,15 +285,11 @@ description of the node.
 """
 function path_length(ancestor::Node, descendant::Node)::Float64
     l::Float64 = 0
-
-    for  i in descendant.binary[length(ancestor.binary)+1:end]
-        if i == '0'
-            ancestor = ancestor.rchild
-        else
-            ancestor = ancestor.lchild
-        end # if
-        l += ancestor.inc_length
-    end # for
+    mn = descendant
+    while descendant != ancestor
+        l += descendant.inc_length
+        descendant = descendant.mother
+    end # while
     return l
 end #function path_length
 
@@ -431,13 +420,16 @@ function get_branchlength_vector(root::Node)::Vector{Float64}
     return get_branchlength_vector(post_order(root))
 end # function get_branchlength_vector
 
+function get_branchlength_vector(t::TreeStochastic)
+    get_branchlength_vector(t.value)
+end # function
 
 """
     set_branchlength_vector!(post_order::Vector{Node}, blenvec::Vector{Float64})::Vector{Node}
 
 This function sets the branch lengths of a tree to the values specified in blenvec.
 """
-function set_branchlength_vector!(post_order::Vector{Node}, blenvec)::Vector{Node}
+function set_branchlength_vector!(post_order::Vector{Node}, blenvec::Array{Float64})::Vector{Node}
     @assert size(post_order) == size(blenvec)
     for node in post_order
         node.inc_length = blenvec[node.num]
@@ -451,10 +443,14 @@ end # function set_branchlength_vector!
 
 This function sets the branch lengths of a tree to the values specified in blenvec.
 """
-function set_branchlength_vector!(root::Node, blenvec)::Node
+function set_branchlength_vector!(root::Node, blenvec::Array{Float64})::Node
     return last(set_branchlength_vector!(post_order(root), blenvec))
 end # function set_branchlength_vector!
 
+
+function set_branchlength_vector!(t::TreeStochastic, blenvec::Array{Float64})
+    set_branchlength_vector!(t.value, blenvec::Array{Float64})
+end # function
 
 """
     get_sum_seperate_length!(root::Node)::Vector{Float64}

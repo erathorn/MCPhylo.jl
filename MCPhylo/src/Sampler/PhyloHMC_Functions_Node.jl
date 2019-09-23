@@ -1,4 +1,8 @@
 
+
+
+
+
 function my_sample!(tree::Node, n_leap::Float64, stepsz::Float64, mypi::Number, n_c::Number, priordist::Distribution)
     delta = 0.01
     rates = ones(n_c)
@@ -16,6 +20,7 @@ function my_sample!(tree::Node, n_leap::Float64, stepsz::Float64, mypi::Number, 
 
     tree_c::Node=deepcopy(tree)
 
+
     for i in 1:n_leap
 
         probM = probM.-stepsz/2.0 .* GradiantLog(pre_order(tree_c), mypi).-_logpdf(priordist, tree_c)
@@ -23,9 +28,9 @@ function my_sample!(tree::Node, n_leap::Float64, stepsz::Float64, mypi::Number, 
         NNI_attempts += step_nn_att
         ref_attempts += step_ref_att
 
-        set_branchlength_vector(tree_c, probB)
+        set_branchlength_vector!(tree_c, probB)
 
-        probM = probM .- stepsz/2.0 .* (GradiantLog(tree_c, mypi, n_c).-_logpdf(priordist, tree_c))
+        probM = probM .- stepsz/2.0 .* (GradiantLog(pre_order(tree_c), mypi).-_logpdf(priordist, tree_c))
 
     end
 
@@ -56,10 +61,12 @@ function refraction(tree::Node, probB::Vector{Float64}, probM::Vector{Float64}, 
 
 
     postorder = post_order(tree) # post order and probB are in the same order
+
     tmpB = @. probB + stepsz * probM
     ref_time = 0.0
     NNI_attempts = 0.0
     ref_attempts = 0.0
+
     while minimum(tmpB)<=0
         timelist::Vector{Float64} = tmpB./abs.(probM)
         ref_index::Int64 = argmin(timelist)
@@ -73,14 +80,15 @@ function refraction(tree::Node, probB::Vector{Float64}, probM::Vector{Float64}, 
                 U_before_nni::Float64 = LogPost(tree, surrogate, delta, rates, n_c, mypi, priordist)
 
                 tree_copy = deepcopy(tree)
-                tmp_NNI_made = NNI!(tree, postorder[ref_index])
+                set_binary!(tree_copy)
+                tmp_NNI_made = NNI!(tree_copy, postorder[ref_index])
+
 
                 if tmp_NNI_made != 0
-                    U_after_NNI::Float64 = LogPost(tree, surrogate, delta, rates, n_c, mypi, priordist)
+                    U_after_NNI::Float64 = LogPost(tree_copy, surrogate, delta, rates, n_c, mypi, priordist)
                     delta_U = 2.0*(U_after_NNI - U_before_nni)
                     my_v::Float64 = probM[ref_index]^2
                     if my_v >= delta_U
-
                         probM[ref_index] = sqrt(my_v - delta_U)
                         tree = tree_copy
                         NNI_attempts += 1
@@ -104,10 +112,23 @@ end # function
 documentation
 """
 function LogPost(tree::Node, surrogate::Bool, delta::Float64, rates::Vector{Float64}, n_c::Int64, mypi::Number, priordist::Distribution)::Float64
-    blens = get_branchlength_vector(tree)
     if surrogate
+        blens = get_branchlength_vector(tree)
         blens = [molifier(i, delta) for i in blens]
         tree = set_branchlength_vector!(tree, blens)
     end
-    FelsensteinFunction(post_order(tree), mypi, rates, n_c)-_logpdf(priordist, tree)
+    FelsensteinFunction(post_order(tree), mypi, rates)-_logpdf(priordist, tree)
 end # function
+
+function log_grad(tree::Node, mypi::Number, rates::Vector{Float64}, value::Bool, grad::Bool)
+    loglik::Float64 = -Inf
+    gradll = Vector{Float64}(undef, length(pre_tree))
+    if value
+        loglik = FelsensteinFunction(post_order(tree), mypi, rates)
+    end
+    if grad
+        pre_tree = pre_order(tree)
+        gradll = GradiantLog(pre_tree, mypi)
+    end
+    return loglik, gradll
+end
