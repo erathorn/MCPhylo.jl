@@ -141,14 +141,15 @@ function Stochastic(d::Integer, f::Function,
   setmonitor!(s, monitor)
 end
 
-function Stochastic(d::AbstractString, f::Function, monitor::Union{Bool, Vector{Int}}=true)
+Stochastic(f::Function, d::Node, args...) = Stochastic(d, f, args...)
+
+function Stochastic(d::Node, f::Function, monitor::Union{Bool, Vector{Int}}=true)
     value = Node()
     fx, src = modelfxsrc(depfxargs, f)
     s = TreeStochastic(value, :nothing, Int[], fx, src, Symbol[],
                       NullUnivariateDistribution())
     setmonitor!(s, monitor)
 end
-
 
 ScalarStochastic(x::T) where T <: Real = x
 
@@ -208,6 +209,11 @@ end
 function logpdf(s::AbstractStochastic, transform::Bool=false)
   logpdf(s, s.value, transform)
 end
+
+function gradlogpdf(s::AbstractStochastic)
+  gradlogpdf(s, s.value)
+end
+
 
 function logpdf(s::AbstractStochastic, x, transform::Bool=false)
   logpdf_sub(s.distr, x, transform)

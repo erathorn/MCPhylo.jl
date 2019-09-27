@@ -246,7 +246,7 @@ struct Chains <: AbstractChains
   range::StepRange{Int, Int}
   names::Vector{AbstractString}
   chains::Vector{Int}
-  trees::Array{Node, 3}
+  trees::Array{AbstractString, 3}
 end
 
 struct ModelChains <: AbstractChains
@@ -254,7 +254,7 @@ struct ModelChains <: AbstractChains
   range::StepRange{Int, Int}
   names::Vector{AbstractString}
   chains::Vector{Int}
-  trees::Array{Node, 3}
+  trees::Array{AbstractString, 3}
   model::Model
 end
 
@@ -270,6 +270,7 @@ include("distributions/distributionstruct.jl")
 include("distributions/extensions.jl")
 include("distributions/pdmatdistribution.jl")
 include("distributions/transformdistribution.jl")
+include("distributions/Phylodist.jl")
 
 include("model/dependent.jl")
 include("model/graph.jl")
@@ -344,6 +345,7 @@ export
   ArrayStochastic,
   ArrayVariate,
   TreeVariate,
+  Node,
   Chains,
   Logical,
   MatrixVariate,
@@ -361,7 +363,9 @@ export
 export
   BDiagNormal,
   Flat,
-  SymUniform
+  SymUniform,
+  CompoundDirichlet,
+  PhyloDist
 
 export
   autocor,
@@ -426,7 +430,12 @@ export
   NUTS, NUTSVariate,
   RWM, RWMVariate,
   Slice, SliceMultivariate, SliceUnivariate,
-  SliceSimplex, SliceSimplexVariate
+  SliceSimplex, SliceSimplexVariate,
+  ProbPathHMC
+
+export
+  make_tree_with_data,
+  to_file
 
 export
   cm,

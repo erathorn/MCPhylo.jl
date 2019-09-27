@@ -1,4 +1,4 @@
-# TODO: Look into Parallelizing it
+
 """
     FelsensteinFunction(tree_postorder::Vector{Node}, pi::Float64, rates::Vector{Float64})
 
@@ -70,11 +70,12 @@ function CondLikeInternal(node::Node, pi_::Number, rates::Vector{Float64}, n_c::
     end # for
 end # function
 
-function GradiantLog(tree_preorder::Vector{Node}, pi_::Number)
+function GradiantLog(tree_preorder::Vector{Node}, pi_::Number, rates::Array{Float64,1})
     root::Node = tree_preorder[1]
     n_c::Int64 = size(root.data)[2]
     Up::Array{Float64,3} = ones(length(tree_preorder)+1, size(root.data)[1], n_c)
     Grad_ll::Array{Float64} = zeros(length(tree_preorder))
+    gradient::Array{Float64,1} = zeros(n_c)
     for node in tree_preorder
         if node.binary == "1"
             # this is the root
@@ -92,21 +93,28 @@ function GradiantLog(tree_preorder::Vector{Node}, pi_::Number)
             #Up[node_ind,:,:].*=sister.data
             #Up[node_ind,:,:].*=Up[parse(Int, mother.binary, base=2),:,:]
 
-            my_mat::Array{Float64,2} = exponentiate_binary(pi_, node.inc_length, 1.0)
+            @inbounds for i in 1:n_c
+                my_mat::Array{Float64,2} = exponentiate_binary(pi_, node.inc_length, rates[i])
 
-            #a::Array{Float64,1} = node.data[1,:].*my_mat[1,1] .+ node.data[2,:].*my_mat[2,1]
-            #b::Array{Float64,1} = node.data[1,:].*my_mat[1,2] .+ node.data[2,:].*my_mat[2,2]
-            a::Array{Float64,1} = my_dot(node.data, my_mat[:,1], n_c)
-            b::Array{Float64,1} = my_dot(node.data, my_mat[:,2], n_c)
+                #a::Array{Float64,1} = node.data[1,:].*my_mat[1,1] .+ node.data[2,:].*my_mat[2,1]
+                #b::Array{Float64,1} = node.data[1,:].*my_mat[1,2] .+ node.data[2,:].*my_mat[2,2]
+                a = node.data[1, i] * my_mat[1,1] + node.data[2,i] * my_mat[2,1]
+                b = node.data[1, i] * my_mat[1,2] + node.data[2,i] * my_mat[2,2]
+                #a::Array{Float64,1} = my_dot(node.data, my_mat[:,1], n_c)
+                #b::Array{Float64,1} = my_dot(node.data, my_mat[:,2], n_c)
 
             #gradient::Array{Float64,1} = Up[node_ind,1,:].*a .+ Up[node_ind,2,:].*b
-            gradient::Array{Float64,1} = pointwise_vec(Up[node_ind,1,:],a) .+ pointwise_vec(Up[node_ind,2,:],b)
+                gradient[i] = Up[node_ind,1,i] * a + Up[node_ind,2,i]*b
+
+                #gradient::Array{Float64,1} = pointwise_vec(Up[node_ind,1,:],a) .+ pointwise_vec(Up[node_ind,2,:],b)
 
             #Up[node_ind,1,:] = Up[node_ind,1,:].*my_mat[1,2] + Up[node_ind,2,:].*my_mat[2,2]
             #Up[node_ind,2,:] = Up[node_ind,1,:].*my_mat[1,1] + Up[node_ind,2,:].*my_mat[2,1]
-            Up[node_ind,1,:] = my_dot(Up[node_ind,:,:], my_mat[:,2], n_c)
-            Up[node_ind,2,:] = my_dot(Up[node_ind,:,:], my_mat[:,1], n_c)
-
+                #a = Up[node_ind,1, i] * my_mat[1,2] + Up[node_ind,2,i] * my_mat[2,2]
+                #b = Up[node_ind,1, i] * my_mat[1,1] + Up[node_ind,2,i] * my_mat[2,1]
+                Up[node_ind,1,i] = Up[node_ind,1, i] * my_mat[1,2] + Up[node_ind,2,i] * my_mat[2,2]
+                Up[node_ind,2,i] = Up[node_ind,1, i] * my_mat[1,1] + Up[node_ind,2,i] * my_mat[2,1]
+            end
             #d = sum(Up[node_ind,:,:].*node.data, dims=1)
             d = sum(pointwise_mat(Up[node_ind,:,:],node.data, n_c), dims=1)
             gradient ./= d[1,:]

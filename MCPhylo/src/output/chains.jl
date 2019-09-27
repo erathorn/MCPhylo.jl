@@ -6,15 +6,15 @@ function Chains(iters::Integer, params::Integer;
                start::Integer=1, thin::Integer=1, chains::Integer=1,
                names::Vector{T}=AbstractString[]) where {T<:AbstractString}
   value = Array{Float64}(undef, length(start:thin:iters), params, chains)
-  value2 = Array{Node}(undef, length(start:thin:iters), 1, chains)
+  value2 = Array{AbstractString}(undef, length(start:thin:iters), 1, chains)
   fill!(value, NaN)
   Chains(value, value2, start=start, thin=thin, names=names)
 end
 
 function Chains(value::Array{T, 3},
-                value2::Array{W,3};
+                value2::Array{U,3};
                start::Integer=1, thin::Integer=1,
-               names::Vector{U}=AbstractString[], chains::Vector{V}=Int[]) where {T<:Real, U<:AbstractString, V<:Integer, W<:Node}
+               names::Vector{U}=AbstractString[], chains::Vector{V}=Int[]) where {T<:Real, U<:AbstractString, V<:Integer}
   n, p, m = size(value)
 
   if isempty(names)

@@ -6,16 +6,16 @@ mutable struct ProbPathHMCTune <: SamplerTune
     n_leap::Float64
     stepsz::Float64
     delta::Float64
-    logfgrad::Union{Function, Missing}
+    differ::Union{Symbol, Missing}
 
     ProbPathHMCTune() = new()
 
     ProbPathHMCTune(n_leap::Float64, stepsz::Float64, delta::Float64) = new(n_leap::Float64, stepsz::Float64, delta::Float64)
 
-    ProbPathHMCTune(n_leap::Float64, stepsz::Float64, delta::Float64, logfgrad::Union{Missing,Function}) = new(n_leap::Float64, stepsz::Float64, delta::Float64, logfgrad)
+    ProbPathHMCTune(n_leap::Float64, stepsz::Float64, delta::Float64, differ::Union{Missing,Symbol}) = new(n_leap::Float64, stepsz::Float64, delta::Float64, differ)
 
-    function ProbPathHMCTune(x::Vector, n_leap::Float64, stepsz::Float64, delta::Float64, logf::Union{Function, Missing})
-      new(n_leap, stepsz, delta, logf)
+    function ProbPathHMCTune(x::Vector, n_leap::Float64, stepsz::Float64, delta::Float64, differ::Union{Symbol, Missing})
+      new(n_leap, stepsz, delta, differ)
     end
 end # mutable struct
 
@@ -25,14 +25,14 @@ ProbPathHMCTune(x::Vector,n_leap::Float64, stepsz::Float64, delta::Float64 ; arg
 const ProbPathVariate = SamplerVariate{ProbPathHMCTune}
 
 
-function ProbPathHMCSampler(params, pargs...; dtype::Symbol=:forward)
+function ProbPathHMC(params, pargs...)
 
     samplerfx = function(model::Model, block::Integer)
 
         block = SamplingBlock(model, block, true)
         v = SamplerVariate(block, pargs...)
 
-        sample!(v, block, x -> logpdf!(block, x), x-> gradf!(block, x))
+        sample!(v, block, x -> logpdf!(block, x), (x, differ) -> gradf!(block, x, differ))
 
         relist(block, v)
     end # function samplerfx
@@ -49,6 +49,7 @@ function sample!(v::ProbPathVariate, block, logf::Function, gradf::Function)
 
     params = keys(block.model, :block, block.index)
     targets = keys(block.model, :target, block.index)
+
     a = setdiff(params, targets)
 
     @assert length(a) == 1
@@ -68,16 +69,11 @@ function sample!(v::ProbPathVariate, block, logf::Function, gradf::Function)
     probB = deepcopy(blens)
 
     for i in 1:n_leap
-
         fac = scale_factor(v, delta)
-        molify!(v, delta)
-        probM = probM.-stepsz/2.0 .* ((gradf(v).-logpdf(block.model, a, false)).*fac)
-
-        step_nn_att, step_ref_att = refraction(v, probB, probM, true, logf)
-
-
+        probM = probM.-stepsz/2.0 .* (gradf(v, v.tune.differ).-logpdf(block.model, a, false))
+        v, probB, probM, step_nn_att, step_ref_att = refraction(v, probB, probM, true, logf)
         set_branchlength_vector!(v.value[1], probB)
-        probM = probM .- stepsz/2.0 .* ((gradf(v).-logpdf(block.model, a, false)).*fac)
+        probM = probM .- stepsz/2.0 .* (gradf(v, v.tune.differ).-logpdf(block.model, a, false))
     end
 
     probU::Float64 = logf(v)
@@ -117,18 +113,22 @@ function refraction(v::ProbPathVariate, probB::Vector{Float64}, probM::Vector{Fl
         if !(postorder[ref_index].nchild == 0)
 
             if surrogate
+                # set tree branchlengths such to probB
+                v_copy = deepcopy(v)
 
-                molify!(v, delta)
+                blens = molify!(probB, delta)
+
+                set_binary!(v_copy.value[1])
+                set_branchlength_vector!(v_copy.value[1], blens)
                 U_before_nni::Float64 = logf(v)
 
-                v_copy = deepcopy(v)
-                set_binary!(v.value[1])
-                tmp_NNI_made = NNI!(v.value[1], postorder[ref_index])
+                tmp_NNI_made = NNI!(v_copy.value[1], postorder[ref_index])
 
 
                 if tmp_NNI_made != 0
 
-                    molify!(v_copy, delta)
+
+                    #molify!(v_copy, delta)
                     U_after_nni::Float64 = logf(v_copy)
                     delta_U = 2.0*(U_after_nni - U_before_nni)
                     my_v::Float64 = probM[ref_index]^2
@@ -136,6 +136,7 @@ function refraction(v::ProbPathVariate, probB::Vector{Float64}, probM::Vector{Fl
                         probM[ref_index] = sqrt(my_v - delta_U)
                         v = v_copy
                         NNI_attempts += 1
+
                     end
                 end
             else
@@ -146,7 +147,7 @@ function refraction(v::ProbPathVariate, probB::Vector{Float64}, probM::Vector{Fl
         temp = (stepsz-ref_time)
         tmpB = @. probB + temp * probM
     end
-    return NNI_attempts, ref_attempts
+    return v, tmpB, probM, NNI_attempts, ref_attempts
 end # function
 
 
@@ -159,9 +160,14 @@ function scale_factor(v::SamplerVariate, delta::Float64)::Float64
     end
 end # function
 
+function molify!(v::Vector, delta::Float64)
+    blens = [molifier(i, delta) for i in v]
+    return blens
+end
+
 function molify!(v::SamplerVariate, delta::Float64)
-    blens = [molifier(i, delta) for i in get_branchlength_vector(v.value[1])]
-    set_branchlength_vector!(v.value[1], blens)
+    #blens = [molifier(i, delta) for i in get_branchlength_vector(v.value[1])]
+    return molify!(get_branchlength_vector(v.value[1]), delta)
 end
 
 
@@ -174,13 +180,13 @@ function molifier(x::Float64, delta::Float64)::Float64
     if x >= delta
         return delta
     else
-        return 1.0/(2.0/delta) * (x*x+delta*delta)
+        return 1.0/2.0/delta * (x*x+delta*delta)
     end
 end # function
 
 
-function gradf!(block::SamplingBlock, x::AbstractVector{T}) where {T<:Real}
-    gradlogpdf!(block, x)
+function gradf!(block::SamplingBlock, x::AbstractVector{T}, dtype::Symbol=:forward) where {T<:Real}
+    gradlogpdf!(block, x, dtype)
 
 end
 
@@ -188,12 +194,16 @@ function mlogpdf!(block::SamplingBlock, x::AbstractVector{T}) where {T<:Real}
   logpdf!(block, x) # logf is already with prior
 end
 
-function gradlogpdf!(m::Model, x::AbstractVector{T}, block::Integer=0,
-                      transform::Bool=false; dtype::Symbol=:mytree) where {T<:Real}
-  GradiantLog(pre_order(x.value[1]), m.nodes[:mypi])
+#function gradlogpdf!(m::Model, x::AbstractVector{T}, block::Integer=0,
+#                      transform::Bool=false; dtype::Symbol=:mytree) where {T<:Real}
+#  GradiantLog(pre_order(x.value[1]), m.nodes[:mypi])
+#end
+
+function gradlogpdf(s::AbstractStochastic, x::AbstractArray)
+  gradlogpdf_sub(s.distr, x)
 end
 
-function Stochastic(d::AbstractString, f::Function, monitor::Union{Bool, Vector{Int}}=true)
+function Stochastic(d::Node, f::Function, monitor::Union{Bool, Vector{Int}}=true)
     value = Node()
     fx, src = modelfxsrc(depfxargs, f)
     s = TreeStochastic(value, :nothing, Int[], fx, src, Symbol[],

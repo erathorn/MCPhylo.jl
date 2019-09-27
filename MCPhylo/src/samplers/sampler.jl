@@ -113,7 +113,11 @@ end
 
 function gradlogpdf!(block::SamplingBlock, x::AbstractArray{T},
                     dtype::Symbol=:forward) where {T<:Real}
-  gradlogpdf!(block.model, x, block.index, block.transform, dtype=dtype)
+  if dtype == :provided
+      return _gradlogpdf!(block.model, x, block.index)
+  else
+      return gradlogpdf!(block.model, x, block.index, block.transform, dtype=dtype)
+  end
 end
 
 function logpdf!(block::SamplingBlock, x::AbstractArray{T}) where {T<:Real}
@@ -123,6 +127,16 @@ end
 function logpdf!(block::SamplingBlock, x::AbstractArray{T}) where {T<:Node}
   logpdf!(block.model, x, block.index, block.transform)
 end
+
+
+function _gradlogpdf!(m::Model, x::AbstractArray, block::Integer, dtype::Symbol=:provided)
+  targets = keys(m, :target, block)
+  node = m[targets[1]]
+  update!(node, m)
+  gradlogpdf(node)
+end
+
+
 
 function logpdfgrad!(block::SamplingBlock, x::AbstractVector{T},
                     dtype::Symbol) where {T<:Real}

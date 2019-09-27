@@ -11,121 +11,71 @@ extensions = quote
     ## Load needed packages and import methods to be extended
 
     using Distributions
-    import Distributions: minimum, maximum, logpdf
+    import Distributions: minimum, maximum, logpdf, gradlogpdf
 
     ## Type declaration
     mutable struct PhyloDist <: ContinuousUnivariateDistribution
         my_tree
         mypi::Real
         data::Array
-        #rates::Array
+        rates::Vector
     end
     minimum(d::PhyloDist) = -Inf
     maximum(d::PhyloDist) = Inf
 
     function logpdf(d::PhyloDist, x::Real)
-        rates = ones(3132)
+
         mt = MCPhylo.post_order(d.my_tree.value)
-        return MCPhylo.FelsensteinFunction(mt, d.mypi, rates)
+        return MCPhylo.FelsensteinFunction(mt, d.mypi, d.rates)
+    end
+
+    function gradlogpdf(d::PhyloDist, x::Real)
+        mt = MCPhylo.pre_order(d.my_tree.value)
+        return MCPhylo.GradiantLog(mt, d.mypi, d.rates)
     end
 end
-#include("./myMamba.jl")
-#using .myMamba
+
 include("./MCPhylo/src/MCPhylo.jl")
 using .MCPhylo
 
-
-
-
-eval(extensions)
-tt, data_arr, df = MCPhylo.make_tree_with_data_mat("./local/development.nex")
 mt = MCPhylo.make_tree_with_data("./local/development.nex")
 
 my_data = Dict{Symbol, Any}(
-  :mtree => mt,
-  :data =>data_arr)
+  :mtree => mt)
 
 
 
 
 model =  Model(
     y = Stochastic(1,
-    (mtree, mypi, data) ->
-    begin
-        UnivariateDistribution[PhyloDist(mtree, mypi, data)]
-    end,
+    (mtree, mypi, rates) -> PhyloDist(mtree, mypi, rates)
     ),
     mypi = Stochastic( () -> Truncated(Uniform(0.0,1.0), 0.0, 1.0)),
-    mtree = Stochastic("t", () -> MCPhylo.CompoundDirichlet(1.0,1.0,0.100,1.0))
+    mtree = Stochastic(Node(), () -> CompoundDirichlet(1.0,1.0,0.100,1.0)),
+    rates = Logical(1,(mymap, av) -> [av[convert(UInt8,i)] for i in mymap],false),
+    mymap = Stochastic(1,() -> Categorical([0.25, 0.25, 0.25, 0.25])),
+     av = Stochastic(1,() -> Dirichlet([1.0, 1.0, 1.0, 1.0]))
      )
-inivals = rand(Uniform(0,1),3132)
-inivals =inivals./sum(inivals)
+inivals = rand(Categorical([0.25, 0.25, 0.25, 0.25]),3132)
+inivals2 =rand(Dirichlet([0.25, 0.25, 0.25, 0.25]))
 
 inits = [ Dict(
     :mtree => my_data[:mtree],
     :mypi=> 0.5,
     :y => [-500000],
-    :rates=>inivals)]
+    :mymap=>inivals,
+    :av => inivals2)]
 
-function my_func()
-    println("myfunc")
-end
 
-#scheme = [Slice(:mypi, 0.05), SliceSimplex(:rates)]
-scheme = [MCPhylo.ProbPathHMCSampler(:mtree, 3.0,2.0, 0.001, my_func),
-         Slice(:mypi, 0.05)
-            #Slice(:blenvec, 0.02),
+scheme = [ProbPathHMC(:mtree, 3.0,0.2, 0.001, :provided),
+         Slice(:mypi, 0.05),
+         Slice(:av, 0.02),
+         RWM(:mymap, 1)
              ]
 
 setsamplers!(model, scheme)
-#setinputs!(model, my_data)
-#MCPhylo.setinits!(model, inits)
 
 
-
-
-sim = mcmc(model, my_data, inits, 250, burnin=0, chains=1)
+sim = mcmc(model, my_data, inits, 500, burnin=0, chains=1, trees=true)
 
 MCPhylo.to_file(sim, "")
-
-
-
-epsilon = 0.1
-L = 50
-
-theta1 = HMCVariate([0.0, 0.0, 0.0], epsilon, L, my_func)
-
-
-
-
-
-
-
-
-describe(sim)
-
-using Profile
-using ProfileView
-using Serialization
-function benchmark()
-    # Any setup code goes here.
-
-    # Run once, to force compilation.
-    println("======================= First run:")
-    #srand(666)
-    @time mcmc(model, my_data, inits, 2, burnin=1, chains=1)
-
-    # Run a second time, with profiling.
-    println("\n\n======================= Second run:")
-    #srand(666)
-    Profile.init(delay=10.01)
-    Profile.clear()
-    Profile.clear_malloc_data()
-    @profile @time mcmc(model, my_data, inits, 10, burnin=1, chains=1)
-
-    # Write profile results to profile.bin.
-    r = Profile.retrieve()
-    f = open("profile.bin", "w")
-    Serialization.serialize(f, r)
-    close(f)
-end

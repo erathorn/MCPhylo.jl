@@ -176,7 +176,7 @@ function post_order(root::Node, traversal::Vector{Node})::Vector{Node}
    end # if
    push!(traversal, root)
    return traversal
-end # function post_order
+end # function post_order_trav
 
 
 """
@@ -234,9 +234,13 @@ function newick(root::Node, newickstring::AbstractString)
         newickstring = newick(root.rchild, newickstring)
         newickstring = string(newickstring, ")")
         newickstring = string(newickstring, root.name)
+        newickstring = string(newickstring, ":")
+        newickstring = string(newickstring, root.inc_length)
         return newickstring
     else
-        return string(newickstring, root.name)
+        newickstring = string(newickstring, root.name)
+        newickstring = string(newickstring, ":")
+        return string(newickstring, root.inc_length)
     end
 end
 

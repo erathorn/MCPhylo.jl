@@ -167,6 +167,23 @@ function logpdf_sub(D::Array{MultivariateDistribution}, X::AbstractArray,
   lp
 end
 
+function gradlogpdf_sub(D::Array{UnivariateDistribution}, X::AbstractArray)
+    if length(D) > 1
+      throw(DimensionMismatch("To many Distributions"))
+    end
+    grad = gradlogpdf_sub(D[1], X[1])
+    ifelse.(isfinite.(grad), grad, 0.0)
+end
+
+function gradlogpdf_sub(d::Distribution, x)
+  gradlogpdf(d, x)
+end
+
+function gradlogpdf_sub(d::Distribution, x::AbstractArray)
+  gradlogpdf(d, x[1])
+end
+
+
 
 #################### Rand Fallbacks ####################
 
