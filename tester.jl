@@ -6,46 +6,17 @@ tester:
 
 =#
 
-extensions = quote
-
-    ## Load needed packages and import methods to be extended
-
-    using Distributions
-    import Distributions: minimum, maximum, logpdf, gradlogpdf
-
-    ## Type declaration
-    mutable struct PhyloDist <: ContinuousUnivariateDistribution
-        my_tree
-        mypi::Real
-        data::Array
-        rates::Vector
-    end
-    minimum(d::PhyloDist) = -Inf
-    maximum(d::PhyloDist) = Inf
-
-    function logpdf(d::PhyloDist, x::Real)
-
-        mt = MCPhylo.post_order(d.my_tree.value)
-        return MCPhylo.FelsensteinFunction(mt, d.mypi, d.rates)
-    end
-
-    function gradlogpdf(d::PhyloDist, x::Real)
-        mt = MCPhylo.pre_order(d.my_tree.value)
-        return MCPhylo.GradiantLog(mt, d.mypi, d.rates)
-    end
-end
-
 include("./MCPhylo/src/MCPhylo.jl")
 using .MCPhylo
 
-mt = MCPhylo.make_tree_with_data("./local/development.nex")
+mt = make_tree_with_data("yournexusfile.nex") # load your own nexus file
 
 my_data = Dict{Symbol, Any}(
   :mtree => mt)
 
 
 
-
+# model setup
 model =  Model(
     y = Stochastic(1,
     (mtree, mypi, rates) -> PhyloDist(mtree, mypi, rates)
@@ -56,6 +27,8 @@ model =  Model(
     mymap = Stochastic(1,() -> Categorical([0.25, 0.25, 0.25, 0.25])),
      av = Stochastic(1,() -> Dirichlet([1.0, 1.0, 1.0, 1.0]))
      )
+
+# intial model values
 inivals = rand(Categorical([0.25, 0.25, 0.25, 0.25]),3132)
 inivals2 =rand(Dirichlet([0.25, 0.25, 0.25, 0.25]))
 
@@ -75,7 +48,9 @@ scheme = [ProbPathHMC(:mtree, 3.0,0.2, 0.001, :provided),
 
 setsamplers!(model, scheme)
 
-
+# do the mcmc simmulation. if trees=true the trees are stored and can later be
+# flushed ot a file output.
 sim = mcmc(model, my_data, inits, 500, burnin=0, chains=1, trees=true)
 
-MCPhylo.to_file(sim, "")
+# write the output to a path specified as the second argument
+to_file(sim, "")

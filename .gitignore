@@ -8,3 +8,5 @@ usr/
 *.bin
 ProfileVtune.jl
 local/
+params.csv
+*.nwk
