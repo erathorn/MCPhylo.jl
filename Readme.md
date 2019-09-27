@@ -14,5 +14,7 @@ This module is build on a forked instance of Mamba 0.12.0
 A proper installation of this package is not supported yet. Please install all the
 necessary packages listed in `REQUIRE`.
 
+Download the package and place it in your workspace. Then use it as shown in `tester.jl`.
+
 An initial running version is shown in the file `tester.jl`.
 The general setup is as in the original Mamba package.
