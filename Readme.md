@@ -9,7 +9,7 @@ It is written in Julia 1.2.0. This package is not backwards compatible!
 
 This module is build on a forked instance of Mamba 0.12.0
 
-== How to==
+## How to
 
 A proper installation of this package is not supported yet. Please install all the
 necessary packages listed in `REQUIRE`.
