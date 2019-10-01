@@ -3,7 +3,7 @@ import Distributions: length, insupport, _logpdf
 
 """
     CompoundDirichlet(alpha::Float64, a::Float64, beta::Float64, c::Float64, nterm::Float64)
-This structure implememts the CompoundDirichlet distribution described4
+This structure implememts the CompoundDirichlet distribution described
 in Zhang, Rannala and Yang 2012. (DOI:10.1093/sysbio/sys030)
 """
 ## Type declaration

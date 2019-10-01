@@ -1,6 +1,6 @@
 #=
 tester:
-- Julia version: 1.0.1
+- Julia version: 1.2.0
 - Author: erathorn
 - Date: 2019-05-07
 
