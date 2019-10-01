@@ -14,7 +14,7 @@ function Model(; iter::Integer=0, burnin::Integer=0,
     node.symbol = key
     nodedict[key] = node
   end
-  m = Model(nodedict, Sampler[], ModelState[], iter, burnin, false, false)
+  m = Model(nodedict, Sampler[], ModelState[], iter, burnin, false, false, -Inf64)
   dag = ModelGraph(m)
   dependentkeys = keys(m, :dependent)
   terminalkeys = keys(m, :stochastic)
@@ -251,4 +251,10 @@ function names(m::Model, nodekeys::Vector{Symbol})
     append!(values, names(m, key))
   end
   values
+end
+
+
+function update_likelihood!(m::Model, likelihood::Float64)
+  m.likelihood = likelihood
+  m
 end

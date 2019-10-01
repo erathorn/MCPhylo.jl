@@ -48,6 +48,7 @@ function SliceSimplex(params::ElementOrVector{Symbol}; args...)
 
       SliceSimplex_sub!(node.distr, sim, logf)
     end
+    
     nothing
   end
   Sampler(params, samplerfx, SliceSimplexTune())

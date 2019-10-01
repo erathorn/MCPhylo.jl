@@ -234,6 +234,7 @@ mutable struct Model
   burnin::Int
   hasinputs::Bool
   hasinits::Bool
+  likelihood::Float64
 end
 
 

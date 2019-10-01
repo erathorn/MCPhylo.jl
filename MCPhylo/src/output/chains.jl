@@ -8,6 +8,7 @@ function Chains(iters::Integer, params::Integer;
   value = Array{Float64}(undef, length(start:thin:iters), params, chains)
   value2 = Array{AbstractString}(undef, length(start:thin:iters), 1, chains)
   fill!(value, NaN)
+
   Chains(value, value2, start=start, thin=thin, names=names)
 end
 

@@ -9,4 +9,5 @@ usr/
 ProfileVtune.jl
 local/
 params.csv
+params.log
 *.nwk

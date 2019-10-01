@@ -91,6 +91,7 @@ end
 
 
 function sample!(m::Model, block::Integer=0)
+  ov_t = keys_output(m)[1]
   m.iter += 1
   isoneblock = block != 0
   blocks = isoneblock ? block : 1:length(m.samplers)
@@ -103,6 +104,7 @@ function sample!(m::Model, block::Integer=0)
     end
   end
   m.iter -= isoneblock
+  m.likelihood = logpdf(m[ov_t])
   m
 end
 
@@ -117,7 +119,7 @@ function unlist(m::Model, monitoronly::Bool)
     lvalue = unlist(node)
     monitoronly ? lvalue[node.monitor] : lvalue
   end
-  vcat(map(f, keys(m, :dependent))...)
+  vcat(map(f, keys(m, :dependent))..., m.likelihood)
 end
 
 function unlist(m::Model, nodekeys::Vector{Symbol}, transform::Bool=false)

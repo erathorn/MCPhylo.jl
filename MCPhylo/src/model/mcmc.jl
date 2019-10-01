@@ -75,12 +75,13 @@ end
 
 function mcmc_worker!(args::Vector)
   m, state, window, burnin, thin, meter, trees = args
-
+  llname::AbstractString = "likelihood"
   m.iter = first(window) - 1
   relist!(m, state.value)
   settune!(m, state.tune)
 
-  pnames = names(m, true)
+  pnames = vcat(names(m, true), llname)
+  
   sim = Chains(last(window), length(pnames), start=burnin + thin, thin=thin,
                names=pnames)
   treenode = :tn
