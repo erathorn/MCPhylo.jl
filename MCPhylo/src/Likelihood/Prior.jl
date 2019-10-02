@@ -1,6 +1,4 @@
 
-import Distributions: length, insupport, _logpdf
-
 """
     CompoundDirichlet(alpha::Float64, a::Float64, beta::Float64, c::Float64, nterm::Float64)
 This structure implememts the CompoundDirichlet distribution described

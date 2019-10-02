@@ -47,7 +47,7 @@ import Distributions:
        InverseWishart, Wishart,
        ## Methods
        cdf, dim, gradlogpdf, insupport, isprobvec, logpdf, logpdf!, maximum,
-       minimum, pdf, quantile, rand, sample!, support
+       minimum, pdf, quantile, rand, sample!, support, length
 import Gadfly: draw, Geom, Guide, Layer, layer, PDF, PGF, Plot, plot, PNG, PS,
        render, Scale, SVG, Theme
 using LightGraphs: DiGraph, add_edge!, outneighbors,
@@ -146,6 +146,15 @@ mutable struct ArrayLogical{N} <: ArrayVariate{N}
   targets::Vector{Symbol}
 end
 
+mutable struct TreeLogical <: TreeVariate
+  value::Node
+  symbol::Symbol
+  monitor::Vector{Int}
+  eval::Function
+  sources::Vector{Symbol}
+  targets::Vector{Symbol}
+end
+
 mutable struct ScalarStochastic <: ScalarVariate
   value::Float64
   symbol::Symbol
@@ -176,7 +185,7 @@ mutable struct TreeStochastic <: TreeVariate
     distr::DistributionStruct
 end
 
-const AbstractLogical = Union{ScalarLogical, ArrayLogical}
+const AbstractLogical = Union{ScalarLogical, ArrayLogical, TreeLogical}
 const AbstractStochastic = Union{ScalarStochastic, ArrayStochastic, TreeStochastic}
 const AbstractDependent = Union{AbstractLogical, AbstractStochastic}
 #const AnyDependent = Union{AbstractDependent, TreeStochastic}
@@ -272,6 +281,7 @@ include("distributions/extensions.jl")
 include("distributions/pdmatdistribution.jl")
 include("distributions/transformdistribution.jl")
 include("distributions/Phylodist.jl")
+include("distributions/Branchlengthdist.jl")
 
 include("model/dependent.jl")
 include("model/graph.jl")
@@ -345,6 +355,7 @@ export
   ArrayLogical,
   ArrayStochastic,
   ArrayVariate,
+  TreeLogical,
   TreeVariate,
   Node,
   Chains,
@@ -366,7 +377,8 @@ export
   Flat,
   SymUniform,
   CompoundDirichlet,
-  PhyloDist
+  PhyloDist,
+  MultivariateUniformTrunc
 
 export
   autocor,

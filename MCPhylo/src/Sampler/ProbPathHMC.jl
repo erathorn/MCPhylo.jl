@@ -211,10 +211,16 @@ function Stochastic(d::Node, f::Function, monitor::Union{Bool, Vector{Int}}=true
     setmonitor!(s, monitor)
 end
 
-function setmonitor!(d::TreeStochastic, monitor::Bool)
-    d.monitor = [1,2]
-    d
-end
+#function setmonitor!(d::TreeStochastic, monitor::Bool)
+#    d.monitor = [1,2]
+#    d
+#end
+
+#function setmonitor!(d::TreeLogical, monitor::Bool)
+#    d.monitor = [1,2]
+#    d
+#end
+
 
 """
     setinits!(d::TreeVariate, m::model, x::Array)
@@ -236,10 +242,21 @@ function names(d::TreeStochastic, nodekey::Symbol)
     AbstractString["Tree height", "Tree length"]
 end
 
+function names(d::TreeLogical, nodekey::Symbol)
+    AbstractString["Tree height", "Tree length"]
+end
+
+
 function unlist(d::TreeStochastic)
     y = tree_height(d.value), tree_length(d.value)
     collect(y)
 end
+
+function unlist(d::TreeLogical)
+    y = tree_height(d.value), tree_length(d.value)
+    collect(y)
+end
+
 
 function unlist(s::AbstractStochastic, x::Node, transform::Bool=false)
     s.value

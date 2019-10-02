@@ -19,12 +19,14 @@ end
 
 function setmonitor!(d::AbstractDependent, monitor::Vector{Int})
   values = monitor
-  n = length(unlist(d))
-  if n > 0 && !isempty(monitor)
-    if monitor[1] == 0
-      values = collect(1:n)
-    elseif minimum(monitor) < 1 || maximum(monitor) > n
-      throw(BoundsError())
+  if !isempty(monitor)
+    n = length(unlist(d))
+    if n > 0
+      if monitor[1] == 0
+        values = collect(1:n)
+      elseif minimum(monitor) < 1 || maximum(monitor) > n
+        throw(BoundsError())
+      end
     end
   end
   d.monitor = values
@@ -48,6 +50,10 @@ logpdf(d::AbstractDependent, transform::Bool=false) = 0.0
 
 logpdf(d::AbstractDependent, x, transform::Bool=false) = 0.0
 
+gradlogpdf(d::AbstractDependent, x, transform::Bool=false) = 0.0
+
+gradlogpdf(d::AbstractDependent, transform::Bool=false) = 0.0
+
 
 #################### Logical ####################
 
@@ -70,6 +76,16 @@ function Logical(d::Integer, f::Function,
   value = Array{Float64}(undef, fill(0, d)...)
   fx, src = modelfxsrc(depfxargs, f)
   l = ArrayLogical(value, :nothing, Int[], fx, src, Symbol[])
+  setmonitor!(l, monitor)
+end
+
+Logical(f::Function, d::Node, args...) = Logical(d, f, args...)
+
+function Logical(d::Node, f::Function,
+                 monitor::Union{Bool, Vector{Int}}=true)
+  value = Node()
+  fx, src = modelfxsrc(depfxargs, f)
+  l = TreeLogical(value, :nothing, Int[], fx, src, Symbol[])
   setmonitor!(l, monitor)
 end
 
@@ -211,6 +227,10 @@ function logpdf(s::AbstractStochastic, transform::Bool=false)
 end
 
 function gradlogpdf(s::AbstractStochastic)
+  gradlogpdf(s, s.value)
+end
+
+function gradlogpdf(s::AbstractLogical)
   gradlogpdf(s, s.value)
 end
 

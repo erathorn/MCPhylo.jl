@@ -144,9 +144,9 @@ function create_tree_from_leaves(leaf_nodes::Vector{String}, node_size::Int64 = 
         # create a new mother node to which the two first nodes are added as children
         # add the new mother node to the list and reshuffle
         first_child::Node = pop!(my_node_list)
-        first_child.inc_length = rand(Uniform(0,1))
+        first_child.inc_length = rand(Uniform(1,5))
         second_child::Node = pop!(my_node_list)
-        second_child.inc_length = rand(Uniform(0,1))
+        second_child.inc_length = rand(Uniform(1,5))
         curr_node::Node = Node(string(temp_name), zeros(Float64, (2, node_size)), missing, missing, missing, 0, true, 0.0, "0", 0)
         add_child!(curr_node, first_child, true)
         add_child!(curr_node, second_child, false)
@@ -171,8 +171,8 @@ used for the post order traversal.
 """
 function post_order(root::Node, traversal::Vector{Node})::Vector{Node}
    if root.nchild != 0
-        post_order(root.lchild, traversal)
-        post_order(root.rchild, traversal)
+        isdefined(root, :lchild) && post_order(root.lchild, traversal)
+        isdefined(root, :rchild) && post_order(root.rchild, traversal)
    end # if
    push!(traversal, root)
    return traversal
@@ -454,6 +454,11 @@ end # function set_branchlength_vector!
 function set_branchlength_vector!(t::TreeStochastic, blenvec::Array{Float64})
     set_branchlength_vector!(t.value, blenvec::Array{Float64})
 end # function
+
+function set_branchlength_vector!(t::TreeStochastic, blenvec::ArrayStochastic)
+    set_branchlength_vector!(t.value, blenvec.value)
+end # function
+
 
 """
     get_sum_seperate_length!(root::Node)::Vector{Float64}
