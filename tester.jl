@@ -1,3 +1,4 @@
+
 #=
 tester:
 - Julia version: 1.2.0
@@ -56,7 +57,7 @@ setsamplers!(model, scheme)
 
 # do the mcmc simmulation. if trees=true the trees are stored and can later be
 # flushed ot a file output.
-sim = mcmc(model, my_data, inits, 5000, burnin=500,thin=10, chains=1, trees=true)
+sim = mcmc(model, my_data, inits, 500, burnin=50,thin=10, chains=1, trees=true)
 
 # write the output to a path specified as the second argument
 to_file(sim, "")

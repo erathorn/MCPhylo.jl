@@ -19,10 +19,7 @@ function FelsensteinFunction(tree_postorder::Vector{Node}, pi_::Number, rates::V
     _pi_::Float64 = log(1.0-pi_)
     _lpi_::Float64 = log(pi_)
     @inbounds for ind in 1:n_c
-        res +=(log(rdata[1,ind])+ _lpi_) + (log(rdata[2,ind])+ _pi_)
-
-        #rdata[1, ind] *pi_
-        #rdata[2, ind] *=_pi_
+        res += exp(log(rdata[1,ind])+ _lpi_) + exp(log(rdata[2,ind])+ _pi_)
     end
 
     return res#sum(log.(rdata.*[pi_, 1.0-pi_]))
@@ -49,24 +46,26 @@ function CondLikeInternal(node::Node, pi_::Number, rates::Vector{Float64}, n_c::
         p_::Float64 = 1.0-pi_
         v_::Float64 = ext_*pi_
         w_::Float64 = ext_*p_
-        v1::Float64 = ext+v_
-        v2::Float64 = ext+w_
+        @fastmath v1::Float64 = log(ext+v_)
+        @fastmath v2::Float64 = log(ext+w_)
 
-        @inbounds a::Float64 = left_daughter_data[1,ind]*v1 + left_daughter_data[2,ind]*v_
-        @inbounds b::Float64 = left_daughter_data[1,ind]*w_ + left_daughter_data[2,ind]*v2
+
+        @inbounds a::Float64 = exp(log(left_daughter_data[1,ind])+v1) + exp(log(left_daughter_data[2,ind])+log(v_))
+        @inbounds b::Float64 = exp(log(left_daughter_data[1,ind])+log(w_)) + exp(log(left_daughter_data[2,ind])+v2)
 
         @fastmath ext = exp(-rinc*r)
         ext_ = 1.0-ext
         v_ = ext_*pi_
         w_ = ext_*p_
-        v1 = ext+v_
-        v2 = ext+w_
+        @fastmath v1 = log(ext+v_)
+        @fastmath v2 = log(ext+w_)
 
-        @inbounds c::Float64 = right_daughter_data[1,ind]*v1 + right_daughter_data[2,ind]*v_
-        @inbounds d::Float64 = right_daughter_data[1,ind]*w_ + right_daughter_data[2,ind]*v2
 
-        @inbounds node.data[1,ind] = a*c
-        @inbounds node.data[2,ind] = b*d
+        @inbounds c::Float64 = exp(log(right_daughter_data[1,ind])+v1) + exp(log(right_daughter_data[2,ind])+log(v_))
+        @inbounds d::Float64 = exp(log(right_daughter_data[1,ind])+log(w_)) + exp(log(right_daughter_data[2,ind])+v2)
+
+        @inbounds node.data[1,ind] = exp(log(a)+log(c))
+        @inbounds node.data[2,ind] = exp(log(b)+log(d))
     end # for
 end # function
 
