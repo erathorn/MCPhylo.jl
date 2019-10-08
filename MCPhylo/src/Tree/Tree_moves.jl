@@ -46,21 +46,22 @@ end # function NNI!
 
 
 """
-    NNI(mat::Array{Float64,2})::nothing
+    NNI(root::Node, target::Node)::nothing
 
-documentation
+This function does a nearest neighbour interchange (NNI) move on the tree specified
+by `root`. The parameter `target` specifies the node which performs the interchange
+move with a randomly selected neighbour.
+The function returns 1 if the move was successfull and 0 else.
 """
-function NNI!(root::Node, target::Node)
-    
+function NNI!(root::Node, target::Node)::Int64
+    # NNI move would be illegal
     if target.nchild == 0 || target.root
         return 0
-        #end
-    end
+    end # if
 
 
     parent::Node = get_mother(target)
     sister = get_sister(target)
-
 
     if rand([1,2]) == 1
         ychild = remove_child!(target, true)

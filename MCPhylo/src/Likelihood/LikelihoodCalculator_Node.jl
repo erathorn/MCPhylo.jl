@@ -6,7 +6,7 @@ This function calculates the log-likelihood of an evolutiuonary model using the
 Felsensteins pruning algorithm.
 """
 function FelsensteinFunction(tree_postorder::Vector{Node}, pi_::Number, rates::Vector{Float64})::Float64
-    n_c = size(tree_postorder[1].data)[2]
+    n_c::Int64 = size(tree_postorder[1].data)[2]
     for node in tree_postorder
         if node.nchild !== 0
             CondLikeInternal(node, pi_, rates, n_c)
@@ -19,15 +19,15 @@ function FelsensteinFunction(tree_postorder::Vector{Node}, pi_::Number, rates::V
     _pi_::Float64 = log(1.0-pi_)
     _lpi_::Float64 = log(pi_)
     @simd for ind in 1:n_c
-        @inbounds res += exp(log(rdata[1,ind])+ _lpi_) + exp(log(rdata[2,ind])+ _pi_)
-    end
+        @inbounds res += log(exp(rdata[1,ind]+ _lpi_) + exp(rdata[2,ind]+ _pi_))
+    end # for
 
-    return res#sum(log.(rdata.*[pi_, 1.0-pi_]))
+    return res
 end # function
 
 
 function CondLikeInternal(node::Node, pi_::Number, rates::Vector{Float64}, n_c::Int64)::Nothing
-    #@assert size(node.child)[1] == 2
+
     @assert size(rates)[1] == n_c
     left_daughter::Node = node.lchild
     right_daughter::Node = node.rchild
@@ -36,36 +36,38 @@ function CondLikeInternal(node::Node, pi_::Number, rates::Vector{Float64}, n_c::
     left_daughter_data::Array{Float64,2} = left_daughter.data
     right_daughter_data::Array{Float64,2} = right_daughter.data
 
-    # use the inbounds decorator to enable SIMD
-    # SIMD greatly improves speed!!!
+    # use the inbounds decorator to prevent bounds checking
+
+
     Base.Threads.@threads for ind=eachindex(rates)
         @inbounds r::Float64 = rates[ind]
 
         @fastmath ext::Float64 = exp(-linc*r)
-        ext_::Float64 = 1.0-ext
+        ext_::Float64 = log(1.0-ext)
         p_::Float64 = 1.0-pi_
-        v_::Float64 = ext_*pi_
-        w_::Float64 = ext_*p_
-        @fastmath v1::Float64 = log(ext+v_)
-        @fastmath v2::Float64 = log(ext+w_)
+        v_::Float64 = ext_+log(pi_)
+        w_::Float64 = ext_+log(p_)
+        @fastmath v1::Float64 = log(ext+exp(v_))
+        @fastmath v2::Float64 = log(ext+exp(w_))
 
 
-        @inbounds a::Float64 = exp(log(left_daughter_data[1,ind])+v1) + exp(log(left_daughter_data[2,ind])+log(v_))
-        @inbounds b::Float64 = exp(log(left_daughter_data[1,ind])+log(w_)) + exp(log(left_daughter_data[2,ind])+v2)
+        @inbounds a::Float64 = exp(left_daughter_data[1,ind]+v1) + exp(left_daughter_data[2,ind]+v_)
+        @inbounds b::Float64 = exp(left_daughter_data[1,ind]+w_) + exp(left_daughter_data[2,ind]+v2)
+
 
         @fastmath ext = exp(-rinc*r)
-        ext_ = 1.0-ext
-        v_ = ext_*pi_
-        w_ = ext_*p_
-        @fastmath v1 = log(ext+v_)
-        @fastmath v2 = log(ext+w_)
+        ext_ = log(1.0-ext)
+        v_ = ext_+log(pi_)
+        w_ = ext_+log(p_)
+        @fastmath v1 = log(ext+exp(v_))
+        @fastmath v2 = log(ext+exp(w_))
 
 
-        @inbounds c::Float64 = exp(log(right_daughter_data[1,ind])+v1) + exp(log(right_daughter_data[2,ind])+log(v_))
-        @inbounds d::Float64 = exp(log(right_daughter_data[1,ind])+log(w_)) + exp(log(right_daughter_data[2,ind])+v2)
+        @inbounds c::Float64 = exp(right_daughter_data[1,ind]+v1) + exp(right_daughter_data[2,ind]+v_)
+        @inbounds d::Float64 = exp(right_daughter_data[1,ind]+w_) + exp(right_daughter_data[2,ind]+v2)
 
-        @inbounds node.data[1,ind] = exp(log(a)+log(c))
-        @inbounds node.data[2,ind] = exp(log(b)+log(d))
+        @inbounds node.data[1,ind] = log(a)+log(c)
+        @inbounds node.data[2,ind] = log(b)+log(d)
     end # for
 end # function
 

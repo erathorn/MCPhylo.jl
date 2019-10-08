@@ -120,7 +120,7 @@ function make_tree_with_data(filename::String)#::Tree_Module.Node
             end # if
         end # for
         node = find_by_name(new_tree, row.Language)
-        node.data = data_vec
+        node.data = log.(data_vec)
     end # for
     return new_tree
 end # function make_tree_with_data
