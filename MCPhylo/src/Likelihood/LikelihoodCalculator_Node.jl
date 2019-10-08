@@ -42,6 +42,7 @@ function CondLikeInternal(node::Node, pi_::Number, rates::Vector{Float64}, n_c::
     Base.Threads.@threads for ind=eachindex(rates)
         @inbounds r::Float64 = rates[ind]
 
+
         @fastmath ext::Float64 = exp(-linc*r)
         ext_::Float64 = log(1.0-ext)
         p_::Float64 = 1.0-pi_
@@ -66,6 +67,7 @@ function CondLikeInternal(node::Node, pi_::Number, rates::Vector{Float64}, n_c::
         @inbounds c::Float64 = exp(right_daughter_data[1,ind]+v1) + exp(right_daughter_data[2,ind]+v_)
         @inbounds d::Float64 = exp(right_daughter_data[1,ind]+w_) + exp(right_daughter_data[2,ind]+v2)
 
+
         @inbounds node.data[1,ind] = log(a)+log(c)
         @inbounds node.data[2,ind] = log(b)+log(d)
     end # for
@@ -76,7 +78,7 @@ function GradiantLog(tree_preorder::Vector{Node}, pi_::Number, rates::Array{Floa
     n_c::Int64 = size(root.data)[2]
     Up::Array{Float64,3} = ones(length(tree_preorder)+1, size(root.data)[1], n_c)
     Grad_ll::Array{Float64,1} = zeros(length(tree_preorder))
-    gradient::Array{Float64,1} = zeros(n_c)
+    gradient::Vector{Float64} = zeros(n_c)
     for node in tree_preorder
         node_ind::Int64 = node.num
         if node.binary == "1"
@@ -89,32 +91,42 @@ function GradiantLog(tree_preorder::Vector{Node}, pi_::Number, rates::Array{Floa
             sister::Node = get_sister(node)
             mother::Node = get_mother(node)
 
+            sisterdata::Array{Float64} = exp.(sister.data)
+            sisterdata ./= sum(sisterdata, dims=1)
+            @inbounds Up[node_ind,:,:] = pointwise_mat(Up[node_ind,:,:], sisterdata, n_c)
 
-            @inbounds Up[node_ind,:,:] = pointwise_mat(Up[node_ind,:,:], sister.data, n_c)
+
             @inbounds Up[node_ind,:,:] = pointwise_mat(Up[node_ind,:,:], Up[mother.num,:,:], n_c)
 
-            Base.Threads.@threads for i in 1:n_c
-                @inbounds my_mat::Array{Float64,2} = exponentiate_binary(pi_, node.inc_length, rates[i])
+            nodedata::Array{Float64, 2} = exp.(node.data)
+            nodedata ./= sum(nodedata, dims=1)
 
-                @inbounds a::Float64 = node.data[1, i] * my_mat[1,1] + node.data[2,i] * my_mat[2,1]
-                @inbounds b::Float64 = node.data[1, i] * my_mat[1,2] + node.data[2,i] * my_mat[2,2]
+            Base.Threads.@threads for i in 1:n_c
+                @inbounds my_mat::Array{Float64,2} = exponentiate_binary_grad(pi_, node.inc_length, rates[i])
+                @inbounds my_mat2::Array{Float64,2} = exponentiate_binary(pi_, node.inc_length, rates[i])
+
+                @inbounds a::Float64 = nodedata[1, i] * my_mat[1,1] + nodedata[2,i] * my_mat[2,1]
+                @inbounds b::Float64 = nodedata[1, i] * my_mat[1,2] + nodedata[2,i] * my_mat[2,2]
 
                 @inbounds gradient[i] = Up[node_ind,1,i] * a + Up[node_ind,2,i]*b
 
-                @inbounds Up[node_ind,1,i] = Up[node_ind,1, i] * my_mat[1,2] + Up[node_ind,2,i] * my_mat[2,2]
-                @inbounds Up[node_ind,2,i] = Up[node_ind,1, i] * my_mat[1,1] + Up[node_ind,2,i] * my_mat[2,1]
+                @inbounds Up[node_ind,1,i] = Up[node_ind,1, i] * my_mat2[1,2] + Up[node_ind,2,i] * my_mat2[2,2]
+                @inbounds Up[node_ind,2,i] = Up[node_ind,1, i] * my_mat2[1,1] + Up[node_ind,2,i] * my_mat2[2,1]
             end
 
-            d = sum(pointwise_mat(Up[node_ind,:,:],node.data, n_c), dims=1)
+            d = sum(pointwise_mat(Up[node_ind,:,:],nodedata, n_c), dims=1)
+
             @inbounds gradient ./= d[1,:]
+
             @inbounds Grad_ll[node_ind] = sum(gradient)
 
-            if node.nchild == 0
+            if node.nchild != 0
                 @inbounds scaler = sum(Up[node_ind,:,:], dims=1)
                 @inbounds Up[node_ind,:,:] ./= scaler
             end # if
         end # if
     end # for
+
     return Grad_ll
 
 end # function

@@ -404,7 +404,7 @@ end # function move!
 Return a vector of branch lenghts.
 """
 function get_branchlength_vector(post_order::Vector{Node})::Vector{Float64}
-    out = zeros(length(post_order))
+    out = zeros(length(post_order)-1)
     for i in eachindex(post_order)
         if !post_order[i].root
             out[post_order[i].num]= post_order[i].inc_length
@@ -433,9 +433,11 @@ end # function
 This function sets the branch lengths of a tree to the values specified in blenvec.
 """
 function set_branchlength_vector!(post_order::Vector{Node}, blenvec::Array{Float64})::Vector{Node}
-    @assert size(post_order) == size(blenvec)
+    @assert length(post_order)-1 == length(blenvec)
     for node in post_order
-        node.inc_length = blenvec[node.num]
+        if !node.root
+            node.inc_length = blenvec[node.num]
+        end
     end # for
     return post_order
 end # function set_branchlength_vector!
@@ -492,6 +494,25 @@ function get_sum_seperate_length!(post_order::Vector{Node})::Vector{Float64}
     return [res_int, res_leave]
 end # function get_sum_seperate_length!
 
+function internal_external_map(t::TreeStochastic)::Vector{Int64}
+    internal_external_map(t.value)
+end
+
+function internal_external_map(root::Node)::Vector{Int64}
+    internal_external_map(post_order(root))
+end
+
+function internal_external_map(post_order::Vector{Node})::Vector{Int64}
+    my_map = Vector{Int64}(undef, length(post_order))
+    for node_ind in eachindex(post_order)
+        if post_order[node_ind].nchild != 0
+            my_map[node_ind] = 1
+        else
+            my_map[node_ind] = 0
+        end
+    end
+    return my_map
+end
 
 #"""
 # proper Markdown comments are not possible

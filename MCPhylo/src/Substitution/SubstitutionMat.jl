@@ -17,6 +17,13 @@ function exponentiate_binary(pi_::Number, t::Float64, r::Float64)::Array{Float64
             v_ ext+w_]
 end # function
 
+function exponentiate_binary_grad(pi_::Number, t::Float64, r::Float64)::Array{Float64, 2}
+        exp2::Float64 = exp(-2*pi_*t*r)*pi_
+        return [-exp2 exp2;
+                exp2 -exp2]
+end
+
+
 
 function exponentiate_binary(pi_::Number, t::Float64, r::Float64, out_arr::Array{Float64,2})::Nothing
     # calculate some auxiliary variables

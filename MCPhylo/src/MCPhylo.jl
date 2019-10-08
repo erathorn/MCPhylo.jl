@@ -334,6 +334,7 @@ include("Sampler/ProbPathHMC.jl")
 include("Sampler/ProbPathHMC_Node.jl")
 include("Sampler/PhyloHMC_Functions.jl")
 include("Sampler/PhyloHMC_Functions_Node.jl")
+include("Sampler/BranchLengthSlice.jl")
 
 
 include("Substitution/SubstitutionMat.jl")
@@ -378,7 +379,8 @@ export
   SymUniform,
   CompoundDirichlet,
   PhyloDist,
-  MultivariateUniformTrunc
+  MultivariateUniformTrunc,
+  CompoundDirichletWrap
 
 export
   autocor,
@@ -444,7 +446,8 @@ export
   RWM, RWMVariate,
   Slice, SliceMultivariate, SliceUnivariate,
   SliceSimplex, SliceSimplexVariate,
-  ProbPathHMC
+  ProbPathHMC,
+  BranchSlice
 
 export
   make_tree_with_data,

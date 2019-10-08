@@ -21,6 +21,8 @@ A proper installation of this package is not supported yet. Please install all t
 necessary packages listed in `REQUIRE`. Next, download this
 package and place it in your workspace. Then use it as shown in `tester.jl`.
 
+**Note** This package uses multithreading. (https://docs.julialang.org/en/v1/base/multi-threading/)
+
 An initial running version is shown in the file `tester.jl`.
 The general setup is as in the original Mamba package.
 

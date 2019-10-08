@@ -29,7 +29,7 @@ function ProbPathHMC(params, pargs...)
 
     samplerfx = function(model::Model, block::Integer)
 
-        block = SamplingBlock(model, block, true)
+        block = SamplingBlock(model, block, false)
         v = SamplerVariate(block, pargs...)
 
         sample!(v, block, x -> logpdf!(block, x), (x, differ) -> gradf!(block, x, differ))
@@ -39,8 +39,9 @@ function ProbPathHMC(params, pargs...)
     Sampler(params, samplerfx, ProbPathHMCTune(pargs...))
 end
 
-function sample!(v::ProbPathVariate, block, logf::Function, gradf::Function)
 
+function sample!(v::ProbPathVariate, block, logf::Function, gradf::Function)
+    
     x1 = v.value[:][1] # copy the original state, so it state can be restored
 
     n_leap = v.tune.n_leap
@@ -60,17 +61,23 @@ function sample!(v::ProbPathVariate, block, logf::Function, gradf::Function)
 
 
     tree = block.model[a[1]]
-
-    probM = randn(size(post_order(tree))[1])
+    blens = get_branchlength_vector(tree)
+    probM = randn(length(blens))
 
     currM = deepcopy(probM)
     currH = ll.+ 0.5*sum(currM.*currM)
-    blens = get_branchlength_vector(tree)
+
     probB = deepcopy(blens)
 
     for i in 1:n_leap
+
         fac = scale_factor(v, delta)
-        probM = probM.-stepsz/2.0 .* (gradf(v, v.tune.differ).-logpdf(block.model, a, false))
+        l = gradf(v, v.tune.differ)
+        l2 = logpdf(block.model, a, false)
+
+
+        probM = probM.-stepsz/(2.0 .* (l.-l2))
+
         v, probB, probM, step_nn_att, step_ref_att = refraction(v, probB, probM, true, logf)
         set_branchlength_vector!(v.value[1], probB)
         probM = probM .- stepsz/2.0 .* (gradf(v, v.tune.differ).-logpdf(block.model, a, false))
@@ -96,7 +103,7 @@ function refraction(v::ProbPathVariate, probB::Vector{Float64}, probM::Vector{Fl
     stepsz = v.tune.stepsz
     delta = v.tune.delta
 
-    postorder = post_order(v.value[1]) # post order and probB are in the same order
+    postorder = post_order(v.value[1])[1:end-1] # post order and probB are in the same order
 
     tmpB = @. probB + stepsz * probM
     ref_time = 0.0
@@ -111,24 +118,18 @@ function refraction(v::ProbPathVariate, probB::Vector{Float64}, probM::Vector{Fl
         probM[ref_index] *= -1.0
         ref_attempts += 1.0
         if !(postorder[ref_index].nchild == 0)
-
             if surrogate
                 # set tree branchlengths such to probB
+
+                U_before_nni::Float64 = logf(v)
                 v_copy = deepcopy(v)
 
                 blens = molify!(probB, delta)
-
                 set_binary!(v_copy.value[1])
                 set_branchlength_vector!(v_copy.value[1], blens)
-                U_before_nni::Float64 = logf(v)
-
                 tmp_NNI_made = NNI!(v_copy.value[1], postorder[ref_index])
-
-
                 if tmp_NNI_made != 0
 
-
-                    #molify!(v_copy, delta)
                     U_after_nni::Float64 = logf(v_copy)
                     delta_U = 2.0*(U_after_nni - U_before_nni)
                     my_v::Float64 = probM[ref_index]^2
@@ -210,16 +211,6 @@ function Stochastic(d::Node, f::Function, monitor::Union{Bool, Vector{Int}}=true
                       NullUnivariateDistribution())
     setmonitor!(s, monitor)
 end
-
-#function setmonitor!(d::TreeStochastic, monitor::Bool)
-#    d.monitor = [1,2]
-#    d
-#end
-
-#function setmonitor!(d::TreeLogical, monitor::Bool)
-#    d.monitor = [1,2]
-#    d
-#end
 
 
 """

@@ -21,11 +21,11 @@ my_data = Dict{Symbol, Any}(
 # model setup
 model =  Model(
     y = Stochastic(1,
-    (mtreev, mypi, rates) -> PhyloDist(mtreev, mypi, rates), false
+    (mtree, mypi, rates) -> PhyloDist(mtree, mypi, rates), false
     ),
     mypi = Stochastic( () -> Uniform(0.0,1.0)),
-    mtreev = Logical(Node(), (mtree, blens) -> MCPhylo.set_branchlength_vector!(mtree, blens)),
-    blens = Stochastic(1, (nb) -> MultivariateUniformTrunc(nb, 0.000, 100), false),
+    #mtreev = Logical(Node(), (mtree, blens) -> MCPhylo.set_branchlength_vector!(mtree, blens)),
+    #blens = Stochastic(1, (mtree) -> CompoundDirichletWrap(mtree, 1.0,1.0,0.100,1.0), false),
     mtree = Stochastic(Node(), () -> CompoundDirichlet(1.0,1.0,0.100,1.0), false),
     rates = Logical(1,(mymap, av) -> [av[convert(UInt8,i)] for i in mymap],false),
     mymap = Stochastic(1,() -> Categorical([0.25, 0.25, 0.25, 0.25]), false),
@@ -47,10 +47,10 @@ inits = [ Dict(
 
 
 scheme = [ProbPathHMC(:mtree, 3.0,0.2, 0.001, :provided),
+         BranchSlice(:mtree, 0.05),
          Slice(:mypi, 0.05, Univariate),
          SliceSimplex(:av, scale=0.02),
-         RWM(:mymap, 1),
-         Slice(:blens, 0.05, Multivariate)
+         RWM(:mymap, 1)
              ]
 
 setsamplers!(model, scheme)

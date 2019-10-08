@@ -52,61 +52,6 @@ function my_sample!(tree::Node, n_leap::Float64, stepsz::Float64, mypi::Number, 
 end # function
 
 """
-    refraction(tree::Array{Float64,2}, prob, probm)
-
-documentation
-"""
-function refraction(tree::Node, probB::Vector{Float64}, probM::Vector{Float64}, stepsz::Float64, surrogate::Bool,
-    n_c::Int64, delta::Float64, rates::Vector{Float64}, priordist::Distribution, mypi::Number)
-
-
-    postorder = post_order(tree) # post order and probB are in the same order
-
-    tmpB = @. probB + stepsz * probM
-    ref_time = 0.0
-    NNI_attempts = 0.0
-    ref_attempts = 0.0
-
-    while minimum(tmpB)<=0
-        timelist::Vector{Float64} = tmpB./abs.(probM)
-        ref_index::Int64 = argmin(timelist)
-        temp=(stepsz-ref_time+timelist[ref_index])
-        probB = @. probB + temp * probM
-        probM[ref_index] *= -1.0
-        ref_attempts += 1.0
-        if !(postorder[ref_index].nchild == 0)
-
-            if surrogate
-                U_before_nni::Float64 = LogPost(tree, surrogate, delta, rates, n_c, mypi, priordist)
-
-                tree_copy = deepcopy(tree)
-                set_binary!(tree_copy)
-                tmp_NNI_made = NNI!(tree_copy, postorder[ref_index])
-
-
-                if tmp_NNI_made != 0
-                    U_after_NNI::Float64 = LogPost(tree_copy, surrogate, delta, rates, n_c, mypi, priordist)
-                    delta_U = 2.0*(U_after_NNI - U_before_nni)
-                    my_v::Float64 = probM[ref_index]^2
-                    if my_v >= delta_U
-                        probM[ref_index] = sqrt(my_v - delta_U)
-                        tree = tree_copy
-                        NNI_attempts += 1
-                    end
-                end
-            else
-                NNI_attempts += NNI!(tree, ref_index)
-            end
-        end
-        ref_time = stepsz + timelist[ref_index]
-        temp = (stepsz-ref_time)
-        tmpB = @. probB + temp * probM
-    end
-    return NNI_attempts, ref_attempts
-end # function
-
-
-"""
     LogPost(tree::Array{Float64,2}, blens::Vector{Float64}, scale::Float64)
 
 documentation
