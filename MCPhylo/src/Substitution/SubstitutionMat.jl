@@ -8,13 +8,13 @@ function exponentiate_binary(pi_::Number, t::Float64, r::Float64)::Array{Float64
     # calculate some auxiliary variables
     ext::Float64 = exp(-t*r)
     ext_::Float64 = 1.0-ext
-    p_::Float64 = 1.0-pi_
+    pj_::Float64 = 1.0-pi_
     v_::Float64 = ext_*pi_
-    w_::Float64 = ext_*p_
+    w_::Float64 = ext_*pj_
 
     # return the expontiated matrix
-    return [ext+v_ w_;
-            v_ ext+w_]
+    return [ext+v_ 1-(ext+v_);
+            1-(ext+w_) ext+w_]
 end # function
 
 function exponentiate_binary_grad(pi_::Number, t::Float64, r::Float64)::Array{Float64, 2}

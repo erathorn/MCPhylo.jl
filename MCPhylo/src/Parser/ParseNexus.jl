@@ -106,21 +106,25 @@ function make_tree_with_data(filename::String)#::Tree_Module.Node
     # create random tree
     new_tree = create_tree_from_leaves(df[!,:Language], nc)
 
+    n_nodes = length(post_order(new_tree))
+    my_df = zeros(Float64, (n_nodes, 2, nc))
     # iterate through the data frame and get the node information
     for row in eachrow(df)
-        data_vec = zeros(Float64, (2, nc))
+        #data_vec = zeros(Float64, (2, nc))
+        mn = find_by_name(new_tree, row.Language)
+        mind = mn.num
         for (ind, i) in enumerate(row.Data)
             if i == '0'
-                data_vec[1,ind] = 1.0
+                my_df[mind, 1,ind] = 1.0
             elseif i == '1'
-                data_vec[2,ind] = 1.0
+                my_df[mind,2,ind] = 1.0
             else
-                data_vec[1, ind] = 1.0
-                data_vec[2, ind] = 1.0
+                my_df[mind,1, ind] = 1.0
+                my_df[mind,2, ind] = 1.0
             end # if
         end # for
-        node = find_by_name(new_tree, row.Language)
-        node.data = log.(data_vec)
+        #node = find_by_name(new_tree, row.Language)
+        #node.data = log.(data_vec)
     end # for
-    return new_tree
+    return new_tree, my_df
 end # function make_tree_with_data

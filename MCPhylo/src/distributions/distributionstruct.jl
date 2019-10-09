@@ -139,6 +139,10 @@ function logpdf_sub(d::Distribution, x, transform::Bool)
   insupport(d, x) ? logpdf(d, x, transform) : -Inf
 end
 
+function logpdf_sub(d::DiscreteMatrixDistribution, X::AbstractArray, transform::Bool)
+  logpdf(d, X)
+end
+
 function logpdf_sub(d::UnivariateDistribution, X::AbstractArray,
                     transform::Bool)
   lp = 0.0
@@ -180,7 +184,7 @@ function gradlogpdf_sub(d::Distribution, x)
 end
 
 function gradlogpdf_sub(d::Distribution, x::AbstractArray)
-  gradlogpdf(d, x[1])
+  gradlogpdf(d, x)
 end
 
 

@@ -41,7 +41,7 @@ end
 
 
 function sample!(v::ProbPathVariate, block, logf::Function, gradf::Function)
-    
+
     x1 = v.value[:][1] # copy the original state, so it state can be restored
 
     n_leap = v.tune.n_leap
@@ -65,22 +65,34 @@ function sample!(v::ProbPathVariate, block, logf::Function, gradf::Function)
     probM = randn(length(blens))
 
     currM = deepcopy(probM)
-    currH = ll.+ 0.5*sum(currM.*currM)
+    currH = ll + 0.5*sum(currM.*currM)
 
     probB = deepcopy(blens)
 
     for i in 1:n_leap
 
         fac = scale_factor(v, delta)
+        before = get_branchlength_vector(v.value[1])
+        blens_ = molify!(probB, delta)
+        set_branchlength_vector!(v.value[1], blens_)
         l = gradf(v, v.tune.differ)
         l2 = logpdf(block.model, a, false)
+        set_branchlength_vector!(v.value[1], before)
 
 
-        probM = probM.-stepsz/(2.0 .* (l.-l2))
+        probM = probM.-stepsz/(2.0 .* ((l.-l2).*fac))
 
-        v, probB, probM, step_nn_att, step_ref_att = refraction(v, probB, probM, true, logf)
+        v, tmpB, probM, step_nn_att, step_ref_att = refraction(v, probB, probM, true, logf)
+
+        probB = tmpB
+
+        blens_ = molify!(probB, delta)
+        set_branchlength_vector!(v.value[1], blens_)
+        l = gradf(v, v.tune.differ)
+        l2 = logpdf(block.model, a, false)
         set_branchlength_vector!(v.value[1], probB)
-        probM = probM .- stepsz/2.0 .* (gradf(v, v.tune.differ).-logpdf(block.model, a, false))
+
+        probM = probM .- stepsz/(2.0 .* ((l.-l2).*fac))
     end
 
     probU::Float64 = logf(v)
@@ -88,10 +100,11 @@ function sample!(v::ProbPathVariate, block, logf::Function, gradf::Function)
 
     ratio = currH - probH
 
-    if ratio <= min(0, log(rand(Uniform(0,1))))
+    if ratio < min(0, log(rand(Uniform(0,1))))
         # not successfull
         v.value[1] = x1
     end
+
     set_binary!(v.value[1])
 
     v
@@ -119,17 +132,13 @@ function refraction(v::ProbPathVariate, probB::Vector{Float64}, probM::Vector{Fl
         ref_attempts += 1.0
         if !(postorder[ref_index].nchild == 0)
             if surrogate
-                # set tree branchlengths such to probB
-
                 U_before_nni::Float64 = logf(v)
                 v_copy = deepcopy(v)
-
                 blens = molify!(probB, delta)
                 set_binary!(v_copy.value[1])
                 set_branchlength_vector!(v_copy.value[1], blens)
                 tmp_NNI_made = NNI!(v_copy.value[1], postorder[ref_index])
                 if tmp_NNI_made != 0
-
                     U_after_nni::Float64 = logf(v_copy)
                     delta_U = 2.0*(U_after_nni - U_before_nni)
                     my_v::Float64 = probM[ref_index]^2
@@ -137,28 +146,29 @@ function refraction(v::ProbPathVariate, probB::Vector{Float64}, probM::Vector{Fl
                         probM[ref_index] = sqrt(my_v - delta_U)
                         v = v_copy
                         NNI_attempts += 1
-
-                    end
-                end
+                    end # if my_v
+                end #if tmpNNI
             else
                 NNI_attempts += NNI!(v.value[1], ref_index)
-            end
-        end
+            end #if surrogate
+        end # postorder
         ref_time = stepsz + timelist[ref_index]
         temp = (stepsz-ref_time)
         tmpB = @. probB + temp * probM
-    end
+    end# while
     return v, tmpB, probM, NNI_attempts, ref_attempts
 end # function
 
 
 function scale_factor(v::SamplerVariate, delta::Float64)::Float64
     mv = minimum(get_branchlength_vector(v.value[1]))
+    fac = 0.0
     if mv > delta
         fac = 1.0
     else
         fac = mv/delta
     end
+    fac
 end # function
 
 function molify!(v::Vector, delta::Float64)
@@ -179,9 +189,9 @@ documentation
 """
 function molifier(x::Float64, delta::Float64)::Float64
     if x >= delta
-        return delta
+        return x
     else
-        return 1.0/2.0/delta * (x*x+delta*delta)
+        return (1.0/(2.0*delta)) * (x*x+delta*delta)
     end
 end # function
 

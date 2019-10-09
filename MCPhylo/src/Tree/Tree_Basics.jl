@@ -144,9 +144,9 @@ function create_tree_from_leaves(leaf_nodes::Vector{String}, node_size::Int64 = 
         # create a new mother node to which the two first nodes are added as children
         # add the new mother node to the list and reshuffle
         first_child::Node = pop!(my_node_list)
-        first_child.inc_length = rand(Uniform(0,5))
+        first_child.inc_length = rand(Uniform(0,1))
         second_child::Node = pop!(my_node_list)
-        second_child.inc_length = rand(Uniform(0,5))
+        second_child.inc_length = rand(Uniform(0,1))
         curr_node::Node = Node(string(temp_name), zeros(Float64, (2, node_size)), missing, missing, missing, 0, true, 0.0, "0", 0)
         add_child!(curr_node, first_child, true)
         add_child!(curr_node, second_child, false)

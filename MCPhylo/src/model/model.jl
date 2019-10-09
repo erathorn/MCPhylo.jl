@@ -233,9 +233,18 @@ end
 function names(m::Model, monitoronly::Bool)
   values = AbstractString[]
   for key in keys(m, :dependent)
-    nodenames = names(m, key)
-    v = monitoronly ? nodenames[m[key].monitor] : nodenames
-    append!(values, v)
+    if monitoronly
+      if !isempty(m[key].monitor)
+        nodenames = names(m, key)
+        append!(values, nodenames)
+      end
+    else
+      nodenames = names(m, key)
+      append!(values, nodenames)
+    end
+    #  end
+    #v = monitoronly ? nodenames[m[key].monitor] : nodenames
+    #append!(values, v)
   end
   values
 end
