@@ -319,6 +319,7 @@ include("samplers/mala.jl")
 include("samplers/miss.jl")
 include("samplers/nuts.jl")
 include("samplers/rwm.jl")
+include("samplers/rwmc.jl")
 include("samplers/slice.jl")
 include("samplers/slicesimplex.jl")
 
@@ -447,7 +448,8 @@ export
   Slice, SliceMultivariate, SliceUnivariate,
   SliceSimplex, SliceSimplexVariate,
   ProbPathHMC,
-  BranchSlice
+  BranchSlice,
+  RWMC, RWMCVariate
 
 export
   make_tree_with_data,

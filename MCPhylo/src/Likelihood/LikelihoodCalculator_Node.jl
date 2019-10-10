@@ -7,33 +7,28 @@ Felsensteins pruning algorithm.
 """
 function FelsensteinFunction(tree_postorder::Vector{Node}, pi_::Number, rates::Vector{Float64}, data::Array{Float64,3}, n_c::Int64)::Float64
 
-
+    res::Float64 = 0.0
     for node in tree_postorder
         if node.nchild != 0
-            CondLikeInternal(node, pi_, rates, n_c, data)
+            res += CondLikeInternal(node, pi_, rates, n_c, data)
         end # if
     end # for
 
     # sum the two rows
     #rdata::Array{Float64,2}=last(tree_postorder).data
     rnum = last(tree_postorder).num
-    res::Float64 = 0.0
     _lpi_::Float64 = log(1.0-pi_)
     _pi_::Float64 = log(pi_)
 
     @simd for ind in 1:n_c
         @inbounds res += log(exp(data[rnum,1,ind]+ _lpi_) + exp(data[rnum,2,ind]+ _pi_))
     end # for
-    if res > 0
-        blv = get_branchlength_vector(tree_postorder)
-        println("res ", res, " blv ", blv, " pi ", pi_, " av ", unique(rates))
-        @assert res < 0
-    end
+
     return res
 end # function
 
 
-function CondLikeInternal(node::Node, pi_::Number, rates::Vector{Float64}, n_c::Int64, data::Array{Float64})::Nothing
+function CondLikeInternal(node::Node, pi_::Number, rates::Vector{Float64}, n_c::Int64, data::Array{Float64})::Float64
 
     @assert size(rates)[1] == n_c
     left_daughter::Node = node.lchild
@@ -42,34 +37,38 @@ function CondLikeInternal(node::Node, pi_::Number, rates::Vector{Float64}, n_c::
     rinc::Float64 = right_daughter.inc_length
     l_num::Int64 = left_daughter.num
     r_num::Int64 = right_daughter.num
-
+    res::Float64 = 0
 
     n_num::Int64 = node.num
 
     Base.Threads.@threads for ind=eachindex(rates)
         @inbounds r::Float64 = rates[ind]
-        my_mat = log.(exponentiate_binary(pi_, linc, r))
+        #my_mat = log.(exponentiate_binary(pi_, linc, r))
 
-        @inbounds a::Float64 = log(exp(data[l_num, 1,ind]+my_mat[1,1]) + exp(data[l_num, 2,ind]+my_mat[1,2]))
-        @inbounds b::Float64 = log(exp(data[l_num, 1,ind]+my_mat[2,1]) + exp(data[l_num, 2,ind]+my_mat[2,2]))
+        ext::Float64 = exp(-linc*r)
+        ext_::Float64 = 1.0-ext
+        pj_::Float64 = 1.0-pi_
 
-        my_mat2 = log.(exponentiate_binary(pi_, rinc, r))
+        m_v::Float64 = ext+ext_*pi_
+        m_w::Float64 = ext+ext_*pj_
 
-        @inbounds c::Float64 = log(exp(data[r_num, 1,ind]+my_mat2[1,1]) + exp(data[r_num,2,ind]+my_mat2[1,2]))
-        @inbounds d::Float64 = log(exp(data[r_num, 1,ind]+my_mat2[2,1]) + exp(data[r_num,2,ind]+my_mat2[2,2]))
-        if (a+c) > 0 || (b+d) > 0
-            println("here ", a+c," ", b+d)
-            println(a, ", ", c, ", ", b, ", ", d)
-            println(data[l_num, 1,ind], " ", data[l_num, 2,ind])
-            println(data[r_num, 1,ind], " ", data[r_num, 2,ind])
-            println(my_mat)
-            println(exp.(my_mat))
-            println(my_mat2)
-            println(exp.(my_mat2))
-            throw("I am Here")
-        end
+        @inbounds a::Float64 = log(exp(data[l_num, 1,ind]+log(m_v)) + exp(data[l_num, 2,ind]+log(1.0-m_v)))
+        @inbounds b::Float64 = log(exp(data[l_num, 1,ind]+log(1-m_w)) + exp(data[l_num, 2,ind]+log(m_w)))
+
+        #my_mat2 = log.(exponentiate_binary(pi_, rinc, r))
+        ext = exp(-rinc*r)
+        ext_ = 1.0-ext
+        #v_ = ext_*pi_
+        #w_ = ext_*pj_
+        m_v = ext+ext_*pi_
+        m_w = ext+ext_*pj_
+
+        @inbounds c::Float64 = log(exp(data[r_num, 1,ind]+log(m_v)) + exp(data[r_num,2,ind]+log(1.0-m_v)))
+        @inbounds d::Float64 = log(exp(data[r_num, 1,ind]+log(1-m_w)) + exp(data[r_num,2,ind]+log(m_w)))
+
         @inbounds data[n_num,1,ind] = a+c
         @inbounds data[n_num,2,ind] = b+d
+        res += log(exp(a+b)+exp(c+d))
 
     end # for
     if any(0 .< data[n_num, :, :])
@@ -80,6 +79,7 @@ function CondLikeInternal(node::Node, pi_::Number, rates::Vector{Float64}, n_c::
         end
         @assert all(0 .>= data[n_num, :, :])
     end
+    return res
 end # function
 
 function GradiantLog(tree_preorder::Vector{Node}, pi_::Number, rates::Array{Float64,1}, data, n_c)
