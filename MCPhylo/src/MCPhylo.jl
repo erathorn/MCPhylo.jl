@@ -329,7 +329,8 @@ include("Tree/Converter.jl")
 include("Tree/Tree_moves.jl")
 include("Tree/Tree_Matrix.jl")
 
-include("Parser/ParseNexus.jl")
+include("Parser/Parser.jl")
+#include("Parser/ParseCSV.jl")
 
 include("Sampler/ProbPathHMC.jl")
 include("Sampler/ProbPathHMC_Node.jl")
