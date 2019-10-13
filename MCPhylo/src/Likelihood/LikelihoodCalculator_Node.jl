@@ -1,6 +1,6 @@
 
 """
-    FelsensteinFunction(tree_postorder::Vector{Node}, pi::Float64, rates::Vector{Float64})
+    FelsensteinFunction(tree_postorder::Vector{Node}, pi::Float64, rates::Vector{Float64}, data::Array{Float64,3}, n_c::Int64)::Float64
 
 This function calculates the log-likelihood of an evolutiuonary model using the
 Felsensteins pruning algorithm.
@@ -15,7 +15,6 @@ function FelsensteinFunction(tree_postorder::Vector{Node}, pi_::Number, rates::V
     end # for
 
     # sum the two rows
-    #rdata::Array{Float64,2}=last(tree_postorder).data
     rnum = last(tree_postorder).num
     _lpi_::Float64 = log(1.0-pi_)
     _pi_::Float64 = log(pi_)
@@ -28,6 +27,13 @@ function FelsensteinFunction(tree_postorder::Vector{Node}, pi_::Number, rates::V
 end # function
 
 
+"""
+This function calculates the log sum at an internal node in a tree. This function
+is designed to specifically handle binary data. The matrix exponentiation is pulled
+out of an extra function to avoid array creation.
+
+The loop is written such that the julia converter should be able to infer simd patterns.
+"""
 function CondLikeInternal(node::Node, pi_::Number, rates::Vector{Float64}, n_c::Int64, data::Array{Float64})::Float64
 
     @assert size(rates)[1] == n_c
@@ -43,7 +49,7 @@ function CondLikeInternal(node::Node, pi_::Number, rates::Vector{Float64}, n_c::
 
     Base.Threads.@threads for ind=eachindex(rates)
         @inbounds r::Float64 = rates[ind]
-        #my_mat = log.(exponentiate_binary(pi_, linc, r))
+
 
         ext::Float64 = exp(-linc*r)
         ext_::Float64 = 1.0-ext
@@ -71,23 +77,23 @@ function CondLikeInternal(node::Node, pi_::Number, rates::Vector{Float64}, n_c::
         res += log(exp(a+b)+exp(c+d))
 
     end # for
-    if any(0 .< data[n_num, :, :])
-        println(n_num)
-        inds = findall(x-> x > 0 , data[n_num, :, :])
-        for ind in inds
-            println(data[n_num, :, :][ind])
-        end
-        @assert all(0 .>= data[n_num, :, :])
-    end
     return res
 end # function
 
-function GradiantLog(tree_preorder::Vector{Node}, pi_::Number, rates::Array{Float64,1}, data, n_c)
-    root::Node = tree_preorder[1]
 
+"""
+    function GradiantLog(tree_preorder::Vector{Node}, pi_::Number, rates::Array{Float64,1}, data::Array{Fl0at64,3}, n_c::Int64)::Array{Float64}
+
+This functio calculates the gradient for the Probabilistic Path Sampler.
+
+"""
+function GradiantLog(tree_preorder::Vector{Node}, pi_::Number, rates::Array{Float64,1}, data::Array{Fl0at64,3}, n_c::Int64)::Array{Float64}
+
+    root::Node = tree_preorder[1]
     Up::Array{Float64,3} = ones(length(tree_preorder)+1, size(root.data)[1], n_c)
     Grad_ll::Array{Float64,1} = zeros(length(tree_preorder))
     gradient::Vector{Float64} = zeros(n_c)
+
     for node in tree_preorder
         node_ind::Int64 = node.num
         if node.binary == "1"
