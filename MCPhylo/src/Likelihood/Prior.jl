@@ -10,7 +10,7 @@ mutable struct CompoundDirichlet <: ContinuousUnivariateDistribution
     a::Float64
     beta::Float64
     c::Float64
-    #tree::Node
+    constraints::Union{Dict, Missing}
 
 end # struct
 
@@ -37,7 +37,8 @@ function _logpdf(d::CompoundDirichlet, x::Node)
 end # function _logpdf
 
 function insupport(d::CompoundDirichlet, x::Node)
-    all(isfinite.(get_branchlength_vector(x))) && all(0 .< get_branchlength_vector(x))
+
+    all(isfinite.(get_branchlength_vector(x))) && all(0 .< get_branchlength_vector(x)) && topological(x, d.constraints)
 end # function insupport
 
 
