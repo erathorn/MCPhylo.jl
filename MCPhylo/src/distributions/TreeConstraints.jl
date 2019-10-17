@@ -7,4 +7,6 @@ end
 
 
 # topological constraints fallback
-function topological(tree::Node, constraints::Missing) = true
+function topological(tree::Node, constraints::Missing)
+    true
+end

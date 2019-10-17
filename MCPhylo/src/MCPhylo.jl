@@ -282,6 +282,7 @@ include("distributions/pdmatdistribution.jl")
 include("distributions/transformdistribution.jl")
 include("distributions/Phylodist.jl")
 include("distributions/Branchlengthdist.jl")
+include("distributions/TreeConstraints.jl")
 
 include("model/dependent.jl")
 include("model/graph.jl")

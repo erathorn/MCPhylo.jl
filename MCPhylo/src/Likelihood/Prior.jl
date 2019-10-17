@@ -12,10 +12,12 @@ mutable struct CompoundDirichlet <: ContinuousUnivariateDistribution
     c::Float64
     constraints::Union{Dict, Missing}
 
+    CompoundDirichlet(alpha::Float64, a::Float64, beta::Float64, c::Float64) =
+        new(alpha, a, beta, c, missing)
 end # struct
 
-length(d::CompoundDirichlet) = 23409
-Base.size(d::CompoundDirichlet) = 1#(153,153)
+#length(d::CompoundDirichlet) = 23409
+#Base.size(d::CompoundDirichlet) = 1#(153,153)
 
 function _logpdf(d::CompoundDirichlet, x::Node)
 
