@@ -4,7 +4,7 @@
 This function parses a NEXUS file which stores the input for the MCMC compuation.
 The file should follow the conventions used for MrBayes.
 """
-function ParseCSV(filename::String, header::Boolean=True)
+function ParseCSV(filename::String, header::Bool=True)
     open(filename, "r") do file
         global content = readlines(file)
     end # do

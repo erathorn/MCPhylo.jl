@@ -1,14 +1,9 @@
 
-"""
-    make_tree_with_data(filename::String)::Node
 
-This function creates a tree where the terminal nodes get the data specified in
-the input file.
-"""
-function make_tree_with_data(filename::String, dialect::AbstractString="nexus"
+function make_tree_with_data(filename::String, dialect::AbstractString="nexus",
                              gap::Union{Missing, AbstractString}=missing,
-                             miss::Union{Missing,Abstract}=missing
-                             header::Boolean=false)
+                             miss::Union{Missing,AbstractString}=missing,
+                             header::Bool=false)
     # get all the information from the input file
     if lowercase(dialect) == "nexus"
         n_tax, nc, gap, miss, df = ParseNexus(filename)

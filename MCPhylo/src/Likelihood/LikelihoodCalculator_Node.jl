@@ -87,7 +87,8 @@ end # function
 This functio calculates the gradient for the Probabilistic Path Sampler.
 
 """
-function GradiantLog(tree_preorder::Vector{Node}, pi_::Number, rates::Array{Float64,1}, data::Array{Fl0at64,3}, n_c::Int64)::Array{Float64}
+function GradiantLog(tree_preorder::Vector{Node}, pi_::Number, rates::Array{Float64,1},
+                     data::Array{Float64,3}, n_c::Int64)::Array{Float64}
 
     root::Node = tree_preorder[1]
     Up::Array{Float64,3} = ones(length(tree_preorder)+1, size(root.data)[1], n_c)

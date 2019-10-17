@@ -22,7 +22,9 @@ my_data = Dict{Symbol, Any}(
   :nsites => size(df)[3],
   :nb => length(MCPhylo.get_branchlength_vector(mt)))
 
-
+constraints = Dict{Int, Any}(
+    1 => ["Swedish_0", "Marathi_0"]
+)
 
 # model setup
 model =  Model(
