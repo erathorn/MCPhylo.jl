@@ -20,10 +20,6 @@ my_data = Dict{Symbol, Any}(
   :nnodes => size(df)[1],
   :nbase => size(df)[2],
   :nsites => size(df)[3],
-  :nb => length(MCPhylo.get_branchlength_vector(mt)))
-
-constraints = Dict{Int, Any}(
-    1 => ["Swedish_0", "Marathi_0"]
 )
 
 # model setup
@@ -40,7 +36,7 @@ model =  Model(
 
 # intial model values
 inivals = rand(Categorical([0.25, 0.25, 0.25, 0.25]),3132)
-inivals2 =rand(Dirichlet([0.25, 0.25, 0.25, 0.25]))
+inivals2 =rand(Dirichlet([1.0, 1.0, 1.0, 1.0]))
 
 inits = [ Dict(
     :mtree => my_data[:mtree],
@@ -50,9 +46,7 @@ inits = [ Dict(
     :nnodes => size(my_data[:df])[1],
     :nbase => size(my_data[:df])[2],
     :nsites => size(my_data[:df])[3],
-
     :mymap=>inivals,
-    #:nb => my_data[:nb],
     :av => inivals2
     )
     ]

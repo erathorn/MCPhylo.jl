@@ -48,7 +48,7 @@ function SliceSimplex(params::ElementOrVector{Symbol}; args...)
 
       SliceSimplex_sub!(node.distr, sim, logf)
     end
-    
+
     nothing
   end
   Sampler(params, samplerfx, SliceSimplexTune())
@@ -83,16 +83,20 @@ sample!(v::SliceSimplexVariate) = sample!(v, v.tune.logf)
 function sample!(v::SliceSimplexVariate, logf::Function)
   p0 = logf(v.value) + log(rand())
   d = Dirichlet(fill!(similar(v), 1))
-
+  ct = 0
   vertices = makefirstsimplex(v, v.tune.scale)
   vb = vertices \ v
   xb = rand(d)
   x = vertices * xb
-  while any(x .< 0.0) || any(x .> 1.0) || logf(x) < p0
+  while any(x .< 0.0) || any(x .> 1.0) || !isprobvec(x) || logf(x) < p0
+    if ct > 10
+      return v
+    end
     vertices = shrinksimplex(vb, xb, v, x, vertices)
     vb = vertices \ v
     xb = rand(d)
     x = vertices * xb
+    ct += 1
   end
   v[:] = x
 
@@ -110,10 +114,14 @@ end
 function shrinksimplex(bx::AbstractVector{Float64}, bc::AbstractVector{Float64},
                        cx::AbstractVector{Float64}, cc::AbstractVector{Float64},
                        vertices::AbstractMatrix{Float64})
+  v1 = deepcopy(vertices)
   for i in findall(bc .< bx)
     inds = [1:(i - 1); (i + 1):size(vertices, 2)]
     vertices[:, inds] += bc[i] * (vertices[:, i] .- vertices[:, inds])
     bc = vertices \ cc
+  end
+  if any(isnan.(vertices))
+    throw(DomainError((cx,vertices, v1), "This is wrong"))
   end
   vertices
 end
