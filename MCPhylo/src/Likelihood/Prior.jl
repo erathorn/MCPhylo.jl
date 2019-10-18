@@ -42,8 +42,14 @@ function _logpdf(d::CompoundDirichlet, x::Node)
 end # function _logpdf
 
 function insupport(d::CompoundDirichlet, x::Node)
-
-    all(isfinite.(get_branchlength_vector(x))) && all(0 .< get_branchlength_vector(x)) && topological(x, d.constraints)
+    bl = get_branchlength_vector(x)
+    res = all(isfinite.(bl)) && all(0 .< bl) && topological(x, d.constraints) && !any(isnan.(bl))
+    if !res
+        println("insupport ",res)
+        println(all(isfinite.(bl)) , all(0 .< bl), topological(x, d.constraints) ,!any(isnan.(bl)))
+        println(bl)
+    end
+    res
 end # function insupport
 
 

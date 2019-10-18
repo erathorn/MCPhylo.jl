@@ -22,16 +22,13 @@ my_data = Dict{Symbol, Any}(
   :nsites => size(df)[3],
 )
 
-constraints = Dict{Int, Any}(
-    1 => ["Sardinian_N_0", "Italian_0"]
-)
 # model setup
 model =  Model(
     df = Stochastic(3,
     (mtree, mypi, rates, nnodes, nbase, nsites) -> PhyloDist(mtree, mypi, rates, nnodes, nbase, nsites), false
     ),
     mypi = Stochastic( () -> Uniform(0.0,1.0)),
-    mtree = Stochastic(Node(), () -> CompoundDirichlet(1.0,1.0,0.100,1.0, constraints), true),
+    mtree = Stochastic(Node(), () -> CompoundDirichlet(1.0,1.0,0.100,1.0), true),
     rates = Logical(1,(mymap, av) -> [av[convert(UInt8,i)] for i in mymap],false),
     mymap = Stochastic(1,() -> Categorical([0.25, 0.25, 0.25, 0.25]), false),
     av = Stochastic(1,() -> Dirichlet([1.0, 1.0, 1.0, 1.0]))
@@ -57,9 +54,9 @@ inits = [ Dict(
 
 scheme = [ProbPathHMC(:mtree, 3.0,0.02, 0.001, :provided),
          #BranchSlice(:mtree, 0.05),
-         Slice(:mypi, 0.05, Univariate),
-         SliceSimplex(:av, scale=0.02),
-         RWMC(:mymap)
+         #Slice(:mypi, 0.05, Univariate),
+         #SliceSimplex(:av, scale=0.02),
+         #RWMC(:mymap)
              ]
 
 setsamplers!(model, scheme)

@@ -16,13 +16,24 @@ function FelsensteinFunction(tree_postorder::Vector{Node}, pi_::Number, rates::V
 
     # sum the two rows
     rnum = last(tree_postorder).num
+    if pi_ < 0
+        println(tree_postorder)
+        println(pi_)
+        println(get_branchlength_vector(last(tree_postorder)))
+    end
     _lpi_::Float64 = log(1.0-pi_)
     _pi_::Float64 = log(pi_)
 
     @simd for ind in 1:n_c
         @inbounds res += log(exp(data[rnum,1,ind]+ _lpi_) + exp(data[rnum,2,ind]+ _pi_))
     end # for
-
+    if isinf(res)
+        println("inf")
+        println(tree_postorder)
+        println(pi_)
+        println(get_branchlength_vector(last(tree_postorder)))
+        println("--")
+    end
     return res
 end # function
 

@@ -58,7 +58,7 @@ function sample!(v::ProbPathVariate, block, logf::Function, gradf::Function)
     ll = logf(v) # log likelihood of the model, including the prior
 
     prior = logpdf(block.model, a, false) # log of the prrior
-
+    
 
     tree = block.model[a[1]]
     blens = get_branchlength_vector(tree)
@@ -81,6 +81,7 @@ function sample!(v::ProbPathVariate, block, logf::Function, gradf::Function)
 
 
         probM = probM.-stepsz/(2.0 .* ((l.-l2).*fac))
+        #println("probM ",probM)
 
         v, tmpB, probM, step_nn_att, step_ref_att = refraction(v, probB, probM, true, logf)
 
@@ -91,7 +92,9 @@ function sample!(v::ProbPathVariate, block, logf::Function, gradf::Function)
         l = gradf(v, v.tune.differ)
         l2 = logpdf(block.model, a, false)
         set_branchlength_vector!(v.value[1], probB)
-
+        if any(isnan.(probB))
+            println(probB)
+        end
         probM = probM .- stepsz/(2.0 .* ((l.-l2).*fac))
     end
 
@@ -117,17 +120,22 @@ function refraction(v::ProbPathVariate, probB::Vector{Float64}, probM::Vector{Fl
     delta = v.tune.delta
 
     postorder = post_order(v.value[1])[1:end-1] # post order and probB are in the same order
-
+    #println("refraction probB ", probB)
     tmpB = @. probB + stepsz * probM
     ref_time = 0.0
     NNI_attempts = 0.0
     ref_attempts = 0.0
-
+    if any(isnan.(tmpB))
+        println("tmpB ", tmpB)
+    end
     while minimum(tmpB)<=0
         timelist::Vector{Float64} = tmpB./abs.(probM)
         ref_index::Int64 = argmin(timelist)
         temp=(stepsz-ref_time+timelist[ref_index])
         probB = @. probB + temp * probM
+        if any(isnan.(probB))
+            println("probB ", probB)
+        end
         probM[ref_index] *= -1.0
         ref_attempts += 1.0
         if !(postorder[ref_index].nchild == 0)
