@@ -114,14 +114,11 @@ end
 function shrinksimplex(bx::AbstractVector{Float64}, bc::AbstractVector{Float64},
                        cx::AbstractVector{Float64}, cc::AbstractVector{Float64},
                        vertices::AbstractMatrix{Float64})
-  v1 = deepcopy(vertices)
   for i in findall(bc .< bx)
     inds = [1:(i - 1); (i + 1):size(vertices, 2)]
     vertices[:, inds] += bc[i] * (vertices[:, i] .- vertices[:, inds])
     bc = vertices \ cc
   end
-  if any(isnan.(vertices))
-    throw(DomainError((cx,vertices, v1), "This is wrong"))
-  end
+
   vertices
 end
