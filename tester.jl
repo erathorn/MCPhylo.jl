@@ -22,13 +22,16 @@ my_data = Dict{Symbol, Any}(
   :nsites => size(df)[3],
 )
 
+constraints = Dict{Int, Any}(
+    1 => ["Sardinian_N_0", "Italian_0"]
+)
 # model setup
 model =  Model(
     df = Stochastic(3,
     (mtree, mypi, rates, nnodes, nbase, nsites) -> PhyloDist(mtree, mypi, rates, nnodes, nbase, nsites), false
     ),
     mypi = Stochastic( () -> Uniform(0.0,1.0)),
-    mtree = Stochastic(Node(), () -> CompoundDirichlet(1.0,1.0,0.100,1.0), true),
+    mtree = Stochastic(Node(), () -> CompoundDirichlet(1.0,1.0,0.100,1.0, constraints), true),
     rates = Logical(1,(mymap, av) -> [av[convert(UInt8,i)] for i in mymap],false),
     mymap = Stochastic(1,() -> Categorical([0.25, 0.25, 0.25, 0.25]), false),
     av = Stochastic(1,() -> Dirichlet([1.0, 1.0, 1.0, 1.0]))
@@ -63,7 +66,7 @@ setsamplers!(model, scheme)
 
 # do the mcmc simmulation. if trees=true the trees are stored and can later be
 # flushed ot a file output.
-sim = mcmc(model, my_data, inits, 5000, burnin=50,thin=10, chains=1, trees=true)
+sim = mcmc(model, my_data, inits, 5000, burnin=500,thin=10, chains=1, trees=true)
 
 # write the output to a path specified as the second argument
 to_file(sim, "")

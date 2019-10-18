@@ -14,6 +14,9 @@ mutable struct CompoundDirichlet <: ContinuousUnivariateDistribution
 
     CompoundDirichlet(alpha::Float64, a::Float64, beta::Float64, c::Float64) =
         new(alpha, a, beta, c, missing)
+
+    CompoundDirichlet(alpha::Float64, a::Float64, beta::Float64, c::Float64, constraints::Dict) =
+            new(alpha, a, beta, c, constraints)
 end # struct
 
 #length(d::CompoundDirichlet) = 23409

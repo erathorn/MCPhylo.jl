@@ -514,6 +514,34 @@ function internal_external_map(post_order::Vector{Node})::Vector{Int64}
     return my_map
 end
 
+function find_lca(tree::Node, node_l::Array{String, 1})::Node
+    find_lca(tree, [find_by_name(tree, i) for i in node_l])
+end
+
+function find_lca(tree::Node, node_l::Array{Node})::Node
+    if length(node_l) == 0
+        return ""
+    elseif length(node_l) == 1
+        return node_l[1]
+    else
+        n1 = popfirst!(node_l)
+        n2 = popfirst!(node_l)
+        lca = find_lca(tree, n1, n2)
+        while length(node_l) != 0
+            n1 = popfirst!(node_l)
+            lca = find_lca(lca, n1)
+        end
+        return lca
+    end
+end
+
+function find_lca(tree::Node, node1::Node, node2::Node)::Node
+    nb = lcp(node1.binary, node2.binary)
+    find_by_binary(tree, nb)
+end
+
+
+
 #"""
 # proper Markdown comments are not possible
 #

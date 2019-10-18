@@ -107,7 +107,7 @@ function lcp(str1::AbstractString, str2::AbstractString)::AbstractString
   minl = min(length(str1), length(str2))
   minl == 0 && return outs
 
-  for i in 1:minl:
+  for i in 1:minl
     if str1[i] == str2[i]
         outs *= str1[i]
     else
