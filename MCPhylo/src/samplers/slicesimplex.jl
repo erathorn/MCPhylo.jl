@@ -81,14 +81,20 @@ end
 sample!(v::SliceSimplexVariate) = sample!(v, v.tune.logf)
 
 function sample!(v::SliceSimplexVariate, logf::Function)
-  p0 = logf(v.value) + log(rand())
+  p0 = -Inf
+  try
+    p0 = logf(v.value) + log(rand())
+  catch y
+    println(v.value)
+  end
+
   d = Dirichlet(fill!(similar(v), 1))
   ct = 0
   vertices = makefirstsimplex(v, v.tune.scale)
   vb = vertices \ v
   xb = rand(d)
   x = vertices * xb
-  while any(x .< 0.0) || any(x .> 1.0) || !isprobvec(x) || logf(x) < p0
+  while any(x .< 0.0) || any(x .> 1.0) || logf(x) < p0
     if ct > 10
       return v
     end
