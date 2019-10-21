@@ -1,0 +1,10 @@
+#Nexus
+
+Begin MrBayes;
+      execute development.nex;
+      lset coding=all;
+      mcmc;
+      sump;
+      sumt;
+      q;
+End;
