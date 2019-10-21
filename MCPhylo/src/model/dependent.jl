@@ -226,6 +226,10 @@ function logpdf(s::AbstractStochastic, transform::Bool=false)
   logpdf(s, s.value, transform)
 end
 
+function mgradient(s::AbstractStochastic)
+  mgradient(s, s.value)
+end
+
 function gradlogpdf(s::AbstractStochastic)
   gradlogpdf(s, s.value)
 end
@@ -237,6 +241,10 @@ end
 
 function logpdf(s::AbstractStochastic, x, transform::Bool=false)
   logpdf_sub(s.distr, x, transform)
+end
+
+function mgradient(s::AbstractStochastic, x)
+  gradient(s.distr, x)
 end
 
 rand(s::AbstractStochastic) = rand_sub(s.distr, s.value)

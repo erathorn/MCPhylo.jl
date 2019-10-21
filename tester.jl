@@ -52,11 +52,11 @@ inits = [ Dict(
     ]
 
 
-scheme = [ProbPathHMC(:mtree, 3.0,0.02, 0.001, :provided),
+scheme = [ProbPathHMC(:mtree, 6.0,0.1, 0.001, :provided),
          #BranchSlice(:mtree, 0.05),
-         #Slice(:mypi, 0.05, Univariate),
-         #SliceSimplex(:av, scale=0.02),
-         #RWMC(:mymap)
+         Slice(:mypi, 0.05, Univariate),
+         SliceSimplex(:av, scale=0.02),
+         RWMC(:mymap)
              ]
 
 setsamplers!(model, scheme)

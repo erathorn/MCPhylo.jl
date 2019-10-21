@@ -22,23 +22,63 @@ end # struct
 #length(d::CompoundDirichlet) = 23409
 #Base.size(d::CompoundDirichlet) = 1#(153,153)
 
+function internal_logpdf(d::CompoundDirichlet, b_lens::Any, int_leave_map::Array{Int64})
+    blen_int = 0.0
+    blen_leave = 0.0
+    blen_int_log = 0.0
+    blen_leave_log = 0.0
+    nterm::Int64 = 0
+    for i in eachindex(int_leave_map)
+        if int_leave_map[i] == 1
+            blen_int += b_lens[i]
+            blen_int_log += log(b_lens[i])
+        else
+            blen_leave += b_lens[i]
+            blen_leave_log += log(b_lens[i])
+            nterm += 1
+        end
+    end
+
+    t_l = blen_int+blen_leave
+    n_int::Float64 = nterm-3.0
+
+    first = (d.alpha*log(d.beta))-log(gamma(d.alpha)) - (t_l*d.beta)
+    second = -log(gamma(d.a))-log(gamma(d.c))+log(gamma(d.a+d.c))
+    third = blen_leave_log*(d.a-1) + blen_int_log*(d.a*d.c-1.0)
+    fourth = (d.alpha-d.a*nterm-d.a*d.c*n_int)*log(t_l)
+
+    r2 = first + second +third+fourth
+    return r2
+
+end
+
+function gradient(d::CompoundDirichlet, x::Node)
+
+    g(mt) = internal_logpdf(d, mt, internal_external_map(x))
+    ForwardDiff.gradient(g, get_branchlength_vector(x))
+end
+
 function _logpdf(d::CompoundDirichlet, x::Node)
 
-    xn = get_sum_seperate_length!(x)
-    blen_int::Float64 = xn[1]
-    blen_leave::Float64 = xn[2]
-    t_l::Float64 = blen_int+blen_leave
-    n_term::Float64 = length(get_leaves(x))
-    n_int::Float64 = n_term-3.0
-    ln1::Float64 = (d.a-1.0)*blen_leave + (d.a*d.c-1.0)*blen_int
-    ln2::Float64 = (d.alpha-d.a*n_term-d.a*d.c*n_int)*log(t_l)- d.beta*t_l
-    v1 = (d.alpha*log(d.beta))
-    v2 = log(gamma(d.alpha))
-    v3 = log(gamma(d.a*n_term+d.a*d.c*n_int))
-    v4 = n_term*log(gamma(d.beta))
-    v5 = n_int*log(gamma(d.beta*d.a))
-    ln3::Float64 = (d.alpha*log(d.beta))-log(gamma(d.alpha))+log(gamma(d.a*n_term+d.a*d.c*n_int))-n_term*log(gamma(d.beta))-n_int*log(gamma(d.beta*d.a))
-    return ln1+ln2+ln3
+    internal_logpdf(d, get_branchlength_vector(x), internal_external_map(x))
+    #xn = get_sum_seperate_length!(x)
+    #blen_int::Float64 = xn[1]
+    #blen_leave::Float64 = xn[2]
+    #blen_int_log::Float64 = xn[3]
+    #blen_leave_log::Float64 = xn[4]
+    #t_l::Float64 = blen_int+blen_leave
+    #n_term::Float64 = length(get_leaves(x))
+    #n_int::Float64 = n_term-3.0
+
+    #first = (d.alpha*log(d.beta))-log(gamma(d.alpha)) - (t_l*d.beta)
+    #second = -log(gamma(d.a))-log(gamma(d.c))+log(gamma(d.a+d.c))
+    #third = blen_leave_log*(d.a-1) + blen_int_log*(d.a*d.c-1.0)
+    #fourth = (d.alpha-d.a*n_term-d.a*d.c*n_int)*log(t_l)
+
+    #r2 = first + second +third+fourth
+
+
+    #return r2
 end # function _logpdf
 
 function insupport(d::CompoundDirichlet, x::Node)

@@ -54,11 +54,9 @@ function sample!(v::ProbPathVariate, block, logf::Function, gradf::Function)
     a = setdiff(params, targets)
 
     @assert length(a) == 1
-
     ll = logf(v) # log likelihood of the model, including the prior
 
-    prior = logpdf(block.model, a, false) # log of the prrior
-    
+    #prior = logpdf(block.model, a, false) # log of the prrior
 
     tree = block.model[a[1]]
     blens = get_branchlength_vector(tree)
@@ -75,12 +73,13 @@ function sample!(v::ProbPathVariate, block, logf::Function, gradf::Function)
         before = get_branchlength_vector(v.value[1])
         blens_ = molify!(probB, delta)
         set_branchlength_vector!(v.value[1], blens_)
-        l = gradf(v, v.tune.differ)
-        l2 = logpdf(block.model, a, false)
+        l = gradf(v, v.tune.differ)[1:end-1]
+        l2 = gradient(block.model, a, false)
+        
         set_branchlength_vector!(v.value[1], before)
 
 
-        probM = probM.-stepsz/(2.0 .* ((l.-l2).*fac))
+        probM = probM.-stepsz/2.0 .* ((l.-l2).*fac)
         #println("probM ",probM)
 
         v, tmpB, probM, step_nn_att, step_ref_att = refraction(v, probB, probM, true, logf)
@@ -89,13 +88,13 @@ function sample!(v::ProbPathVariate, block, logf::Function, gradf::Function)
 
         blens_ = molify!(probB, delta)
         set_branchlength_vector!(v.value[1], blens_)
-        l = gradf(v, v.tune.differ)
-        l2 = logpdf(block.model, a, false)
+        l = gradf(v, v.tune.differ)[1:end-1]
+        l2 = gradient(block.model, a, false)
         set_branchlength_vector!(v.value[1], probB)
         if any(isnan.(probB))
             println(probB)
         end
-        probM = probM .- stepsz/(2.0 .* ((l.-l2).*fac))
+        probM = probM.-stepsz/2.0 .* ((l.-l2).*fac)
     end
 
     probU::Float64 = logf(v)

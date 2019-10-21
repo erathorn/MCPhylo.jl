@@ -11,7 +11,8 @@ using Serialization
 using Distributed
 using Printf: @sprintf
 using LinearAlgebra
-using Calculus: gradient
+using ForwardDiff
+#using Calculus: gradient
 using Showoff: showoff
 using Markdown
 using DataFrames

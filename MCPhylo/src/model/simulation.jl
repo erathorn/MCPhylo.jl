@@ -66,6 +66,17 @@ function logpdf(m::Model, nodekeys::Vector{Symbol}, transform::Bool=false)
   lp
 end
 
+
+function gradient(m::Model, nodekeys::Vector{Symbol}, transform::Bool=false)
+  lp = 0.0
+  for key in nodekeys
+    lp = mgradient(m[key])
+    #isfinite.(lp) || break
+  end
+  lp
+end
+
+
 function logpdf(m::Model, x::AbstractArray{T}, block::Integer=0,
                 transform::Bool=false) where {T<:Real}
   x0 = unlist(m, block)
