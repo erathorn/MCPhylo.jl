@@ -482,16 +482,22 @@ branches leading to the leave nodes.
 function get_sum_seperate_length!(post_order::Vector{Node})::Vector{Float64}
     res_int::Float64 = 0.0
     res_leave::Float64 = 0.0
+    res_int_log::Float64 = 0.0
+    res_leave_log::Float64 = 0.0
     for node in post_order
         if node.nchild != 0
             # internal branches
-            res_int += node.inc_length
+            if !node.root
+                res_int += node.inc_length
+                res_int_log += log(node.inc_length)
+            end
         else
             # branches leading to leaves
             res_leave += node.inc_length
+            res_leave_log += log(node.inc_length)
         end # if
     end # for
-    return [res_int, res_leave]
+    return [res_int, res_leave, res_int_log, res_leave_log]
 end # function get_sum_seperate_length!
 
 function internal_external_map(t::TreeStochastic)::Vector{Int64}
@@ -503,12 +509,14 @@ function internal_external_map(root::Node)::Vector{Int64}
 end
 
 function internal_external_map(post_order::Vector{Node})::Vector{Int64}
-    my_map = Vector{Int64}(undef, length(post_order))
+    my_map = Vector{Int64}(undef, length(post_order)-1)
     for node_ind in eachindex(post_order)
-        if post_order[node_ind].nchild != 0
-            my_map[node_ind] = 1
-        else
-            my_map[node_ind] = 0
+        if !post_order[node_ind].root
+            if post_order[node_ind].nchild != 0
+                my_map[node_ind] = 1
+            else
+                my_map[node_ind] = 0
+            end
         end
     end
     return my_map
