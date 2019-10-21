@@ -6,7 +6,6 @@ tester:
 - Date: 2019-05-07
 
 =#
-
 include("./MCPhylo/src/MCPhylo.jl")
 using .MCPhylo
 using Random
@@ -48,7 +47,7 @@ inits = [ Dict(
     :nsites => size(my_data[:df])[3],
     :mymap=>inivals,
     :av => inivals2
-    )
+    ) for i in 1:2
     ]
 
 
@@ -63,7 +62,9 @@ setsamplers!(model, scheme)
 
 # do the mcmc simmulation. if trees=true the trees are stored and can later be
 # flushed ot a file output.
-sim = mcmc(model, my_data, inits, 5000, burnin=50,thin=10, chains=1, trees=true)
+sim = mcmc(model, my_data, inits, 10000, burnin=5000,thin=10, chains=2, trees=true)
+
+draw(plot(sim), ask=False)
 
 # write the output to a path specified as the second argument
-to_file(sim, "")
+to_file(sim, "tmp")

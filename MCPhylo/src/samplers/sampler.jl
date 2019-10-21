@@ -96,7 +96,7 @@ function validatebinary(v::SamplerVariate)
 end
 
 function validatesimplex(v::SamplerVariate)
-  isprobvec(v) || throw(ArgumentError("variate is not a probability vector", v))
+  isprobvec(v) || throw(ArgumentError("variate is not a probability vector $v"))
   v
 end
 
