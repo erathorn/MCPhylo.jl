@@ -11,12 +11,15 @@ include("./MCPhylo/src/MCPhylo.jl")
 using .MCPhylo
 using Random
 Random.seed!(1234)
+using ForwardDiff
 
 mt, df = make_tree_with_data("local/development.nex") # load your own nexus file
 
+
+
 my_data = Dict{Symbol, Any}(
   :mtree => mt,
-  :df => log.(df),
+  :df => df,
   :nnodes => size(df)[1],
   :nbase => size(df)[2],
   :nsites => size(df)[3],
