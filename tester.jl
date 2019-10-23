@@ -17,6 +17,7 @@ mt, df = make_tree_with_data("local/development.nex") # load your own nexus file
 
 
 
+
 my_data = Dict{Symbol, Any}(
   :mtree => mt,
   :df => df,
@@ -66,7 +67,7 @@ setsamplers!(model, scheme)
 
 # do the mcmc simmulation. if trees=true the trees are stored and can later be
 # flushed ot a file output.
-sim = mcmc(model, my_data, inits, 5000, burnin=500,thin=10, chains=1, trees=true)
+sim = mcmc(model, my_data, inits, 50, burnin=5,thin=10, chains=1, trees=true)
 
 # write the output to a path specified as the second argument
 to_file(sim, "")

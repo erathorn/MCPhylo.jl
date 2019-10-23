@@ -5,12 +5,12 @@
 This function calculates the log-likelihood of an evolutiuonary model using the
 Felsensteins pruning algorithm.
 """
-function FelsensteinFunction(tree_postorder::Any, pi_::Number, rates::Vector{Float64}, data, n_c::Int64)#::Float64
+function FelsensteinFunction(tree_postorder::Any, pi_::Number, rates::Vector{Float64}, data, n_c::Int64, blv)#::Float64
 
     res = 0.0
     for node in tree_postorder
         if node.nchild != 0
-            res += CondLikeInternal(node, pi_, rates, n_c, data)
+            res += CondLikeInternal(node, pi_, rates, n_c, data, blv)
         end # if
     end # for
 
@@ -45,17 +45,17 @@ out of an extra function to avoid array creation.
 
 The loop is written such that the julia converter should be able to infer simd patterns.
 """
-function CondLikeInternal(node::Node, pi_::Number, rates::Vector{Float64}, n_c::Int64, data)#::Float64
+function CondLikeInternal(node::Node, pi_::Number, rates::Vector{Float64}, n_c::Int64, data,blv )#::Float64
 
     @assert size(rates)[1] == n_c
     left_daughter::Node = node.lchild
     right_daughter::Node = node.rchild
-    linc::Float64 = left_daughter.inc_length
-    rinc::Float64 = right_daughter.inc_length
+    #linc::Float64 = left_daughter.inc_length
+    #rinc::Float64 = right_daughter.inc_length
     l_num::Int64 = left_daughter.num
     r_num::Int64 = right_daughter.num
-    #linc = blv[l_num]
-    #rinc = blv[r_num]
+    linc = blv[l_num]
+    rinc = blv[r_num]
     res = 0.0
 
     n_num::Int64 = node.num

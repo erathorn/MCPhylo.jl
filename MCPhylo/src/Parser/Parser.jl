@@ -16,8 +16,8 @@ function make_tree_with_data(filename::String, dialect::AbstractString="nexus",
     new_tree = create_tree_from_leaves(df[!,:Language], nc)
 
     n_nodes = length(post_order(new_tree))
-    my_df = Array{Float64,3}(undef, n_nodes, 2, nc)
-    my_df .= -Inf
+    my_df = Array{Any,3}(undef, n_nodes, 2, nc)
+    #my_df .= -Inf
     # iterate through the data frame and get the node information
     for row in eachrow(df)
         #data_vec = zeros(Float64, (2, nc))
