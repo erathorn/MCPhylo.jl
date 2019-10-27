@@ -54,8 +54,8 @@ end
 
 function gradient(d::CompoundDirichlet, x::Node)
 
-    g(mt) = internal_logpdf(d, mt, internal_external_map(x))
-    ForwardDiff.gradient(g, get_branchlength_vector(x))
+    g(mt) = exp(internal_logpdf(d, mt, internal_external_map(x)))
+    gradient(g, get_branchlength_vector(x))
 end
 
 function _logpdf(d::CompoundDirichlet, x::Node)

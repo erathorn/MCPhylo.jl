@@ -5,7 +5,7 @@
 This function calculates the log-likelihood of an evolutiuonary model using the
 Felsensteins pruning algorithm.
 """
-function FelsensteinFunction(tree_postorder::Any, pi_::Number, rates::Vector{Float64}, data, n_c::Int64, blv)#::Float64
+function FelsensteinFunction(tree_postorder::Any, pi_::Number, rates::Vector{Float64}, data::Array{Float64}, n_c::Int64, blv::Vector{Float64})#::Float64
 
     res = 0.0
     for node in tree_postorder
@@ -16,24 +16,14 @@ function FelsensteinFunction(tree_postorder::Any, pi_::Number, rates::Vector{Flo
 
     # sum the two rows
     rnum = last(tree_postorder).num
-    if pi_ < 0
-        println(tree_postorder)
-        println(pi_)
-        println(get_branchlength_vector(last(tree_postorder)))
-    end
+
     _lpi_::Float64 = log(1.0-pi_)
     _pi_::Float64 = log(pi_)
 
     @simd for ind in 1:n_c
-        @inbounds res += log(exp(data[rnum,1,ind]+ _lpi_) + exp(data[rnum,2,ind]+ _pi_))
+        @inbounds res += log(exp(data[rnum,1,ind]+ _pi_) + exp(data[rnum,2,ind]+ _lpi_))
     end # for
-    if isinf(res)
-        println("inf")
-        println(tree_postorder)
-        println(pi_)
-        println(get_branchlength_vector(last(tree_postorder)))
-        println("--")
-    end
+
     return res
 end # function
 
@@ -45,7 +35,7 @@ out of an extra function to avoid array creation.
 
 The loop is written such that the julia converter should be able to infer simd patterns.
 """
-function CondLikeInternal(node::Node, pi_::Number, rates::Vector{Float64}, n_c::Int64, data,blv )#::Float64
+function CondLikeInternal(node::Node, pi_::Number, rates::Vector{Float64}, n_c::Int64, data::Array{Float64}, blv::Vector{Float64})::Float64
 
     @assert size(rates)[1] == n_c
     left_daughter::Node = node.lchild
@@ -64,35 +54,51 @@ function CondLikeInternal(node::Node, pi_::Number, rates::Vector{Float64}, n_c::
         @inbounds r::Float64 = rates[ind]
 
 
-        ext = exp(-linc*r)
-        ext_ = 1.0-ext
-        pj_::Float64 = 1.0-pi_
+        #ext = exp(-linc*r)
+        #ext_ = 1.0-ext
+        #pj_::Float64 = 1.0-pi_
+        #m_v = ext+ext_*pi_
+        #m_w = ext+ext_*pj_
+        m = expo1(pi_, linc, r)
+        if any(m .< 0)
+            println(m)
+            println(pi_, " ", linc, " ", r)
+        end
 
-        m_v = ext+ext_*pi_
-        m_w = ext+ext_*pj_
-
-        @inbounds a = log(exp(data[l_num, 1,ind]+log(m_v)) + exp(data[l_num, 2,ind]+log(1.0-m_v)))
-        @inbounds b = log(exp(data[l_num, 1,ind]+log(1-m_w)) + exp(data[l_num, 2,ind]+log(m_w)))
-
+        @inbounds a = log(exp(data[l_num, 1,ind]+log(m[1,1])) + exp(data[l_num, 2,ind]+log(m[2,1])))
+        @inbounds b = log(exp(data[l_num, 1,ind]+log(m[1,2])) + exp(data[l_num, 2,ind]+log(m[2,2])))
         #my_mat2 = log.(exponentiate_binary(pi_, rinc, r))
-        ext = exp(-rinc*r)
-        ext_ = 1.0-ext
+        m = expo1(pi_, rinc, r)
+        if any(m .< 0)
+            println(m)
+            println(pi_, " ", linc, " ", r)
+        end
+        #ext = exp(-rinc*r)
+        #ext_ = 1.0-ext
         #v_ = ext_*pi_
         #w_ = ext_*pj_
-        m_v = ext+ext_*pi_
-        m_w = ext+ext_*pj_
+        #m_v = ext+ext_*pi_
+        #m_w = ext+ext_*pj_
 
-        @inbounds c = log(exp(data[r_num, 1,ind]+log(m_v)) + exp(data[r_num,2,ind]+log(1.0-m_v)))
-        @inbounds d = log(exp(data[r_num, 1,ind]+log(1-m_w)) + exp(data[r_num,2,ind]+log(m_w)))
+        @inbounds c = log(exp(data[r_num, 1,ind]+log(m[1,1])) + exp(data[r_num,2,ind]+log(m[2,1])))
+        @inbounds d = log(exp(data[r_num, 1,ind]+log(m[1,2])) + exp(data[r_num,2,ind]+log(m[2,2])))
 
         @inbounds data[n_num,1,ind] = a+c
         @inbounds data[n_num,2,ind] = b+d
-        res += log(exp(a+b)+exp(c+d))
+        res += a+b+c+d
 
     end # for
     return res
 end # function
 
+function expo2(p, t, r)
+    return [-p*exp(-t*r) p*exp(-t*r);
+            (1 - p)*exp(-t*r) (p - 1)*exp(-t*r)]
+end
+function expo1(p,t,r)
+    return [exp(-t*r)+p*(1-exp(-r*t)) (1-p)*exp(-r*t);
+            p*(1-exp(-r*t)) exp(-r*t)+(1-p)*(1-exp(-r*t))]
+end
 
 """
     function GradiantLog(tree_preorder::Vector{Node}, pi_::Number, rates::Array{Float64,1}, data::Array{Fl0at64,3}, n_c::Int64)::Array{Float64}
@@ -100,6 +106,7 @@ end # function
 This functio calculates the gradient for the Probabilistic Path Sampler.
 
 """
+
 function GradiantLog(tree_preorder::Vector{Node}, pi_::Number, rates::Array{Float64,1},
                      data, n_c::Int64)::Array{Any}
 

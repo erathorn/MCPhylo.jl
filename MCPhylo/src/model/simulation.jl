@@ -67,7 +67,7 @@ function logpdf(m::Model, nodekeys::Vector{Symbol}, transform::Bool=false)
 end
 
 
-function gradient(m::Model, nodekeys::Vector{Symbol}, transform::Bool=false)
+function mgradient(m::Model, nodekeys::Vector{Symbol}, transform::Bool=false)
   lp = 0.0
   for key in nodekeys
     lp = mgradient(m[key])

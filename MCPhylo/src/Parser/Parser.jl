@@ -17,13 +17,14 @@ function make_tree_with_data(filename::String, dialect::AbstractString="nexus",
 
     n_nodes = length(post_order(new_tree))
     my_df = Array{Any,3}(undef, n_nodes, 2, nc)
-    #my_df .= -Inf
+    my_df .= -Inf
     # iterate through the data frame and get the node information
     for row in eachrow(df)
         #data_vec = zeros(Float64, (2, nc))
         mn = find_by_name(new_tree, row.Language)
         mind = mn.num
         for (ind, i) in enumerate(row.Data)
+
             if i == '0'
                 my_df[mind, 1,ind] = 0.0
                 my_df[mind, 2,ind] = -Inf
@@ -33,6 +34,7 @@ function make_tree_with_data(filename::String, dialect::AbstractString="nexus",
             else
                 my_df[mind,1, ind] = 0.0
                 my_df[mind,2, ind] = 0.0
+            
             end # if
         end # for
         #node = find_by_name(new_tree, row.Language)
