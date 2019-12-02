@@ -8,7 +8,7 @@ tree which is supplied.
 """
 function NNI!(root::Node)
 
-    target::Node = Node(1.0, [0.0], Node[], 0, true, 0.0, "0")
+    target::Node = Node("node_name", zeros(Float64, (2, 1)),missing, missing, missing, 0, true, 0.0, "0", 0)
     while true
         target = random_node(root)
         # check if target is not a leave and that its grand daughters are also
@@ -63,11 +63,7 @@ function NNI!(root::Node, target::Node)::Int64
     parent::Node = get_mother(target)
     sister = get_sister(target)
 
-    if rand([1,2]) == 1
-        ychild = remove_child!(target, true)
-    else
-        ychild = remove_child!(target, false)
-    end # if
+    rand([1,2]) == 1 ? ychild = remove_child!(target, true) : ychild = remove_child!(target, false)
 
     xchild = remove_child!(parent, sister)
 
@@ -82,6 +78,44 @@ function NNI!(root::Node, target::Node)::Int64
 
 end # function
 
+
+
+"""
+    NNI(root::Node, target::Node)::nothing
+
+This function does a nearest neighbour interchange (NNI) move on the tree specified
+by `root`. The parameter `target` specifies the node which performs the interchange
+move with a randomly selected neighbour.
+The function returns 1 if the move was successfull and 0 else.
+"""
+function NNI!(root::Node, target::Node, lor::Bool)::Int64
+    # NNI move would be illegal
+    if target.nchild == 0 || target.root
+        return 0
+    end # if
+
+
+    parent = get_mother(target)
+    sister = get_sister(target)
+
+    ychild = remove_child!(target, lor)
+    xchild = remove_child!(parent, sister)
+
+    add_child!(target, sister)
+    add_child!(parent, ychild)
+
+
+    set_binary!(root)
+
+    return 1
+
+end # function
+
+
+function NNI!(root::Node, target::Int64, lor::Bool)::Int64
+   tn = find_num(root, target)
+   NNI!(root, tn, lor)
+end #function
 
 
 """
@@ -169,7 +203,7 @@ function NNI!(mat::Array{Float64,2})::Array{Float64,2}
         push!(ac, get_neighbours(mat[ch[c],:]))
     end
 
-    if rand([true,false])
+    if 0.5 > rand()
         # swap ac[1,1] with ac[2, 1]
         swap_cols(mat, ac[1][1], ac[2][1])
     else

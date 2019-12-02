@@ -11,14 +11,18 @@ using Serialization
 using Distributed
 using Printf: @sprintf
 using LinearAlgebra
-#using ForwardDiff
+using CuArrays
+using GPUArrays
+using CUDAnative
+#using Flux.Tracker
+#import ForwardDiff: gradient
 import Calculus: gradient
 using Showoff: showoff
 using Markdown
 using DataFrames
 using Random
 using CSV
-
+using StaticArrays
 import Base: Matrix, names, summary
 import Compose: Context, context, cm, gridstack, inch, MeasureOrNumber, mm, pt, px
 import LinearAlgebra: cholesky, dot
@@ -59,7 +63,7 @@ import StatsBase: autocor, autocov, countmap, counts, describe, predict,
 include("distributions/pdmats2.jl")
 using .PDMats2
 
-
+CuArrays.allowscalar(false)
 
 """
     Node
@@ -84,10 +88,13 @@ mutable struct Node
     inc_length::Float64
     binary::String
     num::Int64
+    height::Float64
+    IntExtMap::Union{Vector{Int64}, Nothing}
 
     #Node() = new("",zeros(Float64,(1,2)), nothing, nothing, 0, true, 0.0, "0", 0)
     Node() = new("noname")
-    function Node(n::String, d::Array{Float64,2}, m::Union{Node, Missing},c1::Union{Node, Missing},c2::Union{Node, Missing} , n_c::Int64, r::Bool, inc::Float64, b::String, num::Int64)
+    function Node(n::String, d::Array{Float64,2}, m::Union{Node, Missing},c1::Union{Node, Missing},c2::Union{Node, Missing} ,
+      n_c::Int64, r::Bool, inc::Float64, b::String, num::Int64,height::Float64)
         mn = Node()
         mn.name = n
         mn.data = d
@@ -99,6 +106,8 @@ mutable struct Node
         mn.inc_length = inc
         mn.binary = b
         mn.num = num
+        mn.height = height
+        mn.IntExtMap = nothing
         return mn
     end
 end # struct Node
@@ -167,7 +176,7 @@ mutable struct ScalarStochastic <: ScalarVariate
 end
 
 mutable struct ArrayStochastic{N} <: ArrayVariate{N}
-  value::Array{Float64, N}
+  value::Union{CuArray{Float64, N}, Array{Float64, N}}
   symbol::Symbol
   monitor::Vector{Int}
   eval::Function
@@ -175,6 +184,7 @@ mutable struct ArrayStochastic{N} <: ArrayVariate{N}
   targets::Vector{Symbol}
   distr::DistributionStruct
 end
+
 
 mutable struct TreeStochastic <: TreeVariate
     value::Node
@@ -189,7 +199,7 @@ end
 const AbstractLogical = Union{ScalarLogical, ArrayLogical, TreeLogical}
 const AbstractStochastic = Union{ScalarStochastic, ArrayStochastic, TreeStochastic}
 const AbstractDependent = Union{AbstractLogical, AbstractStochastic}
-#const AnyDependent = Union{AbstractDependent, TreeStochastic}
+
 
 #################### Sampler Types ####################
 
@@ -258,6 +268,7 @@ struct Chains <: AbstractChains
   names::Vector{AbstractString}
   chains::Vector{Int}
   trees::Array{AbstractString, 3}
+  moves::Int
 end
 
 struct ModelChains <: AbstractChains
@@ -267,6 +278,7 @@ struct ModelChains <: AbstractChains
   chains::Vector{Int}
   trees::Array{AbstractString, 3}
   model::Model
+  moves::Int
 end
 
 
@@ -329,16 +341,21 @@ include("samplers/slicesimplex.jl")
 include("Tree/Tree_Basics.jl")
 include("Tree/Converter.jl")
 include("Tree/Tree_moves.jl")
+include("Tree/Tree_Distance.jl")
+include("Tree/TreeIterator.jl")
 #include("Tree/Tree_Matrix.jl")
 
 include("Parser/Parser.jl")
 include("Parser/ParseCSV.jl")
 include("Parser/ParseNexus.jl")
 
+
+include("Sampler/PNUTS.jl")
 include("Sampler/ProbPathHMC.jl")
 include("Sampler/ProbPathHMC_Node.jl")
 include("Sampler/PhyloHMC_Functions.jl")
 include("Sampler/PhyloHMC_Functions_Node.jl")
+
 include("Sampler/BranchLengthSlice.jl")
 
 
@@ -385,7 +402,8 @@ export
   CompoundDirichlet,
   PhyloDist,
   MultivariateUniformTrunc,
-  CompoundDirichletWrap
+  CompoundDirichletWrap,
+  exponentialBL
 
 export
   autocor,
@@ -451,13 +469,17 @@ export
   RWM, RWMVariate,
   Slice, SliceMultivariate, SliceUnivariate,
   SliceSimplex, SliceSimplexVariate,
+  PNUTS, PNUTSVariate,
   ProbPathHMC,
   BranchSlice,
   RWMC, RWMCVariate
 
 export
   make_tree_with_data,
-  to_file
+  make_tree_with_data_cu,
+  to_file,
+  NNI!,
+  RF
 
 export
   cm,

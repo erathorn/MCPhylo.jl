@@ -5,24 +5,40 @@
 This function calculates the log-likelihood of an evolutiuonary model using the
 Felsensteins pruning algorithm.
 """
-function FelsensteinFunction(tree_postorder::Any, pi_::Number, rates::Vector{Float64}, data::Array{Float64}, n_c::Int64, blv::Vector{Float64})#::Float64
+function FelsensteinFunction(tree_postorder::Any, pi_::Number, rates::Vector{Float64}, data::Array, n_c::Int64, blv)#::Float64
 
-    res = 0.0
     for node in tree_postorder
         if node.nchild != 0
-            res += CondLikeInternal(node, pi_, rates, n_c, data, blv)
-        end # if
+            CondLikeInternal(node, pi_, rates, n_c, data, blv)
+        end
     end # for
 
     # sum the two rows
-    rnum = last(tree_postorder).num
+    rnum::Int64 = last(tree_postorder).num
+    res = sum(log.(sum(data[:, : , rnum] .* Array([pi_, 1.0-pi_]), dims=1)))
 
-    _lpi_::Float64 = log(1.0-pi_)
-    _pi_::Float64 = log(pi_)
+    return res
+end # function
 
-    @simd for ind in 1:n_c
-        @inbounds res += log(exp(data[rnum,1,ind]+ _pi_) + exp(data[rnum,2,ind]+ _lpi_))
+
+"""
+    FelsensteinFunction(tree_postorder::Vector{Node}, pi::Float64, rates::Vector{Float64}, data::Array{Float64,3}, n_c::Int64)::Float64
+
+This function calculates the log-likelihood of an evolutiuonary model using the
+Felsensteins pruning algorithm.
+"""
+function FelsensteinFunction(tree_postorder::Any, pi_::Number, rates::Vector{Float64}, data::CuArray, n_c::Int64, blv::Vector{Float64})#::Float64
+
+    for node in tree_postorder
+        if node.nchild != 0
+            CondLikeInternal(node, pi_, rates, n_c, data, blv)
+        end
     end # for
+
+    # sum the two rows
+    rnum::Int64 = last(tree_postorder).num
+
+    res = sum(CUDAnative.log.(sum(data[:, : , rnum] .* CuArray([pi_, 1.0-pi_]), dims=1)))
 
     return res
 end # function
@@ -35,70 +51,88 @@ out of an extra function to avoid array creation.
 
 The loop is written such that the julia converter should be able to infer simd patterns.
 """
-function CondLikeInternal(node::Node, pi_::Number, rates::Vector{Float64}, n_c::Int64, data::Array{Float64}, blv::Vector{Float64})::Float64
+function CondLikeInternal(node::Node, pi_::Number, rates::Vector{Float64}, n_c::Int64, data::Array, blv)#::Float64
 
-    @assert size(rates)[1] == n_c
-    left_daughter::Node = node.lchild
-    right_daughter::Node = node.rchild
-    #linc::Float64 = left_daughter.inc_length
-    #rinc::Float64 = right_daughter.inc_length
-    l_num::Int64 = left_daughter.num
-    r_num::Int64 = right_daughter.num
-    linc = blv[l_num]
-    rinc = blv[r_num]
-    res = 0.0
-
+    l_num::Int64 = node.lchild.num
+    r_num::Int64 = node.rchild.num
+    linc::Float64 = blv[l_num]
+    rinc::Float64 = blv[r_num]
     n_num::Int64 = node.num
 
-    Base.Threads.@threads for ind=eachindex(rates)
-        @inbounds r::Float64 = rates[ind]
-
-
-        #ext = exp(-linc*r)
-        #ext_ = 1.0-ext
-        #pj_::Float64 = 1.0-pi_
-        #m_v = ext+ext_*pi_
-        #m_w = ext+ext_*pj_
-        m = expo1(pi_, linc, r)
-        if any(m .< 0)
-            println(m)
-            println(pi_, " ", linc, " ", r)
-        end
-
-        @inbounds a = log(exp(data[l_num, 1,ind]+log(m[1,1])) + exp(data[l_num, 2,ind]+log(m[2,1])))
-        @inbounds b = log(exp(data[l_num, 1,ind]+log(m[1,2])) + exp(data[l_num, 2,ind]+log(m[2,2])))
-        #my_mat2 = log.(exponentiate_binary(pi_, rinc, r))
-        m = expo1(pi_, rinc, r)
-        if any(m .< 0)
-            println(m)
-            println(pi_, " ", linc, " ", r)
-        end
-        #ext = exp(-rinc*r)
-        #ext_ = 1.0-ext
-        #v_ = ext_*pi_
-        #w_ = ext_*pj_
-        #m_v = ext+ext_*pi_
-        #m_w = ext+ext_*pj_
-
-        @inbounds c = log(exp(data[r_num, 1,ind]+log(m[1,1])) + exp(data[r_num,2,ind]+log(m[2,1])))
-        @inbounds d = log(exp(data[r_num, 1,ind]+log(m[1,2])) + exp(data[r_num,2,ind]+log(m[2,2])))
-
-        @inbounds data[n_num,1,ind] = a+c
-        @inbounds data[n_num,2,ind] = b+d
-        res += a+b+c+d
-
+    r::Float64 = 1.0
+    v::Float64 = exp(-r*linc)
+    m11::Float64 = pi_ - (pi_ - 1)*v
+    m22::Float64 = pi_*(v - 1) + 1
+    m21::Float64 = pi_ - pi_* v
+    m12::Float64 = (pi_ - 1)*(v - 1)
+    mm::Array{Float64} = [m11 m12;m21 m22]
+    v1::Float64 = exp(-r*rinc)
+    m11b::Float64 = pi_ - (pi_ - 1)*v1
+    m22b::Float64 = pi_*(v1 - 1) + 1
+    m21b::Float64 = pi_ - pi_* v1
+    m12b::Float64 = (pi_ - 1)*(v1 - 1)
+    mm2::Array{Float64} = [m11b m12b;m21b m22b]
+    Base.Threads.@threads for ind in 1:n_c #eachindex(rates)
+        @inbounds data[:,ind,n_num] = (mm*data[:,ind,l_num]).*(mm2*data[:,ind,r_num])
     end # for
-    return res
+
 end # function
 
-function expo2(p, t, r)
-    return [-p*exp(-t*r) p*exp(-t*r);
-            (1 - p)*exp(-t*r) (p - 1)*exp(-t*r)]
+
+function kernel(arr, trans_arr1, trans_arr2, n_num, l_num, r_num)
+    i = (blockIdx().x - 1) * blockDim().x + threadIdx().x
+    if i <= size(arr,2)
+        @inbounds arr[1,i,n_num]= ((arr[1,i,l_num]*trans_arr1[1,1]) + (arr[2,i,l_num]*trans_arr1[2,1])) *
+                                  ((arr[1,i,r_num]*trans_arr2[1,1]) + (arr[2,i,r_num]*trans_arr2[2,1]))
+        @inbounds arr[2,i,n_num]= ((arr[1,i,l_num]*trans_arr1[1,2]) + (arr[2,i,l_num]*trans_arr1[2,2])) *
+                                  ((arr[1,i,r_num]*trans_arr2[1,2]) + (arr[2,i,r_num]*trans_arr2[2,2]))
+    end
+    return
 end
-function expo1(p,t,r)
-    return [exp(-t*r)+p*(1-exp(-r*t)) (1-p)*exp(-r*t);
-            p*(1-exp(-r*t)) exp(-r*t)+(1-p)*(1-exp(-r*t))]
+
+function CondLikeInternal(node::Node, pi_::Number, rates::Vector{Float64}, n_c::Int64, data::CuArray, blv::Array)
+
+    l_num::Int64 = node.lchild.num
+    r_num::Int64 = node.rchild.num
+    linc::Float64 = blv[l_num]
+    rinc::Float64 = blv[r_num]
+    n_num::Int64 = node.num
+
+    r::Float64 = 1.0
+    v::Float64 = exp(-r*linc)
+    m11::Float64 = pi_ - (pi_ - 1)*v
+    m22::Float64 = pi_*(v - 1) + 1
+    m21::Float64 = pi_ - pi_* v
+    m12::Float64 = (pi_ - 1)*(v - 1)
+    mm::CuArray{Float64} = [m11 m21;m12 m22]
+    v1::Float64 = exp(-r*rinc)
+    m11b::Float64 = pi_ - (pi_ - 1)*v1
+    m22b::Float64 = pi_*(v1 - 1) + 1
+    m21b::Float64 = pi_ - pi_* v1
+    m12b::Float64 = (pi_ - 1)*(v1 - 1)
+    mm2::CuArray{Float64} = [m11b m21b;m12b m22b]
+
+    @cuda threads=1024 blocks=1 kernel(data, mm, mm2, n_num, l_num, r_num)
+
+
+end # function
+
+
+
+function transition_storage(pi_::Float64, rates::Vector{Float64}, inc::Float64, outarr::MArray)
+    @simd for ind=eachindex(rates)
+        #@inbounds r::Float64 = rates[ind]
+        @inbounds v::Float64 = exp(-rates[ind]*inc)
+        outarr[1,1,ind] = log(pi_ - (pi_ - 1)*v)
+        outarr[1,2, ind] = log(pi_ - pi_* v)
+        outarr[2,1,ind] = log((pi_ - 1)*(v - 1))
+        outarr[2,2,ind] = log(pi_*(v - 1) + 1)
+    end
+
 end
+
+
+
 
 """
     function GradiantLog(tree_preorder::Vector{Node}, pi_::Number, rates::Array{Float64,1}, data::Array{Fl0at64,3}, n_c::Int64)::Array{Float64}

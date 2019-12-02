@@ -3,24 +3,24 @@
 
 
 mutable struct ProbPathHMCTune <: SamplerTune
-    n_leap::Float64
-    stepsz::Float64
+    n_leap::Int64
+    epsilon::Float64
     delta::Float64
     differ::Union{Symbol, Missing}
 
     ProbPathHMCTune() = new()
 
-    ProbPathHMCTune(n_leap::Float64, stepsz::Float64, delta::Float64) = new(n_leap::Float64, stepsz::Float64, delta::Float64)
+    ProbPathHMCTune(n_leap::Int64, epsilon::Float64, delta::Float64) = new(n_leap::Int64, epsilon::Float64, delta::Float64)
 
-    ProbPathHMCTune(n_leap::Float64, stepsz::Float64, delta::Float64, differ::Union{Missing,Symbol}) = new(n_leap::Float64, stepsz::Float64, delta::Float64, differ)
+    ProbPathHMCTune(n_leap::Int64, epsilon::Float64, delta::Float64, differ::Union{Missing,Symbol}) = new(n_leap::Int64, epsilon::Float64, delta::Float64, differ)
 
-    function ProbPathHMCTune(x::Vector, n_leap::Float64, stepsz::Float64, delta::Float64, differ::Union{Symbol, Missing})
-      new(n_leap, stepsz, delta, differ)
+    function ProbPathHMCTune(x::Vector, n_leap::Int64, epsilon::Float64, delta::Float64, differ::Union{Symbol, Missing})
+      new(n_leap, epsilon, delta, differ)
     end
 end # mutable struct
 
-ProbPathHMCTune(x::Vector,n_leap::Float64, stepsz::Float64, delta::Float64 ; args...) =
-  ProbPathHMCTune(x, n_leap, stepsz, delta, missing; args...)
+ProbPathHMCTune(x::Vector,n_leap::Int64, epsilon::Float64, delta::Float64 ; args...) =
+  ProbPathHMCTune(x, n_leap, epsilon, delta, missing; args...)
 
 const ProbPathVariate = SamplerVariate{ProbPathHMCTune}
 
@@ -39,66 +39,60 @@ function ProbPathHMC(params, pargs...)
     Sampler(params, samplerfx, ProbPathHMCTune(pargs...))
 end
 
+function mgradient(var::SamplerVariate)
+    gradient(var.distr, var.value)
+end
+
 
 function sample!(v::ProbPathVariate, block, logf::Function, gradf::Function)
 
-    x1 = v.value[:][1] # copy the original state, so it state can be restored
+    x1 = deepcopy(v.value[:][1]) # copy the original state, so it state can be restored
 
     n_leap = v.tune.n_leap
-    stepsz = v.tune.stepsz
+    stepsz = v.tune.epsilon
     delta = v.tune.delta
 
     params = keys(block.model, :block, block.index)
     targets = keys(block.model, :target, block.index)
 
     a = setdiff(params, targets)
+    cd_distr = block.model[a[1]].distr
 
     @assert length(a) == 1
-    ll = logf(v) # log likelihood of the model, including the prior
 
-    #prior = logpdf(block.model, a, false) # log of the prrior
+    blens::Vector{Float64} = get_branchlength_vector(block.model[a[1]]) # without root incident length
 
-    tree = block.model[a[1]]
-    blens = get_branchlength_vector(tree)
-    probM = randn(length(blens))#[1:end-1]
 
-    currM = deepcopy(probM)
-    currH = ll + 0.5*sum(currM.*currM)
+    currU::Float64 = logf(v) # log likelihood of the model, including the prior
 
-    probB = deepcopy(blens)
+    probM::Vector{Float64} = rand(Normal(),length(blens))
+    currM::Vector{Float64} = deepcopy(probM)
+    currH::Float64 = currU + 0.5*sum(currM.*currM)
+    probB::Vector{Float64} = deepcopy(blens)
 
     for i in 1:n_leap
+        fac::Float64 = scale_factor(v, delta)
+        blens_::Vector{Float64} = molify(probB, delta)
+        set_branchlength_vector!(v.value[1], blens_)
+        relist(block, v)
+        l::Vector{Float64} = gradf(v, v.tune.differ)
+        l2::Vector{Float64} = gradient(cd_distr, v.value[1])
+
+        probM =  @. probM - stepsz/2.0 * ((l + l2) * fac)
+
+        v, probB, probM = refraction(v, probB, probM, logf, block)
 
         fac = scale_factor(v, delta)
-        before = get_branchlength_vector(v.value[1])
-        blens_ = molify!(probB, delta)
+        blens_ = molify(probB, delta)
         set_branchlength_vector!(v.value[1], blens_)
-        l = gradf(v, v.tune.differ)#[1:end-1]
-        l2 = mgradient(block.model, a, false)#[1:end-1]
-        #println(l, size(l))
-        #println(l2, size(l2))
-        #println( size(probM))
-        set_branchlength_vector!(v.value[1], before)
 
-
-        probM = probM.-stepsz/2.0 .* ((l.-l2).*fac)
-        #println("probM ",probM)
-
-        v, tmpB, probM, step_nn_att, step_ref_att = refraction(v, probB, probM, true, logf)
-
-        probB = tmpB
-
-        blens_ = molify!(probB, delta)
-        set_branchlength_vector!(v.value[1], blens_)
-        l = gradf(v, v.tune.differ)#[1:end-1]
-        l2 = mgradient(block.model, a, false)#[1:end-1]
-        set_branchlength_vector!(v.value[1], probB)
-        if any(isnan.(probB))
-            println(probB)
-        end
-        probM = probM.-stepsz/2.0 .* ((l.-l2).*fac)
+        relist(block, v)
+        l = gradf(v, v.tune.differ)
+        l2 = gradient(cd_distr, v.value[1])
+        probM =  @. probM - stepsz/2.0 * ((l + l2) * fac)
     end
-
+    set_branchlength_vector!(v.value[1], probB)
+    relist(block, v)
     probU::Float64 = logf(v)
     probH = probU + 0.5 * sum(probM.*probM)
 
@@ -115,63 +109,61 @@ function sample!(v::ProbPathVariate, block, logf::Function, gradf::Function)
 end
 
 
-function refraction(v::ProbPathVariate, probB::Vector{Float64}, probM::Vector{Float64}, surrogate::Bool, logf::Function)
+function refraction(v::ProbPathVariate, probB::Vector{Float64}, probM::Vector{Float64}, logf::Function, block)
 
-    stepsz = v.tune.stepsz
+    stepsz = v.tune.epsilon
     delta = v.tune.delta
 
-    postorder = post_order(v.value[1])[1:end-1] # post order and probB are in the same order
-    #println("refraction probB ", probB)
-    tmpB = @. probB + stepsz * probM
+    postorder = post_order(v.value[1])
+
+    tmpB = @. probB + (stepsz * probM)
     ref_time = 0.0
-    NNI_attempts = 0.0
-    ref_attempts = 0.0
-    if any(isnan.(tmpB))
-        println("tmpB ", tmpB)
-    end
+
+
     while minimum(tmpB)<=0
         timelist::Vector{Float64} = tmpB./abs.(probM)
         ref_index::Int64 = argmin(timelist)
         temp=(stepsz-ref_time+timelist[ref_index])
         probB = @. probB + temp * probM
-        if any(isnan.(probB))
-            println("probB ", probB)
-        end
+
+        blens_ = molify(probB, delta)
+        set_branchlength_vector!(v.value[1], blens_)
+        relist(block, v)
         probM[ref_index] *= -1.0
-        ref_attempts += 1.0
+
         if !(postorder[ref_index].nchild == 0)
-            if surrogate
-                U_before_nni::Float64 = logf(v)
-                v_copy = deepcopy(v)
-                blens = molify!(probB, delta)
-                set_binary!(v_copy.value[1])
-                set_branchlength_vector!(v_copy.value[1], blens)
-                tmp_NNI_made = NNI!(v_copy.value[1], postorder[ref_index])
-                if tmp_NNI_made != 0
-                    U_after_nni::Float64 = logf(v_copy)
-                    delta_U = 2.0*(U_after_nni - U_before_nni)
-                    my_v::Float64 = probM[ref_index]^2
-                    if my_v >= delta_U
-                        probM[ref_index] = sqrt(my_v - delta_U)
-                        v = v_copy
-                        NNI_attempts += 1
-                    end # if my_v
-                end #if tmpNNI
-            else
-                NNI_attempts += NNI!(v.value[1], ref_index)
-            end #if surrogate
+
+            U_before_nni::Float64 = logf(v) # still with molified branch length
+
+            v_copy = deepcopy(v)
+            tmp_NNI_made = NNI!(v_copy.value[1], postorder[ref_index])
+
+            if tmp_NNI_made != 0
+                relist(block, v_copy)
+                U_after_nni::Float64 = logf(v_copy)
+                delta_U::Float64 = 2.0*(U_after_nni - U_before_nni)
+                my_v::Float64 = probM[ref_index]^2
+
+                if my_v >= delta_U
+                    probM[ref_index] = sqrt(my_v - delta_U)
+                    v = v_copy
+                else
+                    relist(block, v)
+                end # if my_v
+            end #if tmpNNI
+
         end # postorder
         ref_time = stepsz + timelist[ref_index]
-        temp = (stepsz-ref_time)
-        tmpB = @. probB + temp * probM
+
+        tmpB = @. probB + (stepsz-ref_time) * probM
     end# while
-    return v, tmpB, probM, NNI_attempts, ref_attempts
+    return v, tmpB, probM
 end # function
 
 
 function scale_factor(v::SamplerVariate, delta::Float64)::Float64
-    mv = minimum(get_branchlength_vector(v.value[1]))
-    fac = 0.0
+    mv::Float64 = minimum(get_branchlength_vector(v.value[1]))
+    fac::Float64 = 0.0
     if mv > delta
         fac = 1.0
     else
@@ -180,14 +172,14 @@ function scale_factor(v::SamplerVariate, delta::Float64)::Float64
     fac
 end # function
 
-function molify!(v::Vector, delta::Float64)
-    blens = [molifier(i, delta) for i in v]
-    return blens
+function molify(v::Vector, delta::Float64)
+    #blens = molifier.(v, delta)
+    return molifier.(v, delta)
 end
 
-function molify!(v::SamplerVariate, delta::Float64)
+function molify(v::SamplerVariate, delta::Float64)
     #blens = [molifier(i, delta) for i in get_branchlength_vector(v.value[1])]
-    return molify!(get_branchlength_vector(v.value[1]), delta)
+    return molify(get_branchlength_vector(v.value[1]), delta)
 end
 
 
@@ -197,40 +189,38 @@ end
 documentation
 """
 function molifier(x::Float64, delta::Float64)::Float64
-    if x >= delta
-        return x
-    else
-        return (1.0/(2.0*delta)) * (x*x+delta*delta)
-    end
+    x >= delta ? x : (x^2+delta^2)/(2.0*delta)
 end # function
 
 
-function gradf!(block::SamplingBlock, x::AbstractVector{T}, dtype::Symbol=:forward) where {T<:Real}
+function gradf!(block::SamplingBlock, x::Node, dtype::Symbol=:forward) where {T<:Real}
+    #println("here")
     gradlogpdf!(block, x, dtype)
 
 end
 
 function mlogpdf!(block::SamplingBlock, x::AbstractVector{T}) where {T<:Real}
-  logpdf!(block, x) # logf is already with prior
+  m = block.model
+  index = block.index
+  transform = block.transform
+  params = keys(m, :block, index)
+  targets = keys(m, :target, index)
+  m[params] = relist(m, x, params, transform)
+  lp = -logpdf(m, setdiff(params, targets), transform)
+  for key in targets
+    isfinite(lp) || break
+    node = m[key]
+    update!(node, m)
+    lp -= key in params ? logpdf(node, transform) : logpdf(node)
+  end
+  lp
+
 end
 
-#function gradlogpdf!(m::Model, x::AbstractVector{T}, block::Integer=0,
-#                      transform::Bool=false; dtype::Symbol=:mytree) where {T<:Real}
-#  GradiantLog(pre_order(x.value[1]), m.nodes[:mypi])
-#end
 
 function gradlogpdf(s::AbstractStochastic, x::AbstractArray)
   gradlogpdf_sub(s.distr, x)
 end
-
-function Stochastic(d::Node, f::Function, monitor::Union{Bool, Vector{Int}}=true)
-    value = Node()
-    fx, src = modelfxsrc(depfxargs, f)
-    s = TreeStochastic(value, :nothing, Int[], fx, src, Symbol[],
-                      NullUnivariateDistribution())
-    setmonitor!(s, monitor)
-end
-
 
 """
     setinits!(d::TreeVariate, m::model, x::Array)
@@ -240,6 +230,7 @@ documentation
 function setinits!(d::TreeStochastic, m::Model, x::Array)
     d.value = x
     d.distr = d.eval(m)
+
     setmonitor!(d, d.monitor)
 end # function
 
@@ -249,22 +240,29 @@ function update!(d::TreeStochastic, m::Model)
 end
 
 function names(d::TreeStochastic, nodekey::Symbol)
+    n_names = vec(AbstractString["node "*string(n.num) for n in post_order(d.value) if n.root != true])
     AbstractString["Tree height", "Tree length"]
+    vcat(AbstractString["Tree height", "Tree length"], n_names)
 end
 
 function names(d::TreeLogical, nodekey::Symbol)
+    n_names = vec(AbstractString["node_"*string(n.num) for n in post_order(d.value) if n.root != true])
     AbstractString["Tree height", "Tree length"]
+    vcat(AbstractString["Tree height", "Tree length"], n_names)
 end
 
 
 function unlist(d::TreeStochastic)
-    y = tree_height(d.value), tree_length(d.value)
-    collect(y)
+    y = tree_height(d.value)
+    x = vec([n.height for n in post_order(d.value) if n.root != true])
+    vcat(y, tree_length(d.value), x)
+
 end
 
 function unlist(d::TreeLogical)
-    y = tree_height(d.value), tree_length(d.value)
-    collect(y)
+    y = tree_height(d.value)
+    x = vec([n.height for n in post_order(d.value) if n.root != true])
+    vcat(y, tree_length(d.value), x)
 end
 
 

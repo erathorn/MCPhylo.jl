@@ -44,6 +44,15 @@ function gradlogpdf(m::Model, x::AbstractVector{T}, block::Integer=0,
   value
 end
 
+function gradlogpdf!(m::Model, x::Node, block::Integer=0,
+                    transform::Bool=false)
+  x0 = unlist(m, block)
+  value = gradlogpdf!(m, x, block)
+  relist!(m, x0[1], block)
+  value
+end
+
+
 function gradlogpdf!(m::Model, x::AbstractVector{T}, block::Integer=0,
                       transform::Bool=false; dtype::Symbol=:forward) where {T<:Real}
   f = x -> logpdf!(m, x, block, transform)
@@ -83,6 +92,36 @@ function logpdf(m::Model, x::AbstractArray{T}, block::Integer=0,
   lp = logpdf!(m, x, block, transform)
   relist!(m, x0, block)
   lp
+end
+
+
+function logpdf!(m::Model, x::Node, block::Integer=0,
+                  transform::Bool=false)
+  params = keys(m, :block, block)
+  targets = keys(m, :target, block)
+  m[params] = relist(m, x, params, transform)
+  lp = logpdf(m, setdiff(params, targets), transform)
+  for key in targets
+    isfinite(lp) || break
+    node = m[key]
+    update!(node, m)
+    lp += key in params ? logpdf(node, transform) : logpdf(node)
+  end
+  lp
+end
+
+function gradlogpdf!(m::Model, x::AbstractArray{T}, block::Integer=0,transform::Bool=false)where {T<:Node}
+  gradlogpdf!(m, x[1], block, transform)
+end
+
+
+function gradlogpdf!(m::Model, x::Node, block::Integer=0,transform::Bool=false)
+  params = keys(m, :block, block)
+  targets = keys(m, :target, block)
+  m[params] = relist(m, x, params, transform)
+  #grad = mgradient(m, setdiff(params, targets))
+  grad = gradlogpdf(m[params[1]], x)
+  gradlogpdf(m[targets[1]]).+grad
 end
 
 function logpdf!(m::Model, x::AbstractArray{T}, block::Integer=0,
@@ -143,6 +182,13 @@ function relist(m::Model, x::AbstractArray{T}, block::Integer=0,
   relist(m, x, keys(m, :block, block), transform)
 end
 
+function relist(m::Model, x::AbstractArray{T}, block::Integer=0,
+                transform::Bool=false) where {T<:Node}
+
+  relist(m, x, keys(m, :block, block), transform)
+end
+
+
 function relist(m::Model, x::AbstractArray{T},
                 nodekeys::Vector{Symbol}, transform::Bool=false) where {T<:Any}
   values = Dict{Symbol,Any}()
@@ -157,6 +203,22 @@ function relist(m::Model, x::AbstractArray{T},
     throw(ArgumentError("incompatible number of values to put in nodes"))
   values
 end
+
+
+function relist(m::Model, x::Node,
+                nodekeys::Vector{Symbol}, transform::Bool=false)
+  values = Dict{Symbol,Any}()
+  #N = length(x)
+  offset = 0
+  for key in nodekeys
+    value, n = relistlength(m[key], x, transform)
+    values[key] = value
+    offset += n
+  end
+
+  values
+end
+
 
 
 function relist!(m::Model, x::AbstractArray{T}, block::Integer=0,

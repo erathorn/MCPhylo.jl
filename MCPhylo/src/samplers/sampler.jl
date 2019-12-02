@@ -113,18 +113,23 @@ end
 
 function gradlogpdf!(block::SamplingBlock, x::AbstractArray{T},
                     dtype::Symbol=:forward) where {T<:Real}
-  if dtype == :provided
-      return _gradlogpdf!(block.model, x, block.index)
-  else
-      return gradlogpdf!(block.model, x, block.index, block.transform, dtype=dtype)
-  end
+  gradlogpdf!(block.model, x, block.index, block.transform, dtype=dtype)
+end
+
+
+function gradlogpdf!(block::SamplingBlock, x::Node, dtype::Symbol=:forward)
+      gradlogpdf!(block.model, x, block.index, block.transform)
 end
 
 function logpdf!(block::SamplingBlock, x::AbstractArray{T}) where {T<:Real}
   logpdf!(block.model, x, block.index, block.transform)
 end
 
-function logpdf!(block::SamplingBlock, x::AbstractArray{T}) where {T<:Node}
+function logpdf!(block::SamplingBlock, x::AbstractArray{Node}) where {T<:Node}
+  logpdf!(block.model, x[1])
+end
+
+function logpdf!(block::SamplingBlock, x::Node) where {T<:Node}
   logpdf!(block.model, x, block.index, block.transform)
 end
 
@@ -161,6 +166,12 @@ end
 function relist(block::SamplingBlock, x::AbstractArray{T}) where {T<:Real}
   relist(block.model, x, block.index, block.transform)
 end
+
+function relist(block::SamplingBlock, x::AbstractArray{T}) where {T<:Node}
+  
+  relist(block.model, x, block.index, block.transform)
+end
+
 
 
 #################### Auxiliary Functions ####################

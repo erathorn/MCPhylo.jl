@@ -251,6 +251,7 @@ end
 
 function names(m::Model, nodekey::Symbol)
   node = m[nodekey]
+  
   unlist(node, names(node))
 end
 

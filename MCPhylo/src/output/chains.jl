@@ -31,7 +31,7 @@ function Chains(value::Array{T, 3},
   end
 
   v = convert(Array{Float64, 3}, value)
-  Chains(v, range(start, step=thin, length=n), AbstractString[names...], Int[chains...], value2)
+  Chains(v, range(start, step=thin, length=n), AbstractString[names...], Int[chains...], value2, 0)
 end
 
 function Chains(value::Matrix{T};
@@ -220,7 +220,8 @@ function header(c::AbstractChains)
     "Iterations = $(first(c)):$(last(c))\n",
     "Thinning interval = $(step(c))\n",
     "Chains = $(join(map(string, c.chains), ","))\n",
-    "Samples per chain = $(length(c.range))\n"
+    "Samples per chain = $(length(c.range))\n",
+    "Successfull NNI moves = $(c.moves)\n"
   )
 end
 

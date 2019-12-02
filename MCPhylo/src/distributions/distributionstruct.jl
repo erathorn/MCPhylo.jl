@@ -51,6 +51,11 @@ end
 relistlength_sub(d::Distribution, s::AbstractStochastic, x::AbstractArray) =
   relistlength(d, x)
 
+relistlength_sub(d::Distribution, s::AbstractStochastic, x::Node) =
+  relistlength(d, x)
+
+relistlength(d::UnivariateDistribution, x::Node) = (x, 1)
+
 function relistlength_sub(d::UnivariateDistribution, s::ArrayStochastic,
                           X::AbstractArray)
   n = length(s)

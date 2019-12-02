@@ -3,18 +3,19 @@ include("./MCPhylo/src/MCPhylo.jl")
 using .MCPhylo
 using Random
 Random.seed!(1234)
-using ForwardDiff
+
 using Calculus
 mt, df = make_tree_with_data("local/development.nex") # load your own nexus file
 po = MCPhylo.post_order(mt)
 blv = MCPhylo.get_branchlength_vector(mt)
 av = rand(Dirichlet([1.0, 1.0, 1.0, 1.0]))
+push!(blv, 0.0)
 #rates = [av[convert(UInt8,i)] for i in rand(Categorical([0.25, 0.25, 0.25, 0.25]),3132)]
 rates = ones(1)
-g(y) = exp(MCPhylo.FelsensteinFunction(po, 0.2705, rates, deepcopy(df), 1,y))
+g(y) = MCPhylo.FelsensteinFunction(po, 0.2705, rates, deepcopy(df), 1,y)
+f(y) = exp(MCPhylo.FelsensteinFunction(y, 0.2705, rates, deepcopy(df), 1,blv))
 
-
-g2 = ForwardDiff.gradient(g, blv)
+g2 = Calculus.gradient(g, blv)
 
 
 

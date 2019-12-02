@@ -1,13 +1,13 @@
 #################### MCMC Simulation Engine ####################
 
-function mcmc(mc::ModelChains, iters::Integer; verbose::Bool=true)
+function mcmc(mc::ModelChains, iters::Integer; verbose::Bool=true, trees::Bool=false)
   thin = step(mc)
   last(mc) == div(mc.model.iter, thin) * thin ||
     throw(ArgumentError("chain is missing its last iteration"))
 
   mm = deepcopy(mc.model)
   mc2 = mcmc_master!(mm, mm.iter .+ (1:iters), last(mc), thin, mc.chains,
-                     verbose)
+                     verbose, trees)
   if mc2.names != mc.names
     mc2 = mc2[:, mc.names, :]
   end
@@ -63,7 +63,11 @@ function mcmc_master!(m::Model, window::UnitRange{Int}, burnin::Integer,
     Any[m, states[k], window, burnin, thin, ChainProgress(frame, k, N), trees]
     for k in chains
   ]
-  results = pmap2(mcmc_worker!, lsts)
+  #results = pmap2(mcmc_worker!, lsts)
+  results = []
+  for k in lsts
+     push!(results, mcmc_worker!(k))
+  end
 
   sims  = Chains[results[k][1] for k in 1:K]
   model = results[1][2]
@@ -95,6 +99,7 @@ function mcmc_worker!(args::Vector)
 
   reset!(meter)
   for i in window
+
     sample!(m)
     if i > burnin && (i - burnin) % thin == 0
       sim[i, :, 1] = unlist(m, true)

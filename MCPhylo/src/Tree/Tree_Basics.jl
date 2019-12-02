@@ -12,7 +12,14 @@ function Base.summary(io::IO, d::Node)
 end
 
 function Base.show(io::IO, d::Node)
+    print(io, "Tree with root:\n")
     show(io, d.name)
+    print(io, "\n\nLenght:\n")
+    show(io, "text/plain", tree_length(d))
+    print(io, "\n\nHeight:\n")
+    show(io, "text/plain", tree_height(d))
+    print(io, "\n\nNumber of leave nodes:\n")
+    show(io, "text/plain",length(get_leaves(d)))
 end
 
 function showall(io::IO, d::Node)
@@ -25,8 +32,10 @@ function showall(io::IO, d::Node)
   show(io, d.binary)
 end
 
+Base.:(==)(x::Node, y::Node) = x.binary == y.binary
 
 
+Base.size(x::Node) = size(post_order(x))
 
 """
     add_child(mother_node::Node, child::Node)
@@ -82,11 +91,15 @@ function remove_child!(mother_node::Node, left::Bool)::Node
     if left
         rv = mother_node.lchild
         mother_node.lchild = missing
+
         rv.mother = missing
     else
         rv = mother_node.rchild
         mother_node.rchild = missing
+
         rv.mother = missing
+
+
     end # end if
     mother_node.nchild -= 1
     return rv
@@ -129,7 +142,7 @@ function create_tree_from_leaves(leaf_nodes::Vector{String}, node_size::Int64 = 
 
     # first create a list of leaf nodes
     for node_name in leaf_nodes
-        nn =  Node(node_name, zeros(Float64, (2, node_size)),missing, missing, missing, 0, true, 0.0, "0", 0)
+        nn =  Node(node_name, zeros(Float64, (2, node_size)),missing, missing, missing, 0, true, 0.0, "0", 0, 0.0)
         push!(my_node_list,nn)
     end # for
 
@@ -144,10 +157,10 @@ function create_tree_from_leaves(leaf_nodes::Vector{String}, node_size::Int64 = 
         # create a new mother node to which the two first nodes are added as children
         # add the new mother node to the list and reshuffle
         first_child::Node = pop!(my_node_list)
-        first_child.inc_length = rand(Uniform(0,1))
+        first_child.inc_length = rand(Uniform(0,1))#*0.1
         second_child::Node = pop!(my_node_list)
-        second_child.inc_length = rand(Uniform(0,1))
-        curr_node::Node = Node(string(temp_name), zeros(Float64, (2, node_size)), missing, missing, missing, 0, true, 0.0, "0", 0)
+        second_child.inc_length = rand(Uniform(0,1))#*0.1
+        curr_node::Node = Node(string(temp_name), zeros(Float64, (2, node_size)), missing, missing, missing, 0, true, 0.0, "0", 0,0.0)
         add_child!(curr_node, first_child, true)
         add_child!(curr_node, second_child, false)
         push!(my_node_list, curr_node)
@@ -250,31 +263,53 @@ end
 This function calculates the tree_length.
 """
 function tree_length(root::Node)::Float64
-    l::Float64 = 0.0
-    for node in post_order(root)
-        l += node.inc_length
-    end # for
-    return l
+    return tree_length(root, 0.0)
 end # function tree_length
 
+
+
+function tree_length(root::Node, tl::Float64)::Float64
+    if root.nchild != 0
+         if isdefined(root, :lchild) tl = tree_length(root.lchild, tl) end
+         if isdefined(root, :rchild) tl = tree_length(root.rchild, tl) end
+    end # if
+    if root.root != true
+        tl += root.inc_length# = blenvec[root.num]
+    end
+    tl
+end
+
+
+
+function node_height(root::Node, mv::Float64)
+    if !root.root
+        if isdefined(root, :mother)
+            rmh = root.mother.height
+        else
+            rmh = -Inf
+        end
+        root.height = rmh+root.inc_length
+    end
+    if root.nchild != 0
+        if isdefined(root, :lchild)  mv = node_height(root.lchild, mv) end
+        if isdefined(root, :rchild) mv = node_height(root.rchild, mv) end
+    else
+        if root.height>mv
+            mv = root.height
+        end
+    end # if
+    return mv
+end
 
 """
     tree_height(root::Node)::Float64
 
 This function calculates the tree height.
 """
-function tree_height(root::Node)::Float64
-    max_len = -Inf
-    for node in post_order(root)
-        if node.nchild == 0
-            temp = path_length(root, node)
-            if temp > max_len
-                max_len = temp
-            end # if
-        end # end if
-    end # end for
-    return max_len
-end # function tree_height
+function tree_height(root::Node)
+    return node_height(root, -Inf)
+end
+
 
 
 """
@@ -287,8 +322,8 @@ offspring node. The function follows the path specified through the binary
 description of the node.
 """
 function path_length(ancestor::Node, descendant::Node)::Float64
-    l::Float64 = 0
-    mn = descendant
+    l::Float64 = 0.0
+
     while descendant != ancestor
         l += descendant.inc_length
         descendant = descendant.mother
@@ -305,11 +340,7 @@ binary representation of the sister.
 """
 function get_sister(node::Node)::Node
     mother = node.mother
-    if node == mother.lchild
-        return mother.rchild
-    else
-        return mother.lchild
-    end # if
+    node == mother.lchild ? mother.rchild : mother.lchild
 end # function
 
 
@@ -405,7 +436,7 @@ Return a vector of branch lenghts.
 """
 function get_branchlength_vector(post_order::Vector{Node})::Vector{Float64}
     out = zeros(length(post_order)-1)
-    for i in eachindex(post_order)
+    @simd for i in eachindex(post_order)
         if !post_order[i].root
             out[post_order[i].num]= post_order[i].inc_length
         end
@@ -413,6 +444,15 @@ function get_branchlength_vector(post_order::Vector{Node})::Vector{Float64}
     return out
 end # function get_branchlength_vector
 
+function get_branchlength_vector(root::Node, out_vec::Vector)
+    if root.nchild != 0
+         isdefined(root, :lchild) && get_branchlength_vector(root.lchild, out_vec)
+         isdefined(root, :rchild) && get_branchlength_vector(root.rchild, out_vec)
+    end # if
+    if root.root != true
+        out_vec[root.num] = root.inc_length
+    end
+end
 
 """
     get_branchlength_vector!(root::Node)::Vector{Float64}
@@ -427,30 +467,6 @@ function get_branchlength_vector(t::TreeStochastic)
     get_branchlength_vector(t.value)
 end # function
 
-"""
-    set_branchlength_vector!(post_order::Vector{Node}, blenvec::Vector{Float64})::Vector{Node}
-
-This function sets the branch lengths of a tree to the values specified in blenvec.
-"""
-function set_branchlength_vector!(post_order::Vector{Node}, blenvec::Array{Float64})::Vector{Node}
-    @assert length(post_order)-1 == length(blenvec)
-    for node in post_order
-        if !node.root
-            node.inc_length = blenvec[node.num]
-        end
-    end # for
-    return post_order
-end # function set_branchlength_vector!
-
-
-"""
-    set_branchlength_vector!(root::Node, blenvec::Vector{Float64})::Node
-
-This function sets the branch lengths of a tree to the values specified in blenvec.
-"""
-function set_branchlength_vector!(root::Node, blenvec::Array{Float64})::Node
-    return last(set_branchlength_vector!(post_order(root), blenvec))
-end # function set_branchlength_vector!
 
 
 function set_branchlength_vector!(t::TreeStochastic, blenvec::Array{Float64})
@@ -460,6 +476,21 @@ end # function
 function set_branchlength_vector!(t::TreeStochastic, blenvec::ArrayStochastic)
     set_branchlength_vector!(t.value, blenvec.value)
 end # function
+
+"""
+    set_branchlength_vector!(root::Node, blenvec::Vector{Float64})::Node
+
+This function sets the branch lengths of a tree to the values specified in blenvec.
+"""
+function set_branchlength_vector!(root::Node, blenvec::Array{Float64})
+    if root.nchild != 0
+         isdefined(root, :lchild) && set_branchlength_vector!(root.lchild, blenvec)
+         isdefined(root, :rchild) && set_branchlength_vector!(root.rchild, blenvec)
+    end # if
+    if root.root != true
+        root.inc_length = blenvec[root.num]
+    end
+end # function set_branchlength_vector!
 
 
 """
@@ -510,17 +541,26 @@ end
 
 function internal_external_map(post_order::Vector{Node})::Vector{Int64}
     my_map = Vector{Int64}(undef, length(post_order)-1)
-    for node_ind in eachindex(post_order)
-        if !post_order[node_ind].root
-            if post_order[node_ind].nchild != 0
-                my_map[node_ind] = 1
-            else
-                my_map[node_ind] = 0
+    my_map .= 0
+    for node in post_order
+        if !node.root
+            if node.nchild != 0
+                my_map[node.num] = 1
             end
         end
     end
     return my_map
 end
+
+function internal_external(root::Node)
+    v = root.IntExtMap
+    if v == nothing
+        v = internal_external_map(root)
+        root.IntExtMap = v
+    end
+    v
+end
+
 
 function find_lca(tree::Node, node_l::Array{String, 1})::Node
     find_lca(tree, [find_by_name(tree, i) for i in node_l])
@@ -547,7 +587,34 @@ function find_lca(tree::Node, node1::Node, node2::Node)::Node
     nb = lcp(node1.binary, node2.binary)
     find_by_binary(tree, nb)
 end
+function find_num(root::Node, num::Int64)
+    rn = Vector{Node}(undef, 1)#MCPhylo.Node()
+    find_num(root, num, rn)
+    return rn[1]
+end
+function find_num(root::Node, num::Int64, rn::Vector{Node})
 
+    if root.num == num
+        rn[1] = root
+        rv = true
+    else
+        rv = false
+    end
+
+    if root.nchild != 0
+        if !rv
+         if isdefined(root, :lchild)
+               rv = find_num(root.lchild, num,  rn)
+         end
+        end
+         if !rv
+             if isdefined(root, :rchild)
+                 rv = find_num(root.rchild, num,  rn)
+            end
+        end
+    end # if
+    return rv
+end
 
 
 #"""

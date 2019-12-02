@@ -34,6 +34,30 @@ function setmonitor!(d::AbstractDependent, monitor::Vector{Int})
 end
 
 
+
+function setmonitor!(d::AbstractDependent, size::Int, monitor::Bool)
+  value = monitor ? Int[0] : Int[]
+  setmonitor!(d, size, value)
+end
+
+function setmonitor!(d::AbstractDependent, size::Int, monitor::Vector{Int})
+  values = monitor
+  if !isempty(monitor)
+    n = size#length(unlist(d))
+    if n > 0
+      if monitor[1] == 0
+        values = collect(1:n)
+      elseif minimum(monitor) < 1 || maximum(monitor) > n
+        throw(BoundsError())
+      end
+    end
+  end
+  d.monitor = values
+  d
+end
+
+
+
 #################### Distribution Fallbacks ####################
 
 unlist(d::AbstractDependent, transform::Bool=false) =
@@ -148,23 +172,48 @@ end
 
 Stochastic(f::Function, d::Integer, args...) = Stochastic(d, f, args...)
 
-function Stochastic(d::Integer, f::Function,
+function Stochastic_cu(d::Integer, f::Function,
                     monitor::Union{Bool, Vector{Int}}=true)
-  value = Array{Float64}(undef, fill(0, d)...)
+
+  value = CuArray{Float64}(undef, fill(0, d)...)
   fx, src = modelfxsrc(depfxargs, f)
   s = ArrayStochastic(value, :nothing, Int[], fx, src, Symbol[],
                       NullUnivariateDistribution())
   setmonitor!(s, monitor)
 end
 
+
+function Stochastic_ncu(d::Integer, f::Function,
+                    monitor::Union{Bool, Vector{Int}}=true)
+
+  value = Array{Float64}(undef, fill(0, d)...)
+
+  fx, src = modelfxsrc(depfxargs, f)
+  s = ArrayStochastic(value, :nothing, Int[], fx, src, Symbol[],
+                      NullUnivariateDistribution())
+  setmonitor!(s, monitor)
+end
+
+
+
+function Stochastic(d::Integer, f::Function,
+                    monitor::Union{Bool, Vector{Int}}=true, cuda::Bool=false)
+  if cuda
+     return Stochastic_cu(d, f, monitor)
+  else
+     return Stochastic_ncu(d, f, monitor)
+  end
+
+end
+
 Stochastic(f::Function, d::Node, args...) = Stochastic(d, f, args...)
 
-function Stochastic(d::Node, f::Function, monitor::Union{Bool, Vector{Int}}=true)
+function Stochastic(d::Node, f::Function, nnodes::Int, monitor::Union{Bool, Vector{Int}}=true)
     value = Node()
     fx, src = modelfxsrc(depfxargs, f)
     s = TreeStochastic(value, :nothing, Int[], fx, src, Symbol[],
                       NullUnivariateDistribution())
-    setmonitor!(s, monitor)
+    setmonitor!(s, nnodes, monitor)
 end
 
 ScalarStochastic(x::T) where T <: Real = x
@@ -222,6 +271,13 @@ function relistlength(s::AbstractStochastic, x::AbstractArray,
   (transform ? invlink_sub(s.distr, value) : value, n)
 end
 
+function relistlength(s::TreeStochastic, x::Node,
+                      transform::Bool=false)
+  value, n = relistlength_sub(s.distr, s, x)
+  (transform ? invlink_sub(s.distr, value) : value, n)
+end
+
+
 function logpdf(s::AbstractStochastic, transform::Bool=false)
   logpdf(s, s.value, transform)
 end
@@ -238,6 +294,9 @@ function gradlogpdf(s::AbstractLogical)
   gradlogpdf(s, s.value)
 end
 
+function gradlogpdf(s::AbstractStochastic, x::Node, transform::Bool=false)
+  gradient(s.distr, x)
+end
 
 function logpdf(s::AbstractStochastic, x, transform::Bool=false)
   logpdf_sub(s.distr, x, transform)
