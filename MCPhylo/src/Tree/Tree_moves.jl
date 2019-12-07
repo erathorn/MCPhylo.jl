@@ -90,7 +90,7 @@ The function returns 1 if the move was successfull and 0 else.
 """
 function NNI!(root::Node, target::Node, lor::Bool)::Int64
     # NNI move would be illegal
-    if target.nchild == 0 || target.root
+    if target.nchild === 0 || target.root 
         return 0
     end # if
 
@@ -117,6 +117,17 @@ function NNI!(root::Node, target::Int64, lor::Bool)::Int64
    NNI!(root, tn, lor)
 end #function
 
+
+function randomize!(root::Node, num::Int64=100)
+    nnodes = size(root)[1]
+    i = 0
+    while i < num
+        n = rand(1:nnodes)
+        lor = 0.5 > rand()
+        NNI!(root, n, lor)
+        i+=1
+    end
+end
 
 """
     slide!(root::Node)

@@ -22,19 +22,19 @@ end # struct
 #length(d::CompoundDirichlet) = 23409
 #Base.size(d::CompoundDirichlet) = 1#(153,153)
 
-function internal_logpdf(d::CompoundDirichlet, b_lens::Any, int_leave_map::Array{Int64})
+function internal_logpdf(d::CompoundDirichlet, b_lens::Any, int_leave_map::Vector{Int64})
     blen_int = 0.0
     blen_leave = 0.0
     blen_int_log = 0.0
     blen_leave_log = 0.0
-    nterm::Int64 = 0
-    for i in eachindex(int_leave_map)
+    nterm::Float64 = 0
+    @simd for i in eachindex(int_leave_map)
         if int_leave_map[i] == 1
-            blen_int += b_lens[i]
-            blen_int_log += log(b_lens[i])
+            @inbounds blen_int += b_lens[i]
+            @inbounds blen_int_log += log(b_lens[i])
         else
-            blen_leave += b_lens[i]
-            blen_leave_log += log(b_lens[i])
+            @inbounds blen_leave += b_lens[i]
+            @inbounds blen_leave_log += log(b_lens[i])
             nterm += 1
         end
     end

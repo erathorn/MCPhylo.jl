@@ -3,14 +3,14 @@
 #################### Constructors ####################
 
 function ModelChains(c::Chains, m::Model)
-  ModelChains(c.value, c.range, c.names, c.chains, c.trees, m, c.moves)
+  ModelChains(c.value, c.range, c.names, c.chains, m, c.trees, c.moves)
 end
 
 
 #################### Conversions ####################
 
 Base.convert(::Type{Chains}, mc::ModelChains) =
-  Chains(mc.value, mc.range, mc.names, mc.chains)
+  Chains(mc.value, mc.range, mc.names, mc.chains, mc.trees, mc.moves)
 
 
 #################### Indexing ####################

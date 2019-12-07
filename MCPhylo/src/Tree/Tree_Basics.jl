@@ -205,6 +205,9 @@ function post_order(root::Node)::Vector{Node}
 end # function post_order
 
 
+
+
+
 """
     pre_order(root::Node, traversal::Vector{Node})::Vector{Node}
 
@@ -241,19 +244,11 @@ function newick(root::Node)
 end
 function newick(root::Node, newickstring::AbstractString)
     if root.nchild != 0
-        newickstring = string(newickstring, "(")
-        newickstring = newick(root.lchild, newickstring)
-        newickstring = string(newickstring, ",")
-        newickstring = newick(root.rchild, newickstring)
-        newickstring = string(newickstring, ")")
-        newickstring = string(newickstring, root.name)
-        newickstring = string(newickstring, ":")
-        newickstring = string(newickstring, root.inc_length)
-        return newickstring
+
+        return string(newickstring, "(",newick(root.lchild, newickstring),",",newick(root.rchild, newickstring),")", root.name, ":", root.inc_length)
     else
-        newickstring = string(newickstring, root.name)
-        newickstring = string(newickstring, ":")
-        return string(newickstring, root.inc_length)
+
+        return string(newickstring, root.name, ":", root.inc_length)
     end
 end
 
@@ -273,7 +268,7 @@ function tree_length(root::Node, tl::Float64)::Float64
          if isdefined(root, :lchild) tl = tree_length(root.lchild, tl) end
          if isdefined(root, :rchild) tl = tree_length(root.rchild, tl) end
     end # if
-    if root.root != true
+    if root.root !== true
         tl += root.inc_length# = blenvec[root.num]
     end
     tl
@@ -445,23 +440,25 @@ function get_branchlength_vector(post_order::Vector{Node})::Vector{Float64}
 end # function get_branchlength_vector
 
 function get_branchlength_vector(root::Node, out_vec::Vector)
-    if root.nchild != 0
+    if root.nchild !== 0
          isdefined(root, :lchild) && get_branchlength_vector(root.lchild, out_vec)
          isdefined(root, :rchild) && get_branchlength_vector(root.rchild, out_vec)
     end # if
-    if root.root != true
+    if root.root !== true
         out_vec[root.num] = root.inc_length
     end
 end
 
-"""
-    get_branchlength_vector!(root::Node)::Vector{Float64}
-
-Return a vector of branch lenghts.
-"""
 function get_branchlength_vector(root::Node)::Vector{Float64}
-    return get_branchlength_vector(post_order(root))
+    if root.blv === nothing
+        root.blv = Vector{Float64}(undef, length(post_order(root))-1)
+    end
+    vec = root.blv
+    get_branchlength_vector(root, vec)
+    return vec
 end # function get_branchlength_vector
+
+
 
 function get_branchlength_vector(t::TreeStochastic)
     get_branchlength_vector(t.value)
@@ -515,8 +512,8 @@ function get_sum_seperate_length!(post_order::Vector{Node})::Vector{Float64}
     res_leave::Float64 = 0.0
     res_int_log::Float64 = 0.0
     res_leave_log::Float64 = 0.0
-    for node in post_order
-        if node.nchild != 0
+    @simd for node in post_order
+        if node.nchild !== 0
             # internal branches
             if !node.root
                 res_int += node.inc_length
@@ -554,7 +551,7 @@ end
 
 function internal_external(root::Node)
     v = root.IntExtMap
-    if v == nothing
+    if v === nothing
         v = internal_external_map(root)
         root.IntExtMap = v
     end
@@ -567,15 +564,15 @@ function find_lca(tree::Node, node_l::Array{String, 1})::Node
 end
 
 function find_lca(tree::Node, node_l::Array{Node})::Node
-    if length(node_l) == 0
+    if length(node_l) === 0
         return ""
-    elseif length(node_l) == 1
+    elseif length(node_l) === 1
         return node_l[1]
     else
         n1 = popfirst!(node_l)
         n2 = popfirst!(node_l)
         lca = find_lca(tree, n1, n2)
-        while length(node_l) != 0
+        while length(node_l) !== 0
             n1 = popfirst!(node_l)
             lca = find_lca(lca, n1)
         end
@@ -594,7 +591,7 @@ function find_num(root::Node, num::Int64)
 end
 function find_num(root::Node, num::Int64, rn::Vector{Node})
 
-    if root.num == num
+    if root.num === num
         rn[1] = root
         rv = true
     else

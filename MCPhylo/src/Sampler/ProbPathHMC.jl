@@ -172,23 +172,16 @@ function scale_factor(v::SamplerVariate, delta::Float64)::Float64
     fac
 end # function
 
-function molify(v::Vector, delta::Float64)
-    #blens = molifier.(v, delta)
+function molify(v::Vector{Float64}, delta::Float64)
     return molifier.(v, delta)
 end
-
-function molify(v::SamplerVariate, delta::Float64)
-    #blens = [molifier(i, delta) for i in get_branchlength_vector(v.value[1])]
-    return molify(get_branchlength_vector(v.value[1]), delta)
-end
-
 
 """
     molifier(x::Float64, delta::Float64)::Float64
 
 documentation
 """
-function molifier(x::Float64, delta::Float64)::Float64
+@inline function molifier(x::Float64, delta::Float64)::Float64
     x >= delta ? x : (x^2+delta^2)/(2.0*delta)
 end # function
 
@@ -240,13 +233,13 @@ function update!(d::TreeStochastic, m::Model)
 end
 
 function names(d::TreeStochastic, nodekey::Symbol)
-    n_names = vec(AbstractString["node "*string(n.num) for n in post_order(d.value) if n.root != true])
+    n_names = vec(AbstractString["node "*string(n.num) for n in post_order(d.value) if n.root !== true])
     AbstractString["Tree height", "Tree length"]
     vcat(AbstractString["Tree height", "Tree length"], n_names)
 end
 
 function names(d::TreeLogical, nodekey::Symbol)
-    n_names = vec(AbstractString["node_"*string(n.num) for n in post_order(d.value) if n.root != true])
+    n_names = vec(AbstractString["node_"*string(n.num) for n in post_order(d.value) if n.root !== true])
     AbstractString["Tree height", "Tree length"]
     vcat(AbstractString["Tree height", "Tree length"], n_names)
 end
@@ -254,14 +247,14 @@ end
 
 function unlist(d::TreeStochastic)
     y = tree_height(d.value)
-    x = vec([n.height for n in post_order(d.value) if n.root != true])
+    x = vec([n.height for n in post_order(d.value) if n.root !== true])
     vcat(y, tree_length(d.value), x)
 
 end
 
 function unlist(d::TreeLogical)
     y = tree_height(d.value)
-    x = vec([n.height for n in post_order(d.value) if n.root != true])
+    x = vec([n.height for n in post_order(d.value) if n.root !== true])
     vcat(y, tree_length(d.value), x)
 end
 

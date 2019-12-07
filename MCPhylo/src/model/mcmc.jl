@@ -78,7 +78,7 @@ end
 
 
 function mcmc_worker!(args::Vector)
-  m, state, window, burnin, thin, meter, trees = args
+  m, state, window, burnin, thin, meter, store_trees = args
   llname::AbstractString = "likelihood"
   treeind = 1
   m.iter = first(window) - 1
@@ -98,12 +98,12 @@ function mcmc_worker!(args::Vector)
   end
 
   reset!(meter)
-  for i in window
+  @sync for i in window
 
     sample!(m)
     if i > burnin && (i - burnin) % thin == 0
-      sim[i, :, 1] = unlist(m, true)
-      if trees == true
+      @async sim[i, :, 1] = unlist(m, true)
+      @async if store_trees
        sim.trees[treeind, 1, 1] = newick(m[treenode].value)
        treeind +=1
      end
@@ -111,5 +111,19 @@ function mcmc_worker!(args::Vector)
     next!(meter)
   end
 
+  mv = samparas(m)
+
+  sim.moves[1] = mv
   (sim, m, ModelState(unlist(m), gettune(m)))
+end
+
+function track(i::Integer, burnin::Integer, thin::Integer,
+               sim::Chains, m::Model, store_trees::Bool, treeind::Integer, treenode)
+  if i > burnin && (i - burnin) % thin == 0
+    sim[i, :, 1] = unlist(m, true)
+    if store_trees
+     sim.trees[treeind, 1, 1] = newick(m[treenode].value)
+     treeind +=1
+   end
+  end
 end

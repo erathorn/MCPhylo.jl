@@ -64,15 +64,9 @@ function mlogpdfgrad!(block::SamplingBlock, x::Node, sz::Int64, ll::Bool=false, 
   lp = 0.0
   if ll
     lp = logpdf!(block, x)
-
-
-
   end
   if gr
     grad = gradf!(block, x, :provided)
-
-
-
   end
   lp, grad
 end
@@ -140,6 +134,7 @@ function nuts_sub!(v::PNUTSVariate, epsilon::Float64, logfgrad::Function)
     xminus = xplus = mt
     rminus = rplus = org_r
     gradminus = gradplus = zeros(nl)
+    nni = 0
   end
 
   j = 0
@@ -150,7 +145,7 @@ function nuts_sub!(v::PNUTSVariate, epsilon::Float64, logfgrad::Function)
 
 
     pm = 2 * (rand() > 0.5) - 1
-    if pm == -1
+    if pm === -1
       xminus, rminus, gradminus, _, _, _, xprime, nprime, sprime, alpha,
         nalpha, nni1, lpp = buildtree(xminus, rminus, gradminus, pm, j, epsilon, logfgrad,
                            logp0, logu0, delta, false, nl)
@@ -160,9 +155,7 @@ function nuts_sub!(v::PNUTSVariate, epsilon::Float64, logfgrad::Function)
                   logu0, delta, true, nl)
     end
     if sprime && rand() < nprime / n
-      #if min(1, exp(lpp-logp0)) > rand()
         v.value[1]= xprime
-    #end
   end
     j += 1
     n += nprime
@@ -170,11 +163,11 @@ function nuts_sub!(v::PNUTSVariate, epsilon::Float64, logfgrad::Function)
     v.tune.alpha, v.tune.nalpha = alpha, nalpha
     nni += nni1
   end
-
+  v.tune.moves += nni
   v
 end
 
-function scale_fac(x::T, delta::T) where T<:Real
+@inline function scale_fac(x::T, delta::T) where T<:Float64
   x < delta ? x/delta : 1.0
 end
 
@@ -184,8 +177,8 @@ function refraction(v::Node, r::Vector{Float64},
                     delta::Float64, lor::Bool, sz::Int64)
 
     ref_grad = -grad
-    blenvec = zeros(sz)
-    get_branchlength_vector(v, blenvec)
+    #blenvec = zeros(sz)
+    blenvec = get_branchlength_vector(v)#, blenvec)
     fac = scale_fac.(blenvec, delta)
 
 
@@ -200,7 +193,7 @@ function refraction(v::Node, r::Vector{Float64},
 
     end
 
-    set_branchlength_vector!(v, molify(tmpB, delta))
+    set_branchlength_vector!(v, molifier.(tmpB, delta))
     logf, grad = logfgrad(v, sz, true, true)
     ref_grad = -grad
     get_branchlength_vector(v, blenvec)
@@ -228,25 +221,24 @@ function ref_NNI(v::Node, tmpB::Vector{Float64}, r::Vector{Float64}, epsilon::Fl
 
      r[ref_index] *= -1.0
 
-     if intext[ref_index] == 1
-       blv =molify(rv, delta)
+     if intext[ref_index] === 1
+       blv =molifier.(rv, delta)
        set_branchlength_vector!(v, blv)
        U_before_nni, _ = logfgrad(v, sz, true, false) # still with molified branch length
        U_before_nni *= -1
        v_copy = deepcopy(v)
        tmp_NNI_made = NNI!(v_copy, ref_index, lor)
-       if tmp_NNI_made != 0
+
+       if tmp_NNI_made !== 0
 
             U_after_nni, _ = logfgrad(v_copy, sz, true, false)
             U_after_nni *= -1
             delta_U::Float64 = 2.0*(U_after_nni - U_before_nni)
             my_v::Float64 = r[ref_index]^2
             if my_v >= delta_U
-
-              r[ref_index] = sqrt(my_v - delta_U)
-
-              v = v_copy
               nni += tmp_NNI_made
+              r[ref_index] = sqrt(my_v - delta_U)
+              v = v_copy
             end # if my_v
         end #if NNI
       end #non leave
@@ -267,8 +259,7 @@ function buildtree(x::Node, r::Vector{Float64},
                    delta::Float64, lor::Bool, sz::Int64)
 
 
-  if j == 0
-
+  if j === 0
 
     xprime, rprime, logfprime, gradprime, nni = refraction(x, r, pm.*grad, epsilon,
                                           logfgrad, delta, lor, sz)
@@ -287,7 +278,7 @@ function buildtree(x::Node, r::Vector{Float64},
       alphaprime, nalphaprime, nni, logpprime = buildtree(x, r, grad, pm, j - 1, epsilon,
                                           logfgrad, logp0, logu0, delta, lor, sz)
     if sprime
-      if pm == -1
+      if pm === -1
 
         xminus, rminus, gradminus, _, _, _, xprime2, nprime2, sprime2,
           alphaprime2, nalphaprime2 , nni, logpprime= buildtree(xminus, rminus, gradminus, pm,
@@ -327,15 +318,15 @@ function nouturn(xminus::Node, xplus::Node,
         xminus_bar,_,_,_,_ = refraction(deepcopy(xminus), rminus, -grad, epsilon, logfgrad, delta, false, sz)
         xplus_bar,_,_,_,_ = refraction(deepcopy(xplus), rplus, grad, epsilon, logfgrad, delta, true, sz)
         rf1 = RF(xminus_bar, xplus_bar)
-        if rf1 == rf0
-          xminusone = zeros(sz)
-          xplusone = zeros(sz)
-          xminus_barone = zeros(sz)
-          xplus_barone = zeros(sz)
-          get_branchlength_vector(xminus_bar, xminus_barone)
-          get_branchlength_vector(xplus_bar, xplus_barone)
-          get_branchlength_vector(xminus, xminusone)
-          get_branchlength_vector(xplus, xplusone)
+        if rf1 === rf0
+          #xminusone = zeros(sz)
+          #xplusone = zeros(sz)
+          #xminus_barone = zeros(sz)
+          #xplus_barone = zeros(sz)
+          xminus_barone=get_branchlength_vector(xminus_bar)#, xminus_barone)
+          xplus_barone=get_branchlength_vector(xplus_bar)#, xplus_barone)
+          xminusone= get_branchlength_vector(xminus)#, xminusone)
+          xplusone=get_branchlength_vector(xplus)#, xplusone)
 
           xdiff1 = xplusone-xminusone
           xdiff2 = xplus_barone-xminus_barone

@@ -22,7 +22,7 @@ using Markdown
 using DataFrames
 using Random
 using CSV
-using StaticArrays
+#using StaticArrays
 import Base: Matrix, names, summary
 import Compose: Context, context, cm, gridstack, inch, MeasureOrNumber, mm, pt, px
 import LinearAlgebra: cholesky, dot
@@ -79,7 +79,7 @@ stored in the node.
 
 mutable struct Node
     name::String
-    data::Array{Float64,2}
+    #data::Array{Float64,2}
     mother::Union{Node, Missing}
     lchild::Union{Node, Missing}
     rchild::Union{Node, Missing}
@@ -90,6 +90,7 @@ mutable struct Node
     num::Int64
     height::Float64
     IntExtMap::Union{Vector{Int64}, Nothing}
+    blv::Union{Vector{Float64}, Nothing}
 
     #Node() = new("",zeros(Float64,(1,2)), nothing, nothing, 0, true, 0.0, "0", 0)
     Node() = new("noname")
@@ -97,7 +98,7 @@ mutable struct Node
       n_c::Int64, r::Bool, inc::Float64, b::String, num::Int64,height::Float64)
         mn = Node()
         mn.name = n
-        mn.data = d
+        #mn.data = d
         mn.mother = m
         mn.lchild = c1
         mn.rchild = c2
@@ -108,6 +109,7 @@ mutable struct Node
         mn.num = num
         mn.height = height
         mn.IntExtMap = nothing
+        mn.blv = nothing
         return mn
     end
 end # struct Node
@@ -268,7 +270,7 @@ struct Chains <: AbstractChains
   names::Vector{AbstractString}
   chains::Vector{Int}
   trees::Array{AbstractString, 3}
-  moves::Int
+  moves::Array{Int, 1}
 end
 
 struct ModelChains <: AbstractChains
@@ -276,9 +278,9 @@ struct ModelChains <: AbstractChains
   range::StepRange{Int, Int}
   names::Vector{AbstractString}
   chains::Vector{Int}
-  trees::Array{AbstractString, 3}
   model::Model
-  moves::Int
+  trees::Array{AbstractString, 3}
+  moves::Array{Int, 1}
 end
 
 
@@ -479,7 +481,7 @@ export
   make_tree_with_data_cu,
   to_file,
   NNI!,
-  RF
+  RF, randomize!
 
 export
   cm,

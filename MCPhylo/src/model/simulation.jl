@@ -163,6 +163,16 @@ function unlist(m::Model, block::Integer=0, transform::Bool=false)
   unlist(m, keys(m, :block, block), transform)
 end
 
+function samparas(m::Model)
+  moves = 0
+  for i in m.samplers
+    if typeof(i.tune) == PNUTSTune
+      moves = i.tune.moves
+    end
+  end
+ return moves
+end
+
 function unlist(m::Model, monitoronly::Bool)
   f = function(key)
     node = m[key]
