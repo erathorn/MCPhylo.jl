@@ -2,25 +2,131 @@
 include("./MCPhylo/src/MCPhylo.jl")
 using .MCPhylo
 using Random
-Random.seed!(1234)
+using BenchmarkTools
+Random.seed!(1234);
+using Calculus
+mt2, df2 = make_tree_with_data("LangData/Sino-Tibetan.cc.phy.nex"); # load your own nexus file
+po2 = MCPhylo.post_order(mt2);
+for node in po2
+    node.data = df2[:,:,node.num]
+end
+blv2 = MCPhylo.get_branchlength_vector(mt2);
+rates = ones(1);
+f(y) = MCPhylo.FelsensteinFunction(po2, 0.996, rates, df2, 838, y)
+
+f(blv2)
+
+Random.seed!(1234);
+mt, df = make_tree_with_data_cu("LangData/Sino-Tibetan.cc.phy.nex"); # load your own nexus file
+po = MCPhylo.post_order(mt);
+for node in po
+    node.data = df[:,:,node.num]
+end
+
+
+blv = MCPhylo.get_branchlength_vector(mt);
+rates = ones(1);
+g(y) = MCPhylo.FelsensteinFunction(po, 0.996, rates, df, 838, y)
+g(blv)
+
+
+function mf22(blv, f)
+        #f(y) = MCPhylo.FelsensteinFunction(po, 0.0996, rates, df, 3132, y)
+        f(blv), Calculus.gradient(f, blv, :forward)
+end
+
+
+
 using Calculus
 
-mt, df = make_tree_with_data("local/development.nex") # load your own nexus file
-po = MCPhylo.post_order(mt)
-blv = MCPhylo.get_branchlength_vector(mt)
-rates = ones(1)
+
+function mf(blv, f)
+
+    Zygote.refresh()
+    v, g = Zygote._pullback(f, blv)
+end
+
+function mf2(po, rates, df, blv, f)
+        #f(y) = MCPhylo.FelsensteinFunction(po, 0.0996, rates, df, 3132, y)
+        f(blv), Calculus.gradient(f, blv, :central)
+end
 
 
 
-f(y) = MCPhylo.FelsensteinFunction(po, 0.2705, rates, deepcopy(df), 3132,y)
+function mf23(po, rates, df, x, f)
+    f_x = f(x)
+    g = similar(x)
+    n = length(x)
+    for i = 1:n
+        Calculus.@forwardrule x[i] epsilon
+        oldx = x[i]
+        x[i] = oldx + epsilon
+        f_xplusdx = f(x)
+        x[i] = oldx
+        g[i] = (f_xplusdx - f_x) / epsilon
+    end
+    return f_x, g
+end
+
+
+function mf3(po, rates, df, y,f)
+    #f(y) = MCPhylo.FelsensteinFunction(po, 0.0996, rates, df, 3132, y)
+    res = DiffResults.GradientResult(y)
+    ReverseDiff.gradient!(res, f, y)
+    return DiffResults.value(res), DiffResults.gradient(res)
+end
+
+
+v, g = Zygote.pullback(f, blv)
+g(Zygote.sensitivity(v))
+Zygote.sensitivity(v)
+using Calculus
+Calculus.gradient(f, blv)
+
+
+c = MCPhylo.FelsensteinFunction(po, 0.9605, rates, df, 3132, blvt)
+Tracker.grad(blvt)
+blvt = param(blv)
+
+r = Flux.Tracker.forward(f,blv)
+r[2]([1,1,1])
+
+function val_der(f, y)
+    res = DiffResults.GradientResult(y)
+    cfg = ForwardDiff.GradientConfig(MyTag, y)
+    ForwardDiff.gradient!(res, f, y, cfg, Val{false}())
+
+
+    return DiffResults.value(res), DiffResults.gradient(res)
+end
+
+
+v, gr = val_der(f, blv)
+
+
+using Calculus
+grc = Calculus.gradient(f, blv)
+
+using Flux
+Flux.gradient(f, blv)
 
 
 #@diff MCPhylo.FelsensteinFunction(po, 0.2705, rates, df, 3132,y1)
 Calculus.gradient(f, blv)
-
-differentiate("(p - (p-1)*exp(-x))", :x)
+using Calculus
+v1 = exp(-r*rinc)
+m11b = pi_ - (pi_ - 1)*exp(-r*rinc)
+m22b = pi_*(exp(-r*rinc) - 1) + 1
+m21b = pi_ - pi_* exp(-r*rinc)
+m12b = (pi_ - 1)*(exp(-r*rinc) - 1)
+pi_ = 0.2
+r = 1
+rinc =0.5
+mm2 = [pi_ - (pi_ - 1)*exp(-r*rinc) pi_ - pi_* exp(-r*rinc); (pi_ - 1)*(exp(-r*rinc) - 1) pi_*(exp(-r*rinc) - 1) + 1]
+differentiate("(mm*l_data) .* (mm2*r_data)", :mm2)
 differentiate("p - (p-1)*exp(-x)", :x)
 
+ty
 
 exp(MCPhylo.FelsensteinFunction(po, 0.2705, rates, df, 1,blv))
 

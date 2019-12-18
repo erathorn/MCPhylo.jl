@@ -6,7 +6,7 @@
 This function performs an inplace nearest neighbour interchange operation on the
 tree which is supplied.
 """
-function NNI!(root::Node)
+function NNI!(root::T) where T<:Node
 
     target::Node = Node("node_name", zeros(Float64, (2, 1)),missing, missing, missing, 0, true, 0.0, "0", 0)
     while true
@@ -53,7 +53,7 @@ by `root`. The parameter `target` specifies the node which performs the intercha
 move with a randomly selected neighbour.
 The function returns 1 if the move was successfull and 0 else.
 """
-function NNI!(root::Node, target::Node)::Int64
+function NNI!(root::T, target::T)::Int64 where T <: Node
     # NNI move would be illegal
     if target.nchild == 0 || target.root
         return 0
@@ -88,9 +88,9 @@ by `root`. The parameter `target` specifies the node which performs the intercha
 move with a randomly selected neighbour.
 The function returns 1 if the move was successfull and 0 else.
 """
-function NNI!(root::Node, target::Node, lor::Bool)::Int64
+function NNI!(root::T, target::T, lor::Bool)::Int64  where T<:Node
     # NNI move would be illegal
-    if target.nchild === 0 || target.root 
+    if target.nchild === 0 || target.root
         return 0
     end # if
 
@@ -112,7 +112,7 @@ function NNI!(root::Node, target::Node, lor::Bool)::Int64
 end # function
 
 
-function NNI!(root::Node, target::Int64, lor::Bool)::Int64
+function NNI!(root::T, target::Int64, lor::Bool)::Int64  where T<:Node
    tn = find_num(root, target)
    NNI!(root, tn, lor)
 end #function

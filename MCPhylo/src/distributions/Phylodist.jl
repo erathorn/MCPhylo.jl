@@ -34,7 +34,7 @@ function gradlogpdf(d::PhyloDist, x::AbstractArray)
     mt = post_order(d.my_tree.value)
     f(y) = FelsensteinFunction(mt, d.mypi, d.rates, x, d.nsites, y)
     get_branchlength_vector(d.my_tree.value, d.blv)
-    gr = gradient(f, d.blv, :forward)
+    #gr = gradient(f, d.blv, :forward)
 
-    return gr
+    return val_der(f, d.blv)
 end

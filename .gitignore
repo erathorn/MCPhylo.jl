@@ -15,3 +15,6 @@ LangData/
 ample.jl
 nutstest.jl
 *.jls
+rt.jl
+gputest.jl
+*params*.log

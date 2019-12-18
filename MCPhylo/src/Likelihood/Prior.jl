@@ -22,14 +22,20 @@ end # struct
 #length(d::CompoundDirichlet) = 23409
 #Base.size(d::CompoundDirichlet) = 1#(153,153)
 
-function internal_logpdf(d::CompoundDirichlet, b_lens::Any, int_leave_map::Vector{Int64})
+function internal_logpdf(d::CompoundDirichlet, b_lens::Any, int_leave_map::Vector{Int64}; rd::Bool=false)
     blen_int = 0.0
     blen_leave = 0.0
     blen_int_log = 0.0
     blen_leave_log = 0.0
-    nterm::Float64 = 0
-    @simd for i in eachindex(int_leave_map)
-        if int_leave_map[i] == 1
+    nterm = 0.0
+    #if rd === true
+    #    b_lens .-= 0.0015
+    #end
+    #@assert all(b_lens .>= 0.0)
+    #b_lens[b_lens .< 0.0] .= 0.0
+
+    for i in eachindex(int_leave_map)
+        if int_leave_map[i] === 1
             @inbounds blen_int += b_lens[i]
             @inbounds blen_int_log += log(b_lens[i])
         else
@@ -40,7 +46,7 @@ function internal_logpdf(d::CompoundDirichlet, b_lens::Any, int_leave_map::Vecto
     end
 
     t_l = blen_int+blen_leave
-    n_int::Float64 = nterm-3.0
+    n_int = nterm-3.0
 
     first = (d.alpha*log(d.beta))-log(gamma(d.alpha)) - (t_l*d.beta)
     second = -log(gamma(d.a))-log(gamma(d.c))+log(gamma(d.a+d.c))
@@ -48,23 +54,40 @@ function internal_logpdf(d::CompoundDirichlet, b_lens::Any, int_leave_map::Vecto
     fourth = (d.alpha-d.a*nterm-d.a*d.c*n_int)*log(t_l)
 
     r2 = first + second +third+fourth
+
     return r2
 
 end
 
-function gradient(d::CompoundDirichlet, x::Node)
+function pgradient(d::CompoundDirichlet, x::Node)
 
-    g(mt) = internal_logpdf(d, mt, internal_external(x))
-    gradient(g, get_branchlength_vector(x), :forward)
+    int_ext = internal_external(x)
+    g(mt) = internal_logpdf(d, mt, int_ext)
+
+    blv = get_branchlength_vector(x)
+    blv .-= 0.0000015
+    re = internal_logpdf(d, blv, int_ext)#, rd=true)
+    gr = gradient(g, blv, :forward)
+    re, gr
+    #gradient(g, get_branchlength_vector(x), :forward)
+end
+
+function val_der(f, y)
+
+    re = f(y)
+
+    gr = gradient(f, y, :forward)
+    re, gr
 end
 
 
 function _logpdf(d::CompoundDirichlet, x::Node)
-    internal_logpdf(d, get_branchlength_vector(x), internal_external(x))
+    internal_logpdf(d, get_branchlength_vector(x), internal_external(x); rd=true)
 end # function _logpdf
 
 function insupport(d::CompoundDirichlet, x::Node)
     bl = get_branchlength_vector(x)
+
     all(isfinite.(bl)) && all(0 .< bl) && topological(x, d.constraints) && !any(isnan.(bl))
 end # function insupport
 

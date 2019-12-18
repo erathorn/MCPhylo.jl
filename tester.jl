@@ -11,16 +11,15 @@ include("./MCPhylo/src/MCPhylo.jl")
 using .MCPhylo
 using Random
 Random.seed!(1234)
-using BenchmarkTools
-
 
 
 
 mt, df = make_tree_with_data("LangData/Timor-Alor-Pantar.sc.phy.nex"); # load your own nexus file
 
-blv = MCPhylo.get_branchlength_vector(mt)
-
-@benchmark MCPhylo.get_branchlength_vector(mt)
+po = MCPhylo.post_order(mt);
+for node in po
+    node.data = df[:,:,node.num]
+end
 
 my_data = Dict{Symbol, Any}(
   :mtree => mt,
@@ -30,7 +29,7 @@ my_data = Dict{Symbol, Any}(
   :nsites => size(df)[2],
 );
 
-mt2 = deepcopy(mt)
+mt2 = randomize!(deepcopy(mt))
 mt3 = deepcopy(mt)
 mt4 = deepcopy(mt)
 
@@ -39,7 +38,7 @@ model =  Model(
     df = Stochastic(3,
     (mtree, mypi, rates, nnodes, nbase, nsites) -> PhyloDist(mtree, mypi, rates, nbase, nsites, nnodes), false, false),
     mypi = Stochastic( () -> Uniform(0.0,1.0)),
-    mtree = Stochastic(Node(), () -> CompoundDirichlet(1.0,1.0,0.100,1.0), my_data[:nnodes]+1, true),
+    mtree = Stochastic(MCPhylo.Node_ncu(), () -> CompoundDirichlet(1.0,1.0,0.100,1.0), my_data[:nnodes]+1, true),
 
     rates = Logical(1,(mymap, av) -> [av[convert(UInt8,i)] for i in mymap],false),
     mymap = Stochastic(1,() -> Categorical([0.25, 0.25, 0.25, 0.25]), false),
@@ -102,7 +101,9 @@ setsamplers!(model, scheme)
 # do the mcmc simmulation. if trees=true the trees are stored and can later be
 # flushed ot a file output.
 #sim = mcmc(model, my_data, inits, 10000, burnin=1000,thin=50, chains=2, trees=true)
-sim = mcmc(model, my_data, inits, 200, burnin=5,thin=1, chains=1, trees=true)
+sim = mcmc(model, my_data, inits, 50, burnin=10,thin=2, chains=1, trees=true)
+
+#sim = mcmc(sim, 200, trees=true)
 
 # write the output to a path specified as the second argument
-#to_file(sim, "tneg")
+to_file(sim, "tneg", 2)

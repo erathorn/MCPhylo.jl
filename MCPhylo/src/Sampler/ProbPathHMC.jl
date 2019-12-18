@@ -186,7 +186,7 @@ documentation
 end # function
 
 
-function gradf!(block::SamplingBlock, x::Node, dtype::Symbol=:forward) where {T<:Real}
+function gradf!(block::SamplingBlock, x::S, dtype::Symbol=:forward) where {T<:Real, S<:Node}
     #println("here")
     gradlogpdf!(block, x, dtype)
 
@@ -233,13 +233,17 @@ function update!(d::TreeStochastic, m::Model)
 end
 
 function names(d::TreeStochastic, nodekey::Symbol)
-    n_names = vec(AbstractString["node "*string(n.num) for n in post_order(d.value) if n.root !== true])
+    n_names = [n.num for n in post_order(d.value) if n.root !== true]
+    sort!(n_names)
+    n_names = vec(AbstractString["node "*string(n) for n in n_names])
     AbstractString["Tree height", "Tree length"]
     vcat(AbstractString["Tree height", "Tree length"], n_names)
 end
 
 function names(d::TreeLogical, nodekey::Symbol)
-    n_names = vec(AbstractString["node_"*string(n.num) for n in post_order(d.value) if n.root !== true])
+    n_names = [n.num for n in post_order(d.value) if n.root !== true]
+    sort!(n_names)
+    n_names = vec(AbstractString["node "*string(n) for n in n_names])
     AbstractString["Tree height", "Tree length"]
     vcat(AbstractString["Tree height", "Tree length"], n_names)
 end

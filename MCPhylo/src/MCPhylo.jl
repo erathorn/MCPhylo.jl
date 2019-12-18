@@ -14,8 +14,11 @@ using LinearAlgebra
 using CuArrays
 using GPUArrays
 using CUDAnative
+using CUDAdrv
 #using Flux.Tracker
-#import ForwardDiff: gradient
+#using ForwardDiff
+#import ForwardDiff: gradient, gradient!
+#using Zygote
 import Calculus: gradient
 using Showoff: showoff
 using Markdown
@@ -63,7 +66,7 @@ import StatsBase: autocor, autocov, countmap, counts, describe, predict,
 include("distributions/pdmats2.jl")
 using .PDMats2
 
-CuArrays.allowscalar(false)
+#CuArrays.allowscalar(false)
 
 """
     Node
@@ -77,12 +80,52 @@ stored in the node.
 * `binary` specifies the path from the root to the Node. `1` and `0` represent left and right turns respectively.
 """
 
-mutable struct Node
+abstract type Node <: Any end
+
+mutable struct Node_cu <: Node
+  name::String
+  data::CuArray{Float64,2, Nothing}#{Float64, 2}
+  mother::Union{Node_cu, Missing}
+  lchild::Union{Node_cu, Missing}
+  rchild::Union{Node_cu, Missing}
+  nchild::Int64
+  root::Bool
+  inc_length::Float64
+  binary::String
+  num::Int64
+  height::Float64
+  IntExtMap::Union{Vector{Int64}, Nothing}
+  blv::Union{Vector{Float64}, Nothing}
+
+  Node_cu() = new("noname")
+  function Node_cu(n::String, d::Array{Float64,2}, m::Union{Node, Missing},c1::Union{Node, Missing},c2::Union{Node, Missing} ,
+    n_c::Int64, r::Bool, inc::Float64, b::String, num::Int64,height::Float64)
+      mn = Node_cu()
+      mn.name = n
+      mn.data = CuArray{Float64, 2}(undef, 2, 2)
+      mn.mother = m
+      mn.lchild = c1
+      mn.rchild = c2
+      mn.nchild = n_c
+      mn.root = r
+      mn.inc_length = inc
+      mn.binary = b
+      mn.num = num
+      mn.height = height
+      mn.IntExtMap = nothing
+      mn.blv = nothing
+      return mn
+  end
+
+end
+
+
+mutable struct Node_ncu <: Node
     name::String
-    #data::Array{Float64,2}
-    mother::Union{Node, Missing}
-    lchild::Union{Node, Missing}
-    rchild::Union{Node, Missing}
+    data::Array{Float64,2}
+    mother::Union{Node_ncu, Missing}
+    lchild::Union{Node_ncu, Missing}
+    rchild::Union{Node_ncu, Missing}
     nchild::Int64
     root::Bool
     inc_length::Float64
@@ -92,13 +135,12 @@ mutable struct Node
     IntExtMap::Union{Vector{Int64}, Nothing}
     blv::Union{Vector{Float64}, Nothing}
 
-    #Node() = new("",zeros(Float64,(1,2)), nothing, nothing, 0, true, 0.0, "0", 0)
-    Node() = new("noname")
-    function Node(n::String, d::Array{Float64,2}, m::Union{Node, Missing},c1::Union{Node, Missing},c2::Union{Node, Missing} ,
+    Node_ncu() = new("noname")
+    function Node_ncu(n::String, d::Array{Float64,2}, m::Union{Node, Missing},c1::Union{Node, Missing},c2::Union{Node, Missing} ,
       n_c::Int64, r::Bool, inc::Float64, b::String, num::Int64,height::Float64)
-        mn = Node()
+        mn = Node_ncu()
         mn.name = n
-        #mn.data = d
+        mn.data = Array{Float64, 2}(undef, 2, 2)
         mn.mother = m
         mn.lchild = c1
         mn.rchild = c2
@@ -216,7 +258,7 @@ end
 abstract type SamplerTune end
 
 struct SamplerVariate{T<:SamplerTune} <: VectorVariate
-  value::Union{Vector{Float64}, Vector{Node}}
+  value::Union{Vector{Float64}, Vector{S}} where S<: Node
   tune::T
 
   function SamplerVariate{T}(x::AbstractVector, tune::T) where T<:SamplerTune
@@ -225,10 +267,12 @@ struct SamplerVariate{T<:SamplerTune} <: VectorVariate
   end
 
   function SamplerVariate{T}(x::AbstractVector, pargs...; kargs...) where T<:SamplerTune
+
     if !isa(x[1], Node)
       value = convert(Vector{Float64}, x)
     else
-      value = convert(Vector{Node}, x)
+      mt = typeof(x[1])
+      value = convert(Vector{mt}, x)
     end
     new{T}(value, T(value, pargs...; kargs...))
   end

@@ -47,7 +47,9 @@ end
 function gradlogpdf!(m::Model, x::Node, block::Integer=0,
                     transform::Bool=false)
   x0 = unlist(m, block)
+  println("THISFun")
   value = gradlogpdf!(m, x, block)
+
   relist!(m, x0[1], block)
   value
 end
@@ -120,8 +122,9 @@ function gradlogpdf!(m::Model, x::Node, block::Integer=0,transform::Bool=false)
   targets = keys(m, :target, block)
   m[params] = relist(m, x, params, transform)
   #grad = mgradient(m, setdiff(params, targets))
-  grad = gradlogpdf(m[params[1]], x)
-  gradlogpdf(m[targets[1]]).+grad
+  vp, gradp = gradlogpdf(m[params[1]], x)
+  v, grad = gradlogpdf(m[targets[1]])
+  v+vp, grad.+gradp
 end
 
 function logpdf!(m::Model, x::AbstractArray{T}, block::Integer=0,

@@ -167,6 +167,7 @@ function cat3(c1::AbstractChains, args::AbstractChains...)
     throw(ArgumentError("chain ranges differ"))
 
   names = c1.names
+  
   all(c -> c.names == names, args) ||
     throw(ArgumentError("chain names differ"))
 

@@ -103,11 +103,11 @@ function Logical(d::Integer, f::Function,
   setmonitor!(l, monitor)
 end
 
-Logical(f::Function, d::Node, args...) = Logical(d, f, args...)
+Logical(f::Function, d::T, args...)  where T<:Node = Logical(d, f, args...)
 
-function Logical(d::Node, f::Function,
-                 monitor::Union{Bool, Vector{Int}}=true)
-  value = Node()
+function Logical(d::T, f::Function,
+                 monitor::Union{Bool, Vector{Int}}=true) where T<:Node
+  value = T()
   fx, src = modelfxsrc(depfxargs, f)
   l = TreeLogical(value, :nothing, Int[], fx, src, Symbol[])
   setmonitor!(l, monitor)
@@ -206,10 +206,10 @@ function Stochastic(d::Integer, f::Function,
 
 end
 
-Stochastic(f::Function, d::Node, args...) = Stochastic(d, f, args...)
+Stochastic(f::Function, d::T, args...)  where T<:Node = Stochastic(d, f, args...)
 
-function Stochastic(d::Node, f::Function, nnodes::Int, monitor::Union{Bool, Vector{Int}}=true)
-    value = Node()
+function Stochastic(d::T, f::Function, nnodes::Int, monitor::Union{Bool, Vector{Int}}=true) where T<:Node
+    value = T()
     fx, src = modelfxsrc(depfxargs, f)
     s = TreeStochastic(value, :nothing, Int[], fx, src, Symbol[],
                       NullUnivariateDistribution())
@@ -295,7 +295,7 @@ function gradlogpdf(s::AbstractLogical)
 end
 
 function gradlogpdf(s::AbstractStochastic, x::Node, transform::Bool=false)
-  gradient(s.distr, x)
+  pgradient(s.distr, x)
 end
 
 function logpdf(s::AbstractStochastic, x, transform::Bool=false)

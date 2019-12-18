@@ -22,21 +22,21 @@ mutable struct PNUTSTune <: SamplerTune
 
   PNUTSTune() = new()
 
-  function PNUTSTune(x::Vector{Node}, epsilon::Float64, logfgrad::Union{Function, Missing};
-                    target::Real=0.6)
-    new(logfgrad, false, 0.0, epsilon, 1.0, 0.05, 0.0, 0.75, 0, NaN, 0, 10.0,0.003,
+  function PNUTSTune(x::Vector{T}, epsilon::Float64, logfgrad::Union{Function, Missing};
+                    target::Real=0.6) where T<:Node
+    new(logfgrad, false, 0.0, epsilon, 1.0, 0.05, 0.0, 0.75, 0, NaN, 0, 10.0,0.000003,
         target,0)
   end
 end
 
-PNUTSTune(x::Vector{Node}, logfgrad::Function, ::NullFunction, delta::Float64=0.003; args...) =
+PNUTSTune(x::Vector{T}, logfgrad::Function, ::NullFunction, delta::Float64=0.000003; args...) where T<:Node =
   PNUTSTune(x, nutsepsilon(x[1], logfgrad, delta), logfgrad; args...)
 
-PNUTSTune(x::Vector{Node}, logfgrad::Function, delta::Float64; args...) =
+PNUTSTune(x::Vector{T}, logfgrad::Function, delta::Float64; args...) where T<:Node =
   PNUTSTune(x, nutsepsilon(x[1], logfgrad, delta), logfgrad; args...)
 
 
-  NUTSTune(x::Vector{Node}, epsilon::Float64; args...) =
+  NUTSTune(x::Vector{T}, epsilon::Float64; args...) where T<:Node =
     NUTSTune(x, epsilon, missing; args...)
 
 const PNUTSVariate = SamplerVariate{PNUTSTune}
@@ -59,22 +59,22 @@ end
 
 #################### Sampling Functions ####################
 
-function mlogpdfgrad!(block::SamplingBlock, x::Node, sz::Int64, ll::Bool=false, gr::Bool=false)
+function mlogpdfgrad!(block::SamplingBlock, x::T, sz::Int64, ll::Bool=false, gr::Bool=false)  where T<:Node
   grad = Vector{Float64}(undef, sz)
   lp = 0.0
-  if ll
+  if gr
+    lp, grad = gradf!(block, x, :provided)
+  elseif ll
     lp = logpdf!(block, x)
   end
-  if gr
-    grad = gradf!(block, x, :provided)
-  end
+
   lp, grad
 end
 
 sample!(v::PNUTSVariate; args...) = sample!(v, v.tune.logfgrad; args...)
 
 function sample!(v::PNUTSVariate, logfgrad::Function; adapt::Bool=false)
-
+  
   tune = v.tune
   setadapt!(v, adapt)
   if tune.adapt
@@ -172,9 +172,9 @@ end
 end
 
 
-function refraction(v::Node, r::Vector{Float64},
+function refraction(v::T, r::Vector{Float64},
                     grad::Vector{Float64}, epsilon::Float64, logfgrad::Function,
-                    delta::Float64, lor::Bool, sz::Int64)
+                    delta::Float64, lor::Bool, sz::Int64)  where T<:Node
 
     ref_grad = -grad
     #blenvec = zeros(sz)
@@ -204,8 +204,8 @@ function refraction(v::Node, r::Vector{Float64},
 end
 
 
-function ref_NNI(v::Node, tmpB::Vector{Float64}, r::Vector{Float64}, epsilon::Float64, rv::Vector{Float64},
-                 delta::Float64, logfgrad::Function, lor::Bool, sz::Int64)
+function ref_NNI(v::T, tmpB::Vector{Float64}, r::Vector{Float64}, epsilon::Float64, rv::Vector{Float64},
+                 delta::Float64, logfgrad::Function, lor::Bool, sz::Int64)  where T<:Node
 
   intext = internal_external(v)
   t = 0.0
@@ -253,10 +253,10 @@ end
 
 
 
-function buildtree(x::Node, r::Vector{Float64},
+function buildtree(x::T, r::Vector{Float64},
                    grad::Vector{Float64}, pm::Integer, j::Integer,
                    epsilon::Float64, logfgrad::Function, logp0::Real, logu0::Real,
-                   delta::Float64, lor::Bool, sz::Int64)
+                   delta::Float64, lor::Bool, sz::Int64)  where T<:Node
 
 
   if j === 0
@@ -307,13 +307,13 @@ function buildtree(x::Node, r::Vector{Float64},
 end
 
 
-function nouturn(xminus::Node, xplus::Node,
+function nouturn(xminus::T, xplus::T,
                 rminus::Vector{Float64}, rplus::Vector{Float64}, grad::Vector{Float64},
-                epsilon::Float64, logfgrad::Function, delta::Float64, sz::Int64, j::Int64)
+                epsilon::Float64, logfgrad::Function, delta::Float64, sz::Int64, j::Int64)  where T<:Node
 
-        if j > 7
-          return false
-        end
+        #if j > 7
+        #  return false
+        #end
         rf0 = RF(xminus, xplus)
         xminus_bar,_,_,_,_ = refraction(deepcopy(xminus), rminus, -grad, epsilon, logfgrad, delta, false, sz)
         xplus_bar,_,_,_,_ = refraction(deepcopy(xplus), rplus, grad, epsilon, logfgrad, delta, true, sz)
@@ -345,7 +345,7 @@ end
 
 #################### Auxilliary Functions ####################
 
-function nutsepsilon(x::Node, logfgrad::Function, delta::Float64)
+function nutsepsilon(x::T, logfgrad::Function, delta::Float64)  where T<:Node
   e1 = nutsepsilon_sub(x, logfgrad, delta, true)
   e2 = nutsepsilon_sub(x, logfgrad, delta, false)
   e = (e1+e2)/2.0
