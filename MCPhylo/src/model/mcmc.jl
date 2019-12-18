@@ -102,8 +102,8 @@ function mcmc_worker!(args::Vector)
 
     sample!(m)
     if i > burnin && (i - burnin) % thin == 0
-      @async sim[i, :, 1] = unlist(m, true)
-      @async if store_trees
+      sim[i, :, 1] = unlist(m, true)
+      if store_trees
        sim.trees[treeind, 1, 1] = newick(m[treenode].value)
        treeind +=1
      end

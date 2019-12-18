@@ -14,9 +14,11 @@ Random.seed!(1234)
 
 
 
-mt, df = make_tree_with_data("LangData/Timor-Alor-Pantar.sc.phy.nex"); # load your own nexus file
+mt, df = make_tree_with_data("local/development.nex"); # load your own nexus file
 
-po = MCPhylo.post_order(mt);
+
+
+po = post_order(mt);
 for node in po
     node.data = df[:,:,node.num]
 end
@@ -103,7 +105,7 @@ setsamplers!(model, scheme)
 #sim = mcmc(model, my_data, inits, 10000, burnin=1000,thin=50, chains=2, trees=true)
 sim = mcmc(model, my_data, inits, 50, burnin=10,thin=2, chains=1, trees=true)
 
-#sim = mcmc(sim, 200, trees=true)
+sim = mcmc(sim, 5000, trees=true)
 
 # write the output to a path specified as the second argument
 to_file(sim, "tneg", 2)

@@ -4,6 +4,7 @@ Begin MrBayes;
       execute development.nex;
       lset coding=all;
       mcmc;
+      showmodel;
       sump;
       sumt;
       q;

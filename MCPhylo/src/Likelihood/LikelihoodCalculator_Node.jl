@@ -8,7 +8,8 @@ Felsensteins pruning algorithm.
 function FelsensteinFunction(tree_postorder::Vector{Node_ncu}, pi_::Number, rates::Vector{Float64}, data::Array, n_c::Int64, blv::Array{Float64,1})#::Float64
     #mm::Array{ForwardDiff.Dual} = [0.0 0.0;0.0 0.0]
     #mm2::Array{ForwardDiff.Dual} = [0.0 0.0;0.0 0.0]
-
+    res = 0.0
+    scaler = zeros(1, size(last(tree_postorder).data, 2))
     for node in tree_postorder
         if node.nchild != 0
             ld::Array{Float64, 2} = node.lchild.data
@@ -18,15 +19,19 @@ function FelsensteinFunction(tree_postorder::Vector{Node_ncu}, pi_::Number, rate
 
             @inbounds linc::Float64 = blv[l_num]
             @inbounds rinc::Float64 = blv[r_num]
+            out = CondLikeInternal(pi_, ld, rd, linc, rinc)
+            m_s = maximum(out, dims = 1)
+            out ./= m_s
 
-            node.data = CondLikeInternal(pi_, ld, rd, linc, rinc)
+            scaler .+= log.(m_s)
+            node.data = out#CondLikeInternal(pi_, ld, rd, linc, rinc)
         end
     end # for
 
     # sum the two rows
     rnum::Array{Float64, 2} = last(tree_postorder).data#::Array{Number, 2}#.num
 
-    res = sum(log.(sum(rnum .* Array([pi_, 1.0-pi_]), dims=1)))#::Number
+    res += sum(scaler.+log.(sum(rnum .* Array([pi_, 1.0-pi_]), dims=1)))#::Number
 
     return res
 end # function
@@ -81,14 +86,15 @@ function CondLikeInternal(pi_::Number, l_data::Array{Float64}, r_data::Array{Flo
 
 
         r::Float64 = 1.0
-        v = exp(-r*linc)
+        mu =  1.0 / (2.0 * pi_ * (1-pi_))
+        v = exp(-r*linc*mu)
         m11::Float64 = pi_ - (pi_ - 1)*v
         m22::Float64 = pi_*(v - 1) + 1
         m21::Float64 = pi_ - pi_* v
         m12::Float64 = (pi_ - 1)*(v - 1)
         mm = [m11 m12; m21 m22]
 
-        v1 = exp(-r*rinc)
+        v1 = exp(-r*rinc*mu)
         m11b::Float64 = pi_ - (pi_ - 1)*v1
         m22b::Float64 = pi_*(v1 - 1) + 1
         m21b::Float64 = pi_ - pi_* v1

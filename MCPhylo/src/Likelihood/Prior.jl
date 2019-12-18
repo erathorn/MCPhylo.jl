@@ -28,11 +28,7 @@ function internal_logpdf(d::CompoundDirichlet, b_lens::Any, int_leave_map::Vecto
     blen_int_log = 0.0
     blen_leave_log = 0.0
     nterm = 0.0
-    #if rd === true
-    #    b_lens .-= 0.0015
-    #end
-    #@assert all(b_lens .>= 0.0)
-    #b_lens[b_lens .< 0.0] .= 0.0
+
 
     for i in eachindex(int_leave_map)
         if int_leave_map[i] === 1
@@ -53,8 +49,11 @@ function internal_logpdf(d::CompoundDirichlet, b_lens::Any, int_leave_map::Vecto
     third = blen_leave_log*(d.a-1) + blen_int_log*(d.a*d.c-1.0)
     fourth = (d.alpha-d.a*nterm-d.a*d.c*n_int)*log(t_l)
 
+    #r1 = (d.alpha - d.a*nterm - d.a*d.c*n_int) * log(t_l) - d.beta*t_l
+    #r1 += third
     r2 = first + second +third+fourth
-
+    #println(r1)
+    #println( r2 , r1 + first+second)
     return r2
 
 end

@@ -74,7 +74,7 @@ end
 sample!(v::PNUTSVariate; args...) = sample!(v, v.tune.logfgrad; args...)
 
 function sample!(v::PNUTSVariate, logfgrad::Function; adapt::Bool=false)
-  
+
   tune = v.tune
   setadapt!(v, adapt)
   if tune.adapt
@@ -265,7 +265,8 @@ function buildtree(x::T, r::Vector{Float64},
                                           logfgrad, delta, lor, sz)
 
     logpprime = logfprime - 0.5 * dot(rprime)
-    nprime = Int(logu0 < logpprime && min(1, exp(logpprime - logp0)) > rand())
+    #nprime = Int(logu0 < logpprime) #&&
+    nprime = Int(min(1, exp(logpprime - logp0)) > rand())
     sprime = logu0 < logpprime + 1000.0
     xminus = xplus = xprime
     rminus = rplus = rprime

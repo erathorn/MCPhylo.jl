@@ -5,16 +5,19 @@ using Random
 using BenchmarkTools
 Random.seed!(1234);
 using Calculus
-mt2, df2 = make_tree_with_data("LangData/Sino-Tibetan.cc.phy.nex"); # load your own nexus file
-po2 = MCPhylo.post_order(mt2);
+mt2, df2 = make_tree_with_data("local/development.nex"); # load your own nexus file
+po2 = post_order(mt2);
 for node in po2
     node.data = df2[:,:,node.num]
 end
-blv2 = MCPhylo.get_branchlength_vector(mt2);
-rates = ones(1);
-f(y) = MCPhylo.FelsensteinFunction(po2, 0.996, rates, df2, 838, y)
+blv = get_branchlength_vector(mt2);
 
-f(blv2)
+rates = ones(1);
+f(y) = MCPhylo.FelsensteinFunction(po2, 0.925, rates, df2, 838, y)
+blv2 =blv.* 10000.1
+#blv2 .*= 0.001
+x = f(blv)
+y = f(blv2)
 
 Random.seed!(1234);
 mt, df = make_tree_with_data_cu("LangData/Sino-Tibetan.cc.phy.nex"); # load your own nexus file
