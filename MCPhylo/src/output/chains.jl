@@ -15,7 +15,7 @@ end
 function Chains(value::Array{T, 3},
                 value2::Array{U,3};
                start::Integer=1, thin::Integer=1,
-               names::Vector{U}=AbstractString[], chains::Vector{V}=Int[]) where {T<:Real, U<:AbstractString, V<:Integer}
+               names::Vector{U}=AbstractString[], chains::Vector{V}=Int[], moves::Vector{V}=Int[0]) where {T<:Real, U<:AbstractString, V<:Integer}
   n, p, m = size(value)
 
   if isempty(names)
@@ -31,7 +31,7 @@ function Chains(value::Array{T, 3},
   end
 
   v = convert(Array{Float64, 3}, value)
-  Chains(v, range(start, step=thin, length=n), AbstractString[names...], Int[chains...], value2)
+  Chains(v, range(start, step=thin, length=n), AbstractString[names...], Int[chains...], value2, moves)
 end
 
 function Chains(value::Matrix{T};
@@ -54,10 +54,11 @@ end
 function Base.getindex(c::Chains, window, names, chains)
   inds1 = window2inds(c, window)
   inds2 = names2inds(c, names)
-  Chains(c.value[inds1, inds2, chains],
+
+  Chains(c.value[inds1, inds2, chains], c.trees[inds1, :, chains],
          start = first(c) + (first(inds1) - 1) * step(c),
          thin = step(inds1) * step(c), names = c.names[inds2],
-         chains = c.chains[chains])
+         chains = c.chains[chains], moves = c.moves)
 end
 
 Base.lastindex(c::AbstractChains, i) = size(c, i)
@@ -110,6 +111,7 @@ function Base.cat(c1::AbstractChains, args::AbstractChains...; dims::Integer)
 end
 
 function cat1(c1::AbstractChains, args::AbstractChains...)
+
   range = c1.range
   for c in args
     last(range) + step(range) == first(c) ||
@@ -128,8 +130,11 @@ function cat1(c1::AbstractChains, args::AbstractChains...)
     throw(ArgumentError("sets of chains differ"))
 
   value = cat(c1.value, map(c -> c.value, args)..., dims=1)
-  Chains(value, start=first(range), thin=step(range), names=names,
-         chains=chains)
+  trees = cat(c1.trees, map(c -> c.trees, args)..., dims=1)
+  moves = +(c1.moves, map(c -> c.moves, args)...)
+
+  Chains(value, trees, start=first(range), thin=step(range), names=names,
+         chains=chains, moves=moves)
 end
 
 function cat2(c1::AbstractChains, args::AbstractChains...)
@@ -151,8 +156,9 @@ function cat2(c1::AbstractChains, args::AbstractChains...)
     throw(ArgumentError("sets of chains differ"))
 
   value = cat(c1.value, map(c -> c.value, args)..., dims=2)
+  moves = +(c1.moves, map(c -> c.moves, args)...)
   Chains(value, start=first(range), thin=step(range), names=names,
-         chains=chains)
+         chains=chains, moves=moves)
 end
 
 function cat3(c1::AbstractChains, args::AbstractChains...)
@@ -161,12 +167,14 @@ function cat3(c1::AbstractChains, args::AbstractChains...)
     throw(ArgumentError("chain ranges differ"))
 
   names = c1.names
+  
   all(c -> c.names == names, args) ||
     throw(ArgumentError("chain names differ"))
 
   value = cat(c1.value, map(c -> c.value, args)..., dims=3)
   value2 = cat(c1.trees, map(c -> c.trees, args)..., dims=3)
-  Chains(value, value2, start=first(range), thin=step(range), names=names)
+  moves = +(c1.moves, map(c -> c.moves, args)...)
+  Chains(value, value2, start=first(range), thin=step(range), names=names, moves=moves)
 end
 
 Base.hcat(c1::AbstractChains, args::AbstractChains...) = cat(c1, args..., dims=2)
@@ -220,7 +228,8 @@ function header(c::AbstractChains)
     "Iterations = $(first(c)):$(last(c))\n",
     "Thinning interval = $(step(c))\n",
     "Chains = $(join(map(string, c.chains), ","))\n",
-    "Samples per chain = $(length(c.range))\n"
+    "Samples per chain = $(length(c.range))\n",
+    "NNI moves = $(c.moves)\n"
   )
 end
 

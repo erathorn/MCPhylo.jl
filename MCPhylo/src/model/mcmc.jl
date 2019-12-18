@@ -1,13 +1,13 @@
 #################### MCMC Simulation Engine ####################
 
-function mcmc(mc::ModelChains, iters::Integer; verbose::Bool=true)
+function mcmc(mc::ModelChains, iters::Integer; verbose::Bool=true, trees::Bool=false)
   thin = step(mc)
   last(mc) == div(mc.model.iter, thin) * thin ||
     throw(ArgumentError("chain is missing its last iteration"))
 
   mm = deepcopy(mc.model)
   mc2 = mcmc_master!(mm, mm.iter .+ (1:iters), last(mc), thin, mc.chains,
-                     verbose)
+                     verbose, trees)
   if mc2.names != mc.names
     mc2 = mc2[:, mc.names, :]
   end
@@ -63,7 +63,11 @@ function mcmc_master!(m::Model, window::UnitRange{Int}, burnin::Integer,
     Any[m, states[k], window, burnin, thin, ChainProgress(frame, k, N), trees]
     for k in chains
   ]
-  results = pmap2(mcmc_worker!, lsts)
+  #results = pmap2(mcmc_worker!, lsts)
+  results = []
+  for k in lsts
+     push!(results, mcmc_worker!(k))
+  end
 
   sims  = Chains[results[k][1] for k in 1:K]
   model = results[1][2]
@@ -74,7 +78,7 @@ end
 
 
 function mcmc_worker!(args::Vector)
-  m, state, window, burnin, thin, meter, trees = args
+  m, state, window, burnin, thin, meter, store_trees = args
   llname::AbstractString = "likelihood"
   treeind = 1
   m.iter = first(window) - 1
@@ -94,11 +98,12 @@ function mcmc_worker!(args::Vector)
   end
 
   reset!(meter)
-  for i in window
+  @sync for i in window
+
     sample!(m)
     if i > burnin && (i - burnin) % thin == 0
-      sim[i, :, 1] = unlist(m, true)
-      if trees == true
+      @async sim[i, :, 1] = unlist(m, true)
+      @async if store_trees
        sim.trees[treeind, 1, 1] = newick(m[treenode].value)
        treeind +=1
      end
@@ -106,5 +111,19 @@ function mcmc_worker!(args::Vector)
     next!(meter)
   end
 
+  mv = samparas(m)
+
+  sim.moves[1] = mv
   (sim, m, ModelState(unlist(m), gettune(m)))
+end
+
+function track(i::Integer, burnin::Integer, thin::Integer,
+               sim::Chains, m::Model, store_trees::Bool, treeind::Integer, treenode)
+  if i > burnin && (i - burnin) % thin == 0
+    sim[i, :, 1] = unlist(m, true)
+    if store_trees
+     sim.trees[treeind, 1, 1] = newick(m[treenode].value)
+     treeind +=1
+   end
+  end
 end

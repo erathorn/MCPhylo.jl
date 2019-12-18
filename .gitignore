@@ -8,6 +8,13 @@ usr/
 *.bin
 ProfileVtune.jl
 local/
-params.csv
-params.log
+LangData/
+*params.csv
+*params.log
 *.nwk
+ample.jl
+nutstest.jl
+*.jls
+rt.jl
+gputest.jl
+*params*.log

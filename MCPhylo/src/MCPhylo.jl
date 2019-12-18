@@ -11,14 +11,21 @@ using Serialization
 using Distributed
 using Printf: @sprintf
 using LinearAlgebra
-using ForwardDiff
-#using Calculus: gradient
+using CuArrays
+using GPUArrays
+using CUDAnative
+using CUDAdrv
+#using Flux.Tracker
+#using ForwardDiff
+#import ForwardDiff: gradient, gradient!
+#using Zygote
+import Calculus: gradient
 using Showoff: showoff
 using Markdown
 using DataFrames
 using Random
 using CSV
-
+#using StaticArrays
 import Base: Matrix, names, summary
 import Compose: Context, context, cm, gridstack, inch, MeasureOrNumber, mm, pt, px
 import LinearAlgebra: cholesky, dot
@@ -59,7 +66,7 @@ import StatsBase: autocor, autocov, countmap, counts, describe, predict,
 include("distributions/pdmats2.jl")
 using .PDMats2
 
-
+#CuArrays.allowscalar(false)
 
 """
     Node
@@ -73,24 +80,67 @@ stored in the node.
 * `binary` specifies the path from the root to the Node. `1` and `0` represent left and right turns respectively.
 """
 
-mutable struct Node
+abstract type Node <: Any end
+
+mutable struct Node_cu <: Node
+  name::String
+  data::CuArray{Float64,2, Nothing}#{Float64, 2}
+  mother::Union{Node_cu, Missing}
+  lchild::Union{Node_cu, Missing}
+  rchild::Union{Node_cu, Missing}
+  nchild::Int64
+  root::Bool
+  inc_length::Float64
+  binary::String
+  num::Int64
+  height::Float64
+  IntExtMap::Union{Vector{Int64}, Nothing}
+  blv::Union{Vector{Float64}, Nothing}
+
+  Node_cu() = new("noname")
+  function Node_cu(n::String, d::Array{Float64,2}, m::Union{Node, Missing},c1::Union{Node, Missing},c2::Union{Node, Missing} ,
+    n_c::Int64, r::Bool, inc::Float64, b::String, num::Int64,height::Float64)
+      mn = Node_cu()
+      mn.name = n
+      mn.data = CuArray{Float64, 2}(undef, 2, 2)
+      mn.mother = m
+      mn.lchild = c1
+      mn.rchild = c2
+      mn.nchild = n_c
+      mn.root = r
+      mn.inc_length = inc
+      mn.binary = b
+      mn.num = num
+      mn.height = height
+      mn.IntExtMap = nothing
+      mn.blv = nothing
+      return mn
+  end
+
+end
+
+
+mutable struct Node_ncu <: Node
     name::String
     data::Array{Float64,2}
-    mother::Union{Node, Missing}
-    lchild::Union{Node, Missing}
-    rchild::Union{Node, Missing}
+    mother::Union{Node_ncu, Missing}
+    lchild::Union{Node_ncu, Missing}
+    rchild::Union{Node_ncu, Missing}
     nchild::Int64
     root::Bool
     inc_length::Float64
     binary::String
     num::Int64
+    height::Float64
+    IntExtMap::Union{Vector{Int64}, Nothing}
+    blv::Union{Vector{Float64}, Nothing}
 
-    #Node() = new("",zeros(Float64,(1,2)), nothing, nothing, 0, true, 0.0, "0", 0)
-    Node() = new("noname")
-    function Node(n::String, d::Array{Float64,2}, m::Union{Node, Missing},c1::Union{Node, Missing},c2::Union{Node, Missing} , n_c::Int64, r::Bool, inc::Float64, b::String, num::Int64)
-        mn = Node()
+    Node_ncu() = new("noname")
+    function Node_ncu(n::String, d::Array{Float64,2}, m::Union{Node, Missing},c1::Union{Node, Missing},c2::Union{Node, Missing} ,
+      n_c::Int64, r::Bool, inc::Float64, b::String, num::Int64,height::Float64)
+        mn = Node_ncu()
         mn.name = n
-        mn.data = d
+        mn.data = Array{Float64, 2}(undef, 2, 2)
         mn.mother = m
         mn.lchild = c1
         mn.rchild = c2
@@ -99,6 +149,9 @@ mutable struct Node
         mn.inc_length = inc
         mn.binary = b
         mn.num = num
+        mn.height = height
+        mn.IntExtMap = nothing
+        mn.blv = nothing
         return mn
     end
 end # struct Node
@@ -167,7 +220,7 @@ mutable struct ScalarStochastic <: ScalarVariate
 end
 
 mutable struct ArrayStochastic{N} <: ArrayVariate{N}
-  value::Array{Float64, N}
+  value::Union{CuArray{Float64, N}, Array{Float64, N}}
   symbol::Symbol
   monitor::Vector{Int}
   eval::Function
@@ -175,6 +228,7 @@ mutable struct ArrayStochastic{N} <: ArrayVariate{N}
   targets::Vector{Symbol}
   distr::DistributionStruct
 end
+
 
 mutable struct TreeStochastic <: TreeVariate
     value::Node
@@ -189,7 +243,7 @@ end
 const AbstractLogical = Union{ScalarLogical, ArrayLogical, TreeLogical}
 const AbstractStochastic = Union{ScalarStochastic, ArrayStochastic, TreeStochastic}
 const AbstractDependent = Union{AbstractLogical, AbstractStochastic}
-#const AnyDependent = Union{AbstractDependent, TreeStochastic}
+
 
 #################### Sampler Types ####################
 
@@ -204,7 +258,7 @@ end
 abstract type SamplerTune end
 
 struct SamplerVariate{T<:SamplerTune} <: VectorVariate
-  value::Union{Vector{Float64}, Vector{Node}}
+  value::Union{Vector{Float64}, Vector{S}} where S<: Node
   tune::T
 
   function SamplerVariate{T}(x::AbstractVector, tune::T) where T<:SamplerTune
@@ -213,10 +267,12 @@ struct SamplerVariate{T<:SamplerTune} <: VectorVariate
   end
 
   function SamplerVariate{T}(x::AbstractVector, pargs...; kargs...) where T<:SamplerTune
+
     if !isa(x[1], Node)
       value = convert(Vector{Float64}, x)
     else
-      value = convert(Vector{Node}, x)
+      mt = typeof(x[1])
+      value = convert(Vector{mt}, x)
     end
     new{T}(value, T(value, pargs...; kargs...))
   end
@@ -258,6 +314,7 @@ struct Chains <: AbstractChains
   names::Vector{AbstractString}
   chains::Vector{Int}
   trees::Array{AbstractString, 3}
+  moves::Array{Int, 1}
 end
 
 struct ModelChains <: AbstractChains
@@ -265,8 +322,9 @@ struct ModelChains <: AbstractChains
   range::StepRange{Int, Int}
   names::Vector{AbstractString}
   chains::Vector{Int}
-  trees::Array{AbstractString, 3}
   model::Model
+  trees::Array{AbstractString, 3}
+  moves::Array{Int, 1}
 end
 
 
@@ -329,16 +387,21 @@ include("samplers/slicesimplex.jl")
 include("Tree/Tree_Basics.jl")
 include("Tree/Converter.jl")
 include("Tree/Tree_moves.jl")
+include("Tree/Tree_Distance.jl")
+include("Tree/TreeIterator.jl")
 #include("Tree/Tree_Matrix.jl")
 
 include("Parser/Parser.jl")
 include("Parser/ParseCSV.jl")
 include("Parser/ParseNexus.jl")
 
+
+include("Sampler/PNUTS.jl")
 include("Sampler/ProbPathHMC.jl")
 include("Sampler/ProbPathHMC_Node.jl")
 include("Sampler/PhyloHMC_Functions.jl")
 include("Sampler/PhyloHMC_Functions_Node.jl")
+
 include("Sampler/BranchLengthSlice.jl")
 
 
@@ -385,7 +448,8 @@ export
   CompoundDirichlet,
   PhyloDist,
   MultivariateUniformTrunc,
-  CompoundDirichletWrap
+  CompoundDirichletWrap,
+  exponentialBL
 
 export
   autocor,
@@ -451,13 +515,17 @@ export
   RWM, RWMVariate,
   Slice, SliceMultivariate, SliceUnivariate,
   SliceSimplex, SliceSimplexVariate,
+  PNUTS, PNUTSVariate,
   ProbPathHMC,
   BranchSlice,
   RWMC, RWMCVariate
 
 export
   make_tree_with_data,
-  to_file
+  make_tree_with_data_cu,
+  to_file,
+  NNI!,
+  RF, randomize!
 
 export
   cm,

@@ -5,37 +5,69 @@
 This function calculates the log-likelihood of an evolutiuonary model using the
 Felsensteins pruning algorithm.
 """
-function FelsensteinFunction(tree_postorder::Any, pi_::Number, rates::Vector{Float64}, data, n_c::Int64)#::Float64
+function FelsensteinFunction(tree_postorder::Vector{Node_ncu}, pi_::Number, rates::Vector{Float64}, data::Array, n_c::Int64, blv::Array{Float64,1})#::Float64
+    #mm::Array{ForwardDiff.Dual} = [0.0 0.0;0.0 0.0]
+    #mm2::Array{ForwardDiff.Dual} = [0.0 0.0;0.0 0.0]
 
-    res = 0.0
     for node in tree_postorder
         if node.nchild != 0
-            res += CondLikeInternal(node, pi_, rates, n_c, data)
-        end # if
+            ld::Array{Float64, 2} = node.lchild.data
+            rd::Array{Float64, 2} = node.rchild.data
+            @inbounds l_num::Int64 = node.lchild.num
+            @inbounds r_num::Int64 = node.rchild.num
+
+            @inbounds linc::Float64 = blv[l_num]
+            @inbounds rinc::Float64 = blv[r_num]
+
+            node.data = CondLikeInternal(pi_, ld, rd, linc, rinc)
+        end
     end # for
 
     # sum the two rows
-    rnum = last(tree_postorder).num
-    if pi_ < 0
-        println(tree_postorder)
-        println(pi_)
-        println(get_branchlength_vector(last(tree_postorder)))
-    end
-    _lpi_::Float64 = log(1.0-pi_)
-    _pi_::Float64 = log(pi_)
+    rnum::Array{Float64, 2} = last(tree_postorder).data#::Array{Number, 2}#.num
 
-    @simd for ind in 1:n_c
-        @inbounds res += log(exp(data[rnum,1,ind]+ _lpi_) + exp(data[rnum,2,ind]+ _pi_))
-    end # for
-    if isinf(res)
-        println("inf")
-        println(tree_postorder)
-        println(pi_)
-        println(get_branchlength_vector(last(tree_postorder)))
-        println("--")
-    end
+    res = sum(log.(sum(rnum .* Array([pi_, 1.0-pi_]), dims=1)))#::Number
+
     return res
 end # function
+
+
+"""
+    FelsensteinFunction(tree_postorder::Vector{Node}, pi::Float64, rates::Vector{Float64}, data::Array{Float64,3}, n_c::Int64)::Float64
+
+This function calculates the log-likelihood of an evolutiuonary model using the
+Felsensteins pruning algorithm.
+"""
+function FelsensteinFunction(tree_postorder::Array{Node_cu, 1}, pi_::Number, rates::Vector{Float64}, data::CuArray, n_c::Int64, blv::Array{Float64,1})#::Float64
+    #mm::CuArray{Float64} = [0 0;0 0]
+    #mm2::CuArray{Float64} = [0 0;0 0]
+    p = convert(Float64, pi_)
+    for node in tree_postorder
+        if node.nchild != 0
+
+            ld::CuArray{Float64, 2, Nothing} = node.lchild.data
+            rd::CuArray{Float64, 2, Nothing} = node.rchild.data
+            @inbounds l_num::Int64 = node.lchild.num
+            @inbounds r_num::Int64 = node.rchild.num
+            @inbounds linc::Float64 = blv[l_num]
+            @inbounds rinc::Float64 = blv[r_num]
+            v = exp(-linc)
+            v1 = exp(-rinc)
+
+            @cuda threads=128 blocks=16 kernel(node.data, p, v, v1, ld, rd)
+
+        end
+    end # for
+
+    # sum the two rows
+    rnum = last(tree_postorder).data::CuArray
+    pia = CuArray([p, 1.0-p])
+    res = CUDAnative.sum(CUDAnative.log.(CUDAnative.sum(rnum .* pia, dims=1)))::Float64
+
+    return res
+end # function
+
+
 
 
 """
@@ -45,52 +77,72 @@ out of an extra function to avoid array creation.
 
 The loop is written such that the julia converter should be able to infer simd patterns.
 """
-function CondLikeInternal(node::Node, pi_::Number, rates::Vector{Float64}, n_c::Int64, data)#::Float64
-
-    @assert size(rates)[1] == n_c
-    left_daughter::Node = node.lchild
-    right_daughter::Node = node.rchild
-    linc::Float64 = left_daughter.inc_length
-    rinc::Float64 = right_daughter.inc_length
-    l_num::Int64 = left_daughter.num
-    r_num::Int64 = right_daughter.num
-    #linc = blv[l_num]
-    #rinc = blv[r_num]
-    res = 0.0
-
-    n_num::Int64 = node.num
-
-    Base.Threads.@threads for ind=eachindex(rates)
-        @inbounds r::Float64 = rates[ind]
+function CondLikeInternal(pi_::Number, l_data::Array{Float64}, r_data::Array{Float64}, linc::Float64, rinc::Float64)#::Float64
 
 
-        ext = exp(-linc*r)
-        ext_ = 1.0-ext
-        pj_::Float64 = 1.0-pi_
+        r::Float64 = 1.0
+        v = exp(-r*linc)
+        m11::Float64 = pi_ - (pi_ - 1)*v
+        m22::Float64 = pi_*(v - 1) + 1
+        m21::Float64 = pi_ - pi_* v
+        m12::Float64 = (pi_ - 1)*(v - 1)
+        mm = [m11 m12; m21 m22]
 
-        m_v = ext+ext_*pi_
-        m_w = ext+ext_*pj_
+        v1 = exp(-r*rinc)
+        m11b::Float64 = pi_ - (pi_ - 1)*v1
+        m22b::Float64 = pi_*(v1 - 1) + 1
+        m21b::Float64 = pi_ - pi_* v1
+        m12b::Float64 = (pi_ - 1)*(v1 - 1)
+        mm2 = [m11b m12b; m21b m22b]
 
-        @inbounds a = log(exp(data[l_num, 1,ind]+log(m_v)) + exp(data[l_num, 2,ind]+log(1.0-m_v)))
-        @inbounds b = log(exp(data[l_num, 1,ind]+log(1-m_w)) + exp(data[l_num, 2,ind]+log(m_w)))
+        #out = (mm*l_data) .* (mm2*r_data)
+        out = (mm*l_data) .* (mm2*r_data)
+        #out ./= sum(out, dims=1)
+        return out #(mm*l_data) .* (mm2*r_data)  #[i.value for i in out]#(mm*l_data) .* (mm2*r_data)
 
-        #my_mat2 = log.(exponentiate_binary(pi_, rinc, r))
-        ext = exp(-rinc*r)
-        ext_ = 1.0-ext
-        #v_ = ext_*pi_
-        #w_ = ext_*pj_
-        m_v = ext+ext_*pi_
-        m_w = ext+ext_*pj_
 
-        @inbounds c = log(exp(data[r_num, 1,ind]+log(m_v)) + exp(data[r_num,2,ind]+log(1.0-m_v)))
-        @inbounds d = log(exp(data[r_num, 1,ind]+log(1-m_w)) + exp(data[r_num,2,ind]+log(m_w)))
+end # function
 
-        @inbounds data[n_num,1,ind] = a+c
-        @inbounds data[n_num,2,ind] = b+d
-        res += log(exp(a+b)+exp(c+d))
 
-    end # for
-    return res
+function kernel(arr, pi_, v::Float64, v1::Float64, ldata, rdata)
+    i = (blockIdx().x - 1) * blockDim().x + threadIdx().x
+    if i <= size(arr,2)
+        m11 = pi_ - (pi_ - 1)*v
+        m22 = pi_*(v - 1) + 1
+        m21 = pi_ - pi_* v
+        m12 = (pi_ - 1)*(v - 1)
+        m11b = pi_ - (pi_ - 1)*v1
+        m22b = pi_*(v1 - 1) + 1
+        m21b = pi_ - pi_* v1
+        m12b = (pi_ - 1)*(v1 - 1)
+        @inbounds arr[1,i]= ((ldata[1,i]*m11) + (ldata[2,i]*m12)) * ((rdata[1,i]*m11b) + (rdata[2,i]*m12b))
+        @inbounds arr[2,i]= ((ldata[1,i]*m21) + (ldata[2,i]*m22)) * ((rdata[1,i]*m21b) + (rdata[2,i]*m22b))
+        #
+    end
+    return
+end
+
+
+function CondLikeInternal_c(pi_::Number, l_data::CuArray, r_data::CuArray, linc::Float64, rinc::Float64, arr::CuArray{Float64, 2})
+
+    #r::Float64 = 1.0
+    #v = exp(-r*linc)
+    #m11::Float64 = pi_ - (pi_ - 1)*v
+    #m22::Float64 = pi_*(v - 1) + 1
+    #m21::Float64 = pi_ - pi_* v
+    #m12::Float64 = (pi_ - 1)*(v - 1)
+    #mm = CuArray([m11 m12; m21 m22])
+
+    #v1 = exp(-r*rinc)
+    #m11b::Float64 = pi_ - (pi_ - 1)*v1
+    #m22b::Float64 = pi_*(v1 - 1) + 1
+    #m21b::Float64 = pi_ - pi_* v1
+    #m12b::Float64 = (pi_ - 1)*(v1 - 1)
+    #mm2 = CuArray([m11b m12b; m21b m22b])
+
+    @cuda threads = 1024 blocks = 32 kernel(arr, pi_, linc, rinc, l_data, r_data)
+    #return (mm*l_data) .* (mm2*r_data) #[i.value for i in out]#(mm*l_data) .* (mm2*r_data)
+
 end # function
 
 
@@ -100,6 +152,7 @@ end # function
 This functio calculates the gradient for the Probabilistic Path Sampler.
 
 """
+
 function GradiantLog(tree_preorder::Vector{Node}, pi_::Number, rates::Array{Float64,1},
                      data, n_c::Int64)::Array{Any}
 

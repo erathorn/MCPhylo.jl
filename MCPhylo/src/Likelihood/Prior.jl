@@ -22,25 +22,31 @@ end # struct
 #length(d::CompoundDirichlet) = 23409
 #Base.size(d::CompoundDirichlet) = 1#(153,153)
 
-function internal_logpdf(d::CompoundDirichlet, b_lens::Any, int_leave_map::Array{Int64})
+function internal_logpdf(d::CompoundDirichlet, b_lens::Any, int_leave_map::Vector{Int64}; rd::Bool=false)
     blen_int = 0.0
     blen_leave = 0.0
     blen_int_log = 0.0
     blen_leave_log = 0.0
-    nterm::Int64 = 0
+    nterm = 0.0
+    #if rd === true
+    #    b_lens .-= 0.0015
+    #end
+    #@assert all(b_lens .>= 0.0)
+    #b_lens[b_lens .< 0.0] .= 0.0
+
     for i in eachindex(int_leave_map)
-        if int_leave_map[i] == 1
-            blen_int += b_lens[i]
-            blen_int_log += log(b_lens[i])
+        if int_leave_map[i] === 1
+            @inbounds blen_int += b_lens[i]
+            @inbounds blen_int_log += log(b_lens[i])
         else
-            blen_leave += b_lens[i]
-            blen_leave_log += log(b_lens[i])
+            @inbounds blen_leave += b_lens[i]
+            @inbounds blen_leave_log += log(b_lens[i])
             nterm += 1
         end
     end
 
     t_l = blen_int+blen_leave
-    n_int::Float64 = nterm-3.0
+    n_int = nterm-3.0
 
     first = (d.alpha*log(d.beta))-log(gamma(d.alpha)) - (t_l*d.beta)
     second = -log(gamma(d.a))-log(gamma(d.c))+log(gamma(d.a+d.c))
@@ -48,48 +54,41 @@ function internal_logpdf(d::CompoundDirichlet, b_lens::Any, int_leave_map::Array
     fourth = (d.alpha-d.a*nterm-d.a*d.c*n_int)*log(t_l)
 
     r2 = first + second +third+fourth
+
     return r2
 
 end
 
-function gradient(d::CompoundDirichlet, x::Node)
+function pgradient(d::CompoundDirichlet, x::Node)
 
-    g(mt) = internal_logpdf(d, mt, internal_external_map(x))
-    ForwardDiff.gradient(g, get_branchlength_vector(x))
+    int_ext = internal_external(x)
+    g(mt) = internal_logpdf(d, mt, int_ext)
+
+    blv = get_branchlength_vector(x)
+    blv .-= 0.0000015
+    re = internal_logpdf(d, blv, int_ext)#, rd=true)
+    gr = gradient(g, blv, :forward)
+    re, gr
+    #gradient(g, get_branchlength_vector(x), :forward)
 end
 
+function val_der(f, y)
+
+    re = f(y)
+
+    gr = gradient(f, y, :forward)
+    re, gr
+end
+
+
 function _logpdf(d::CompoundDirichlet, x::Node)
-
-    internal_logpdf(d, get_branchlength_vector(x), internal_external_map(x))
-    #xn = get_sum_seperate_length!(x)
-    #blen_int::Float64 = xn[1]
-    #blen_leave::Float64 = xn[2]
-    #blen_int_log::Float64 = xn[3]
-    #blen_leave_log::Float64 = xn[4]
-    #t_l::Float64 = blen_int+blen_leave
-    #n_term::Float64 = length(get_leaves(x))
-    #n_int::Float64 = n_term-3.0
-
-    #first = (d.alpha*log(d.beta))-log(gamma(d.alpha)) - (t_l*d.beta)
-    #second = -log(gamma(d.a))-log(gamma(d.c))+log(gamma(d.a+d.c))
-    #third = blen_leave_log*(d.a-1) + blen_int_log*(d.a*d.c-1.0)
-    #fourth = (d.alpha-d.a*n_term-d.a*d.c*n_int)*log(t_l)
-
-    #r2 = first + second +third+fourth
-
-
-    #return r2
+    internal_logpdf(d, get_branchlength_vector(x), internal_external(x); rd=true)
 end # function _logpdf
 
 function insupport(d::CompoundDirichlet, x::Node)
     bl = get_branchlength_vector(x)
-    res = all(isfinite.(bl)) && all(0 .< bl) && topological(x, d.constraints) && !any(isnan.(bl))
-    if !res
-        println("insupport ",res)
-        println(all(isfinite.(bl)) , all(0 .< bl), topological(x, d.constraints) ,!any(isnan.(bl)))
-        println(bl)
-    end
-    res
+
+    all(isfinite.(bl)) && all(0 .< bl) && topological(x, d.constraints) && !any(isnan.(bl))
 end # function insupport
 
 
@@ -97,6 +96,34 @@ function logpdf_sub(d::ContinuousUnivariateDistribution, x::Node, transform::Boo
     insupport(d, x) ? _logpdf(d, x) : -Inf
 end
 
+
+mutable struct exponentialBL <: ContinuousUnivariateDistribution
+    scale::Float64
+    constraints::Union{Dict, Missing}
+
+    exponentialBL(scale::Float64) =
+        new(scale, missing)
+    exponentialBL(scale::Float64, c) =
+            new(scale, c)
+end
+
+function _logpdf(d::exponentialBL, x::Node)
+    bl = get_branchlength_vector(x)
+    sum(bl)/d.scale - log(d.scale)*length(bl)
+end
+
+function insupport(d::exponentialBL, x::Node)
+    bl = get_branchlength_vector(x)
+    res = all(isfinite.(bl)) && all(0 .< bl) && topological(x, d.constraints) && !any(isnan.(bl))
+
+    res
+end # function insupport
+
+
+function gradient(d::exponentialBL, x::Node)
+    bl = get_branchlength_vector(x)
+    ones(length(bl))./d.scale
+end
 
 
 """
