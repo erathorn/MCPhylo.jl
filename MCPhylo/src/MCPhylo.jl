@@ -525,7 +525,25 @@ export
   make_tree_with_data_cu,
   to_file,
   NNI!,
-  RF, randomize!
+  RF, randomize!,
+  get_branchlength_vector,
+  set_branchlength_vector!,
+  post_order,
+  pre_order,
+  add_child!,
+  remove_child!,
+  find_lca,
+  find_by_binary,
+  find_by_name,
+  create_tree_from_leaves,
+  create_tree_from_leaves_cu,
+  newick,
+  tree_length,
+  tree_height,
+  path_length
+  get_sister,
+  get_leaves
+
 
 export
   cm,
