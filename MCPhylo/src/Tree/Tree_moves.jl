@@ -96,10 +96,13 @@ function NNI!(root::T, target::T, lor::Bool)::Int64  where T<:Node
 
 
     parent = get_mother(target)
+
     sister = get_sister(target)
 
     ychild = remove_child!(target, lor)
+
     xchild = remove_child!(parent, sister)
+    
 
     add_child!(target, sister)
     add_child!(parent, ychild)

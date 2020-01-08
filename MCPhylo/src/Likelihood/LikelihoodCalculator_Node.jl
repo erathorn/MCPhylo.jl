@@ -6,37 +6,42 @@ This function calculates the log-likelihood of an evolutiuonary model using the
 Felsensteins pruning algorithm.
 """
 function FelsensteinFunction(tree_postorder::Vector{Node_ncu}, pi_::Number, rates::Vector{Float64}, data::Array, n_c::Int64, blv::Array{Float64,1})#::Float64
-    #mm::Array{ForwardDiff.Dual} = [0.0 0.0;0.0 0.0]
-    #mm2::Array{ForwardDiff.Dual} = [0.0 0.0;0.0 0.0]
-    res = 0.0
-    scaler = zeros(1, size(last(tree_postorder).data, 2))
+    r::Float64 = 1.0
+    mu::Float64 =  1.0 / (2.0 * pi_ * (1-pi_))
     for node in tree_postorder
         if node.nchild != 0
-            ld::Array{Float64, 2} = node.lchild.data
-            rd::Array{Float64, 2} = node.rchild.data
-            @inbounds l_num::Int64 = node.lchild.num
-            @inbounds r_num::Int64 = node.rchild.num
-
-            @inbounds linc::Float64 = blv[l_num]
-            @inbounds rinc::Float64 = blv[r_num]
-            out = CondLikeInternal(pi_, ld, rd, linc, rinc)
-            m_s = maximum(out, dims = 1)
-            out ./= m_s
-
-            scaler .+= log.(m_s)
-            node.data = out#CondLikeInternal(pi_, ld, rd, linc, rinc)
+            node.data .= 1.0
+            @simd for ch in node
+                node.data .*= nf(ch, blv, pi_, mu, r)
+            end
         end
     end # for
 
     # sum the two rows
     rnum::Array{Float64, 2} = last(tree_postorder).data#::Array{Number, 2}#.num
 
-    res += sum(scaler.+log.(sum(rnum .* Array([pi_, 1.0-pi_]), dims=1)))#::Number
+    res = sum(log.(sum(rnum .* Array([pi_, 1.0-pi_]), dims=1)))#::Number
 
     return res
 end # function
 
+function nf(node::T, blv::Vector, pi_::S, mu::Float64, r::Float64) where {T<:Node, S<:Number}
+    md::Array{Float64, 2} = node.data
+    @inbounds m_num::Int64 = node.num
+    @inbounds minc::Float64 = blv[m_num]
 
+    v::Float64 = exp(-r*minc*mu)
+    m11::Float64 = pi_ - (pi_ - 1)*v
+    m22::Float64 = pi_*(v - 1) + 1
+    m21::Float64 = pi_ - pi_* v
+    m12::Float64 = (pi_ - 1)*(v - 1)
+    mm = [m11 m12; m21 m22]
+    mm*md
+end
+
+@inline function nf(out::Array, child::Missing, blv::Vector, pi_::S) where {S<:Number}
+    out
+end
 """
     FelsensteinFunction(tree_postorder::Vector{Node}, pi::Float64, rates::Vector{Float64}, data::Array{Float64,3}, n_c::Int64)::Float64
 
@@ -79,32 +84,27 @@ end # function
 This function calculates the log sum at an internal node in a tree. This function
 is designed to specifically handle binary data. The matrix exponentiation is pulled
 out of an extra function to avoid array creation.
-
-The loop is written such that the julia converter should be able to infer simd patterns.
 """
-function CondLikeInternal(pi_::Number, l_data::Array{Float64}, r_data::Array{Float64}, linc::Float64, rinc::Float64)#::Float64
+function CondLikeInternal(pi_::T, l_data::Array{Float64}, r_data::Array{Float64}, linc::Float64, rinc::Float64)::Array where T<:Number#::Float64
 
 
         r::Float64 = 1.0
-        mu =  1.0 / (2.0 * pi_ * (1-pi_))
-        v = exp(-r*linc*mu)
+        mu::Float64 =  1.0 / (2.0 * pi_ * (1-pi_))
+        v::Float64 = exp(-r*linc*mu)
         m11::Float64 = pi_ - (pi_ - 1)*v
         m22::Float64 = pi_*(v - 1) + 1
         m21::Float64 = pi_ - pi_* v
         m12::Float64 = (pi_ - 1)*(v - 1)
         mm = [m11 m12; m21 m22]
 
-        v1 = exp(-r*rinc*mu)
+        v1::Float64 = exp(-r*rinc*mu)
         m11b::Float64 = pi_ - (pi_ - 1)*v1
         m22b::Float64 = pi_*(v1 - 1) + 1
         m21b::Float64 = pi_ - pi_* v1
         m12b::Float64 = (pi_ - 1)*(v1 - 1)
         mm2 = [m11b m12b; m21b m22b]
 
-        #out = (mm*l_data) .* (mm2*r_data)
-        out = (mm*l_data) .* (mm2*r_data)
-        #out ./= sum(out, dims=1)
-        return out #(mm*l_data) .* (mm2*r_data)  #[i.value for i in out]#(mm*l_data) .* (mm2*r_data)
+        return (mm*l_data) .* (mm2*r_data)
 
 
 end # function

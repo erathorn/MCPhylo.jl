@@ -69,7 +69,7 @@ function make_tree_with_data(filename::String, dialect::AbstractString="nexus",
 
     n_nodes = length(post_order(new_tree))
     #my_df = Array{Float64}(undef, 2, nc, n_nodes)
-		my_df = Array{Float64}(undef, 2, nc, n_nodes)
+	my_df = Array{Float64}(undef, 2, nc, n_nodes)
     #my_df = ForwardDiff.Dual{Float64}.(my_df, 1)
     #my_df = MArray{Tuple{2,nc,n_nodes}, Float64}(undef)
 

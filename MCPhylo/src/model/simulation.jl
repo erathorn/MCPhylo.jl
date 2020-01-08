@@ -204,7 +204,8 @@ end
 
 function relist(m::Model, x::AbstractArray{T},
                 nodekeys::Vector{Symbol}, transform::Bool=false) where {T<:Any}
-  values = Dict{Symbol,Any}()
+  values = Dict{Symbol,Union{Any, Real}}()
+
   N = length(x)
   offset = 0
   for key in nodekeys
@@ -216,6 +217,7 @@ function relist(m::Model, x::AbstractArray{T},
     throw(ArgumentError("incompatible number of values to put in nodes"))
   values
 end
+
 
 
 function relist(m::Model, x::Node,
@@ -237,12 +239,32 @@ end
 function relist!(m::Model, x::AbstractArray{T}, block::Integer=0,
                  transform::Bool=false) where {T<:Any}
   nodekeys = keys(m, :block, block)
+
   values = relist(m, x, nodekeys, transform)
   for key in nodekeys
-    m[key].value = values[key]
+    assign!(m, key, values[key])
   end
   update!(m, block)
 end
+
+function assign!(m::Model, key::Symbol, value::T) where T <: Real
+  m[key].value = value
+end
+
+function assign!(m::Model, key::Symbol, value::T) where T <: Node
+  m[key].value = value
+end
+
+function assign!(m::Model, key::Symbol, value::T) where T <: Array
+  @assert size(m[key].value) == size(value)
+  d = similar(m[key].value)
+  for (ind, elem) in enumerate(value)
+    d[ind] = elem
+  end
+  m[key].value = d
+end
+
+
 
 function relist!(m::Model, x::AbstractArray{T}, nodekey::Symbol,
                   transform::Bool=false) where {T<:Real}

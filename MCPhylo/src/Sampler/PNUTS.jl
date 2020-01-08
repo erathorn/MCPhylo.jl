@@ -118,11 +118,13 @@ function nuts_sub!(v::PNUTSVariate, epsilon::Float64, logfgrad::Function)
   r = randn(nl)
   org_r = deepcopy(r)
   currH = currU-0.5*dot(r)
-  x, r , logf, grad, nni = refraction(mt, r, zeros(nl), epsilon, logfgrad,delta, lor, nl)
+  x, r , logf, grad, nni = refraction(mt, r, 1.0, zeros(nl), epsilon, logfgrad,delta, lor, nl)
 
   probH = logf-0.5*dot(r)
   ratio = currH - probH
-  if  ratio >= min(0, log(rand()))
+  
+
+  if ratio > min(0, log(rand()))
     logp0 = logf - 0.5 * dot(r)
     logu0 = logp0 + log(rand())
     xminus = xplus = x
@@ -144,7 +146,8 @@ function nuts_sub!(v::PNUTSVariate, epsilon::Float64, logfgrad::Function)
   while s
 
 
-    pm = 2 * (rand() > 0.5) - 1
+    pm =Float64( 2 * (rand() > 0.5) - 1)
+
     if pm === -1
       xminus, rminus, gradminus, _, _, _, xprime, nprime, sprime, alpha,
         nalpha, nni1, lpp = buildtree(xminus, rminus, gradminus, pm, j, epsilon, logfgrad,
@@ -172,11 +175,14 @@ end
 end
 
 
-function refraction(v::T, r::Vector{Float64},
+function refraction(v::T, r::Vector{Float64}, pm::Float64,
                     grad::Vector{Float64}, epsilon::Float64, logfgrad::Function,
                     delta::Float64, lor::Bool, sz::Int64)  where T<:Node
-
-    ref_grad = -grad
+    if pm > 0
+      ref_grad = -grad
+    else
+      ref_grad = grad
+    end
     #blenvec = zeros(sz)
     blenvec = get_branchlength_vector(v)#, blenvec)
     fac = scale_fac.(blenvec, delta)
@@ -195,7 +201,11 @@ function refraction(v::T, r::Vector{Float64},
 
     set_branchlength_vector!(v, molifier.(tmpB, delta))
     logf, grad = logfgrad(v, sz, true, true)
-    ref_grad = -grad
+    if pm > 0
+      ref_grad = -grad
+    else
+      ref_grad = grad
+    end
     get_branchlength_vector(v, blenvec)
     fac = scale_fac.(blenvec, delta)
     r = @. r - epsilon * 0.5 * (ref_grad * fac)
@@ -222,6 +232,7 @@ function ref_NNI(v::T, tmpB::Vector{Float64}, r::Vector{Float64}, epsilon::Float
      r[ref_index] *= -1.0
 
      if intext[ref_index] === 1
+
        blv =molifier.(rv, delta)
        set_branchlength_vector!(v, blv)
        U_before_nni, _ = logfgrad(v, sz, true, false) # still with molified branch length
@@ -254,25 +265,28 @@ end
 
 
 function buildtree(x::T, r::Vector{Float64},
-                   grad::Vector{Float64}, pm::Integer, j::Integer,
+                   grad::Vector{Float64}, pm::Float64, j::Integer,
                    epsilon::Float64, logfgrad::Function, logp0::Real, logu0::Real,
                    delta::Float64, lor::Bool, sz::Int64)  where T<:Node
 
 
   if j === 0
 
-    xprime, rprime, logfprime, gradprime, nni = refraction(x, r, pm.*grad, epsilon,
+    xprime, rprime, logfprime, gradprime, nni = refraction(x, r, pm, grad, epsilon,
                                           logfgrad, delta, lor, sz)
 
     logpprime = logfprime - 0.5 * dot(rprime)
-    #nprime = Int(logu0 < logpprime) #&&
-    nprime = Int(min(1, exp(logpprime - logp0)) > rand())
+
+    nprime = Int(logu0 < logpprime)# && min(1, exp(logpprime - logp0)) > rand())
+    #nprime = Int(min(1, exp(logpprime - logp0)) > rand())
     sprime = logu0 < logpprime + 1000.0
     xminus = xplus = xprime
     rminus = rplus = rprime
     gradminus = gradplus = gradprime
     alphaprime = min(1.0, exp(logpprime - logp0))
     nalphaprime = 1
+
+
   else
 
     xminus, rminus, gradminus, xplus, rplus, gradplus, xprime, nprime, sprime,
@@ -291,10 +305,9 @@ function buildtree(x::T, r::Vector{Float64},
                                                 j - 1, epsilon, logfgrad, logp0,
                                                 logu0, delta, lor, sz)
       end
-      if rand() < nprime2 / (nprime + nprime2)
-        if min(1, exp(logpprime - logp0)) > rand()
+      rnum = rand()
+      if (rnum < nprime2 / (nprime + nprime2)) &&  min(1, exp(logpprime - logp0)) > rnum
           xprime = xprime2
-        end
       end
       nprime += nprime2
       sprime = sprime2 && nouturn(xminus, xplus, rminus, rplus, grad, epsilon, logfgrad, delta, sz, j)
@@ -312,18 +325,16 @@ function nouturn(xminus::T, xplus::T,
                 rminus::Vector{Float64}, rplus::Vector{Float64}, grad::Vector{Float64},
                 epsilon::Float64, logfgrad::Function, delta::Float64, sz::Int64, j::Int64)  where T<:Node
 
-        #if j > 7
-        #  return false
-        #end
+        if j > 7
+          return false
+        end
+
         rf0 = RF(xminus, xplus)
-        xminus_bar,_,_,_,_ = refraction(deepcopy(xminus), rminus, -grad, epsilon, logfgrad, delta, false, sz)
-        xplus_bar,_,_,_,_ = refraction(deepcopy(xplus), rplus, grad, epsilon, logfgrad, delta, true, sz)
+        xminus_bar,_,_,_,_ = refraction(deepcopy(xminus), rminus, -1.0, grad, epsilon, logfgrad, delta, false, sz)
+        xplus_bar,_,_,_,_ = refraction(deepcopy(xplus), rplus,1.0, grad, epsilon, logfgrad, delta, true, sz)
         rf1 = RF(xminus_bar, xplus_bar)
         if rf1 === rf0
-          #xminusone = zeros(sz)
-          #xplusone = zeros(sz)
-          #xminus_barone = zeros(sz)
-          #xplus_barone = zeros(sz)
+
           xminus_barone=get_branchlength_vector(xminus_bar)#, xminus_barone)
           xplus_barone=get_branchlength_vector(xplus_bar)#, xplus_barone)
           xminusone= get_branchlength_vector(xminus)#, xminusone)
@@ -360,11 +371,11 @@ function nutsepsilon_sub(x::Node, logfgrad::Function, delta::Float64, dir::Bool)
   x0 = deepcopy(x)
   n = size(x)[1] - 1
 
-  _, r0, logf0, grad0,_ = refraction(x, randn(n), zeros(n), 0.0, logfgrad, delta, dir, n)
+  _, r0, logf0, grad0,_ = refraction(x, randn(n), 1.0, zeros(n), 0.0, logfgrad, delta, dir, n)
 
   x = deepcopy(x0)
   epsilon = 1.0
-  _, rprime, logfprime, gradprime,_ = refraction(x, r0, grad0, epsilon, logfgrad, delta, dir,n)
+  _, rprime, logfprime, gradprime,_ = refraction(x, r0,1.0 ,grad0,  epsilon, logfgrad, delta, dir,n)
 
   prob = exp(logfprime - logf0 - 0.5 * (dot(rprime) - dot(r0)))
 
@@ -372,7 +383,7 @@ function nutsepsilon_sub(x::Node, logfgrad::Function, delta::Float64, dir::Bool)
   while prob^pm > 0.5^pm
     epsilon *= 2.0^pm
     x = deepcopy(x0)
-    _, rprime, logfprime, _ ,_ = refraction(x, r0, grad0, epsilon, logfgrad, delta, dir, n)
+    _, rprime, logfprime, _ ,_ = refraction(x, r0, 1.0, grad0, epsilon, logfgrad, delta, dir, n)
 
     prob = exp(logfprime - logf0 - 0.5 * (dot(rprime) - dot(r0)))
 

@@ -220,12 +220,6 @@ end
 
 documentation
 """
-function setinits!(d::TreeStochastic, m::Model, x::Array)
-    d.value = x
-    d.distr = d.eval(m)
-
-    setmonitor!(d, d.monitor)
-end # function
 
 function update!(d::TreeStochastic, m::Model)
     d.distr = d.eval(m)

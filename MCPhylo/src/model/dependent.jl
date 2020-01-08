@@ -240,6 +240,22 @@ function setinits!(s::AbstractStochastic, m::Model, x)
   throw(ArgumentError("incompatible initial value for node : $(s.symbol)"))
 end
 
+function setinits!(d::TreeStochastic, m::Model, x::T) where {T<: Node}
+    d.value = x
+    d.distr = d.eval(m)
+    insupport(d.distr, x) || throw(ArgumentError("The supplied tree does not match the topological tree constraints."))
+    setmonitor!(d, d.monitor)
+end # function
+
+function setinits!(d::TreeStochastic, m::Model, x::Array{T})  where {T<: Node}
+    d.value = x
+    d.distr = d.eval(m)
+
+    setmonitor!(d, d.monitor)
+end # function
+
+
+
 function update!(s::AbstractStochastic, m::Model)
   s.distr = s.eval(m)
   s

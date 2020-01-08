@@ -4,7 +4,7 @@ using .MCPhylo
 using Random
 using BenchmarkTools
 Random.seed!(1234);
-using Calculus
+
 mt2, df2 = make_tree_with_data("local/development.nex"); # load your own nexus file
 po2 = post_order(mt2);
 for node in po2
@@ -14,9 +14,11 @@ blv = get_branchlength_vector(mt2);
 
 rates = ones(1);
 f(y) = MCPhylo.FelsensteinFunction(po2, 0.925, rates, df2, 838, y)
-blv2 =blv.* 10000.1
-#blv2 .*= 0.001
+
 x = f(blv)
+
+@benchmark f(blv)
+
 y = f(blv2)
 
 Random.seed!(1234);

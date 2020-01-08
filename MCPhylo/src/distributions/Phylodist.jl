@@ -1,7 +1,7 @@
 
 mutable struct PhyloDist <: DiscreteMatrixDistribution
     my_tree
-    mypi::Real
+    mypi::Number
     rates::Vector
     nbase::Int64
     nsites::Int64

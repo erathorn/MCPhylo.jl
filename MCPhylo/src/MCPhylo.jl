@@ -26,7 +26,7 @@ using DataFrames
 using Random
 using CSV
 #using StaticArrays
-import Base: Matrix, names, summary
+import Base: Matrix, names, summary, iterate
 import Compose: Context, context, cm, gridstack, inch, MeasureOrNumber, mm, pt, px
 import LinearAlgebra: cholesky, dot
 import Statistics: cor
@@ -87,6 +87,7 @@ mutable struct Node_cu <: Node
   data::CuArray{Float64,2, Nothing}#{Float64, 2}
   mother::Union{Node_cu, Missing}
   lchild::Union{Node_cu, Missing}
+  mchild::Union{Node_cu, Missing}
   rchild::Union{Node_cu, Missing}
   nchild::Int64
   root::Bool
@@ -98,13 +99,14 @@ mutable struct Node_cu <: Node
   blv::Union{Vector{Float64}, Nothing}
 
   Node_cu() = new("noname")
-  function Node_cu(n::String, d::Array{Float64,2}, m::Union{Node, Missing},c1::Union{Node, Missing},c2::Union{Node, Missing} ,
+  function Node_cu(n::String, d::Array{Float64,2}, m::Union{Node, Missing},c1::Union{Node, Missing},c2::Union{Node, Missing},c3::Union{Node, Missing},
     n_c::Int64, r::Bool, inc::Float64, b::String, num::Int64,height::Float64)
       mn = Node_cu()
       mn.name = n
       mn.data = CuArray{Float64, 2}(undef, 2, 2)
       mn.mother = m
       mn.lchild = c1
+      mn.mchild = c3
       mn.rchild = c2
       mn.nchild = n_c
       mn.root = r
@@ -125,6 +127,7 @@ mutable struct Node_ncu <: Node
     data::Array{Float64,2}
     mother::Union{Node_ncu, Missing}
     lchild::Union{Node_ncu, Missing}
+    mchild::Union{Node_ncu, Missing}
     rchild::Union{Node_ncu, Missing}
     nchild::Int64
     root::Bool
@@ -136,13 +139,14 @@ mutable struct Node_ncu <: Node
     blv::Union{Vector{Float64}, Nothing}
 
     Node_ncu() = new("noname")
-    function Node_ncu(n::String, d::Array{Float64,2}, m::Union{Node, Missing},c1::Union{Node, Missing},c2::Union{Node, Missing} ,
+    function Node_ncu(n::String, d::Array{Float64,2}, m::Union{Node, Missing},c1::Union{Node, Missing},c2::Union{Node, Missing},c3::Union{Node,Missing},
       n_c::Int64, r::Bool, inc::Float64, b::String, num::Int64,height::Float64)
         mn = Node_ncu()
         mn.name = n
         mn.data = Array{Float64, 2}(undef, 2, 2)
         mn.mother = m
         mn.lchild = c1
+        mn.mchild = c3
         mn.rchild = c2
         mn.nchild = n_c
         mn.root = r
@@ -398,7 +402,7 @@ include("Parser/ParseNexus.jl")
 
 include("Sampler/PNUTS.jl")
 include("Sampler/ProbPathHMC.jl")
-include("Sampler/ProbPathHMC_Node.jl")
+#include("Sampler/ProbPathHMC_Node.jl")
 include("Sampler/PhyloHMC_Functions.jl")
 include("Sampler/PhyloHMC_Functions_Node.jl")
 
