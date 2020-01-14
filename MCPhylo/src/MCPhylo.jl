@@ -25,6 +25,7 @@ using Markdown
 using DataFrames
 using Random
 using CSV
+#using StatsFuns
 #using StaticArrays
 import Base: Matrix, names, summary, iterate
 import Compose: Context, context, cm, gridstack, inch, MeasureOrNumber, mm, pt, px
@@ -86,9 +87,7 @@ mutable struct Node_cu <: Node
   name::String
   data::CuArray{Float64,2, Nothing}#{Float64, 2}
   mother::Union{Node_cu, Missing}
-  lchild::Union{Node_cu, Missing}
-  mchild::Union{Node_cu, Missing}
-  rchild::Union{Node_cu, Missing}
+  children::Vector{Node_cu}
   nchild::Int64
   root::Bool
   inc_length::Float64
@@ -105,9 +104,7 @@ mutable struct Node_cu <: Node
       mn.name = n
       mn.data = CuArray{Float64, 2}(undef, 2, 2)
       mn.mother = m
-      mn.lchild = c1
-      mn.mchild = c3
-      mn.rchild = c2
+      mn.children = Vector{Node_cu()}(undef, 0)
       mn.nchild = n_c
       mn.root = r
       mn.inc_length = inc
@@ -126,9 +123,7 @@ mutable struct Node_ncu <: Node
     name::String
     data::Array{Float64,2}
     mother::Union{Node_ncu, Missing}
-    lchild::Union{Node_ncu, Missing}
-    mchild::Union{Node_ncu, Missing}
-    rchild::Union{Node_ncu, Missing}
+    children::Vector{Node_ncu}
     nchild::Int64
     root::Bool
     inc_length::Float64
@@ -145,9 +140,7 @@ mutable struct Node_ncu <: Node
         mn.name = n
         mn.data = Array{Float64, 2}(undef, 2, 2)
         mn.mother = m
-        mn.lchild = c1
-        mn.mchild = c3
-        mn.rchild = c2
+        mn.children = Vector{Node_ncu}(undef, 0)
         mn.nchild = n_c
         mn.root = r
         mn.inc_length = inc

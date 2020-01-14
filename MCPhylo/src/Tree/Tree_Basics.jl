@@ -32,26 +32,25 @@ function showall(io::IO, d::Node)
   show(io, d.binary)
 end
 
-Base.:(==)(x::Node, y::Node) = x.num == y.num
+Base.:(==)(x::T, y::T) where T<:Node = x.num == y.num
 
 
-Base.size(x::Node) = size(post_order(x))
-Base.length(x::Node) = x.nchild
+Base.size(x::T) where T<:Node = size(post_order(x))
+Base.length(x::T) where T<:Node = x.nchild
 
-Base.getindex(n::Node, ind::Int) = ind == 1 ? n.lchild : (ind == 2 ? n.rchild : n.mchild)
-Base.unsafe_getindex(n::Node, ind::Int) = ind == 1 ? n.lchild : (ind == 2 ? n.rchild : n.mchild)
+Base.getindex(n::T, ind::Int) where T<:Node = ind === 1 ? n.lchild : (ind === 2 ? n.rchild : n.mchild)
+Base.unsafe_getindex(n::T, ind::Int) where T<:Node = ind === 1 ? n.lchild : (ind === 2 ? n.rchild : n.mchild)
 
-Base.firstindex(n::Node) = 1
-Base.lastindex(n::Node) = n.nchild
-Base.iterate(n::Node) = n.lchild, [:rchild, :mchild]
-
-function Base.iterate(n::Node, chlds)
+Base.firstindex(n::T) where T<:Node = 1
+Base.lastindex(n::T) where T<:Node = n.nchild
+Base.iterate(n::T) where T<:Node = n.lchild, [:rchild, :mchild]
+Base.eltype(::Type{T}) where T<:Node = T
+function Base.iterate(n::T, chlds) where T<:Node
    if isempty(chlds)
        nothing
    else
        rv = getfield(n, chlds[1])
-       ismissing(rv) ? nothing : (rv , chlds[2:end])
-
+       !ismissing(rv) ? (rv , chlds[2:end]) : nothing
    end
 end
 """
@@ -62,21 +61,7 @@ The arity of the mother node is increased by `1` and the root
 status of the child is set to `False`.
 """
 function add_child!(mother_node::Node, child::Node, left::Bool, middle::Bool=false)
-    if !middle
-        if left
-            mother_node.lchild = child
-            child.mother = mother_node
-        else
-            mother_node.rchild = child
-            child.mother = mother_node
-        end
-        #push!(mother_node.child, child)
-    else
-        mother_node.mchild = child
-        child.mother = mother_node
-    end
-    mother_node.nchild += 1
-    child.root = false
+    add_child!(mother_node, child)
 end # function add_child
 
 """
@@ -87,22 +72,8 @@ The arity of the mother node is increased by `1` and the root
 status of the child is set to `False`.
 """
 function add_child!(mother_node::Node, child::Node)
-    if ismissing(mother_node.lchild)
-        mother_node.lchild = child
-        child.mother = mother_node
-
-    elseif ismissing(mother_node.rchild)
-        mother_node.rchild = child
-        child.mother = mother_node
-
-    elseif ismissing(mother_node.mchild)
-        mother_node.mchild = child
-        child.mother = mother_node
-
-    else
-        throw("The node $mother_node already has two children.")
-    end
-    #add_child!(mother_node, child, id)
+    push!(mother_node.children, child)
+    child.mother = mother_node
     mother_node.nchild += 1
     child.root = false
 end # function add_child
@@ -115,19 +86,13 @@ This function removes a child from the list of nodes which are daughters of this
 node. The removed node is returned.
 """
 function remove_child!(mother_node::Node, left::Bool)::Node
-    @assert !mother_node.root
+    @assert (mother_node.nchild === 2)
     if left
-        rv = mother_node.lchild
-        mother_node.lchild = missing
+        rv = popfirst!(mother_node.children)
         rv.mother = missing
-
     else
-        rv = mother_node.rchild
-        mother_node.rchild = missing
-
+        rv = pop!(mother_node.children)
         rv.mother = missing
-
-
     end # end if
     mother_node.nchild -= 1
     return rv
@@ -140,22 +105,10 @@ This function removes a child from the list of nodes which are daughters of this
 node. The removed node is returned.
 """
 function remove_child!(mother_node::Node, child::Node)::Node
-    if mother_node.lchild == child
-        mother_node.lchild = missing
-        child.mother = missing
+    ind = findfirst(x->x==child, mother_node.children)
+    deleteat!(mother_node.children, ind)
+    child.mother = missing
 
-    elseif mother_node.rchild == child
-        mother_node.rchild = missing
-        child.mother = missing
-
-    elseif mother_node.mchild == child
-        mother_node.mchild = missing
-        child.mother = missing
-
-    else
-        # the node is not found. Therefore throw an error!
-        throw("The node $child is not a child of $mother_node.")
-    end # end if
     mother_node.nchild -= 1
     return child
 end # function
@@ -190,9 +143,9 @@ function create_tree_from_leaves(leaf_nodes::Vector{String}, node_size::Int64 = 
         # create a new mother node to which the two first nodes are added as children
         # add the new mother node to the list and reshuffle
         first_child::Node = pop!(my_node_list)
-        first_child.inc_length = rand(Uniform(0.0000015,0.1))#*0.1
+        first_child.inc_length = 0.02#rand(Uniform(0.0000015,0.1))#*0.1
         second_child::Node = pop!(my_node_list)
-        second_child.inc_length = rand(Uniform(0.0000015,0.1))
+        second_child.inc_length = 0.02#rand(Uniform(0.0000015,0.1))
         curr_node::Node = Node_ncu(string(temp_name), zeros(Float64, (2, node_size)), missing, missing, missing, missing, 0, true, 0.0, "0", 0,0.0)
         add_child!(curr_node, first_child, true)
         add_child!(curr_node, second_child, false)
@@ -202,11 +155,11 @@ function create_tree_from_leaves(leaf_nodes::Vector{String}, node_size::Int64 = 
     end # while
     root::Node = Node_ncu(string(temp_name), zeros(Float64, (2, node_size)), missing, missing, missing, missing, 0, true, 0.0, "0", 0,0.0)
     lchild = pop!(my_node_list)
-    lchild.inc_length = rand(Uniform(0.0000015,0.1))
+    lchild.inc_length = 0.02#rand(Uniform(0.0000015,0.1))
     mchild = pop!(my_node_list)
-    mchild.inc_length = rand(Uniform(0.0000015,0.1))
+    mchild.inc_length = 0.02#rand(Uniform(0.0000015,0.1))
     rchild = pop!(my_node_list)
-    rchild.inc_length = rand(Uniform(0.0000015,0.1))
+    rchild.inc_length = 0.02#rand(Uniform(0.0000015,0.1))
     add_child!(root, lchild, true)
     add_child!(root, rchild, false)
     add_child!(root, mchild, false, true)
@@ -266,9 +219,9 @@ used for the post order traversal.
 """
 function post_order(root::T, traversal::Vector{T})::Vector{T} where T<:Node
    if root.nchild != 0
-        !ismissing(root.lchild) && post_order(root.lchild, traversal)
-        !ismissing(root.mchild) && post_order(root.mchild, traversal)
-        !ismissing(root.rchild) && post_order(root.rchild, traversal)
+        for child in root.children
+            post_order(child, traversal)
+        end
    end # if
    push!(traversal, root)
    return traversal
@@ -321,22 +274,28 @@ function pre_order(root::T)::Vector{T} where T<:Node
     return t
 end # function pre_order!
 
+
 function newick(root::T)  where T<:Node
     newickstring = newick(root, "")
+    newickstring = chop(newickstring)
     newickstring = string(newickstring, ";")
     return newickstring
 end
+
 function newick(root::T, newickstring::AbstractString) where T<:Node
     if root.nchild != 0
-        if ismissing(root.mchild)# == missing
-            return string(newickstring, "(",newick(root.lchild, newickstring),",",newick(root.rchild, newickstring),")", root.name, ":", root.inc_length)
-        else
-            return string(newickstring, "(",newick(root.lchild, newickstring),",",newick(root.mchild, newickstring),",",newick(root.rchild, newickstring),")", root.name, ":", root.inc_length)
+        newickstring = string(newickstring, "(")
+        for child in root.children
+            newickstring = string(newick(child,newickstring))
         end
+        newickstring = chop(newickstring)
+        return string(newickstring,")", root.name, ":", root.inc_length,",")
+
     else
-        return string(newickstring, root.name, ":", root.inc_length)
+        return string(newickstring, root.name, ":", root.inc_length, ",")
     end
 end
+
 
 """
     tree_length(root::Node)::Float64
@@ -347,18 +306,14 @@ function tree_length(root::T)::Float64  where T<:Node
     return tree_length(root, 0.0)
 end # function tree_length
 
-function tree_length(root::Missing, tl::Float64)
-    tl
-end
-
 function tree_length(root::T, tl::Float64)::Float64 where T<:Node
     if root.nchild != 0
-         if isdefined(root, :lchild) tl = tree_length(root.lchild, tl) end
-         if isdefined(root, :mchild) tl = tree_length(root.mchild, tl) end
-         if isdefined(root, :rchild) tl = tree_length(root.rchild, tl) end
+        for child in root.children
+            tl = tree_length(child, tl)
+        end
     end # if
     if root.root !== true
-        tl += root.inc_length# = blenvec[root.num]
+        tl += root.inc_length
     end
     tl
 end
@@ -375,9 +330,9 @@ function node_height(root::T, mv::Float64)  where T<:Node
         root.height = rmh+root.inc_length
     end
     if root.nchild != 0
-        if !ismissing(root.lchild)  mv = node_height(root.lchild, mv) end
-        if !ismissing(root.mchild)  mv = node_height(root.mchild, mv) end
-        if !ismissing(root.rchild) mv = node_height(root.rchild, mv) end
+        for child in root.children
+            mv = node_height(child, mv)
+        end
     else
         if root.height>mv
             mv = root.height
@@ -423,22 +378,11 @@ end #function path_length
 This function gets the sister of `node`. It does so by looking for the respective
 binary representation of the sister.
 """
-function get_sister(node::T)::T  where T<:Node
+@inline function get_sister(node::T)::T  where T<:Node
 
     mother = node.mother
-    if !ismissing(mother.mchild)
+    mother.children[findfirst(y-> y!=node, mother.children)]
 
-        if node == mother.mchild
-            rand()>0.5 ? mother.lchild : mother.rchild
-        elseif node == mother.lchild
-            rand()>0.5 ? mother.mchild : mother.rchild
-        else
-            rand()>0.5 ? mother.lchild : mother.mchild
-        end
-    else
-
-        node == mother.lchild ? mother.rchild : mother.lchild
-    end
 end # function
 
 
@@ -448,7 +392,7 @@ end # function
 This function gets the mother of `node`. It does so by looking for the respective
 binary representation of the mother node.
 """
-function get_mother(node::T)::T  where T<:Node
+@inline function get_mother(node::T)::T  where T<:Node
     return node.mother
 end # function
 
@@ -464,22 +408,12 @@ function set_binary!(root::T)  where T<:Node
         root.binary = "1"
     end # if
     if root.nchild != 0
-        left::Node = root.lchild
-        right::Node = root.rchild
-        if !ismissing(root.mchild)
-            middle::Node = root.mchild
-            left.binary = string(root.binary, "1")
-            middle.binary = string(root.binary, "2")
-            right.binary = string(root.binary, "0")
-            set_binary!(left)
-            set_binary!(middle)
-            set_binary!(right)
-        else
-            left.binary = string(root.binary, "1")
-            right.binary = string(root.binary, "0")
-            set_binary!(left)
-            set_binary!(right)
+        for (ind, node) in enumerate(root.children)
+            ind -= 1
+            node.binary = string(root.binary, ind)
+            set_binary!(node)
         end
+
     end # if
 end # function set_binary
 
@@ -553,29 +487,27 @@ function get_branchlength_vector(post_order::Vector{T})::Vector{Float64}  where 
 end # function get_branchlength_vector
 
 function get_branchlength_vector(root::T, out_vec::Vector) where T<:Node
-    if root.nchild !== 0
-         get_branchlength_vector(root.lchild, out_vec)
-         get_branchlength_vector(root.mchild, out_vec)
-         get_branchlength_vector(root.rchild, out_vec)
-    end # if
-    if root.root !== true
+
+    for child in root.children
+        get_branchlength_vector(child, out_vec)
+    end
+
+    if !root.root
         out_vec[root.num] = root.inc_length
     end
 end
 
-function get_branchlength_vector(root::Missing, out_vec::Vector)
-    out_vec
-end
-
 function get_branchlength_vector(root::T)::Vector{Float64}  where T<:Node
-    if root.blv === nothing
-        root.blv = Vector{Float64}(undef, length(post_order(root))-1)
-    end
+    get_branchlength_vector(root, root.blv)
+    return root.blv
+end # function get_branchlength_vector
+
+function get_branchlength_vector(root::T, vec::Nothing)::Vector{Float64}  where T<:Node
+    root.blv = Vector{Float64}(undef, length(post_order(root))-1)
     vec = root.blv
     get_branchlength_vector(root, vec)
     return vec
-end # function get_branchlength_vector
-
+end
 
 
 function get_branchlength_vector(t::TreeStochastic)
@@ -598,14 +530,15 @@ end # function
 This function sets the branch lengths of a tree to the values specified in blenvec.
 """
 function set_branchlength_vector!(root::T, blenvec::Array{Float64})  where T<:Node
-    if root.nchild != 0
-         !ismissing(root.lchild) && set_branchlength_vector!(root.lchild, blenvec)
-         !ismissing(root.mchild) && set_branchlength_vector!(root.mchild, blenvec)
-         !ismissing(root.rchild) && set_branchlength_vector!(root.rchild, blenvec)
-    end # if
-    if root.root != true
+
+    for child in root.children
+        set_branchlength_vector!(child, blenvec)
+    end
+
+    if root.root !== true
         root.inc_length = blenvec[root.num]
     end
+    nothing
 end # function set_branchlength_vector!
 
 
@@ -719,22 +652,11 @@ function find_num(root::T, num::Int64, rn::Vector{T})  where T<:Node
         rv = false
     end
 
-    if root.nchild != 0
-        if !rv
-         if !ismissing(root.lchild)
-               rv = find_num(root.lchild, num,  rn)
-         end
+    if !rv
+        for child in root.children
+            rv = find_num(child, num,  rn)
         end
-         if !rv
-             if !ismissing(root.rchild)
-                 rv = find_num(root.rchild, num,  rn)
-            end
-        end
-        if !rv
-         if !ismissing(root.mchild)
-               rv = find_num(root.mchild, num,  rn)
-         end
-        end
+
     end # if
     return rv
 end
