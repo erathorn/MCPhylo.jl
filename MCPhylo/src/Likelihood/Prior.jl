@@ -49,11 +49,8 @@ function internal_logpdf(d::CompoundDirichlet, b_lens::Any, int_leave_map::Vecto
     third = blen_leave_log*(d.a-1) + blen_int_log*(d.a*d.c-1.0)
     fourth = (d.alpha-d.a*nterm-d.a*d.c*n_int)*log(t_l)
 
-    #r1 = (d.alpha - d.a*nterm - d.a*d.c*n_int) * log(t_l) - d.beta*t_l
-    #r1 += third
     r2 = first + second +third+fourth
-    #println(r1)
-    #println( r2 , r1 + first+second)
+
     return r2
 
 end
@@ -65,10 +62,11 @@ function pgradient(d::CompoundDirichlet, x::Node)
 
     blv = get_branchlength_vector(x)
     blv .-= 0.0000015
-    re = internal_logpdf(d, blv, int_ext)#, rd=true)
+    re = internal_logpdf(d, blv, int_ext)
     gr = gradient(g, blv, :forward)
+    #gr = zeros(size(blv))
     re, gr
-    #gradient(g, get_branchlength_vector(x), :forward)
+
 end
 
 function val_der(f, y)

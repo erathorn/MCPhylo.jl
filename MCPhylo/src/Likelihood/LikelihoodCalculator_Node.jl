@@ -8,40 +8,43 @@ Felsensteins pruning algorithm.
 function FelsensteinFunction(tree_postorder::Vector{Node_ncu}, pi_::Number, rates::Vector{Float64}, data::Array, n_c::Int64, blv::Array{Float64,1})#::Float64
     r::Float64 = 1.0
     mu::Float64 =  1.0 / (2.0 * pi_ * (1-pi_))
+    mm = Array{Float64,2}(undef, 2,2)
+    res = 0.0
+    scaler_out = zeros(size(last(tree_postorder).data,2))
+    #println(scaler_out)
     for node in tree_postorder
         if node.nchild != 0
             node.data .= 1.0
-            @simd for ch in node
-                node.data .*= nf(ch, blv, pi_, mu, r)
-            end
-        end
+            @simd for ch in node.children
+                node.data .*= nf(ch, blv, pi_, mu, r, mm)
+            end #for simd
+        end # if
+        #if !node.root
+        #    scaler = maximum(node.data, dims=1)
+        #    scaler_out += log.(scaler)[:]
+        #    node.data ./= scaler
+        #end #if
+
     end # for
 
-    # sum the two rows
-    rnum::Array{Float64, 2} = last(tree_postorder).data#::Array{Number, 2}#.num
-
-    res = sum(log.(sum(rnum .* Array([pi_, 1.0-pi_]), dims=1)))#::Number
+    res += sum(log.(sum(last(tree_postorder).data .* Array([pi_, 1.0-pi_]), dims=1)))#[:]+scaler_out)#::Number
 
     return res
 end # function
 
-function nf(node::T, blv::Vector, pi_::S, mu::Float64, r::Float64) where {T<:Node, S<:Number}
+function nf(node::T, blv::Vector, pi_::S, mu::Float64, r::Float64, mm::Array{Float64,2}) where {T<:Node, S<:Number}
     md::Array{Float64, 2} = node.data
     @inbounds m_num::Int64 = node.num
     @inbounds minc::Float64 = blv[m_num]
-
     v::Float64 = exp(-r*minc*mu)
-    m11::Float64 = pi_ - (pi_ - 1)*v
-    m22::Float64 = pi_*(v - 1) + 1
-    m21::Float64 = pi_ - pi_* v
-    m12::Float64 = (pi_ - 1)*(v - 1)
-    mm = [m11 m12; m21 m22]
+    @inbounds mm[1] = pi_ - (pi_ - 1)*v
+    @inbounds mm[2] = pi_ - pi_* v
+    @inbounds mm[3] = (pi_ - 1)*(v - 1)
+    @inbounds mm[4] = pi_*(v - 1) + 1
+
     mm*md
 end
 
-@inline function nf(out::Array, child::Missing, blv::Vector, pi_::S) where {S<:Number}
-    out
-end
 """
     FelsensteinFunction(tree_postorder::Vector{Node}, pi::Float64, rates::Vector{Float64}, data::Array{Float64,3}, n_c::Int64)::Float64
 
