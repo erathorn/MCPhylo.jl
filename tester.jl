@@ -11,21 +11,13 @@ using .MCPhylo
 using Random
 Random.seed!(1234)
 
-
-
 mt, df = make_tree_with_data("local/development.nex"); # load your own nexus file
-
 
 
 po = post_order(mt);
 for node in po
     node.data = df[:,:,node.num]
 end
-
-#mt2 = deepcopy(mt)
-
-
-
 
 my_data = Dict{Symbol, Any}(
   :mtree => mt,
@@ -34,10 +26,6 @@ my_data = Dict{Symbol, Any}(
   :nbase => size(df)[1],
   :nsites => size(df)[2],
 );
-
-#randomize!(mt2, 1000)
-#mt3 = deepcopy(mt)
-#mt4 = deepcopy(mt)
 
 # model setup
 model =  Model(
@@ -52,12 +40,9 @@ model =  Model(
      )
 
 # intial model values
-#inivals = rand(Categorical([0.25, 0.25, 0.25, 0.25]),3132)
-#inivals2 =rand(Dirichlet([1.0, 1.0, 1.0, 1.0]))
-
 inits = [ Dict{Symbol, Union{Any, Real}}(
     :mtree => mt,
-    :mypi=> rand(),
+    :mypi=> 0.5,
     :df => my_data[:df],
     :nnodes => my_data[:nnodes],
     :nbase => my_data[:nbase],
@@ -65,9 +50,7 @@ inits = [ Dict{Symbol, Union{Any, Real}}(
     :mymap=>ones(3132),
     :av => [1,1,1,1]
     ),
-
     ]
-
 
 scheme = [PNUTS(:mtree),
           Slice(:mypi, 0.05, Univariate)
@@ -77,8 +60,7 @@ setsamplers!(model, scheme);
 
 # do the mcmc simmulation. if trees=true the trees are stored and can later be
 # flushed ot a file output.
-#sim = mcmc(model, my_data, inits, 10000, burnin=1000,thin=50, chains=2, trees=true)
-sim = mcmc(model, my_data, inits, 5000, burnin=1000,thin=10, chains=1, trees=true)
+sim = mcmc(model, my_data, inits, 5000, burnin=500,thin=10, chains=1, trees=true)
 
 sim = mcmc(sim, 10000, trees=true)
 

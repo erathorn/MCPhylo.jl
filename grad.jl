@@ -13,7 +13,7 @@ end
 blv = get_branchlength_vector(mt2);
 
 rates = ones(1);
-f(y) = MCPhylo.FelsensteinFunction(po2, 0.925, rates, df2, 838, y)
+f(y) = MCPhylo.FelsensteinFunction(po2, 0.5, rates, df2, 3132, y)
 
 x = f(blv)
 

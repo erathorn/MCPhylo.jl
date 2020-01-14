@@ -176,16 +176,6 @@ function molify(v::Vector{Float64}, delta::Float64)
     return molifier.(v, delta)
 end
 
-"""
-    molifier(x::Float64, delta::Float64)::Float64
-
-documentation
-"""
-@inline function molifier(x::Float64, delta::Float64)::Float64
-    x >= delta ? x : (x^2+delta^2)/(2.0*delta)
-end # function
-
-
 function gradf!(block::SamplingBlock, x::S, dtype::Symbol=:forward) where {T<:Real, S<:Node}
     #println("here")
     gradlogpdf!(block, x, dtype)
