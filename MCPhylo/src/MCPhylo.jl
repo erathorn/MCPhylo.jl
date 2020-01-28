@@ -15,7 +15,7 @@ using CuArrays
 using GPUArrays
 using CUDAnative
 using CUDAdrv
-#using Flux.Tracker
+using Flux
 #using ForwardDiff
 #import ForwardDiff: gradient, gradient!
 #using Zygote
@@ -29,7 +29,7 @@ using CSV
 #using StaticArrays
 import Base: Matrix, names, summary, iterate
 import Compose: Context, context, cm, gridstack, inch, MeasureOrNumber, mm, pt, px
-import LinearAlgebra: cholesky, dot
+import LinearAlgebra: cholesky, dot, BlasFloat
 import Statistics: cor
 import Distributions:
        ## Generic Types
@@ -124,6 +124,8 @@ mutable struct Node_ncu <: Node
     data::Array{Float64,2}
     mother::Union{Node_ncu, Missing}
     children::Vector{Node_ncu}
+    scaler::Array{Float64,2}
+    trprobs::Array{Float64,2}
     nchild::Int64
     root::Bool
     inc_length::Float64
@@ -139,6 +141,8 @@ mutable struct Node_ncu <: Node
         mn = Node_ncu()
         mn.name = n
         mn.data = Array{Float64, 2}(undef, 2, 2)
+        mn.trprobs = Array{Float64, 2}(undef, 2, 2)
+        mn.scaler = Array{Float64, 2}(undef, 1, 2)
         mn.mother = m
         mn.children = Vector{Node_ncu}(undef, 0)
         mn.nchild = n_c

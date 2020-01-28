@@ -30,7 +30,7 @@ function internal_logpdf(d::CompoundDirichlet, b_lens::Any, int_leave_map::Vecto
     nterm = 0.0
 
 
-    for i in eachindex(int_leave_map)
+    @views for i in eachindex(int_leave_map)
         if int_leave_map[i] === 1
             @inbounds blen_int += b_lens[i]
             @inbounds blen_int_log += log(b_lens[i])
@@ -61,20 +61,20 @@ function pgradient(d::CompoundDirichlet, x::Node)
     g(mt) = internal_logpdf(d, mt, int_ext)
 
     blv = get_branchlength_vector(x)
-    blv .-= 0.0000015
-    re = internal_logpdf(d, blv, int_ext)
-    gr = gradient(g, blv, :forward)
+    blv1 = blv .- 0.0015
+    #re = internal_logpdf(d, blv, int_ext)
+    #gr = gradient(g, blv, :forward)
     #gr = zeros(size(blv))
-    re, gr
+    #re, gr
+    #println(blv)
+    r = val_der(g, blv1)
 
+    r[1], r[2][1]
 end
 
-function val_der(f, y)
-
-    re = f(y)
-
-    gr = gradient(f, y, :forward)
-    re, gr
+function val_der(f, y...)
+    gs1 = Flux.pullback(f, y...)
+    gs1[1], gs1[2](1.0)
 end
 
 
@@ -84,8 +84,7 @@ end # function _logpdf
 
 function insupport(d::CompoundDirichlet, x::Node)
     bl = get_branchlength_vector(x)
-
-    all(isfinite.(bl)) && all(0 .< bl) && topological(x, d.constraints) && !any(isnan.(bl))
+    all(isfinite.(bl)) && all(0.0 .<= bl) && topological(x, d.constraints) && !any(isnan.(bl))
 end # function insupport
 
 

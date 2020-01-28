@@ -22,3 +22,28 @@ function get_bipartitions(tree::Node)::Vector{Tuple}
 
     bt
 end
+
+function BHV_lower(tree1::Node, tree2::Node)
+    #res_low = 0.0
+    res_upper_1 = 0.0
+    res_upper_2 = 0.0
+    res_upper_3 = 0.0
+    po = post_order(tree1)
+    Base.Threads.@threads for node in po
+        nom = MCPhylo.find_num(tree2, node.num)
+        if !node.root
+            if node.mother.num == nom.mother.num
+                #res_low += (node.inc_length-nom.inc_length)^2
+                res_upper_3 += (node.inc_length-nom.inc_length)^2
+            else
+                #res_low += nom.inc_length^2
+                res_upper_2 += nom.inc_length^2
+                #res_low += node.inc_length^2
+                res_upper_1 += node.inc_length^2
+            end
+        end
+    end
+    res_low = res_upper_1+res_upper_2+res_upper_3
+    res_high = (sqrt(res_upper_2)+sqrt(res_upper_1))^2+res_upper_3
+    sqrt(res_low), sqrt(res_high)
+end

@@ -5,32 +5,74 @@
 This function calculates the log-likelihood of an evolutiuonary model using the
 Felsensteins pruning algorithm.
 """
-function FelsensteinFunction(tree_postorder::Vector{Node_ncu}, pi_::Number, rates::Vector{Float64}, data::Array, n_c::Int64, blv::Array{Float64,1})#::Float64
+function FelsensteinFunction(tree_postorder::Vector{Node_ncu}, pi_::T, rates::Vector{Float64}, data::Array, n_c::Int64, blv::S) where {S<:AbstractArray, T<:Number}
     r::Float64 = 1.0
-    mu::Float64 =  1.0 / (2.0 * pi_ * (1-pi_))
-    mm = Array{Float64,2}(undef, 2,2)
-    res = 0.0
-    scaler_out = zeros(size(last(tree_postorder).data,2))
-    #println(scaler_out)
-    for node in tree_postorder
-        if node.nchild != 0
-            node.data .= 1.0
-            @simd for ch in node.children
-                node.data .*= nf(ch, blv, pi_, mu, r, mm)
-            end #for simd
-        end # if
-        #if !node.root
-        #    scaler = maximum(node.data, dims=1)
-        #    scaler_out += log.(scaler)[:]
-        #    node.data ./= scaler
-        #end #if
+    mu =  1.0 / (2.0 * pi_ * (1-pi_))
+    mml = calc_trans.(blv, pi_, mu, r)
 
+    root_node = last(tree_postorder)
+    root_node.scaler = zeros(size(root_node.scaler))
+
+    @views for node in tree_postorder
+        if node.nchild > 0
+            node.data = node_loop(node, mml)
+            if !node.root
+                node.scaler = Base.maximum(node.data, dims=1)
+                root_node.scaler += log.(node.scaler)
+                node.data = node.data ./ node.scaler
+            end #if
+        end #if
     end # for
 
-    res += sum(log.(sum(last(tree_postorder).data .* Array([pi_, 1.0-pi_]), dims=1)))#[:]+scaler_out)#::Number
-
-    return res
+    return likelihood_root(root_node, pi_)#res
 end # function
+
+function likelihood_root(root::T, pi_::S)::Real where {S<:Number, T<:Node}
+    sum(log.(sum(root.data .* Array([pi_, 1.0-pi_]), dims=1))+root.scaler)
+end
+
+function node_loop(node::T, mml::Array{Array{S, 2},1})::Array{S,2} where {T<:Node, S<:Real}
+    reduce(pointwise_reduce, bc.(node.children, Ref(mml)))
+end
+
+function pointwise_reduce(x::S, y::Array{T})::Array{T} where {S<:Array, T<:Real}
+    x.*y
+end
+
+function bc(node::T, mml::Array{Array{S,2},1})::Array{S} where {T<:Node, S<:Real}
+    mml[node.num]*node.data
+end
+
+function node_loop(node::T)::Nothing where T<:Node
+    @views @simd for ch in node.children
+        @inbounds node.data .*= ch.trprobs*ch.data
+    end #for simd
+end
+
+function calc_trans(node::N, pi_::T, mu::S, r::S, time::Array{S})::Nothing where {S<:Number, T<:Number, N<:Node}
+
+    @inbounds t = @view time[node.num]
+    v::Float64 = exp(-r*t*mu)
+    @inbounds node.trprobs[1] = pi_ - (pi_ - 1)*v
+    @inbounds node.trprobs[2] = pi_ - pi_* v
+    @inbounds node.trprobs[3] = (pi_ - 1)*(v - 1)
+    @inbounds node.trprobs[4] = pi_*(v - 1) + 1
+    nothing
+
+end
+
+function calc_trans(time::R, pi_::T, mu::S, r::S) where {S<:Real, T<:Number, R<:Real}
+
+    #mm = Array{R}(undef, 2,2)
+    v = exp(-r*time*mu)
+    v1 = pi_ - (pi_ - 1)*v
+    v2 = pi_ - pi_* v
+    v3 = (pi_ - 1)*(v - 1)
+    v4 = pi_*(v - 1) + 1
+    mm::Array{R}=[v1 v3;
+                  v2 v4]
+    return mm
+end
 
 function nf(node::T, blv::Vector, pi_::S, mu::Float64, r::Float64, mm::Array{Float64,2}) where {T<:Node, S<:Number}
     md::Array{Float64, 2} = node.data

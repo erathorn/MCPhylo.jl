@@ -123,7 +123,10 @@ function gradlogpdf!(m::Model, x::Node, block::Integer=0,transform::Bool=false)
   m[params] = relist(m, x, params, transform)
   #grad = mgradient(m, setdiff(params, targets))
   vp, gradp = gradlogpdf(m[params[1]], x)
+  #println(vp, gradp)
   v, grad = gradlogpdf(m[targets[1]])
+  #gradlogpdf(m[targets[1]])
+  #println(v, grad)
   v+vp, grad.+gradp
 end
 

@@ -143,9 +143,9 @@ function create_tree_from_leaves(leaf_nodes::Vector{String}, node_size::Int64 = 
         # create a new mother node to which the two first nodes are added as children
         # add the new mother node to the list and reshuffle
         first_child::Node = pop!(my_node_list)
-        first_child.inc_length = 0.02#rand(Uniform(0.0000015,0.1))#*0.1
+        first_child.inc_length = 0.002#rand(Uniform(0.0000015,0.1))#*0.1
         second_child::Node = pop!(my_node_list)
-        second_child.inc_length = 0.02#rand(Uniform(0.0000015,0.1))
+        second_child.inc_length = 0.002#rand(Uniform(0.0000015,0.1))
         curr_node::Node = Node_ncu(string(temp_name), zeros(Float64, (2, node_size)), missing, missing, missing, missing, 0, true, 0.0, "0", 0,0.0)
         add_child!(curr_node, first_child, true)
         add_child!(curr_node, second_child, false)
@@ -155,11 +155,11 @@ function create_tree_from_leaves(leaf_nodes::Vector{String}, node_size::Int64 = 
     end # while
     root::Node = Node_ncu(string(temp_name), zeros(Float64, (2, node_size)), missing, missing, missing, missing, 0, true, 0.0, "0", 0,0.0)
     lchild = pop!(my_node_list)
-    lchild.inc_length = 0.02#rand(Uniform(0.0000015,0.1))
+    lchild.inc_length = 0.002#rand(Uniform(0.0000015,0.1))
     mchild = pop!(my_node_list)
-    mchild.inc_length = 0.02#rand(Uniform(0.0000015,0.1))
+    mchild.inc_length = 0.002#rand(Uniform(0.0000015,0.1))
     rchild = pop!(my_node_list)
-    rchild.inc_length = 0.02#rand(Uniform(0.0000015,0.1))
+    rchild.inc_length = 0.002#rand(Uniform(0.0000015,0.1))
     add_child!(root, lchild, true)
     add_child!(root, rchild, false)
     add_child!(root, mchild, false, true)
@@ -239,9 +239,6 @@ function post_order(root::T)::Vector{T} where T<:Node
     post_order(root, t)
     return t
 end # function post_order
-
-
-
 
 
 """
@@ -478,7 +475,7 @@ Return a vector of branch lenghts.
 """
 function get_branchlength_vector(post_order::Vector{T})::Vector{Float64}  where T<:Node
     out = zeros(length(post_order)-1)
-    @simd for i in eachindex(post_order)
+    @views @simd for i in eachindex(post_order)
         if !post_order[i].root
             out[post_order[i].num]= post_order[i].inc_length
         end
@@ -535,7 +532,7 @@ function set_branchlength_vector!(root::T, blenvec::Array{Float64})  where T<:No
         set_branchlength_vector!(child, blenvec)
     end
 
-    if root.root !== true
+    @views if root.root !== true
         root.inc_length = blenvec[root.num]
     end
     nothing
