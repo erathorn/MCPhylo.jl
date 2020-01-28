@@ -9,7 +9,7 @@ are implemented.
 
 **This package is currently under heavy development.**
 
-**It is written in Julia 1.2.0. This package is not backwards compatible!**
+**It is written in Julia 1.3.1. This package is not backwards compatible!**
 
 **This module is build on a forked instance of Mamba 0.12.0**
 

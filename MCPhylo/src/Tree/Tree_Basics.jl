@@ -143,9 +143,9 @@ function create_tree_from_leaves(leaf_nodes::Vector{String}, node_size::Int64 = 
         # create a new mother node to which the two first nodes are added as children
         # add the new mother node to the list and reshuffle
         first_child::Node = pop!(my_node_list)
-        first_child.inc_length = 0.002#rand(Uniform(0.0000015,0.1))#*0.1
+        first_child.inc_length = rand(Uniform(0.0015,1))#*0.1
         second_child::Node = pop!(my_node_list)
-        second_child.inc_length = 0.002#rand(Uniform(0.0000015,0.1))
+        second_child.inc_length = rand(Uniform(0.0015,1))
         curr_node::Node = Node_ncu(string(temp_name), zeros(Float64, (2, node_size)), missing, missing, missing, missing, 0, true, 0.0, "0", 0,0.0)
         add_child!(curr_node, first_child, true)
         add_child!(curr_node, second_child, false)
@@ -155,11 +155,11 @@ function create_tree_from_leaves(leaf_nodes::Vector{String}, node_size::Int64 = 
     end # while
     root::Node = Node_ncu(string(temp_name), zeros(Float64, (2, node_size)), missing, missing, missing, missing, 0, true, 0.0, "0", 0,0.0)
     lchild = pop!(my_node_list)
-    lchild.inc_length = 0.002#rand(Uniform(0.0000015,0.1))
+    lchild.inc_length = rand(Uniform(0.0015,1))
     mchild = pop!(my_node_list)
-    mchild.inc_length = 0.002#rand(Uniform(0.0000015,0.1))
+    mchild.inc_length = rand(Uniform(0.0015,1))
     rchild = pop!(my_node_list)
-    rchild.inc_length = 0.002#rand(Uniform(0.0000015,0.1))
+    rchild.inc_length = rand(Uniform(0.0015,1))
     add_child!(root, lchild, true)
     add_child!(root, rchild, false)
     add_child!(root, mchild, false, true)
@@ -251,9 +251,9 @@ used for the pre order traversal.
 function pre_order(root::T, traversal::Vector{T})::Vector{T} where T<:Node
     push!(traversal, root)
     if root.nchild != 0
-        pre_order(root.lchild, traversal)
-        pre_order(root.mchild, traversal)
-        pre_order(root.rchild, traversal)
+        for child in root.children
+            pre_order(child, traversal)
+        end
     end # if
     return traversal
 end # function pre_order!

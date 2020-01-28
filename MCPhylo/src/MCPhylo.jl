@@ -28,6 +28,7 @@ using CSV
 #using StatsFuns
 #using StaticArrays
 import Base: Matrix, names, summary, iterate
+import Base.Threads.@spawn
 import Compose: Context, context, cm, gridstack, inch, MeasureOrNumber, mm, pt, px
 import LinearAlgebra: cholesky, dot, BlasFloat
 import Statistics: cor

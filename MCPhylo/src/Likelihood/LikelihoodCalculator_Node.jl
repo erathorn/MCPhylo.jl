@@ -27,7 +27,7 @@ function FelsensteinFunction(tree_postorder::Vector{Node_ncu}, pi_::T, rates::Ve
     return likelihood_root(root_node, pi_)#res
 end # function
 
-function likelihood_root(root::T, pi_::S)::Real where {S<:Number, T<:Node}
+@inline function likelihood_root(root::T, pi_::S)::Real where {S<:Number, T<:Node}
     sum(log.(sum(root.data .* Array([pi_, 1.0-pi_]), dims=1))+root.scaler)
 end
 
@@ -35,19 +35,14 @@ function node_loop(node::T, mml::Array{Array{S, 2},1})::Array{S,2} where {T<:Nod
     reduce(pointwise_reduce, bc.(node.children, Ref(mml)))
 end
 
-function pointwise_reduce(x::S, y::Array{T})::Array{T} where {S<:Array, T<:Real}
+@inline function pointwise_reduce(x::S, y::Array{T})::Array{T} where {S<:Array, T<:Real}
     x.*y
 end
 
-function bc(node::T, mml::Array{Array{S,2},1})::Array{S} where {T<:Node, S<:Real}
+@inline function bc(node::T, mml::Array{Array{S,2},1})::Array{S} where {T<:Node, S<:Real}
     mml[node.num]*node.data
 end
 
-function node_loop(node::T)::Nothing where T<:Node
-    @views @simd for ch in node.children
-        @inbounds node.data .*= ch.trprobs*ch.data
-    end #for simd
-end
 
 function calc_trans(node::N, pi_::T, mu::S, r::S, time::Array{S})::Nothing where {S<:Number, T<:Number, N<:Node}
 
@@ -63,7 +58,6 @@ end
 
 function calc_trans(time::R, pi_::T, mu::S, r::S) where {S<:Real, T<:Number, R<:Real}
 
-    #mm = Array{R}(undef, 2,2)
     v = exp(-r*time*mu)
     v1 = pi_ - (pi_ - 1)*v
     v2 = pi_ - pi_* v
