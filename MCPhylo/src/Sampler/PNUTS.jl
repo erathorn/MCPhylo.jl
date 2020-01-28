@@ -114,34 +114,21 @@ function nuts_sub!(v::PNUTSVariate, epsilon::Float64, logfgrad::Function)
   nl = size(mt)[1]-1
   delta = v.tune.delta
 
-  #x = deepcopy(mt)
-
-  #currU, _ = logfgrad(mt, nl, true, false)
   r = randn(nl)
   g = zeros(nl)
 
   lor = bitrand(nl)
 
-  x, r , logf, grad, nni = refraction(mt, r, 1.0, g, epsilon, logfgrad, delta, lor, nl)
+  x, r , logf, grad, nni = refraction(mt, r, 1, g, epsilon, logfgrad, delta, lor, nl)
 
-  #probH = logf-0.5*dot(r)
-  #ratio = currH - probH
   lu = log(rand())
 
   logp0 = logf - 0.5 * dot(r)
   logu0 = logp0 + lu
   rminus = rplus = r
   gradminus = gradplus = grad
-  #if ratio > min(0, log(rand()))
+
   xminus = xplus = x
-  #else
-    #logp0 = currU - 0.5 * dot(org_r)
-    #logu0 = logp0 + log(rand())
-  #  xminus = xplus = mt
-  #  #rminus1 = rplus1 = org_r
-    #gradminus1 = gradplus1 = grad
-  #  nni = 0
-  #end
 
   j = 0
   n = 1
@@ -149,10 +136,9 @@ function nuts_sub!(v::PNUTSVariate, epsilon::Float64, logfgrad::Function)
 
   while s
 
+    pm =2 * (rand() > 0.5) - 1
 
-    pm =Float64( 2 * (rand() > 0.5) - 1)
-
-    if pm == -1.0
+    if pm == -1
 
       xminus, rminus, gradminus, _, _, _, xprime, nprime, sprime, alpha,
         nalpha, nni1, lpp = buildtree(xminus, rminus, gradminus, pm, j, epsilon, logfgrad,
@@ -165,8 +151,8 @@ function nuts_sub!(v::PNUTSVariate, epsilon::Float64, logfgrad::Function)
                   logu0, delta, lor, nl, lu)
 
     end#if pm
-    #ratio = currH-lpp
-    if sprime && rand() < nprime / n #&& rand() < exp(lpp-currH)
+
+    if sprime && rand() < nprime / n
         v.value[1]= xprime
     end
     j += 1
@@ -183,46 +169,39 @@ end
   x < delta ? x/delta : 1.0
 end
 
-function refraction(v::T, r::Vector{Float64}, pm::Float64,
+function refraction(v::T, r::Vector{Float64}, pm::Int64,
                     grad::Vector{Float64}, epsilon::Float64, logfgrad::Function,
                     delta::Float64, lor::BitArray, sz::Int64)  where T<:Node
 
     v1 = deepcopy(v)
-    ref_grad = grad
-    ref_r = r
-    if pm < 0
-      mlor = .!lor
-    else
-      mlor = lor
-    end
+
+    ref_r = pm*r
 
     blenvec = get_branchlength_vector(v1)
     fac = scale_fac.(blenvec, delta)
 
-    ref_r = @. ref_r - (epsilon * 0.5) * (ref_grad * fac)
+    ref_r = @. ref_r + (epsilon * 0.5) * (grad * fac)
 
     tmpB = @. blenvec + (epsilon * ref_r)
 
     nni = 0
 
     if minimum(tmpB) <= 0
-        v1, tmpB, ref_r, nni = ref_NNI(v1, tmpB, ref_r, epsilon, blenvec, delta, logfgrad, mlor, sz)
+        v1, tmpB, ref_r, nni = ref_NNI(v1, tmpB, ref_r, epsilon, blenvec, delta, logfgrad, lor, sz)
 
     end
-    #println(tmpB)
-    set_branchlength_vector!(v1, molifier.(tmpB, delta))
-    #set_branchlength_vector!(v1, tmpB)
+
+    blenvec = molifier.(tmpB, delta)
+    set_branchlength_vector!(v1, blenvec)
+
     logf, grad = logfgrad(v1, sz, true, true)
-    #if pm > 0
-    #  ref_grad = -grad
-    #else
-    #  ref_grad = grad
-    #end
-    get_branchlength_vector(v1, blenvec)
+
     fac = scale_fac.(blenvec, delta)
-    ref_r = @. ref_r - (epsilon * 0.5) * (ref_grad * fac)
-    #r = @. r - (epsilon * 0.5) * ref_grad# * fac)
-    return v1, ref_r, logf, grad, nni
+    ref_r = @. ref_r + (epsilon * 0.5) * (grad * fac)
+
+    r = pm*ref_r
+
+    return v1, r, logf, grad, nni
 end
 
 
@@ -258,16 +237,20 @@ function ref_NNI(v::T, tmpB::Vector{Float64}, r::Vector{Float64}, epsilon::Float
 
        blv1 =molifier.(blv, delta)
        set_branchlength_vector!(v, blv1)
-       U_before_nni, _ = logfgrad(v, sz, true, false) # still with molified branch length
 
-       U_before_nni *= -1
+       # use thread parallelism
+       res_before = @spawn logfgrad(v, sz, true, false) # still with molified branch length
+
        v_copy = deepcopy(v)
        tmp_NNI_made = NNI!(v_copy, ref_index, lor[ref_index])
-       nni += NNI!(v, ref_index, lor[ref_index])
+
+       # fetch the results from the parallel part
+       U_before_nni, _ = fetch(res_before)
+       U_before_nni *= -1
+
        if tmp_NNI_made != 0
-
+            
             U_after_nni, _ = logfgrad(v_copy, sz, true, false)
-
             U_after_nni *= -1
             delta_U::Float64 = 2.0*(U_after_nni - U_before_nni)
             my_v::Float64 = r[ref_index]^2
@@ -290,22 +273,21 @@ end
 
 
 function buildtree(x::T, r::Vector{Float64},
-                   grad::Vector{Float64}, pm::Float64, j::Integer,
+                   grad::Vector{Float64}, pm::Int64, j::Integer,
                    epsilon::Float64, logfgrad::Function, logp0::Real, logu0::Real,
                    delta::Float64, lor::BitArray, sz::Int64, lu::Float64)  where T<:Node
 
 
   if j == 0
-    #x1 = deepcopy(x)
-    xprime, rprime, logfprime, gradprime, nni = refraction(x, pm*r, pm, grad, epsilon,
+
+    xprime, rprime, logfprime, gradprime, nni = refraction(x, r, pm, grad, epsilon,
                                           logfgrad, delta, lor, sz)
 
     logpprime = logfprime - 0.5 * dot(rprime)
 
     nprime = Int(logu0 < logpprime)
-    #nprime = Int(lu <= exp(logpprime))
-    sprime = logu0 < logpprime + 1000.0
 
+    sprime = logu0 < logpprime + 1000.0
     xminus = xplus = xprime
     rminus = rplus = rprime
     gradminus = gradplus = gradprime
@@ -317,7 +299,8 @@ function buildtree(x::T, r::Vector{Float64},
       alphaprime, nalphaprime, nni, logpprime = buildtree(x, r, grad, pm, j - 1, epsilon,
                                           logfgrad, logp0, logu0, delta, lor, sz, lu)
     if sprime
-      if pm == -1.0
+
+      if pm == -1
 
         xminus, rminus, gradminus, _, _, _, xprime2, nprime2, sprime2,
           alphaprime2, nalphaprime2 , nni, logpprime= buildtree(xminus, rminus, gradminus, pm,
@@ -350,8 +333,14 @@ function nouturn(xminus::T, xplus::T,
                 epsilon::Float64, logfgrad::Function, delta::Float64, sz::Int64, j::Int64, lor::BitArray)  where T<:Node
 
         curr_l, curr_h = BHV_lower(xminus, xplus)
-        xminus_bar,_,_,_,_ = refraction(deepcopy(xminus), deepcopy(rminus), -1.0, gradminus, epsilon, logfgrad, delta, lor, sz)
-        xplus_bar,_,_,_,_ = refraction(deepcopy(xplus), deepcopy(rplus),1.0, gradplus, epsilon, logfgrad, delta, lor, sz)
+
+        # use thread parallelism to calculuate both directions at once
+        res_minus = Base.Threads.@spawn refraction(deepcopy(xminus), deepcopy(rminus), -1, gradminus, epsilon, logfgrad, delta, lor, sz)
+        xplus_bar,_,_,_,_ = refraction(deepcopy(xplus), deepcopy(rplus),1, gradplus, epsilon, logfgrad, delta, lor, sz)
+
+        # fetch the results
+        xminus_bar,_,_,_,_ = fetch(res_minus)
+
         curr_t_l, curr_t_h = BHV_lower(xminus_bar, xplus_bar)
         return curr_h < curr_t_l
           #return true
@@ -380,10 +369,9 @@ function nutsepsilon(x::T, logfgrad::Function, delta::Float64)  where T<:Node
   n = size(x)[1] - 1
   dir = bitrand(n)
   e1 = nutsepsilon_sub(x, logfgrad, delta, dir)
-  #dir = .!dir
-  #e2 = nutsepsilon_sub(x, logfgrad, delta, dir)
+
   e = e1
-  #e = 0.0015
+
   println("e ", e)
 
   return e
@@ -394,11 +382,11 @@ function nutsepsilon_sub(x::Node, logfgrad::Function, delta::Float64, dir::BitAr
   x0 = deepcopy(x)
   n = size(x)[1] - 1
 
-  _, r0, logf0, grad0,_ = refraction(x0, randn(n), 1.0, zeros(n), 0.0, logfgrad, delta, dir, n)
+  _, r0, logf0, grad0,_ = refraction(x0, randn(n), 1, zeros(n), 0.0, logfgrad, delta, dir, n)
 
   x0 = deepcopy(x)
   epsilon = 1.0
-  _, rprime, logfprime, gradprime,_ = refraction(x0, r0, 1.0 ,grad0,  epsilon, logfgrad, delta, dir,n)
+  _, rprime, logfprime, gradprime,_ = refraction(x0, r0, 1, grad0,  epsilon, logfgrad, delta, dir,n)
 
   prob = exp(logfprime - logf0 - 0.5 * (dot(rprime) - dot(r0)))
 
@@ -406,12 +394,12 @@ function nutsepsilon_sub(x::Node, logfgrad::Function, delta::Float64, dir::BitAr
   while prob^pm > 0.5^pm
     epsilon *= 2.0^pm
     x0 = deepcopy(x)
-    _, rprime, logfprime, _ ,_ = refraction(x0, r0, 1.0, grad0, epsilon, logfgrad, delta, dir, n)
+    _, rprime, logfprime, _ ,_ = refraction(x0, r0, 1, grad0, epsilon, logfgrad, delta, dir, n)
 
     prob = exp(logfprime - logf0 - 0.5 * (dot(rprime) - dot(r0)))
 
   end
-  #x = x0
+
   println("eps ",epsilon)
   epsilon
 end

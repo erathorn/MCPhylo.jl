@@ -43,7 +43,7 @@ model =  Model(
 # intial model values
 inits = [ Dict{Symbol, Union{Any, Real}}(
     :mtree => mt,
-    :mypi=> 0.78,
+    :mypi=> rand(),
     :df => my_data[:df],
     :nnodes => my_data[:nnodes],
     :nbase => my_data[:nbase],
@@ -61,9 +61,9 @@ setsamplers!(model, scheme);
 
 # do the mcmc simmulation. if trees=true the trees are stored and can later be
 # flushed ot a file output.
-sim = mcmc(model, my_data, inits, 500, burnin=100,thin=5, chains=1, trees=true)
+sim = mcmc(model, my_data, inits, 1000, burnin=500,thin=5, chains=1, trees=true)
 
-#sim = mcmc(sim, 1000, trees=true)
+#sim = mcmc(sim, 500, trees=true)
 
 # write the output to a path specified as the second argument
-#to_file(sim, "tneg", 5)
+to_file(sim, "tneg", 5)
