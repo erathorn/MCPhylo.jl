@@ -525,7 +525,8 @@ export
 export
   make_tree_with_data,
   make_tree_with_data_cu,
-  to_file,
+  to_file, drop_samples,
+  cut_samples,
   NNI!,
   RF, randomize!,
   get_branchlength_vector,

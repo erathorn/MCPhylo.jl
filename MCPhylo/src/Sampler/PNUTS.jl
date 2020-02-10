@@ -180,8 +180,8 @@ function refraction(v::T, r::Vector{Float64}, pm::Int64,
     blenvec = get_branchlength_vector(v1)
     fac = scale_fac.(blenvec, delta)
 
-    ref_r = @. ref_r + (epsilon * 0.5) * (grad * fac)
 
+    ref_r = @. ref_r + (epsilon * 0.5) * (grad * fac)
     tmpB = @. blenvec + (epsilon * ref_r)
 
     nni = 0
@@ -193,6 +193,7 @@ function refraction(v::T, r::Vector{Float64}, pm::Int64,
 
     blenvec = molifier.(tmpB, delta)
     set_branchlength_vector!(v1, blenvec)
+
 
     logf, grad = logfgrad(v1, sz, true, true)
 
@@ -249,7 +250,7 @@ function ref_NNI(v::T, tmpB::Vector{Float64}, r::Vector{Float64}, epsilon::Float
        U_before_nni *= -1
 
        if tmp_NNI_made != 0
-            
+
             U_after_nni, _ = logfgrad(v_copy, sz, true, false)
             U_after_nni *= -1
             delta_U::Float64 = 2.0*(U_after_nni - U_before_nni)
