@@ -117,9 +117,9 @@ function nuts_sub!(v::PNUTSVariate, epsilon::Float64, logfgrad::Function)
   r = randn(nl)
   g = zeros(nl)
 
-  lor = bitrand(nl)
 
-  x, r , logf, grad, nni = refraction(mt, r, 1, g, epsilon, logfgrad, delta, lor, nl)
+
+  x, r , logf, grad, nni = refraction(mt, r, 1, g, epsilon, logfgrad, delta, nl)
 
   lu = log(rand())
 
@@ -142,13 +142,13 @@ function nuts_sub!(v::PNUTSVariate, epsilon::Float64, logfgrad::Function)
 
       xminus, rminus, gradminus, _, _, _, xprime, nprime, sprime, alpha,
         nalpha, nni1, lpp = buildtree(xminus, rminus, gradminus, pm, j, epsilon, logfgrad,
-                           logp0, logu0, delta, lor, nl,lu)
+                           logp0, logu0, delta, nl,lu)
 
     else
 
       _, _, _, xplus, rplus, gradplus, xprime, nprime, sprime, alpha, nalpha, nni1, lpp =
         buildtree(xplus, rplus, gradplus, pm, j, epsilon, logfgrad, logp0,
-                  logu0, delta, lor, nl, lu)
+                  logu0, delta, nl, lu)
 
     end#if pm
 
@@ -157,7 +157,7 @@ function nuts_sub!(v::PNUTSVariate, epsilon::Float64, logfgrad::Function)
     end
     j += 1
     n += nprime
-    s = sprime && nouturn(xminus, xplus, rminus, rplus, gradminus, gradplus, epsilon, logfgrad, delta, nl, j,lor)
+    s = sprime && nouturn(xminus, xplus, rminus, rplus, gradminus, gradplus, epsilon, logfgrad, delta, nl, j)
     v.tune.alpha, v.tune.nalpha = alpha, nalpha
     nni += nni1
   end
@@ -171,7 +171,7 @@ end
 
 function refraction(v::T, r::Vector{Float64}, pm::Int64,
                     grad::Vector{Float64}, epsilon::Float64, logfgrad::Function,
-                    delta::Float64, lor::BitArray, sz::Int64)  where T<:Node
+                    delta::Float64, sz::Int64)  where T<:Node
 
     v1 = deepcopy(v)
 
@@ -187,7 +187,7 @@ function refraction(v::T, r::Vector{Float64}, pm::Int64,
     nni = 0
 
     if minimum(tmpB) <= 0
-        v1, tmpB, ref_r, nni = ref_NNI(v1, tmpB, ref_r, epsilon, blenvec, delta, logfgrad, lor, sz)
+        v1, tmpB, ref_r, nni = ref_NNI(v1, tmpB, ref_r, epsilon, blenvec, delta, logfgrad, sz)
 
     end
 
@@ -218,7 +218,7 @@ end # function
 
 
 function ref_NNI(v::T, tmpB::Vector{Float64}, r::Vector{Float64}, epsilon::Float64, blv::Vector{Float64},
-                 delta::Float64, logfgrad::Function, lor::BitArray, sz::Int64)  where T<:Node
+                 delta::Float64, logfgrad::Function, sz::Int64)  where T<:Node
 
   intext = internal_external(v)
   t = 0.0
@@ -243,7 +243,7 @@ function ref_NNI(v::T, tmpB::Vector{Float64}, r::Vector{Float64}, epsilon::Float
        res_before = @spawn logfgrad(v, sz, true, false) # still with molified branch length
 
        v_copy = deepcopy(v)
-       tmp_NNI_made = NNI!(v_copy, ref_index, lor[ref_index])
+       tmp_NNI_made = NNI!(v_copy, ref_index)
 
        # fetch the results from the parallel part
        U_before_nni, _ = fetch(res_before)
@@ -276,13 +276,13 @@ end
 function buildtree(x::T, r::Vector{Float64},
                    grad::Vector{Float64}, pm::Int64, j::Integer,
                    epsilon::Float64, logfgrad::Function, logp0::Real, logu0::Real,
-                   delta::Float64, lor::BitArray, sz::Int64, lu::Float64)  where T<:Node
+                   delta::Float64, sz::Int64, lu::Float64)  where T<:Node
 
 
   if j == 0
 
     xprime, rprime, logfprime, gradprime, nni = refraction(x, r, pm, grad, epsilon,
-                                          logfgrad, delta, lor, sz)
+                                          logfgrad, delta, sz)
 
     logpprime = logfprime - 0.5 * dot(rprime)
 
@@ -298,7 +298,7 @@ function buildtree(x::T, r::Vector{Float64},
   else
     xminus, rminus, gradminus, xplus, rplus, gradplus, xprime, nprime, sprime,
       alphaprime, nalphaprime, nni, logpprime = buildtree(x, r, grad, pm, j - 1, epsilon,
-                                          logfgrad, logp0, logu0, delta, lor, sz, lu)
+                                          logfgrad, logp0, logu0, delta,  sz, lu)
     if sprime
 
       if pm == -1
@@ -306,19 +306,19 @@ function buildtree(x::T, r::Vector{Float64},
         xminus, rminus, gradminus, _, _, _, xprime2, nprime2, sprime2,
           alphaprime2, nalphaprime2 , nni, logpprime= buildtree(xminus, rminus, gradminus, pm,
                                                 j - 1, epsilon, logfgrad, logp0,
-                                                logu0, delta, lor, sz, lu)
+                                                logu0, delta,  sz, lu)
       else
         _, _, _, xplus, rplus, gradplus, xprime2, nprime2, sprime2,
           alphaprime2, nalphaprime2, nni, logpprime = buildtree(xplus, rplus, gradplus, pm,
                                                 j - 1, epsilon, logfgrad, logp0,
-                                                logu0, delta, lor, sz,lu)
+                                                logu0, delta, sz,lu)
       end # if pm
 
       if rand() < nprime2 / (nprime + nprime2)
         xprime = xprime2
       end
       nprime += nprime2
-      sprime = sprime2 && nouturn(xminus, xplus, rminus, rplus, gradminus, gradplus, epsilon, logfgrad, delta, sz, j, lor)
+      sprime = sprime2 && nouturn(xminus, xplus, rminus, rplus, gradminus, gradplus, epsilon, logfgrad, delta, sz, j)
       alphaprime += alphaprime2
       nalphaprime += nalphaprime2
     end #if sprime
@@ -331,34 +331,19 @@ end
 
 function nouturn(xminus::T, xplus::T,
                 rminus::Vector{Float64}, rplus::Vector{Float64}, gradminus::Vector{Float64},gradplus::Vector{Float64},
-                epsilon::Float64, logfgrad::Function, delta::Float64, sz::Int64, j::Int64, lor::BitArray)  where T<:Node
+                epsilon::Float64, logfgrad::Function, delta::Float64, sz::Int64, j::Int64)  where T<:Node
 
         curr_l, curr_h = BHV_lower(xminus, xplus)
 
         # use thread parallelism to calculuate both directions at once
-        res_minus = Base.Threads.@spawn refraction(deepcopy(xminus), deepcopy(rminus), -1, gradminus, epsilon, logfgrad, delta, lor, sz)
-        xplus_bar,_,_,_,_ = refraction(deepcopy(xplus), deepcopy(rplus),1, gradplus, epsilon, logfgrad, delta, lor, sz)
+        res_minus = Base.Threads.@spawn refraction(deepcopy(xminus), deepcopy(rminus), -1, gradminus, epsilon, logfgrad, delta, sz)
+        xplus_bar,_,_,_,_ = refraction(deepcopy(xplus), deepcopy(rplus),1, gradplus, epsilon, logfgrad, delta,sz)
 
         # fetch the results
         xminus_bar,_,_,_,_ = fetch(res_minus)
 
         curr_t_l, curr_t_h = BHV_lower(xminus_bar, xplus_bar)
         return curr_h < curr_t_l
-          #return true
-        #elseif curr_l > curr_t_h
-        #  return false
-        #elseif curr_l>curr_t_l
-        #  nl = max(curr_l, curr_t_l)
-        #  nh = min(curr_h, curr_t_h)
-        #  msize = nh-nl
-        #  osize = curr_h-curr_l
-        #  ratio = msize/osize
-        #  return rand()>ratio
-        #else
-        #  return false
-        #end
-
-
 end
 
 
