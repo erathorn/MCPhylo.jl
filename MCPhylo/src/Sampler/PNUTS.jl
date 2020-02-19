@@ -223,7 +223,7 @@ function ref_NNI(v::T, tmpB::Vector{Float64}, r::Vector{Float64}, epsilon::Float
   intext = internal_external(v)
   t = 0.0
   nni = 0
-  ## r = probM
+  
   while minimum(tmpB)<=0.0
 
      timelist = tmpB./abs.(r)
@@ -351,28 +351,16 @@ end
 
 #################### Auxilliary Functions ####################
 
-function nutsepsilon(x::T, logfgrad::Function, delta::Float64)  where T<:Node
-  n = size(x)[1] - 1
-  dir = bitrand(n)
-  e1 = nutsepsilon_sub(x, logfgrad, delta, dir)
-
-  e = e1
-
-  println("e ", e)
-
-  return e
-end
-
-function nutsepsilon_sub(x::Node, logfgrad::Function, delta::Float64, dir::BitArray)
+function nutsepsilon(x::Node, logfgrad::Function, delta::Float64)
 
   x0 = deepcopy(x)
   n = size(x)[1] - 1
 
-  _, r0, logf0, grad0,_ = refraction(x0, randn(n), 1, zeros(n), 0.0, logfgrad, delta, dir, n)
+  _, r0, logf0, grad0,_ = refraction(x0, randn(n), 1, zeros(n), 0.0, logfgrad, delta, n)
 
   x0 = deepcopy(x)
   epsilon = 1.0
-  _, rprime, logfprime, gradprime,_ = refraction(x0, r0, 1, grad0,  epsilon, logfgrad, delta, dir,n)
+  _, rprime, logfprime, gradprime,_ = refraction(x0, r0, 1, grad0,  epsilon, logfgrad, delta, n)
 
   prob = exp(logfprime - logf0 - 0.5 * (dot(rprime) - dot(r0)))
 
@@ -380,7 +368,7 @@ function nutsepsilon_sub(x::Node, logfgrad::Function, delta::Float64, dir::BitAr
   while prob^pm > 0.5^pm
     epsilon *= 2.0^pm
     x0 = deepcopy(x)
-    _, rprime, logfprime, _ ,_ = refraction(x0, r0, 1, grad0, epsilon, logfgrad, delta, dir, n)
+    _, rprime, logfprime, _ ,_ = refraction(x0, r0, 1, grad0, epsilon, logfgrad, delta, n)
 
     prob = exp(logfprime - logf0 - 0.5 * (dot(rprime) - dot(r0)))
 

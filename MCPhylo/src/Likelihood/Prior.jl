@@ -19,9 +19,6 @@ mutable struct CompoundDirichlet <: ContinuousUnivariateDistribution
             new(alpha, a, beta, c, constraints)
 end # struct
 
-#length(d::CompoundDirichlet) = 23409
-#Base.size(d::CompoundDirichlet) = 1#(153,153)
-
 function internal_logpdf(d::CompoundDirichlet, b_lens::Any, int_leave_map::Vector{Int64}; rd::Bool=false)
     blen_int = 0.0
     blen_leave = 0.0
@@ -59,15 +56,8 @@ function pgradient(d::CompoundDirichlet, x::Node)
 
     int_ext = internal_external(x)
     g(mt) = internal_logpdf(d, mt, int_ext)
-
     blv = get_branchlength_vector(x)
-    blv1 = blv .- 0.0015
-    #re = internal_logpdf(d, blv, int_ext)
-    #gr = gradient(g, blv, :forward)
-    #gr = zeros(size(blv))
-    #re, gr
-    #println(blv)
-    r = val_der(g, blv1)
+    r = val_der(g, blv)
 
     r[1], r[2][1]
 end
