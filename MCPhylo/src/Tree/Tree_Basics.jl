@@ -434,9 +434,7 @@ needs to be supplied
 """
 function get_leaves(root::T)::Vector{T}  where T<:Node
     leave_list::Vector{Node} = [i for i in post_order(root) if i.nchild == 0]
-    #get_leaves(root, leave_list)
     return leave_list
-
 end # function get_leaves
 
 
@@ -461,7 +459,6 @@ function move!(node1::Node, node2::Node, proportion::Float64)
     total::Float64 = node1.inc_length + node2.inc_length
     fp::Float64 = total*proportion
     sp::Float64 = total-fp
-
     node1.inc_length = fp
     node2.inc_length = sp
 

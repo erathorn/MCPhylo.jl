@@ -63,7 +63,7 @@ function mlogpdfgrad!(block::SamplingBlock, x::T, sz::Int64, ll::Bool=false, gr:
   grad = Vector{Float64}(undef, sz)
   lp = 0.0
   if gr
-    lp, grad = gradf!(block, x, :provided)
+    lp, grad = gradlogpdf!(block, x)
   elseif ll
     lp = logpdf!(block, x)
   end
@@ -223,7 +223,7 @@ function ref_NNI(v::T, tmpB::Vector{Float64}, r::Vector{Float64}, epsilon::Float
   intext = internal_external(v)
   t = 0.0
   nni = 0
-  
+
   while minimum(tmpB)<=0.0
 
      timelist = tmpB./abs.(r)

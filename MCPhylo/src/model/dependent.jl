@@ -314,12 +314,17 @@ function gradlogpdf(s::AbstractStochastic, x::Node, transform::Bool=false)
   pgradient(s.distr, x)
 end
 
+function gradlogpdf(s::AbstractStochastic, x::AbstractArray)
+  gradlogpdf_sub(s.distr, x)
+end
+
+
 function logpdf(s::AbstractStochastic, x, transform::Bool=false)
   logpdf_sub(s.distr, x, transform)
 end
 
-function mgradient(s::AbstractStochastic, x)
-  gradient(s.distr, x)
-end
+#function mgradient(s::AbstractStochastic, x)
+#  gradient(s.distr, x)
+#end
 
 rand(s::AbstractStochastic) = rand_sub(s.distr, s.value)

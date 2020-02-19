@@ -109,75 +109,11 @@ function sample!(v::ProbPathVariate, block, logf::Function, gradf::Function)
 end
 
 
-function refraction(v::ProbPathVariate, probB::Vector{Float64}, probM::Vector{Float64}, logf::Function, block)
-
-    stepsz = v.tune.epsilon
-    delta = v.tune.delta
-
-    postorder = post_order(v.value[1])
-
-    tmpB = @. probB + (stepsz * probM)
-    ref_time = 0.0
-
-
-    while minimum(tmpB)<=0
-        timelist::Vector{Float64} = tmpB./abs.(probM)
-        ref_index::Int64 = argmin(timelist)
-        temp=(stepsz-ref_time+timelist[ref_index])
-        probB = @. probB + temp * probM
-
-        blens_ = molify(probB, delta)
-        set_branchlength_vector!(v.value[1], blens_)
-        relist(block, v)
-        probM[ref_index] *= -1.0
-
-        if !(postorder[ref_index].nchild == 0)
-
-            U_before_nni::Float64 = logf(v) # still with molified branch length
-
-            v_copy = deepcopy(v)
-            tmp_NNI_made = NNI!(v_copy.value[1], postorder[ref_index])
-
-            if tmp_NNI_made != 0
-                relist(block, v_copy)
-                U_after_nni::Float64 = logf(v_copy)
-                delta_U::Float64 = 2.0*(U_after_nni - U_before_nni)
-                my_v::Float64 = probM[ref_index]^2
-
-                if my_v >= delta_U
-                    probM[ref_index] = sqrt(my_v - delta_U)
-                    v = v_copy
-                else
-                    relist(block, v)
-                end # if my_v
-            end #if tmpNNI
-
-        end # postorder
-        ref_time = stepsz + timelist[ref_index]
-
-        tmpB = @. probB + (stepsz-ref_time) * probM
-    end# while
-    return v, tmpB, probM
-end # function
-
-
-function scale_factor(v::SamplerVariate, delta::Float64)::Float64
-    mv::Float64 = minimum(get_branchlength_vector(v.value[1]))
-    fac::Float64 = 0.0
-    if mv > delta
-        fac = 1.0
-    else
-        fac = mv/delta
-    end
-    fac
-end # function
-
 function molify(v::Vector{Float64}, delta::Float64)
     return molifier.(v, delta)
 end
 
-function gradf!(block::SamplingBlock, x::S, dtype::Symbol=:forward) where {T<:Real, S<:Node}
-    #println("here")
+function gradf!(block::SamplingBlock, x::S, dtype::Symbol=:forward) where {S<:Node}
     gradlogpdf!(block, x, dtype)
 
 end
@@ -203,50 +139,4 @@ end
 
 function gradlogpdf(s::AbstractStochastic, x::AbstractArray)
   gradlogpdf_sub(s.distr, x)
-end
-
-"""
-    setinits!(d::TreeVariate, m::model, x::Array)
-
-documentation
-"""
-
-function update!(d::TreeStochastic, m::Model)
-    d.distr = d.eval(m)
-    d
-end
-
-function names(d::TreeStochastic, nodekey::Symbol)
-    n_names = [n.num for n in post_order(d.value) if n.root !== true]
-    sort!(n_names)
-    n_names = vec(AbstractString["node "*string(n) for n in n_names])
-    AbstractString["Tree height", "Tree length"]
-    vcat(AbstractString["Tree height", "Tree length"], n_names)
-end
-
-function names(d::TreeLogical, nodekey::Symbol)
-    n_names = [n.num for n in post_order(d.value) if n.root !== true]
-    sort!(n_names)
-    n_names = vec(AbstractString["node "*string(n) for n in n_names])
-    AbstractString["Tree height", "Tree length"]
-    vcat(AbstractString["Tree height", "Tree length"], n_names)
-end
-
-
-function unlist(d::TreeStochastic)
-    y = tree_height(d.value)
-    x = vec([n.height for n in post_order(d.value) if n.root !== true])
-    vcat(y, tree_length(d.value), x)
-
-end
-
-function unlist(d::TreeLogical)
-    y = tree_height(d.value)
-    x = vec([n.height for n in post_order(d.value) if n.root !== true])
-    vcat(y, tree_length(d.value), x)
-end
-
-
-function unlist(s::AbstractStochastic, x::Node, transform::Bool=false)
-    s.value
 end

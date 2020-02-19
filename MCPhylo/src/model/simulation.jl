@@ -36,24 +36,6 @@ function gradlogpdf(m::Model, block::Integer=0, transform::Bool=false;
   value
 end
 
-function gradlogpdf(m::Model, x::AbstractVector{T}, block::Integer=0,
-                    transform::Bool=false; dtype::Symbol=:forward) where {T<:Real}
-  x0 = unlist(m, block)
-  value = gradlogpdf!(m, x, block, transform, dtype=dtype)
-  relist!(m, x0, block)
-  value
-end
-
-function gradlogpdf!(m::Model, x::Node, block::Integer=0,
-                    transform::Bool=false)
-  x0 = unlist(m, block)
-  println("THISFun")
-  value = gradlogpdf!(m, x, block)
-
-  relist!(m, x0[1], block)
-  value
-end
-
 
 function gradlogpdf!(m::Model, x::AbstractVector{T}, block::Integer=0,
                       transform::Bool=false; dtype::Symbol=:forward) where {T<:Real}
@@ -73,16 +55,6 @@ function logpdf(m::Model, nodekeys::Vector{Symbol}, transform::Bool=false)
   for key in nodekeys
     lp += logpdf(m[key], transform)
     isfinite(lp) || break
-  end
-  lp
-end
-
-
-function mgradient(m::Model, nodekeys::Vector{Symbol}, transform::Bool=false)
-  lp = 0.0
-  for key in nodekeys
-    lp = mgradient(m[key])
-    #isfinite.(lp) || break
   end
   lp
 end
@@ -122,8 +94,8 @@ function gradlogpdf!(m::Model, x::Node, block::Integer=0,transform::Bool=false)
   targets = keys(m, :target, block)
   m[params] = relist(m, x, params, transform)
 
-  # use thread parallelism
 
+  # use thread parallelism
   # prior
   prior_res = @spawn gradlogpdf(m[params[1]], x)
 

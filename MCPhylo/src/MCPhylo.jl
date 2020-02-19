@@ -342,10 +342,10 @@ include("distributions/extensions.jl")
 include("distributions/pdmatdistribution.jl")
 include("distributions/transformdistribution.jl")
 include("distributions/Phylodist.jl")
-include("distributions/Branchlengthdist.jl")
 include("distributions/TreeConstraints.jl")
 
 include("model/dependent.jl")
+include("model/dependent_tree.jl")
 include("model/graph.jl")
 include("model/initialization.jl")
 include("model/mcmc.jl")
@@ -390,8 +390,7 @@ include("Tree/Tree_Basics.jl")
 include("Tree/Converter.jl")
 include("Tree/Tree_moves.jl")
 include("Tree/Tree_Distance.jl")
-include("Tree/TreeIterator.jl")
-#include("Tree/Tree_Matrix.jl")
+
 
 include("Parser/Parser.jl")
 include("Parser/ParseCSV.jl")
@@ -399,20 +398,13 @@ include("Parser/ParseNexus.jl")
 
 
 include("Sampler/PNUTS.jl")
-include("Sampler/ProbPathHMC.jl")
-#include("Sampler/ProbPathHMC_Node.jl")
-include("Sampler/PhyloHMC_Functions.jl")
-include("Sampler/PhyloHMC_Functions_Node.jl")
-
-include("Sampler/BranchLengthSlice.jl")
-
+#include("Sampler/ProbPathHMC.jl")
 
 include("Substitution/SubstitutionMat.jl")
 
 include("Utils/SIMD_Mat.jl")
 include("Utils/FileIO.jl")
 
-#include("Likelihood/LikelihoodCalculator_Matrix.jl")
 include("Likelihood/LikelihoodCalculator_Node.jl")
 include("Likelihood/Prior.jl")
 #################### Exports ####################

@@ -117,7 +117,7 @@ function gradlogpdf!(block::SamplingBlock, x::AbstractArray{T},
 end
 
 
-function gradlogpdf!(block::SamplingBlock, x::Node, dtype::Symbol=:forward)
+function gradlogpdf!(block::SamplingBlock, x::Node)
       gradlogpdf!(block.model, x, block.index, block.transform)
 end
 
@@ -168,7 +168,7 @@ function relist(block::SamplingBlock, x::AbstractArray{T}) where {T<:Real}
 end
 
 function relist(block::SamplingBlock, x::AbstractArray{T}) where {T<:Node}
-  
+
   relist(block.model, x, block.index, block.transform)
 end
 
