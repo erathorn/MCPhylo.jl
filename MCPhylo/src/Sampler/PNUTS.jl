@@ -51,6 +51,7 @@ function PNUTS(params::ElementOrVector{Symbol}; dtype::Symbol=:forward, args...)
     v = SamplerVariate(block, f, NullFunction(); args...)
 
     sample!(v, f, adapt=model.iter <= model.burnin)
+
     relist(block, v)
   end
   Sampler(params, samplerfx, PNUTSTune())
@@ -77,13 +78,18 @@ function sample!(v::PNUTSVariate, logfgrad::Function; adapt::Bool=false)
 
   tune = v.tune
   setadapt!(v, adapt)
+
   if tune.adapt
     tune.m += 1
+
     nuts_sub!(v, tune.epsilon, logfgrad)
     p = 1.0 / (tune.m + tune.t0)
     tune.Hbar = (1.0 - p) * tune.Hbar +
                 p * (tune.target - tune.alpha / tune.nalpha)
     tune.epsilon = exp(tune.mu - sqrt(tune.m) * tune.Hbar / tune.gamma)
+
+
+
     p = tune.m^-tune.kappa
     tune.epsilonbar = exp(p * log(tune.epsilon) +
                           (1.0 - p) * log(tune.epsilonbar))
@@ -98,6 +104,7 @@ end
 
 function setadapt!(v::PNUTSVariate, adapt::Bool)
   tune = v.tune
+  #println(tune.adapt)
   if adapt && !tune.adapt
     tune.m = 0
     tune.mu = log(10.0 * tune.epsilon)

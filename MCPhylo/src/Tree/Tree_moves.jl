@@ -119,8 +119,7 @@ function randomize!(root::Node, num::Int64=100)::nothing
     i = 0
     while i < num
         n = rand(1:nnodes)
-        lor = 0.5 > rand()
-        NNI!(root, n, lor)
+        NNI!(root, n)
         i+=1
     end
 end

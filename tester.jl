@@ -61,9 +61,9 @@ setsamplers!(model, scheme);
 
 # do the mcmc simmulation. if trees=true the trees are stored and can later be
 # flushed ot a file output.
-sim = mcmc(model, my_data, inits, 1000, burnin=500,thin=5, chains=1, trees=true)
+sim = mcmc(model, my_data, inits, 5000, burnin=3000,thin=5, chains=1, trees=true)
 
-#sim = mcmc(sim, 2000, trees=true)
+sim = mcmc(sim, 2000, trees=true)
 
 # write the output to a path specified as the second argument
-#to_file(sim, "t_Drav_2", 5)
+to_file(sim, "t_Drav_2", 5)

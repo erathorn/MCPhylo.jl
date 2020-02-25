@@ -81,6 +81,7 @@ function mcmc_worker!(args::Vector)
   m, state, window, burnin, thin, meter, store_trees = args
   llname::AbstractString = "likelihood"
   treeind = 1
+  simind = 1
   m.iter = first(window) - 1
   relist!(m, state.value)
   settune!(m, state.tune)
@@ -89,6 +90,8 @@ function mcmc_worker!(args::Vector)
 
   sim = Chains(last(window), length(pnames), start=burnin + thin, thin=thin,
                names=pnames)
+  #sim = Chains(last(window), length(pnames), start=thin, thin=thin,
+  #            names=pnames)
   treenode = :tn
   for i in m.nodes
     if isa(i[2], TreeStochastic)
@@ -102,7 +105,9 @@ function mcmc_worker!(args::Vector)
 
     sample!(m)
     if i > burnin && (i - burnin) % thin == 0
+    #if i % thin == 0
       sim[i, :, 1] = unlist(m, true)
+
       if store_trees
        sim.trees[treeind, 1, 1] = newick(m[treenode].value)
        treeind +=1
