@@ -114,12 +114,13 @@ This function randomizes the tree topology by performing a number of nearest
 neighbour interchange (NNI) moves. The number of NNI moves is specified in
 the parameter num.
 """
-function randomize!(root::Node, num::Int64=100)::nothing
+function randomize!(root::Node, num::Int64=100)::Nothing
     nnodes = size(root)[1]
     i = 0
     while i < num
         n = rand(1:nnodes)
-        NNI!(root, n)
-        i+=1
+        r = NNI!(root, n)
+        i += 1
     end
+    
 end
