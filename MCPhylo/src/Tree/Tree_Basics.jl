@@ -115,6 +115,45 @@ end # function
 
 
 
+function to_covariance(tree::Node)
+    leaves = get_leaves(tree)
+    ll = length(leaves)
+    covmat = zeros(Float64, ll, ll)
+    for i in 1:ll
+        node1 = leaves[i]
+        for j in 1:ll
+            if i == j
+                covmat[i,j] = node_distance(tree, node1)
+            elseif i>j
+                lca = find_lca(node1, leaves[j])
+                if lca.root != true
+                    d = node_distance(leaves[i], leaves[j], lca)
+                    covmat[i,j] = d
+                    covmat[j,i] = d
+                end
+            end
+
+        end
+    end
+    covmat
+end
+
+function to_distance_matrix(tree::Node)
+    leaves = get_leaves(tree)
+    ll = length(leaves)
+    covmat = zeros(Float64, ll, ll)
+    for i in 1:ll
+        for j in 1:ll
+            if i>j
+                d = node_distance(leaves[i], leaves[j])
+                distance_mat[i,j] = d
+                distance_mat[j,i] = d
+            end
+        end
+    end
+    distance_mat
+end
+
 
 
 """
@@ -347,6 +386,15 @@ function tree_height(root::T)  where T<:Node
     return node_height(root, -Inf)
 end
 
+
+function node_distance(node1::T, node2::T, lca::T)::Float64 where T<:Node
+    path_length(lca, node1)+path_length(lca,node2)
+end
+
+function node_distance(node1::T, node2::T)::Float64 where T<:Node
+    lca = find_lca(node1, node2)
+    node_distance(node1, node2, lca)
+end
 
 
 """

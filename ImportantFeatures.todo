@@ -5,27 +5,39 @@ This is a list of important features which should be added to the Package
 Tree Functionionality:
   ☐ Nexus support for outputting trees
   ☐ Parser for newick trees
-  ☐ proper unlist function for trees 
-  ✔ Trees need to be rewritten in matrix format @done(2019-08-15 16:31) @project(Tree Functionionality)
+  ☐ CSV support
+  ☐ proper unlist function for trees
+
+Summary Statistics:
+    ☐ Consensus Tree
+    ☐ MCC Tree
+    ☐ split frequencies
+    ☐ posterior of trees
 
 General Features:
-  ☐ Macros for model definition
-  ☐ Automate export of automatically generated functoins
-  ☐ Check if gpu can be leveraged
-  ☐ Use matrix size as parameter and declare it constant (allows inlining)
-  ☐ Write functionality to store entire posterior distribution
+  ☐ Automate export of automatically generated functions
+  ☐ Separate Cuda and non Cuda version
+  ☐ tree plotting
+  ☐ Message Passing
 
 Likelihood Computation:
-  ☐ make sure likelihood calculation can be done in parallel
+  ☐ Jukes Cantor
+  ☐ GTR
 
 Prior Distributions:
   ☐ make prior and constraint checking general
+  ☐ topology and branch length prior combine
 
-Utils:
-  ☐ Make Utlis SIMD work with larger structures --> Careful Timing necessary
 
 ＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿
 Archive:
+    ✘ Trees need to be rewritten in matrix format @cancelled(2020-02-25 13:31) @project(Tree Functionionality)
+    ✘ Macros for model definition @cancelled(2020-02-25 13:31) @project(General Features)
+    ✔ Check if gpu can be leveraged @done(2020-02-25 13:31) @project(General Features)
+    ✘ Use matrix size as parameter and declare it constant (allows inlining) @cancelled(2020-02-25 13:32) @project(General Features)
+    ✘ Write functionality to store entire posterior distribution @cancelled(2020-02-25 13:33) @project(General Features)
+    ✔ make sure likelihood calculation can be done in parallel @done(2020-02-25 13:30) @project(Likelihood Computation)
+    ✘ Make Utlis SIMD work with larger structures --> Careful Timing necessary @cancelled(2020-02-25 13:31) @project(Utils)
   ✔ RSPR tree move @done(2019-08-15 16:31) @project(Tree Functionionality)
   ✔ Check if support for non binary trees is necessary, or even networks @done(2019-07-29 17:31) @project(Tree Functionionality)
   ✔ Check if a more general datatype for the node data is needed @done(2019-07-29 17:31) @project(Tree Functionionality)
