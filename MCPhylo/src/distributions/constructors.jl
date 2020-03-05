@@ -16,17 +16,17 @@ Multinomial(n::Real, p::AbstractVector{T}) where {T<:Real} =
 
 #################### MvNormal ####################
 
-MvNormal(μ::AbstractVector{T}, Σ::AbstractMatrix{U}) where {T<:Real, U<:Real} =
-  MvNormal(convert(Vector{Float64}, μ), convert(Matrix{Float64}, Σ))
+#MvNormal(μ::AbstractVector{T}, Σ::AbstractMatrix{U}) where {T<:Real, U<:Real} =
+#  MvNormal(convert(Vector{Float64}, μ), convert(Matrix{Float64}, Σ))
 
-MvNormal(μ::AbstractVector{T}, σ::AbstractVector{U}) where {T<:Real, U<:Real} =
-  MvNormal(convert(Vector{Float64}, μ), convert(Vector{Float64}, σ))
+#MvNormal(μ::AbstractVector{T}, σ::AbstractVector{U}) where {T<:Real, U<:Real} =
+#  MvNormal(convert(Vector{Float64}, μ), convert(Vector{Float64}, σ))
 
-MvNormal(Σ::AbstractMatrix{T}) where {T<:Real} =
-  MvNormal(convert(Matrix{Float64}, Σ))
+#MvNormal(Σ::AbstractMatrix{T}) where {T<:Real} =
+#  MvNormal(convert(Matrix{Float64}, Σ))
 
-MvNormal(σ::AbstractVector{T}) where {T<:Real} =
-  MvNormal(convert(Vector{Float64}, σ))
+#MvNormal(σ::AbstractVector{T}) where {T<:Real} =
+#  MvNormal(convert(Vector{Float64}, σ))
 
 
 #################### MvNormalCanon ####################
@@ -51,7 +51,7 @@ MvNormalCanon(d::Real, prec::T) where {T<:Real} =
 MvTDist(df::Real, μ::AbstractVector{T}, C::PDMat) where {T<:Real} =
   MvTDist(convert(Float64, df), convert(Vector{Float64}, μ), C)
 
-MvTDist(df::Real, μ::AbstractVector{T}, Σ::AbstractMatrix{U}) where {T<:Real, U<:Real} = 
+MvTDist(df::Real, μ::AbstractVector{T}, Σ::AbstractMatrix{U}) where {T<:Real, U<:Real} =
   MvTDist(convert(Float64, df), convert(Vector{Float64}, μ),
           convert(Matrix{Float64}, Σ))
 

@@ -70,8 +70,9 @@ module PDMats2
   end
 
   function unwhiten(a::PBDiagMat, x::DenseVecOrMat{Float64})
-    au = map(ac -> ac[:U], a.chol)
-    At_mul_B(spbdiagm(au, a.scale), x)
+    au = map(ac -> ac.U, a.chol)
+    #At_mul_B(spbdiagm(au, a.scale), x)
+    spbdiagm(au, a.scale)'*x
   end
 
   function unwhiten!(a::PBDiagMat, x::DenseVecOrMat{Float64})
