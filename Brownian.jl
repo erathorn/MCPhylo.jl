@@ -64,15 +64,20 @@ inits = [ Dict{Symbol, Union{Any, Real}}(
 
 model =  Model(
     arrn = Stochastic(2,
-    (μ, mtree, σi) -> BrownianPhylo(μ, mtree, σi, my_data[:residuals], my_data[:leaves]),false),
-    #P = Stochastic(2, () -> Normal(), false),
+    (μ, mtree, Σ, σi) -> BrownianPhylo(μ, mtree, σi, Σ, my_data[:residuals], my_data[:leaves]),false),
+
     μ = Stochastic(1, (μH, σH) -> Normal(μH, σH), false),
     μH = Stochastic(()->Normal()),
     σH = Stochastic(()->Exponential()),
+    ζi = Logical(1, (ζ)  -> ζ*my_data[:leaves]),
+    Σ = Logical(2, ζi  -> ζi*ζi'),
     σi = Stochastic(1,(λ) -> Exponential(λ), false),
+    ζ = Stochastic(1, () -> Dirichlet(my_data[:leaves], 1.0)),
     λ = Stochastic(() -> Exponential()),
     mtree = Stochastic(MCPhylo.Node_ncu(), () -> CompoundDirichlet(1.0,1.0,0.100,1.0), my_data[:nnodes]+1, true),
      )
+
+
 
 
 
@@ -83,12 +88,13 @@ inits = [ Dict{Symbol, Union{Any, Real}}(
     :nnodes => my_data[:nnodes],
     :nl => my_data[:nnodes],#my_data[:leaves],
     :nsites => my_data[:residuals],
-    :P => randn(my_data[:leaves], my_data[:residuals]),
+    #:P => randn(my_data[:leaves], my_data[:residuals]),
     :μH => rand(),
     :σH => rand(),
+    :ζ => rand(Dirichlet(my_data[:leaves], 1.0)),
     :μ => randn(my_data[:residuals]),
     :λ => rand(),
-    :σi => rand(n),
+    :σi => rand(my_data[:residuals]),
 
     ),
     ]
@@ -97,7 +103,7 @@ scheme = [PNUTS(:mtree),
           #Slice(:mu1, 0.05, Univariate),
           #Slice(:μ, 0.05, Multivariate),
 
-          Slice([ :μ, :σi], 0.05, Univariate),
+          Slice([:ζ, :μ, :σi], 0.05, Univariate),
           #RWM(:P, 1),
           ##Slice(:λ, 0.05, Univariate),
           Slice([:σH, :μH, :λ], 0.05, Multivariate)
@@ -112,4 +118,4 @@ sim = mcmc(model, my_data, inits, 30, burnin=10,thin=2, chains=1, trees=true)
 #sim = mcmc(sim, 200, trees=true)
 
 # write the output to a path specified as the second argument
-to_file(sim, "multiv", 5)
+#to_file(sim, "multiv", 5)

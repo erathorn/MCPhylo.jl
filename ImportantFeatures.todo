@@ -19,6 +19,7 @@ General Features:
   ☐ Separate Cuda and non Cuda version
   ☐ tree plotting
   ☐ Message Passing
+  ☐ proper error messages for model initialization (setinits functions)
 
 Likelihood Computation:
   ☐ Jukes Cantor

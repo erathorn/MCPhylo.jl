@@ -2,8 +2,8 @@
 mutable struct BrownianPhylo <: DiscreteMatrixDistribution
         mu::Array{Float64}
         tree::Node
-        sigmai::Array{Float64}
-        #P::Array{Float64}
+        sigmai::Vector{Float64}
+        Σ::Array{Float64,2}
         chars::Int64
         leaves::Int64
 end
@@ -16,11 +16,11 @@ function logpdf(d::BrownianPhylo, x::AbstractArray{T, 2}) where T<:Real
 
     blv = get_branchlength_vector(d.tree)
 
-    mlpdf(d.mu, d.tree, blv, d.sigmai, d.chars, x)
+    mlpdf(d.mu, d.tree, blv, d.sigmai, d.Σ, d.chars, x)
 
 end
 
-function mlpdf(mu::Vector{Float64}, tree::Node, blv::Vector{T}, sigmai::Vector{Float64}, chars::Int64, data::AbstractArray{S, 2} where S) where T<:Real
+function mlpdf(mu::Vector{Float64}, tree::Node, blv::Vector{T}, sigmai::Vector{Float64}, Σ::Array{Float64,2}, chars::Int64, data::AbstractArray{S, 2} where S) where T<:Real
 
     nor = Normal()
     cov = MCPhylo.to_covariance(tree, blv)
@@ -34,7 +34,8 @@ function mlpdf(mu::Vector{Float64}, tree::Node, blv::Vector{T}, sigmai::Vector{F
     #vs = [-2.33414, -0.741964, 0.741964, -2.33414]
 
     @simd for i in 1:chars
-        ch = cholesky(sigmai[i]^2 .* cov).L
+        temp = sigmai[i]^2 * Σ
+        ch = cholesky(temp .* cov).L
         nullstellen = ch \ -(mm .= mu[i])
         rv += sum(map((f,x)->f(x), fchars[:,i], nullstellen))
         #rv += sum(logpdf.(Bernoulli.(invlogit.(ch*P[:,i]+mu)), @view x[:,i]))
@@ -47,7 +48,7 @@ function gradlogpdf(d::BrownianPhylo, x::AbstractArray{T, 2}) where T<:Real
 
     blv = get_branchlength_vector(d.tree)
 
-    f(y) =mlpdf(d.mu, d.tree, y, d.sigmai, d.chars, x)
+    f(y) =mlpdf(d.mu, d.tree, y, d.sigmai, d.Σ, d.chars, x)
 
     r2 = DiffResults.GradientResult(blv)
     res = ForwardDiff.gradient!(r2, f, deepcopy(blv))
