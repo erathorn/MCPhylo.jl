@@ -16,7 +16,7 @@ using GPUArrays
 using CUDAnative
 using CUDAdrv
 using Flux
-#using ForwardDiff
+using ForwardDiff
 #import ForwardDiff: gradient, gradient!
 #using Zygote
 import Calculus: gradient
@@ -343,6 +343,7 @@ include("distributions/pdmatdistribution.jl")
 include("distributions/transformdistribution.jl")
 include("distributions/Phylodist.jl")
 include("distributions/TreeConstraints.jl")
+include("distributions/logisticregdist.jl")
 
 include("model/dependent.jl")
 include("model/dependent_tree.jl")
@@ -441,6 +442,7 @@ export
   SymUniform,
   CompoundDirichlet,
   PhyloDist,
+  BrownianPhylo,
   MultivariateUniformTrunc,
   CompoundDirichletWrap,
   exponentialBL

@@ -53,10 +53,13 @@ function internal_logpdf(d::CompoundDirichlet, b_lens::Any, int_leave_map::Vecto
 end
 
 function pgradient(d::CompoundDirichlet, x::Node)
-
+    
     int_ext = internal_external(x)
-    g(mt) = internal_logpdf(d, mt, int_ext)
     blv = get_branchlength_vector(x)
+
+
+    g(mt) = internal_logpdf(d, mt, int_ext)
+
     r = val_der(g, blv)
 
     r[1], r[2][1]

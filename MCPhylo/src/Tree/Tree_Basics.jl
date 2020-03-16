@@ -14,12 +14,12 @@ end
 function Base.show(io::IO, d::Node)
     print(io, "Tree with root:\n")
     show(io, d.name)
-    print(io, "\n\nLenght:\n")
-    show(io, "text/plain", tree_length(d))
-    print(io, "\n\nHeight:\n")
-    show(io, "text/plain", tree_height(d))
-    print(io, "\n\nNumber of leave nodes:\n")
-    show(io, "text/plain",length(get_leaves(d)))
+    #print(io, "\n\nLength:\n")
+    #show(io, "text/plain", tree_length(d))
+    #print(io, "\n\nHeight:\n")
+    #show(io, "text/plain", tree_height(d))
+    #print(io, "\n\nNumber of leave nodes:\n")
+    #show(io, "text/plain",length(get_leaves(d)))
 end
 
 function showall(io::IO, d::Node)
@@ -113,30 +113,70 @@ function remove_child!(mother_node::Node, child::Node)::Node
     return child
 end # function
 
+function to_covariance(tree::TreeStochastic, blv::Array)
+    to_covariance(tree.value, blv)
+end
 
-
-function to_covariance(tree::Node)
+function to_covariance(tree::Node, blv::Array{T}) where T<: Real
+    #rescale_length(tree)
     leaves = get_leaves(tree)
     ll = length(leaves)
-    covmat = zeros(Float64, ll, ll)
+    covmat = zeros(T, ll, ll)
     for i in 1:ll
         node1 = leaves[i]
         for j in 1:ll
             if i == j
-                covmat[i,j] = node_distance(tree, node1)
+                path = get_path(tree, node1)
+                covmat[i,j] = reduce(+, @view blv[path])
             elseif i>j
-                lca = find_lca(node1, leaves[j])
+                lca = find_lca(tree, node1, leaves[j])
                 if lca.root != true
-                    d = node_distance(leaves[i], leaves[j], lca)
-                    covmat[i,j] = d
-                    covmat[j,i] = d
+                    path = get_path(tree, lca)
+                    tmp = reduce(+, @view blv[path])
+                    covmat[i,j] = tmp
+                    covmat[j,i] = tmp
+
                 end
             end
-
         end
+
     end
     covmat
 end
+
+
+function to_covariance(tree::TreeStochastic)
+    blv = get_branchlength_vector(tree)
+    to_covariance(tree.value, blv)
+end
+
+function to_covariance(tree::Node)
+    blv = get_branchlength_vector(tree)
+    to_covariance(tree, blv)
+end
+
+#function to_covariance(tree::Node)
+#    leaves = get_leaves(tree)
+#    ll = length(leaves)
+#    covmat = zeros(Float64, ll, ll)
+#    for i in 1:ll
+#        node1 = leaves[i]
+#        for j in 1:ll
+#            if i == j
+#                covmat[i,j] = node_distance(tree, tree, node1, tree)
+#            elseif i>j
+#                lca = find_lca(tree, node1, leaves[j])
+#                if lca.root != true
+#                    d = node_distance(tree, tree, lca, tree)
+#                    covmat[i,j] = d
+#                    covmat[j,i] = d
+#                end
+#            end
+
+        #end
+    #end
+    #covmat
+#end
 
 function to_distance_matrix(tree::Node)
     leaves = get_leaves(tree)
@@ -153,6 +193,61 @@ function to_distance_matrix(tree::Node)
     end
     distance_mat
 end
+
+
+
+"""
+    create_tree_from_leaves(leaf_nodes::Vector{T})::Node
+
+This function creates a  random binary tree from a list of leaf nodes.
+The root node as access point for the tree is returned.
+"""
+function create_tree_from_leaves_bin(leaf_nodes::Vector{String}, node_size::Int64 = 1; cu::Bool=false)::Node
+    my_node_list::Array{Node,1} = []
+
+    # first create a list of leaf nodes
+    for node_name in leaf_nodes
+        nn =  Node_ncu(node_name, zeros(Float64, (2, node_size)),missing, missing,missing, missing, 0, true, 0.0, "0", 0, 0.0)
+        push!(my_node_list,nn)
+    end # for
+
+    # Internal nodes are created using integers as names.
+    temp_name::Int = length(my_node_list)+1
+
+    # shuffle the node list to get a random tree
+    Random.shuffle!(my_node_list)
+
+    while length(my_node_list) > 2
+        # get two nodes
+        # create a new mother node to which the two first nodes are added as children
+        # add the new mother node to the list and reshuffle
+        first_child::Node = pop!(my_node_list)
+        first_child.inc_length = rand(Uniform(0.0015,1))#*0.1
+        second_child::Node = pop!(my_node_list)
+        second_child.inc_length = rand(Uniform(0.0015,1))
+        curr_node::Node = Node_ncu(string(temp_name), zeros(Float64, (2, node_size)), missing, missing, missing, missing, 0, true, 0.0, "0", 0,0.0)
+        add_child!(curr_node, first_child, true)
+        add_child!(curr_node, second_child, false)
+        push!(my_node_list, curr_node)
+        temp_name += 1
+        Random.shuffle!(my_node_list)
+    end # while
+    root::Node = Node_ncu(string(temp_name), zeros(Float64, (2, node_size)), missing, missing, missing, missing, 0, true, 0.0, "0", 0,0.0)
+    lchild = pop!(my_node_list)
+    lchild.inc_length = rand(Uniform(0.0015,1))
+    #mchild = pop!(my_node_list)
+    #mchild.inc_length = rand(Uniform(0.0015,1))
+    rchild = pop!(my_node_list)
+    rchild.inc_length = rand(Uniform(0.0015,1))
+    add_child!(root, lchild, true)
+    add_child!(root, rchild, false)
+    #add_child!(root, mchild, false, true)
+
+    set_binary!(root)
+    number_nodes!(root)
+
+    return root
+end # function create_tree_from_leaves
 
 
 
@@ -249,6 +344,65 @@ end # function create_tree_from_leaves
 
 
 
+function level_order(node::T)::Array{T} where T<: Node
+    level = 1
+    stack::Array{T} = []
+    while level_traverse(node, level, stack)
+        level += 1
+    end
+    stack
+end
+
+function level_traverse(node::T, level::Int64, stack::Array{T})::Bool where T <: Node
+    if level == 1
+        push!(stack, node)
+        return true
+    else
+        boolqueue = [false]
+        for child in node.children
+            push!(boolqueue, level_traverse(child, level-1, stack))
+        end
+        return reduce(|, boolqueue)
+    end
+end
+
+function force_ultrametric(root::T) where T<: Node
+    #node2max_depth = Dict{Int64, Int64}()
+    po = post_order(root)
+    node2max_depth = zeros(length(po))
+    #blv = get_branchlength_vector(root)
+
+    for node in po
+        if node.nchild != 0
+            mv = -1
+            for child in node.children
+                if node2max_depth[child.num] > mv
+                    mv = node2max_depth[child.num]
+                end
+            end
+            node2max_depth[node.num] = mv+1
+        else
+            node2max_depth[node.num] = 1
+        end
+    end
+    #node2dist = Dict(root.num => 0.0)
+    node2dist = zeros(size(node2max_depth))
+    tl = tree_height(root)
+    nblv = zeros(length(po))
+    for node in level_order(root)
+        if node.root != true
+            nv = (tl - node2dist[node.mother.num])/node2max_depth[node.num]
+            
+            nblv[node.num] = nv
+            node2dist[node.num] = nv + node2dist[node.mother.num]
+        end
+    end
+
+
+    set_branchlength_vector!(root, nblv)
+end
+
+
 """
     post_order(root::Node, traversal::Vector{Node})::Vector{Node}
 
@@ -343,7 +497,8 @@ function tree_length(root::T)::Float64  where T<:Node
 end # function tree_length
 
 function tree_length(root::T, tl::Float64)::Float64 where T<:Node
-    if root.nchild != 0
+
+    if length(root.children) != 0
         for child in root.children
             tl = tree_length(child, tl)
         end
@@ -377,6 +532,16 @@ function node_height(root::T, mv::Float64)  where T<:Node
     return mv
 end
 
+function rescale_length(root::T) where T<:Node
+    #mv = tree_height(root)
+    #blv = get_branchlength_vector(root)
+    #blv ./= mv
+    #set_branchlength_vector!(root, blv)
+    force_ultrametric(root)
+end
+
+
+
 """
     tree_height(root::Node)::Float64
 
@@ -387,13 +552,22 @@ function tree_height(root::T)  where T<:Node
 end
 
 
-function node_distance(node1::T, node2::T, lca::T)::Float64 where T<:Node
+function node_distance(tree::T, node1::T, node2::T, lca::T)::Float64 where T<:Node
     path_length(lca, node1)+path_length(lca,node2)
 end
 
-function node_distance(node1::T, node2::T)::Float64 where T<:Node
-    lca = find_lca(node1, node2)
+function node_distance(tree::T, node1::T, node2::T)::Float64 where T<:Node
+    lca = find_lca(tree, node1, node2)
     node_distance(node1, node2, lca)
+end
+
+function get_path(ancestor::T, descendant::T)::Array{Int64} where T<:Node
+    path::Array{Int64} = []
+    while descendant.binary != ancestor.binary
+        push!(path, descendant.num)
+        descendant = descendant.mother
+    end
+    path
 end
 
 
@@ -572,7 +746,7 @@ end # function
 This function sets the branch lengths of a tree to the values specified in blenvec.
 """
 function set_branchlength_vector!(root::T, blenvec::Array{Float64})  where T<:Node
-
+    any(0 .> blenvec) && throw("this should never happen")
     for child in root.children
         set_branchlength_vector!(child, blenvec)
     end
@@ -676,7 +850,7 @@ end
 
 function find_lca(tree::T, node1::T, node2::T)::T  where T<:Node
     nb = lcp(node1.binary, node2.binary)
-    find_by_binary(tree, nb)
+    find_binary(tree, nb)
 end
 
 function find_num(root::T, num::Int64)  where T<:Node
@@ -702,6 +876,42 @@ function find_num(root::T, num::Int64, rn::Vector{T})  where T<:Node
     end # if
     return rv
 end
+
+function find_binary(root::T, bin::String) where T<:Node
+    rn = root
+    for ch in bin[2:end]
+        rn = rn.children[parse(Int, ch)+1]
+    end
+    rn
+end
+
+
+
+
+#function find_binary(root::T, bin::String)  where T<:Node
+#    rn = Vector{Node}(undef, 1)#MCPhylo.Node()
+#    find_num(root, bin, rn)
+#    return rn[1]
+#end
+
+function find_binary(root::T, bin::String, rn::Vector{T})  where T<:Node
+
+    if root.binary == bin
+        rn[1] = root
+        rv = true
+    else
+        rv = false
+    end
+
+    if !rv
+        for child in root.children
+            rv = find_binary(child, bin,  rn)
+        end
+
+    end # if
+    return rv
+end
+
 
 
 #"""

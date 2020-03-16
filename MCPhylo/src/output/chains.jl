@@ -172,7 +172,12 @@ function cat3(c1::AbstractChains, args::AbstractChains...)
     throw(ArgumentError("chain names differ"))
 
   value = cat(c1.value, map(c -> c.value, args)..., dims=3)
-  value2 = cat(c1.trees, map(c -> c.trees, args)..., dims=3)
+  
+  if isdefined(c1.trees,1)
+      value2 = cat(c1.trees, map(c -> c.trees, args)..., dims=3)
+  else
+      value2 = c1.trees
+  end
   moves = +(c1.moves, map(c -> c.moves, args)...)
   Chains(value, value2, start=first(range), thin=step(range), names=names, moves=moves)
 end

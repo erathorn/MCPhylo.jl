@@ -95,6 +95,7 @@ function gradlogpdf!(m::Model, x::Node, block::Integer=0,transform::Bool=false)
   m[params] = relist(m, x, params, transform)
 
 
+
   # use thread parallelism
   # prior
   prior_res = @spawn gradlogpdf(m[params[1]], x)
@@ -104,7 +105,7 @@ function gradlogpdf!(m::Model, x::Node, block::Integer=0,transform::Bool=false)
 
   # get results from threads
   vp, gradp = fetch(prior_res)
-
+  
 
   v+vp, grad.+gradp
 end
