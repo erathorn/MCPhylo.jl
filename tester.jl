@@ -28,17 +28,20 @@ my_data = Dict{Symbol, Any}(
   :nsites => size(df)[2],
 );
 
+
+
 # model setup
 model =  Model(
     df = Stochastic(3,
     (mtree, mypi, rates, nnodes, nbase, nsites) -> PhyloDist(mtree, mypi, rates, nbase, nsites, nnodes), false, false),
     mypi = Stochastic( () -> Uniform(0,1)),
     mtree = Stochastic(MCPhylo.Node_ncu(), () -> CompoundDirichlet(1.0,1.0,0.100,1.0), my_data[:nnodes]+1, true),
-
     rates = Logical(1,(mymap, av) -> [av[convert(UInt8,i)] for i in mymap],false),
     mymap = Stochastic(1,() -> Categorical([0.25, 0.25, 0.25, 0.25]), false),
     av = Stochastic(1,() -> Dirichlet([1.0, 1.0, 1.0, 1.0]), false)
      )
+
+
 
 # intial model values
 inits = [ Dict{Symbol, Union{Any, Real}}(
