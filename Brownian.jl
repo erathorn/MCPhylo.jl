@@ -55,7 +55,7 @@ model =  Model(
     σii = Logical(1, σi -> σi.^2,false),
     σi = Stochastic(1,(λ) -> Exponential(λ), false),
     ζi = Logical(1, ζ -> ζ.*my_data[:leaves],false),
-    ζ = Stochastic(1, () -> Dirichlet(my_data[:leaves], 1.0),false),
+    ζ = Stochastic(1, () -> Dirichlet(my_data[:leaves], 1.0)),
     λ = Stochastic(() -> Exponential()),
     mtree = Stochastic(MCPhylo.Node_ncu(), () -> CompoundDirichlet(1.0,1.0,0.100,1.0), my_data[:nnodes]+1, true),
      )
@@ -83,20 +83,20 @@ inits = [ Dict{Symbol, Union{Any, Real}}(
 
 scheme = [PNUTS(:mtree),
           #Slice(:mu1, 0.05, Univariate),
-          Slice(:μ, 0.05, Multivariate),
+          #Slice(:μ, 0.05, Multivariate),
 
-          #Slice([:μ, :σi], 0.05, Univariate),
+          Slice([:μ, :σi], 0.05, Univariate),
           RWM(:P, 1),
-          #SliceSimplex(:ζ),
+          SliceSimplex(:ζ),
           #, :λ
-          Slice([:σH, :μH], 0.05, Multivariate)
+          Slice([:σH, :μH, :λ], 0.05, Multivariate)
           ]
 
 setsamplers!(model, scheme);
 
 # do the mcmc simmulation. if trees=true the trees are stored and can later be
 # flushed ot a file output.
-sim = mcmc(model, my_data, inits, 5, burnin=1,thin=1, chains=1, trees=true)
+sim = mcmc(model, my_data, inits, 50, burnin=10,thin=5, chains=1, trees=true)
 
 #sim = mcmc(sim, 20, trees=true)
 

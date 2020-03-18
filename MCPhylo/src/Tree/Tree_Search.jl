@@ -80,7 +80,7 @@ Do not use this function if you are unsure wheter the node is in the tree at all
 """
 function find_binary(root::T, bin::String)::T where T<:Node
     rn = Vector{T}(undef, 1)
-    find_binary(root, num, rn)
+    find_binary(root, bin, rn)
     return rn[1]
 end
 

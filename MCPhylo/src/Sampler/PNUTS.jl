@@ -346,9 +346,7 @@ end
 function nouturn(xminus::T, xplus::T,
                 rminus::Vector{Float64}, rplus::Vector{Float64}, gradminus::Vector{Float64},gradplus::Vector{Float64},
                 epsilon::Float64, logfgrad::Function, delta::Float64, sz::Int64, j::Int64, rescale::Bool)  where T<:Node
-         if j > 10
-             return false
-        end
+         
         curr_l, curr_h = BHV_bounds(xminus, xplus)
 
         # use thread parallelism to calculuate both directions at once

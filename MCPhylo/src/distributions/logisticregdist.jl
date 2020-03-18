@@ -33,7 +33,13 @@ function mlpdf(mu::Array{Float64,2}, tree::Node, blv::Vector{T}, sigmai::Vector{
 
     #sis = si .* Ref(mycov)
     #noise = 1e-8.* Diagonal(ones(size(mu, 1)))
-    ch = cholesky(mycov).L
+    ch = similar(mycov)
+    try
+        ch = cholesky(mycov).L
+    catch
+        return -Inf
+    end
+    #ch = cholesky(mycov).L
     #si[i].*
     @inbounds @simd for i in 1:chars
         #ch = cholesky(sis[i]).L
