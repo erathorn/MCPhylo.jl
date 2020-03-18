@@ -388,28 +388,6 @@ end # function create_tree_from_leaves
 
 
 
-function level_order(node::T)::Array{T} where T<: Node
-    level = 1
-    stack::Array{T} = []
-    while level_traverse(node, level, stack)
-        level += 1
-    end
-    stack
-end
-
-function level_traverse(node::T, level::Int64, stack::Array{T})::Bool where T <: Node
-    if level == 1
-        push!(stack, node)
-        return true
-    else
-        boolqueue = [false]
-        for child in node.children
-            push!(boolqueue, level_traverse(child, level-1, stack))
-        end
-        return reduce(|, boolqueue)
-    end
-end
-
 function force_ultrametric(root::T) where T<: Node
     #node2max_depth = Dict{Int64, Int64}()
     po = post_order(root)
@@ -446,67 +424,6 @@ function force_ultrametric(root::T) where T<: Node
     set_branchlength_vector!(root, nblv)
 end
 
-
-"""
-    post_order(root::Node, traversal::Vector{Node})::Vector{Node}
-
-This function performs a post order traversal through the tree. It is assumed that `root` is the
-root of the tree. Thus, if `root` is not the root, the subtree defined by the root `root` is
-used for the post order traversal.
-"""
-function post_order(root::T, traversal::Vector{T})::Vector{T} where T<:Node
-   if root.nchild != 0
-        for child in root.children
-            post_order(child, traversal)
-        end
-   end # if
-   push!(traversal, root)
-   return traversal
-end # function post_order_trav
-
-
-"""
-    post_order(root:Node)::Vector{Node}
-
-This function does post order traversal. It is meant as a wrapper. Only the root
-node needs to be supplied.
-"""
-function post_order(root::T)::Vector{T} where T<:Node
-    t::Vector{T} = []
-    post_order(root, t)
-    return t
-end # function post_order
-
-
-"""
-    pre_order(root::Node, traversal::Vector{Node})::Vector{Node}
-
-This function performs a pre order traversal through the tree. It is assumed that `root` is the
-root of the tree. Thus, if `root` is not the root, the subtree defined by the root `root` is
-used for the pre order traversal.
-"""
-function pre_order(root::T, traversal::Vector{T})::Vector{T} where T<:Node
-    push!(traversal, root)
-    if root.nchild != 0
-        for child in root.children
-            pre_order(child, traversal)
-        end
-    end # if
-    return traversal
-end # function pre_order!
-
-
-"""
-    pre_order(root:Node)::Vector{Node}
-
-This function does pre order traversal. It is meant as a wrapper. Only the root
-node needs to be supplied.
-"""
-function pre_order(root::T)::Vector{T} where T<:Node
-    t::Vector{T} = []
-    pre_order(root, t)
-    return t
-end # function pre_order!
 
 
 function newick(root::T)  where T<:Node
