@@ -349,7 +349,7 @@ function nouturn(xminus::T, xplus::T,
          if j > 10
              return false
         end
-        curr_l, curr_h = BHV_lower(xminus, xplus)
+        curr_l, curr_h = BHV_bounds(xminus, xplus)
 
         # use thread parallelism to calculuate both directions at once
         res_minus = Base.Threads.@spawn refraction(deepcopy(xminus), deepcopy(rminus), -1, gradminus, epsilon, logfgrad, delta, sz, rescale)
@@ -358,7 +358,7 @@ function nouturn(xminus::T, xplus::T,
         # fetch the results
         xminus_bar,_,_,_,_ = fetch(res_minus)
 
-        curr_t_l, curr_t_h = BHV_lower(xminus_bar, xplus_bar)
+        curr_t_l, curr_t_h = BHV_bounds(xminus_bar, xplus_bar)
         return curr_h < curr_t_l
 end
 

@@ -122,5 +122,22 @@ function randomize!(root::Node, num::Int64=100)::Nothing
         r = NNI!(root, n)
         i += 1
     end
-    
+
 end
+
+
+
+"""
+    move!(node1::Node, node2::Node, proportion::Float64)
+
+Change the incomming length of node1 and node2 while keeping there combined length
+constant.
+"""
+function move!(node1::Node, node2::Node, proportion::Float64)
+    total::Float64 = node1.inc_length + node2.inc_length
+    fp::Float64 = total*proportion
+    sp::Float64 = total-fp
+    node1.inc_length = fp
+    node2.inc_length = sp
+
+end # function move!

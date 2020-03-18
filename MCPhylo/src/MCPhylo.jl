@@ -393,6 +393,8 @@ include("Tree/Converter.jl")
 include("Tree/Tree_moves.jl")
 include("Tree/Tree_Distance.jl")
 include("Tree/Tree_Traversal.jl")
+include("Tree/Tree_Search.jl")
+include("Tree/Tree_Legacy.jl")
 
 
 include("Parser/Parser.jl")

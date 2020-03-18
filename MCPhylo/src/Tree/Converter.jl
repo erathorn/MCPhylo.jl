@@ -68,20 +68,162 @@ function from_df(df::DataFrame)::Node
 end # function from_df
 
 """
-    to_newick(node::Node)::String
+    newick(node::Node)::String
 
-creates a newick represnetation of the tree.
+Creates a newick represnetation of the tree.
 """
-function to_newick(node::Node)::String
-    ret_str = ""
-    if node.nchild == 0
-        return string(node.name)*":"*string(node.inc_length)
+function newick(root::T)::String  where T<:Node
+    # get the newickstring
+    newickstring = newick(root, "")
+
+    # Some polishing.
+    newickstring = chop(newickstring)
+    newickstring = string(newickstring, ";")
+    return newickstring
+end
+
+"""
+    newick(root::T, newickstring::AbstractString) where T<:Node
+
+Do the newick recursion. It is meant as the internal iterator function.
+"""
+function newick(root::T, newickstring::AbstractString) where T<:Node
+    if root.nchild != 0
+        # internal node
+        newickstring = string(newickstring, "(")
+        for child in root.children
+            newickstring = string(newick(child,newickstring))
+        end # for
+        newickstring = chop(newickstring)
+        return string(newickstring,")", root.name, ":", root.inc_length,",")
+
     else
-        ret_str *= "(" *to_newick(node.child[1])* "," *to_newick(node.child[2])*")"*string(node.name)*":"*string(node.inc_length)
+        # leave
+        return string(newickstring, root.name, ":", root.inc_length, ",")
     end # if
-    if node.root == true
-        return ret_str*";"
-    else
-        return ret_str
-    end # if
-end # function
+end
+
+
+#################### Covariance wrapper ####################
+function to_covariance(tree::TreeStochastic)
+    blv = get_branchlength_vector(tree)
+    to_covariance(tree.value, blv)
+end # end to_covariance
+
+function to_covariance(tree::T) where T<: Node
+    blv = get_branchlength_vector(tree)
+    to_covariance(tree, blv)
+end # end to_covariance
+
+function to_covariance(tree::TreeStochastic, blv::Array{T}) where T<: Real
+    to_covariance(tree.value, blv)
+end # end to_covariance
+
+"""
+    to_covariance_ultra(tree::Node)::Array{T,2} where T<: Real
+
+Get the covariance matrix of the ultrametric version of `tree` with height 1.
+"""
+function to_covariance_ultra(tree::Node)::Array{T,2} where T<: Real
+    # scale the branchlength between 0 and 1
+    blv = get_branchlength_vector(tree)
+    blv ./= tree_height(tree)
+
+    # copy the tree, to maintain the original one
+    root = deepcopy(tree)
+    set_branchlength_vector!(root, blv)
+    # make the tree ultrametric
+    force_ultrametric!(root)
+
+    # calculate variance-covariance matrix
+    to_covariance(root, blv)
+end # end function to_covariance_ultra
+
+
+#################### To Matrix convertes ####################
+"""
+    to_distance_matrix(tree::T)::Array{Float64,2} where T <: Node
+
+Calculate the distance matrix over the set of leaves.
+"""
+function to_distance_matrix(tree::T)::Array{Float64,2} where T <: Node
+    leaves::Vector{T} = get_leaves(tree)
+    ll = length(leaves)
+    covmat = zeros(Float64, ll, ll)
+    for i in 1:ll
+        for j in 1:ll
+            if i>j
+                d = node_distance(leaves[i], leaves[j])
+                distance_mat[i,j] = d
+                distance_mat[j,i] = d
+            end # if
+        end # for
+    end #for
+    distance_mat
+end # function to_distance_matrix
+
+"""
+    to_covariance(tree::N, blv::Array{T})::Array{T,2} where {N<:Node,T<: Real}
+
+Calcualte the variance-covariance matrix from `tree`. An entry (i,j) of the matrix
+is defined as the length of the path connecting the latest common ancestor
+of i and j with the root of the tree.
+"""
+function to_covariance(tree::N, blv::Array{T})::Array{T,2} where {N<:Node,T<: Real}
+    leaves::Vector{N} = get_leaves(tree)
+    ll = length(leaves)
+    covmat = zeros(T, ll, ll)
+    @inbounds @simd for i in 1:ll
+        @inbounds for j in 1:ll
+            if i >= j
+                node1 = leaves[i]
+                if i == j
+                    covmat[i,j] = reduce(+, @view blv[get_path(tree, node1)])
+                else
+                    lca = find_lca(tree, node1, leaves[j])
+                    if lca.root != true
+                        tmp = reduce(+, @view blv[get_path(tree, lca)])
+                        covmat[i,j] = tmp
+                        covmat[j,i] = tmp
+
+                    end # if
+                end # if
+            end # if
+        end # for
+    end # for
+    covmat
+end# function to_covariance
+
+function to_covariance_ultra(tree::Node) where T<: Real
+    mv = tree_height(tree)
+    blv = get_branchlength_vector(tree)
+    blv ./= mv
+    root = deepcopy(tree)
+    set_branchlength_vector!(root, blv)
+    force_ultrametric(root)
+
+    leaves = get_leaves(root)
+    ll = length(leaves)
+    covmat = zeros(ll, ll)
+    for i in 1:ll
+        node1 = leaves[i]
+        for j in 1:ll
+            if i == j
+
+                path = path_length(root, node1)
+                covmat[i,j] = path
+            elseif i>j
+                lca = find_lca(root, node1, leaves[j])
+                if lca.root != true
+                    path = path_length(root, lca)
+                    covmat[i,j] = path
+                    covmat[j,i] = path
+
+
+                end
+            end
+        end
+
+    end
+    covmat
+end
