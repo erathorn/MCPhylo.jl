@@ -1,9 +1,10 @@
 
 mutable struct BrownianPhylo <: DiscreteMatrixDistribution
-        mu::Array{Float64}
+        mu::Array{Float64,2}
         tree::Node
+        Σ::Array{Float64}
         sigmai::Vector{Float64}
-        Σ::Array{Float64,2}
+        P::Array{Float64,2}
         chars::Int64
         leaves::Int64
 end
@@ -16,29 +17,31 @@ function logpdf(d::BrownianPhylo, x::AbstractArray{T, 2}) where T<:Real
 
     blv = get_branchlength_vector(d.tree)
 
-    mlpdf(d.mu, d.tree, blv, d.sigmai, d.Σ, d.chars, x)
+    mlpdf(d.mu, d.tree, blv, d.sigmai, d.Σ, d.P, d.chars, x)
 
 end
 
-function mlpdf(mu::Vector{Float64}, tree::Node, blv::Vector{T}, sigmai::Vector{Float64}, Σ::Array{Float64,2}, chars::Int64, data::AbstractArray{S, 2} where S) where T<:Real
+function mlpdf(mu::Array{Float64,2}, tree::Node, blv::Vector{T}, sigmai::Vector{Float64}, Σ::Array{Float64,2}, P::Array{Float64,2}, chars::Int64, data::AbstractArray{S, 2} where S) where T<:Real
 
-    nor = Normal()
-    cov = MCPhylo.to_covariance(tree, blv)
+    mycov::Array{T,2} = MCPhylo.to_covariance(tree, blv)
 
-    fchars = Array{Function,2}(undef, size(data))
-    fchars .= x -> logcdf(nor,x)
-    fchars[data .== 1] .= x -> logccdf(nor, x)
-    cov += 1.0e-8 .* Diagonal(ones(size(cov, 1)))
-    rv = 0.0
-    mm = ones(size(data,1))
-    #vs = [-2.33414, -0.741964, 0.741964, -2.33414]
+    rv::T = 0.0
+    #fchars = Array{Function,2}(undef, size(data))
+    #fchars .= x -> logcdf(Normal(),x)
+    #fchars[data .== 1] .= x -> logccdf(Normal(), x)
+    #si = sigmai .* Ref(Σ)
 
-    @simd for i in 1:chars
-        temp = sigmai[i]^2 * Σ
-        ch = cholesky(temp .* cov).L
-        nullstellen = ch \ -(mm .= mu[i])
-        rv += sum(map((f,x)->f(x), fchars[:,i], nullstellen))
-        #rv += sum(logpdf.(Bernoulli.(invlogit.(ch*P[:,i]+mu)), @view x[:,i]))
+    #sis = si .* Ref(mycov)
+    #noise = 1e-8.* Diagonal(ones(size(mu, 1)))
+    ch = cholesky(mycov).L
+    #si[i].*
+    @inbounds @simd for i in 1:chars
+        #ch = cholesky(sis[i]).L
+
+        rv += sum(logpdf.(Bernoulli.(invlogit.(ch*P[:,i]+mu[:,i])), data[:,i]))
+
+
+        #rv += sum(map((f,x)->f(x),fchars[:,i], nullstellen))::T
     end
 
     rv
@@ -48,7 +51,7 @@ function gradlogpdf(d::BrownianPhylo, x::AbstractArray{T, 2}) where T<:Real
 
     blv = get_branchlength_vector(d.tree)
 
-    f(y) =mlpdf(d.mu, d.tree, y, d.sigmai, d.Σ, d.chars, x)
+    f(y) =mlpdf(d.mu, d.tree, y, d.sigmai, d.Σ, d.P, d.chars, x)
 
     r2 = DiffResults.GradientResult(blv)
     res = ForwardDiff.gradient!(r2, f, deepcopy(blv))

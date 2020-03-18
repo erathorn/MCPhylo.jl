@@ -117,25 +117,69 @@ function to_covariance(tree::TreeStochastic, blv::Array)
     to_covariance(tree.value, blv)
 end
 
-function to_covariance(tree::Node, blv::Array{T}) where T<: Real
-    #rescale_length(tree)
-    leaves = get_leaves(tree)
+
+
+function to_covariance_ultra(tree::Node) where T<: Real
+    mv = tree_height(tree)
+    blv = get_branchlength_vector(tree)
+    blv ./= mv
+    root = deepcopy(tree)
+    set_branchlength_vector!(root, blv)
+    force_ultrametric(root)
+
+    leaves = get_leaves(root)
     ll = length(leaves)
-    covmat = zeros(T, ll, ll)
+    covmat = zeros(ll, ll)
+    covmatsym = Array{Function,2}(undef, ll, ll)
+    covmatsym .= x -> 0.0
     for i in 1:ll
         node1 = leaves[i]
         for j in 1:ll
             if i == j
-                path = get_path(tree, node1)
-                covmat[i,j] = reduce(+, @view blv[path])
+                symbolicpath = get_path(root, node1)
+                path = path_length(root, node1)#get_path(root, node1)
+                covmat[i,j] = path#reduce(+, @view blv[path])
+                covmatsym[i,j] = x -> reduce(+,x[symbolicpath])
             elseif i>j
-                lca = find_lca(tree, node1, leaves[j])
+                lca = find_lca(root, node1, leaves[j])
                 if lca.root != true
-                    path = get_path(tree, lca)
-                    tmp = reduce(+, @view blv[path])
-                    covmat[i,j] = tmp
-                    covmat[j,i] = tmp
+                    path = path_length(root, lca)
+                    symbolicpath = get_path(root, lca)
+                    covmat[i,j] = path
+                    covmat[j,i] = path
+                    covmatsym[i,j] = x -> reduce(+,x[symbolicpath])
+                    covmatsym[j,i] = x -> reduce(+,x[symbolicpath])
 
+                end
+            end
+        end
+
+    end
+    covmat, covmatsym
+end
+
+
+
+function to_covariance(tree::N, blv::Array{T}) where {N<:Node,T<: Real}
+    #rescale_length(tree)
+    leaves = get_leaves(tree)
+    ll = length(leaves)
+    covmat = zeros(T, ll, ll)
+    @inbounds @simd for i in 1:ll
+        @inbounds for j in 1:ll
+            if i >= j
+                node1 = leaves[i]
+                if i == j
+                    #path = get_path(tree, node1)
+                    covmat[i,j] = reduce(+, @view blv[get_path(tree, node1)])
+                else
+                    lca = find_lca(tree, node1, leaves[j])
+                    if lca.root != true
+                        tmp = reduce(+, @view blv[get_path(tree, lca)])
+                        covmat[i,j] = tmp
+                        covmat[j,i] = tmp
+
+                    end
                 end
             end
         end
@@ -392,7 +436,7 @@ function force_ultrametric(root::T) where T<: Node
     for node in level_order(root)
         if node.root != true
             nv = (tl - node2dist[node.mother.num])/node2max_depth[node.num]
-            
+
             nblv[node.num] = nv
             node2dist[node.num] = nv + node2dist[node.mother.num]
         end

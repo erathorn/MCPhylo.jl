@@ -281,7 +281,7 @@ function ref_NNI(v::T, tmpB::Vector{Float64}, r::Vector{Float64}, epsilon::Float
       tmpB = @. blv + (epsilon-t) * r
 
   end #while
-  
+
   v, tmpB, r, nni
 end
 
