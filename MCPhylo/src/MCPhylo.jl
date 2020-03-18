@@ -17,7 +17,7 @@ using CUDAnative
 using CUDAdrv
 using Flux
 using ForwardDiff
-using NLsolve
+#using NLsolve
 #import ForwardDiff: gradient, gradient!
 #using Zygote
 import Calculus: gradient
