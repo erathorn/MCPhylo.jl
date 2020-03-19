@@ -26,28 +26,13 @@ function mlpdf(mu::Array{Float64,2}, tree::Node, blv::Vector{T}, sigmai::Vector{
     mycov::Array{T,2} = MCPhylo.to_covariance(tree, blv)
 
     rv::T = 0.0
-    #fchars = Array{Function,2}(undef, size(data))
-    #fchars .= x -> logcdf(Normal(),x)
-    #fchars[data .== 1] .= x -> logccdf(Normal(), x)
-    #si = sigmai .* Ref(Σ)
-
-    #sis = si .* Ref(mycov)
-    #noise = 1e-8.* Diagonal(ones(size(mu, 1)))
-    ch = similar(mycov)
-    try
-        ch = cholesky(mycov).L
-    catch
-        return -Inf
-    end
-    #ch = cholesky(mycov).L
-    #si[i].*
     @inbounds @simd for i in 1:chars
-        #ch = cholesky(sis[i]).L
-
-        rv += sum(logpdf.(Bernoulli.(invlogit.(ch*P[:,i]+mu[:,i])), data[:,i]))
-
-
-        #rv += sum(map((f,x)->f(x),fchars[:,i], nullstellen))::T
+        try
+            ch = cholesky(sigmai[i].*mycov).L
+            rv += sum(logpdf.(Bernoulli.(invlogit.(ch*P[:,i]+mu[:,i])), data[:,i]))
+        catch
+            rv += -Inf
+        end
     end
 
     rv
@@ -60,8 +45,7 @@ function gradlogpdf(d::BrownianPhylo, x::AbstractArray{T, 2}) where T<:Real
     f(y) =mlpdf(d.mu, d.tree, y, d.sigmai, d.Σ, d.P, d.chars, x)
 
     r2 = DiffResults.GradientResult(blv)
-    res = ForwardDiff.gradient!(r2, f, deepcopy(blv))
-
+    res = ForwardDiff.gradient!(r2, f, blv)
 
     DiffResults.value(res), DiffResults.gradient(res)
 end

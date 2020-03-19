@@ -45,17 +45,17 @@ my_data = Dict{Symbol, Any}(
 
 model =  Model(
     arrn = Stochastic(2,
-    (μi, mtree, P, Σ ,σii) -> BrownianPhylo(μi, mtree, Σ, σii, P,  my_data[:residuals], my_data[:leaves]),false),
+    (μi, mtree, P, σii) -> BrownianPhylo(μi, mtree, ones(my_data[:leaves],my_data[:leaves]), σii, P,  my_data[:residuals], my_data[:leaves]),false),
     μi = Logical(2, (μ)->(ones(my_data[:leaves],my_data[:residuals])' .= μ)', false),
     μ = Stochastic(1, (μH, σH) -> Normal(μH, σH), false),
     μH = Stochastic(()->Normal()),
     σH = Stochastic(()->Exponential()),
     P = Stochastic(2, ()  -> Normal(),false),
-    Σ = Logical(2, ζi  -> ζi*ζi',false),
+    #Σ = Logical(2, ζi  -> ζi*ζi',false),
     σii = Logical(1, σi -> σi.^2,false),
     σi = Stochastic(1,(λ) -> Exponential(λ), false),
-    ζi = Logical(1, ζ -> ζ.*my_data[:leaves],false),
-    ζ = Stochastic(1, () -> Dirichlet(my_data[:leaves], 1.0)),
+    #ζi = Logical(1, ζ -> ζ.*my_data[:leaves],false),
+    #ζ = Stochastic(1, () -> Dirichlet(my_data[:leaves], 1.0)),
     λ = Stochastic(() -> Exponential()),
     mtree = Stochastic(MCPhylo.Node_ncu(), () -> CompoundDirichlet(1.0,1.0,0.100,1.0), my_data[:nnodes]+1, true),
      )
@@ -72,7 +72,7 @@ inits = [ Dict{Symbol, Union{Any, Real}}(
     :P => randn(my_data[:leaves], my_data[:residuals]),
     :μH => rand(),
     :σH => rand(),
-    :ζ => rand(Dirichlet(my_data[:leaves], 1.0)),
+    #:ζ => rand(Dirichlet(my_data[:leaves], 1.0)),
     :Σ => ones(my_data[:leaves],my_data[:leaves]),
     :μ => randn(my_data[:residuals]),
     :λ => rand(),
@@ -87,7 +87,7 @@ scheme = [PNUTS(:mtree),
 
           Slice([:μ, :σi], 0.05, Univariate),
           RWM(:P, 1),
-          SliceSimplex(:ζ),
+          #SliceSimplex(:ζ),
           #, :λ
           Slice([:σH, :μH, :λ], 0.05, Multivariate)
           ]
@@ -96,7 +96,7 @@ setsamplers!(model, scheme);
 
 # do the mcmc simmulation. if trees=true the trees are stored and can later be
 # flushed ot a file output.
-sim = mcmc(model, my_data, inits, 50, burnin=10,thin=5, chains=1, trees=true)
+sim = mcmc(model, my_data, inits, 500, burnin=100,thin=5, chains=1, trees=true)
 
 #sim = mcmc(sim, 20, trees=true)
 

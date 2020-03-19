@@ -101,17 +101,16 @@ ind2sub(dims, ind) = Tuple(CartesianIndices(dims)[ind])
 
 showall(v) = showall(stdout, v)
 
-function lcp(str1::AbstractString, str2::AbstractString)::AbstractString
-  outs = ""
+"""
+    lcp(str1::T, str2::T)::T where T <: AbstractString
 
-  minl = min(length(str1), length(str2))
-  minl == 0 && return outs
-
-  for i in 1:minl
-    if str1[i] == str2[i]
-        outs *= str1[i]
-    else
-      return outs
-    end # if
-  end # for
+Get the longest common prefix.
+"""
+function lcp(str1::T, str2::T)::T where T <: AbstractString
+    minl::Int64 = min(length(str1), length(str2))
+    minl == 0 && return outs
+    outs::T = ""
+    for i in 1:minl
+      str1[i] == str2[i] ? outs *= str1[i] : return outs
+    end # for
 end

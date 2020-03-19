@@ -40,7 +40,7 @@ tree.
 
 Do not use this function if you are unsure wheter the node is in the tree at all.
 """
-function find_num(root::T, num::Int64)::T  where T<:Node
+function find_num(root::T, num::I)::T  where {T<:Node, I<:Integer}
     rn = Vector{T}(undef, 1)
     find_num(root, num, rn)
     return rn[1]
@@ -52,7 +52,7 @@ end
 
 Do a post order traversal to find the node corresponding to the `num`.
 """
-function find_num(root::T, num::Int64, rn::Vector{T})::Bool  where T<:Node
+function find_num(root::T, num::I, rn::Vector{T})::Bool  where {T<:Node, I<:Integer}
     # if the current node is the correct one store it in rn
     if root.num === num
         rn[1] = root

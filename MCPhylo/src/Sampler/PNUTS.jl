@@ -108,7 +108,6 @@ end
 
 function setadapt!(v::PNUTSVariate, adapt::Bool)
   tune = v.tune
-  #println(tune.adapt)
   if adapt && !tune.adapt
     tune.m = 0
     tune.mu = log(10.0 * tune.epsilon)
@@ -178,20 +177,17 @@ function nuts_sub!(v::PNUTSVariate, epsilon::Float64, logfgrad::Function)
   v
 end
 
-@inline function scale_fac(x::T, delta::T) where T<:Float64
-  x < delta ? x/delta : 1.0
-end
 
 function refraction(v::T, r::Vector{Float64}, pm::Int64,
                     grad::Vector{Float64}, epsilon::Float64, logfgrad::Function,
                     delta::Float64, sz::Int64, rescale::Bool)  where T<:Node
 
-    v1 = deepcopy(v)
+    v1::T = deepcopy(v)
 
-    ref_r = pm*r
+    ref_r::Vector{Float64} = pm*r
 
-    blenvec = get_branchlength_vector(v1)
-    fac = scale_fac.(blenvec, delta)
+    blenvec::Vector{Float64} = get_branchlength_vector(v1)
+    fac::Vector{Float64} = scale_fac.(blenvec, delta)
 
     ref_r = @. ref_r + (epsilon * 0.5) * (grad * fac)
     tmpB = @. blenvec + (epsilon * ref_r)
@@ -220,14 +216,6 @@ function refraction(v::T, r::Vector{Float64}, pm::Int64,
 end
 
 
-"""
-    molifier(x::Float64, delta::Float64)::Float64
-
-documentation
-"""
-@inline function molifier(x::Float64, delta::Float64)::Float64
-    x >= delta ? x : (x^2+delta^2)/(2.0*delta)
-end # function
 
 
 
@@ -346,7 +334,7 @@ end
 function nouturn(xminus::T, xplus::T,
                 rminus::Vector{Float64}, rplus::Vector{Float64}, gradminus::Vector{Float64},gradplus::Vector{Float64},
                 epsilon::Float64, logfgrad::Function, delta::Float64, sz::Int64, j::Int64, rescale::Bool)  where T<:Node
-         
+
         curr_l, curr_h = BHV_bounds(xminus, xplus)
 
         # use thread parallelism to calculuate both directions at once
@@ -392,3 +380,16 @@ function nutsepsilon(x::Node, logfgrad::Function, delta::Float64, rescale::Bool)
   println("eps ",epsilon)
   epsilon
 end
+
+@inline function scale_fac(x::T, delta::T)::T where T<:Real
+  x < delta ? x/delta : 1.0
+end
+
+"""
+    molifier(x::Float64, delta::Float64)::Float64
+
+documentation
+"""
+@inline function molifier(x::T, delta::T)::T where T <: Real
+    x >= delta ? x : (x^2+delta^2)/(2.0*delta)
+end # function

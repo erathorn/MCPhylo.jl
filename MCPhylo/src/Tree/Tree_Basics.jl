@@ -362,7 +362,7 @@ end # function node_height
 
 
 
-function node_distance(tree::T, node1::T, node2::T, lca::T)::Float64 where T<:Node
+function node_distance(node1::T, node2::T, lca::T)::Float64 where T<:Node
     path_length(lca, node1)+path_length(lca,node2)
 end
 
@@ -371,8 +371,8 @@ function node_distance(tree::T, node1::T, node2::T)::Float64 where T<:Node
     node_distance(node1, node2, lca)
 end
 
-function get_path(ancestor::T, descendant::T)::Array{Int64} where T<:Node
-    path::Array{Int64} = []
+function get_path(ancestor::T, descendant::T)::Vector{Int64} where T<:Node
+    path::Vector{Int64} = []
     while descendant.binary != ancestor.binary
         push!(path, descendant.num)
         descendant = descendant.mother
@@ -408,10 +408,7 @@ This function gets the sister of `node`. It does so by looking for the respectiv
 binary representation of the sister.
 """
 @inline function get_sister(node::T)::T  where T<:Node
-
-    mother = node.mother
-    mother.children[findfirst(y-> y!=node, mother.children)]
-
+    node.mother.children[findfirst(y-> y!=node, node.mother.children)]
 end # function
 
 
@@ -464,9 +461,8 @@ end # fuction number_nodes
 Get all the leaves of this Node. It is meant as a wrapper, only the root node
 needs to be supplied
 """
-function get_leaves(root::T)::Vector{T}  where T<:Node
-    leave_list::Vector{Node} = [i for i in post_order(root) if i.nchild == 0]
-    return leave_list
+@inline function get_leaves(root::T)::Vector{T}  where T<:Node
+    [i for i in post_order(root) if i.nchild == 0]
 end # function get_leaves
 
 
@@ -614,8 +610,7 @@ function internal_external_map(root::T)::Vector{Int64}  where T<:Node
 end
 
 function internal_external_map(post_order::Vector{T})::Vector{Int64}  where T<:Node
-    my_map = Vector{Int64}(undef, length(post_order)-1)
-    my_map .= 0
+    my_map::Vector{Int64} = zeros(Int64, length(post_order)-1)
     for node in post_order
         if !node.root
             if node.nchild != 0
@@ -641,9 +636,8 @@ function find_lca(tree::T, node_l::Array{String, 1})::T  where T<:Node
 end
 
 function find_lca(tree::T, node_l::Array{T})::T  where T<:Node
-    if length(node_l) === 0
-        return ""
-    elseif length(node_l) === 1
+    @assert length(node_l) > 0
+    if length(node_l) === 1
         return node_l[1]
     else
         n1 = popfirst!(node_l)

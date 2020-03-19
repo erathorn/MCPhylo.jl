@@ -45,16 +45,15 @@ function BHV_bounds(tree1::T, tree2::T)::Tuple{Float64, Float64} where T <: Node
     res_upper_2::Float64 = 0.0
     res_upper_3::Float64 = 0.0
     po::Vector{T} = post_order(tree1)
-    Base.Threads.@threads for node in po
+    Base.Threads.@threads for node in po[1:end-1]
         nom = find_num(tree2, node.num)
-        if !node.root
-            if node.mother.num == nom.mother.num
-                res_upper_3 += (node.inc_length-nom.inc_length)^2
-            else
-                res_upper_2 += nom.inc_length^2
-                res_upper_1 += node.inc_length^2
-            end # if
+        if node.mother.num == nom.mother.num
+            res_upper_3 += (node.inc_length-nom.inc_length)^2
+        else
+            res_upper_2 += nom.inc_length^2
+            res_upper_1 += node.inc_length^2
         end # if
+
     end # for
     res_low::Float64 = res_upper_1+res_upper_2+res_upper_3
     res_high::Float64 = (sqrt(res_upper_2)+sqrt(res_upper_1))^2+res_upper_3

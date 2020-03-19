@@ -105,17 +105,17 @@ end
 
 
 #################### Covariance wrapper ####################
-function to_covariance(tree::TreeStochastic)
-    blv = get_branchlength_vector(tree)
+function to_covariance(tree::TreeStochastic)::Array{T,2} where T <: Real
+    blv::Vector{T} = get_branchlength_vector(tree)
     to_covariance(tree.value, blv)
 end # end to_covariance
 
-function to_covariance(tree::T) where T<: Node
-    blv = get_branchlength_vector(tree)
+function to_covariance(tree::N)::Array{T,2} where {N<: Node, T <: Real}
+    blv::Vector{T} = get_branchlength_vector(tree)
     to_covariance(tree, blv)
 end # end to_covariance
 
-function to_covariance(tree::TreeStochastic, blv::Array{T}) where T<: Real
+function to_covariance(tree::TreeStochastic, blv::Vector{T})::Array{T,2} where T<: Real
     to_covariance(tree.value, blv)
 end # end to_covariance
 
@@ -124,7 +124,7 @@ end # end to_covariance
 
 Get the covariance matrix of the ultrametric version of `tree` with height 1.
 """
-function to_covariance_ultra(tree::Node)::Array{T,2} where T<: Real
+function to_covariance_ultra(tree::N)::Array{T,2} where {T<: Real, N <: Node}
     # scale the branchlength between 0 and 1
     blv = get_branchlength_vector(tree)
     blv ./= tree_height(tree)

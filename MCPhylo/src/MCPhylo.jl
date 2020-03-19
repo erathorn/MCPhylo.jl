@@ -101,7 +101,7 @@ mutable struct Node_cu <: Node
 
   Node_cu() = new("noname")
   function Node_cu(n::String, d::Array{Float64,2}, m::Union{Node, Missing},c1::Union{Node, Missing},c2::Union{Node, Missing},c3::Union{Node, Missing},
-    n_c::Int64, r::Bool, inc::Float64, b::String, num::Int64,height::Float64)
+    n_c::Int64, r::Bool, inc::Float64, b::String, num::Int64, height::Float64)
       mn = Node_cu()
       mn.name = n
       mn.data = CuArray{Float64, 2}(undef, 2, 2)
