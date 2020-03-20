@@ -79,6 +79,22 @@ inits = [ Dict{Symbol, Union{Any, Real}}(
     :σi => rand(my_data[:residuals]),
 
     ),
+    Dict{Symbol, Union{Any, Real}}(
+        :mtree => mt,
+        :arrn => my_data[:arrn],
+        :nnodes => my_data[:nnodes],
+        :nl => my_data[:nnodes],#my_data[:leaves],
+        :nsites => my_data[:residuals],
+        :P => randn(my_data[:leaves], my_data[:residuals]),
+        :μH => rand(),
+        :σH => rand(),
+        #:ζ => rand(Dirichlet(my_data[:leaves], 1.0)),
+        :Σ => ones(my_data[:leaves],my_data[:leaves]),
+        :μ => randn(my_data[:residuals]),
+        :λ => rand(),
+        :σi => rand(my_data[:residuals]),
+
+        )
     ]
 
 scheme = [PNUTS(:mtree),
@@ -96,7 +112,7 @@ setsamplers!(model, scheme);
 
 # do the mcmc simmulation. if trees=true the trees are stored and can later be
 # flushed ot a file output.
-sim = mcmc(model, my_data, inits, 500, burnin=100,thin=5, chains=1, trees=true)
+sim = mcmc(model, my_data, inits, 10, burnin=2,thin=1, chains=2, trees=true)
 
 #sim = mcmc(sim, 20, trees=true)
 
