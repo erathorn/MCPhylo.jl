@@ -311,7 +311,7 @@ function gradlogpdf(s::AbstractLogical)
 end
 
 function gradlogpdf(s::AbstractStochastic, x::Node, transform::Bool=false)
-  pgradient(s.distr, x)
+  gradlogpdf(s.distr, x)
 end
 
 function gradlogpdf(s::AbstractStochastic, x::AbstractArray)

@@ -52,8 +52,8 @@ function internal_logpdf(d::CompoundDirichlet, b_lens::Any, int_leave_map::Vecto
 
 end
 
-function pgradient(d::CompoundDirichlet, x::Node)
-    
+function gradlogpdf(d::CompoundDirichlet, x::Node)
+
     int_ext = internal_external(x)
     blv = get_branchlength_vector(x)
 
@@ -109,9 +109,9 @@ function insupport(d::exponentialBL, x::Node)
 end # function insupport
 
 
-function gradient(d::exponentialBL, x::Node)
+function gradlogpdf(d::exponentialBL, x::Node)
     bl = get_branchlength_vector(x)
-    ones(length(bl))./d.scale
+    _logpdf(d, x), ones(length(bl))./d.scale
 end
 
 
