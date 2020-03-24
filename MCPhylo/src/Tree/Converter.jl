@@ -110,8 +110,8 @@ function to_covariance(tree::TreeStochastic)::Array{T,2} where T <: Real
     to_covariance(tree.value, blv)
 end # end to_covariance
 
-function to_covariance(tree::N)::Array{T,2} where {N<: Node, T <: Real}
-    blv::Vector{T} = get_branchlength_vector(tree)
+function to_covariance(tree::N) where {N<: Node, T <: Real}
+    blv = get_branchlength_vector(tree)
     to_covariance(tree, blv)
 end # end to_covariance
 
@@ -178,11 +178,13 @@ function to_covariance(tree::N, blv::Array{T})::Array{T,2} where {N<:Node,T<: Re
             if i >= j
                 node1 = leaves[i]
                 if i == j
+
                     covmat[i,j] = reduce(+, @view blv[get_path(tree, node1)])
                 else
                     lca = find_lca(tree, node1, leaves[j])
-                    if lca.root != true
+                    if !lca.root
                         tmp = reduce(+, @view blv[get_path(tree, lca)])
+                    
                         covmat[i,j] = tmp
                         covmat[j,i] = tmp
 
