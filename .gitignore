@@ -8,7 +8,6 @@ usr/
 *.bin
 ProfileVtune.jl
 local/
-LangData/
 *params.csv
 *params.log
 *.nwk
