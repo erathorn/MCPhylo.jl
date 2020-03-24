@@ -58,6 +58,26 @@ end
 sample!(v::RWMVariate) = sample!(v, v.tune.logf)
 
 function sample!(v::RWMVariate, logf::Function)
+  typeof(v[1]) <: Node ? sample_node!(v, logf) : sample_number!(v, logf)
+end
+
+
+function sample_node!(v::RWMVariate, logf::Function)
+  tree = v[1]
+  tc = deepcopy(tree)
+  move = NNI!(tree)
+  while move == 0
+    move = NNI!(tree)
+  end
+  if rand() < exp(logf(tc) - logf(tree))
+    v[1] = tree
+  else
+    v[1] = tc
+  end
+  v  
+end
+
+function sample_number!(v::RWMVariate, logf::Function)
   x = v + v.tune.scale .* rand(v.tune.proposal(0.0, 1.0), length(v))
   if rand() < exp(logf(x) - logf(v.value))
     v[:] = x
