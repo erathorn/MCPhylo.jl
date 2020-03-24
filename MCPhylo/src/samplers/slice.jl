@@ -57,8 +57,80 @@ end
 
 sample!(v::Union{SliceUnivariate, SliceMultivariate}) = sample!(v, v.tune.logf)
 
+function sample!(v::Union{SliceUnivariate, SliceMultivariate}, logf::Function)
+    typeof(v.value[1]) <: Node ? sample_node!(v, logf) : sample_number!(v, logf)
+end
 
-function sample!(v::SliceUnivariate, logf::Function)
+
+function sample_node!(v::SliceUnivariate, logf::Function)
+  tree = v.value[1]
+
+  logf0 = logf(tree)
+  blv = get_branchlength_vector(tree)
+
+  n = length(blv)
+  lower = blv - v.tune.width .* rand(n)
+  lower[lower .< 0.0] .= 0.0
+  upper = lower .+ v.tune.width
+
+  for i in 1:n
+    p0 = logf0 + log(rand())
+
+    x = blv[i]
+    blv[i] = rand(Uniform(lower[i], upper[i]))
+    while true
+      set_branchlength_vector!(tree, blv)
+      logf0 = logf(tree)
+      logf0 < p0 || break
+      value = blv[i]
+      if value < x
+        lower[i] = value
+      else
+        upper[i] = value
+      end
+      blv[i] = rand(Uniform(lower[i], upper[i]))
+    end
+  end
+
+  v
+end
+
+
+function sample_node!(v::SliceMultivariate, logf::Function)
+  tree = v.value[1]
+
+  p0 = logf(tree) + log(rand())
+  blv = get_branchlength_vector(tree)
+  org = deepcopy(blv)
+
+
+  n = length(blv)
+  lower = blv - v.tune.width .* rand(n)
+  lower[lower .< 0.0] .= 0.0
+  upper = lower .+ v.tune.width
+
+  blv = v.tune.width .* rand(n) + lower
+  set_branchlength_vector!(tree, blv)
+  while logf(tree) < p0
+    for i in 1:n
+      value = blv[i]
+      if value < org[i]
+        lower[i] = value
+      else
+        upper[i] = value
+      end
+      blv[i] = rand(Uniform(lower[i], upper[i]))
+    end
+    set_branchlength_vector!(tree, blv)
+  end
+  #v[:] = x
+  v.value[1] = tree
+  v
+end
+
+
+
+function sample_number!(v::SliceUnivariate, logf::Function)
   logf0 = logf(v.value)
 
   n = length(v)
@@ -87,7 +159,7 @@ function sample!(v::SliceUnivariate, logf::Function)
 end
 
 
-function sample!(v::SliceMultivariate, logf::Function)
+function sample_number!(v::SliceMultivariate, logf::Function)
   p0 = logf(v.value) + log(rand())
 
   n = length(v)
