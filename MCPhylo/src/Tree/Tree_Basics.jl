@@ -46,17 +46,6 @@ This function adds a child to the mother node.
 The arity of the mother node is increased by `1` and the root
 status of the child is set to `False`.
 """
-function add_child!(mother_node::Node, child::Node, left::Bool, middle::Bool=false)
-    add_child!(mother_node, child)
-end # function add_child
-
-"""
-    add_child(mother_node::Node, child::Node)
-
-This function adds a child to the mother node.
-The arity of the mother node is increased by `1` and the root
-status of the child is set to `False`.
-"""
 function add_child!(mother_node::Node, child::Node)
     push!(mother_node.children, child)
     child.mother = mother_node
@@ -100,18 +89,12 @@ function remove_child!(mother_node::Node, child::Node)::Node
 end # function
 
 
-"""
-    create_tree_from_leaves(leaf_nodes::Vector{T})::Node
-
-This function creates a  random binary tree from a list of leaf nodes.
-The root node as access point for the tree is returned.
-"""
-function create_tree_from_leaves_bin(leaf_nodes::Vector{String}, node_size::Int64 = 1; cu::Bool=false)::Node
+function tree_from_leaves(leaf_nodes::Vector{String}, final_length::Int64)::Tuple{Vector{Node}, Int}
     my_node_list::Array{Node,1} = []
 
     # first create a list of leaf nodes
     for node_name in leaf_nodes
-        nn =  Node_ncu(node_name, zeros(Float64, (2, node_size)),missing, missing,missing, missing, 0, true, 0.0, "0", 0, 0.0)
+        nn =  Node_ncu(node_name, zeros(Float64, (2, 1)),missing, missing,missing, missing, 0, true, 0.0, "0", 0, 0.0)
         push!(my_node_list,nn)
     end # for
 
@@ -121,7 +104,7 @@ function create_tree_from_leaves_bin(leaf_nodes::Vector{String}, node_size::Int6
     # shuffle the node list to get a random tree
     Random.shuffle!(my_node_list)
 
-    while length(my_node_list) > 2
+    while length(my_node_list) > final_length
         # get two nodes
         # create a new mother node to which the two first nodes are added as children
         # add the new mother node to the list and reshuffle
@@ -129,23 +112,38 @@ function create_tree_from_leaves_bin(leaf_nodes::Vector{String}, node_size::Int6
         first_child.inc_length = rand(Uniform(0.0015,1))#*0.1
         second_child::Node = pop!(my_node_list)
         second_child.inc_length = rand(Uniform(0.0015,1))
-        curr_node::Node = Node_ncu(string(temp_name), zeros(Float64, (2, node_size)), missing, missing, missing, missing, 0, true, 0.0, "0", 0,0.0)
-        add_child!(curr_node, first_child, true)
-        add_child!(curr_node, second_child, false)
+        curr_node::Node = Node_ncu(string(temp_name), zeros(Float64, (2, 1)), missing, missing, missing, missing, 0, true, 0.0, "0", 0,0.0)
+        add_child!(curr_node, first_child)
+        add_child!(curr_node, second_child)
         push!(my_node_list, curr_node)
         temp_name += 1
         Random.shuffle!(my_node_list)
     end # while
-    root::Node = Node_ncu(string(temp_name), zeros(Float64, (2, node_size)), missing, missing, missing, missing, 0, true, 0.0, "0", 0,0.0)
+
+    return my_node_list, temp_name
+end
+
+
+"""
+    create_tree_from_leaves(leaf_nodes::Vector{T})::Node
+
+This function creates a  random binary tree from a list of leaf nodes.
+The root node as access point for the tree is returned.
+"""
+function create_tree_from_leaves_bin(leaf_nodes::Vector{String}; cu::Bool=false)::Node
+
+    my_node_list, temp_name = tree_from_leaves(leaf_nodes, 2)
+
+    root::Node = Node_ncu(string(temp_name), zeros(Float64, (2, 1)), missing, missing, missing, missing, 0, true, 0.0, "0", 0,0.0)
+
     lchild = pop!(my_node_list)
     lchild.inc_length = rand(Uniform(0.0015,1))
-    #mchild = pop!(my_node_list)
-    #mchild.inc_length = rand(Uniform(0.0015,1))
+
     rchild = pop!(my_node_list)
     rchild.inc_length = rand(Uniform(0.0015,1))
-    add_child!(root, lchild, true)
-    add_child!(root, rchild, false)
-    #add_child!(root, mchild, false, true)
+    add_child!(root, lchild)
+    add_child!(root, rchild)
+
 
     set_binary!(root)
     number_nodes!(root)
@@ -162,35 +160,8 @@ This function creates a  random binary tree from a list of leaf nodes.
 The root node as access point for the tree is returned.
 """
 function create_tree_from_leaves(leaf_nodes::Vector{String}, node_size::Int64 = 1; cu::Bool=false)::Node
-    my_node_list::Array{Node,1} = []
 
-    # first create a list of leaf nodes
-    for node_name in leaf_nodes
-        nn =  Node_ncu(node_name, zeros(Float64, (2, node_size)),missing, missing,missing, missing, 0, true, 0.0, "0", 0, 0.0)
-        push!(my_node_list,nn)
-    end # for
-
-    # Internal nodes are created using integers as names.
-    temp_name::Int = length(my_node_list)+1
-
-    # shuffle the node list to get a random tree
-    Random.shuffle!(my_node_list)
-
-    while length(my_node_list) > 3
-        # get two nodes
-        # create a new mother node to which the two first nodes are added as children
-        # add the new mother node to the list and reshuffle
-        first_child::Node = pop!(my_node_list)
-        first_child.inc_length = rand(Uniform(0.0015,1))#*0.1
-        second_child::Node = pop!(my_node_list)
-        second_child.inc_length = rand(Uniform(0.0015,1))
-        curr_node::Node = Node_ncu(string(temp_name), zeros(Float64, (2, node_size)), missing, missing, missing, missing, 0, true, 0.0, "0", 0,0.0)
-        add_child!(curr_node, first_child, true)
-        add_child!(curr_node, second_child, false)
-        push!(my_node_list, curr_node)
-        temp_name += 1
-        Random.shuffle!(my_node_list)
-    end # while
+    my_node_list, temp_name = tree_from_leaves(leaf_nodes, 3)
     root::Node = Node_ncu(string(temp_name), zeros(Float64, (2, node_size)), missing, missing, missing, missing, 0, true, 0.0, "0", 0,0.0)
     lchild = pop!(my_node_list)
     lchild.inc_length = rand(Uniform(0.0015,1))
