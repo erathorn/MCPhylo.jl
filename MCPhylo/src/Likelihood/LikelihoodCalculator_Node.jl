@@ -5,7 +5,7 @@
 This function calculates the log-likelihood of an evolutiuonary model using the
 Felsensteins pruning algorithm.
 """
-function FelsensteinFunction(tree_postorder::Vector{Node}, pi_::T, rates::Vector{Float64}, data::Array, n_c::Int64, blv::S) where {S<:AbstractArray, T<:Number}
+function FelsensteinFunction(tree_postorder::Vector{N}, pi_::T, rates::Vector{Float64}, data::Array, n_c::Int64, blv::S) where {S<:AbstractArray, T<:Number, N<:AbstractNode}
     r::Float64 = 1.0
     mu =  1.0 / (2.0 * pi_ * (1-pi_))
     mml = calc_trans.(blv, pi_, mu, r)

@@ -206,10 +206,10 @@ function Stochastic(d::Integer, f::Function,
 
 end
 
-Stochastic(f::Function, d::T, args...)  where T<:AbstractNode = Stochastic(d, f, args...)
+Stochastic(f::Function, d::T, args...)  where T<:Node = Stochastic(d, f, args...)
 
-function Stochastic(d::T, f::Function, nnodes::Int, monitor::Union{Bool, Vector{Int}}=true) where T<:AbstractNode
-    value = T()
+function Stochastic(d::Node, f::Function, nnodes::Int, monitor::Union{Bool, Vector{Int}}=true)
+    value = Node()
     fx, src = modelfxsrc(depfxargs, f)
     s = TreeStochastic(value, :nothing, Int[], fx, src, Symbol[],
                       NullUnivariateDistribution())

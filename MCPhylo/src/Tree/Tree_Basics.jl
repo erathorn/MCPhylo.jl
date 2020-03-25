@@ -1,13 +1,11 @@
 #=
 my_tree:
-- Julia version: 1.0.1
+- Julia version: 1.3.1
 - Author: erathorn
 - Date: 2019-05-07
 =#
 
 #TODO: Automate export of automatically genereated funtions
-
-
 
 """
     add_child(mother_node::Node, child::Node)
