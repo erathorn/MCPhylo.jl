@@ -8,47 +8,6 @@ my_tree:
 #TODO: Automate export of automatically genereated funtions
 
 
-function Base.summary(io::IO, d::Node)
-    summary(io, d.name)
-end
-
-function Base.show(io::IO, d::Node)
-
-    print(io, "Tree with root:\n")
-    show(io, d.name)
-    if d.initialized
-        print(io, "\n\nLength:\n")
-        show(io, "text/plain", tree_length(d))
-        print(io, "\n\nHeight:\n")
-        show(io, "text/plain", tree_height(d))
-        print(io, "\n\nNumber of leave nodes:\n")
-        show(io, "text/plain",length(get_leaves(d)))
-    else
-        print(io, "\n\nLength:\n")
-        show(io, "text/plain", 0)
-        print(io, "\n\nHeight:\n")
-        show(io, "text/plain", 0)
-        print(io, "\n\nNumber of leave nodes:\n")
-        show(io, "text/plain",0)
-    end
-end
-
-function showall(io::IO, d::Node)
-  show(io, d)
-  print(io, "\nNode:\n")
-  show(io, "text/plain", d.name)
-  print(io, "\n\n#children:\n")
-  show(io, d.nchild)
-  print(io, "\n\nbinary:\n")
-  show(io, d.binary)
-end
-
-Base.:(==)(x::T, y::T) where T<:AbstractNode = x.num == y.num
-
-
-Base.size(x::T) where T<:AbstractNode = size(post_order(x))
-Base.length(x::T) where T<:AbstractNode = x.nchild
-
 
 """
     add_child(mother_node::Node, child::Node)
@@ -273,7 +232,6 @@ function force_ultrametric!(root::T) where T<:AbstractNode
             node2dist[node.num] = nv + node2dist[node.mother.num]
         end # if
     end # for
-
 
     set_branchlength_vector!(root, nblv)
 end # function force_ultrametric!

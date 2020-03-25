@@ -54,3 +54,45 @@ end
 function Node(name::String; data::A)::Node where A<:AbstractArray
         Node{Float64,A,Array{Float64},Int64}(name, data ,missing, Vector{Node}(undef, 0), ones(3), 0, true, 0.5, "0", 1, 0.5, nothing, nothing, false)
 end
+
+
+
+#################### Base functionality ####################
+
+Base.:(==)(x::T, y::T) where T<:AbstractNode = x.num == y.num
+Base.size(x::T) where T<:AbstractNode = size(post_order(x))
+Base.length(x::T) where T<:AbstractNode = x.nchild
+
+function Base.summary(io::IO, d::N) where N <: AbstractNode
+    summary(io, d.name)
+end
+
+function Base.show(io::IO, d::N) where N <: AbstractNode
+    print(io, "Tree with root:\n")
+    show(io, d.name)
+    if d.initialized
+        print(io, "\nLength:\n")
+        show(io, "text/plain", tree_length(d))
+        print(io, "\nHeight:\n")
+        show(io, "text/plain", tree_height(d))
+        print(io, "\nNumber of leave nodes:\n")
+        show(io, "text/plain",length(get_leaves(d)))
+    else
+        print(io, "\nLength:\n")
+        show(io, "text/plain", 0)
+        print(io, "\nHeight:\n")
+        show(io, "text/plain", 0)
+        print(io, "\nNumber of leave nodes:\n")
+        show(io, "text/plain",0)
+    end
+end
+
+function showall(io::IO, d::N) where N <: AbstractNode
+  show(io, d)
+  print(io, "\nNode:\n")
+  show(io, "text/plain", d.name)
+  print(io, "\n#children:\n")
+  show(io, d.nchild)
+  print(io, "\nbinary:\n")
+  show(io, d.binary)
+end
