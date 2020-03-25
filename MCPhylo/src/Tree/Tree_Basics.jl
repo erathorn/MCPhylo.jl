@@ -12,14 +12,24 @@ function Base.summary(io::IO, d::Node)
 end
 
 function Base.show(io::IO, d::Node)
+
     print(io, "Tree with root:\n")
     show(io, d.name)
-    print(io, "\n\nLength:\n")
-    show(io, "text/plain", tree_length(d))
-    print(io, "\n\nHeight:\n")
-    show(io, "text/plain", tree_height(d))
-    print(io, "\n\nNumber of leave nodes:\n")
-    show(io, "text/plain",length(get_leaves(d)))
+    if isdefined(d, :children)
+        print(io, "\n\nLength:\n")
+        show(io, "text/plain", tree_length(d))
+        print(io, "\n\nHeight:\n")
+        show(io, "text/plain", tree_height(d))
+        print(io, "\n\nNumber of leave nodes:\n")
+        show(io, "text/plain",length(get_leaves(d)))
+    else
+        print(io, "\n\nLength:\n")
+        show(io, "text/plain", 0)
+        print(io, "\n\nHeight:\n")
+        show(io, "text/plain", 0)
+        print(io, "\n\nNumber of leave nodes:\n")
+        show(io, "text/plain",0)
+    end
 end
 
 function showall(io::IO, d::Node)
@@ -281,6 +291,7 @@ end # function tree_length
 This function does the internal tree length recursion
 """
 function tree_length(root::T, tl::Float64)::Float64 where T<:Node
+
     if length(root.children) != 0
         for child in root.children
             tl = tree_length(child, tl)
@@ -289,6 +300,7 @@ function tree_length(root::T, tl::Float64)::Float64 where T<:Node
     if root.root !== true
         tl += root.inc_length
     end
+
     tl
 end # function tree_length
 
@@ -309,6 +321,7 @@ end
 Calculate the height of a node.
 """
 function node_height(root::T, mv::Float64)::Float64  where T<:Node
+
     if !root.root
         if isdefined(root, :mother)
             rmh = root.mother.height
@@ -326,6 +339,7 @@ function node_height(root::T, mv::Float64)::Float64  where T<:Node
             mv = root.height
         end # if
     end # if
+
     return mv
 end # function node_height
 
@@ -433,6 +447,7 @@ Get all the leaves of this Node. It is meant as a wrapper, only the root node
 needs to be supplied
 """
 @inline function get_leaves(root::T)::Vector{T}  where T<:Node
+
     [i for i in post_order(root) if i.nchild == 0]
 end # function get_leaves
 
