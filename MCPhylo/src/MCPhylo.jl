@@ -15,19 +15,17 @@ using CuArrays
 using GPUArrays
 using CUDAnative
 using CUDAdrv
-using Flux
+import Flux
 using ForwardDiff
-#using NLsolve
-#import ForwardDiff: gradient, gradient!
-#using Zygote
+using Calculus
+
 import Calculus: gradient
 using Showoff: showoff
 using Markdown
 using DataFrames
 using Random
 using CSV
-#using StatsFuns
-#using StaticArrays
+
 import Base: Matrix, names, summary, iterate
 import Base.Threads.@spawn
 import Compose: Context, context, cm, gridstack, inch, MeasureOrNumber, mm, pt, px
@@ -68,96 +66,9 @@ import StatsBase: autocor, autocov, countmap, counts, describe, predict,
 
 include("distributions/pdmats2.jl")
 using .PDMats2
+include("Tree/Node_Type.jl") # We need this to get the Node type in
 
 #CuArrays.allowscalar(false)
-
-"""
-    Node
-
-This data type holds the basic Node structure. The type T is used to specify the type of the data
-stored in the node.
-
-* If `nchild` is `0` the Node is a leaf node.
-* If `root` is `False` the Node is a child of another node.
-* `inc_length` specifies the length of the incomming branch.
-* `binary` specifies the path from the root to the Node. `1` and `0` represent left and right turns respectively.
-"""
-
-abstract type Node <: Any end
-
-mutable struct Node_cu <: Node
-  name::String
-  data::CuArray{Float64,2, Nothing}#{Float64, 2}
-  mother::Union{Node_cu, Missing}
-  children::Vector{Node_cu}
-  nchild::Int64
-  root::Bool
-  inc_length::Float64
-  binary::String
-  num::Int64
-  height::Float64
-  IntExtMap::Union{Vector{Int64}, Nothing}
-  blv::Union{Vector{Float64}, Nothing}
-
-  Node_cu() = new("noname")
-  function Node_cu(n::String, d::Array{Float64,2}, m::Union{Node, Missing},c1::Union{Node, Missing},c2::Union{Node, Missing},c3::Union{Node, Missing},
-    n_c::Int64, r::Bool, inc::Float64, b::String, num::Int64, height::Float64)
-      mn = Node_cu()
-      mn.name = n
-      mn.data = CuArray{Float64, 2}(undef, 2, 2)
-      mn.mother = m
-      mn.children = Vector{Node_cu()}(undef, 0)
-      mn.nchild = n_c
-      mn.root = r
-      mn.inc_length = inc
-      mn.binary = b
-      mn.num = num
-      mn.height = height
-      mn.IntExtMap = nothing
-      mn.blv = nothing
-      return mn
-  end
-
-end
-
-
-mutable struct Node_ncu <: Node
-    name::String
-    data::Array{Float64,2}
-    mother::Union{Node_ncu, Missing}
-    children::Vector{Node_ncu}
-    scaler::Array{Float64,2}
-    trprobs::Array{Float64,2}
-    nchild::Int64
-    root::Bool
-    inc_length::Float64
-    binary::String
-    num::Int64
-    height::Float64
-    IntExtMap::Union{Vector{Int64}, Nothing}
-    blv::Union{Vector{Float64}, Nothing}
-
-    Node_ncu() = new("noname")
-    function Node_ncu(n::String, d::Array{Float64,2}, m::Union{Node, Missing},c1::Union{Node, Missing},c2::Union{Node, Missing},c3::Union{Node,Missing},
-      n_c::Int64, r::Bool, inc::Float64, b::String, num::Int64,height::Float64)
-        mn = Node_ncu()
-        mn.name = n
-        mn.data = Array{Float64, 2}(undef, 2, 2)
-        mn.trprobs = Array{Float64, 2}(undef, 2, 2)
-        mn.scaler = Array{Float64, 2}(undef, 1, 2)
-        mn.mother = m
-        mn.children = Vector{Node_ncu}(undef, 0)
-        mn.nchild = n_c
-        mn.root = r
-        mn.inc_length = inc
-        mn.binary = b
-        mn.num = num
-        mn.height = height
-        mn.IntExtMap = nothing
-        mn.blv = nothing
-        return mn
-    end
-end # struct Node
 
 #################### Types ####################
 
@@ -261,7 +172,7 @@ end
 abstract type SamplerTune end
 
 struct SamplerVariate{T<:SamplerTune} <: VectorVariate
-  value::Union{Vector{Float64}, Vector{S}} where S<: Node
+  value::Union{Vector{Float64}, Vector{S}} where S<:AbstractNode
   tune::T
 
   function SamplerVariate{T}(x::AbstractVector, tune::T) where T<:SamplerTune
@@ -270,7 +181,6 @@ struct SamplerVariate{T<:SamplerTune} <: VectorVariate
   end
 
   function SamplerVariate{T}(x::AbstractVector, pargs...; kargs...) where T<:SamplerTune
-
     if !isa(x[1], Node)
       value = convert(Vector{Float64}, x)
     else

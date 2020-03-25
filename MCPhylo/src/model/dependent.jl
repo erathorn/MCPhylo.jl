@@ -103,10 +103,10 @@ function Logical(d::Integer, f::Function,
   setmonitor!(l, monitor)
 end
 
-Logical(f::Function, d::T, args...)  where T<:Node = Logical(d, f, args...)
+Logical(f::Function, d::T, args...)  where T<:AbstractNode = Logical(d, f, args...)
 
 function Logical(d::T, f::Function,
-                 monitor::Union{Bool, Vector{Int}}=true) where T<:Node
+                 monitor::Union{Bool, Vector{Int}}=true) where T<:AbstractNode
   value = T()
   fx, src = modelfxsrc(depfxargs, f)
   l = TreeLogical(value, :nothing, Int[], fx, src, Symbol[])
@@ -206,9 +206,9 @@ function Stochastic(d::Integer, f::Function,
 
 end
 
-Stochastic(f::Function, d::T, args...)  where T<:Node = Stochastic(d, f, args...)
+Stochastic(f::Function, d::T, args...)  where T<:AbstractNode = Stochastic(d, f, args...)
 
-function Stochastic(d::T, f::Function, nnodes::Int, monitor::Union{Bool, Vector{Int}}=true) where T<:Node
+function Stochastic(d::T, f::Function, nnodes::Int, monitor::Union{Bool, Vector{Int}}=true) where T<:AbstractNode
     value = T()
     fx, src = modelfxsrc(depfxargs, f)
     s = TreeStochastic(value, :nothing, Int[], fx, src, Symbol[],
@@ -240,14 +240,14 @@ function setinits!(s::AbstractStochastic, m::Model, x)
   throw(ArgumentError("incompatible initial value for node : $(s.symbol)"))
 end
 
-function setinits!(d::TreeStochastic, m::Model, x::T) where {T<: Node}
+function setinits!(d::TreeStochastic, m::Model, x::T) where {T<:AbstractNode}
     d.value = x
     d.distr = d.eval(m)
     insupport(d.distr, x) || throw(ArgumentError("The supplied tree does not match the topological tree constraints."))
     setmonitor!(d, d.monitor)
 end # function
 
-function setinits!(d::TreeStochastic, m::Model, x::Array{T})  where {T<: Node}
+function setinits!(d::TreeStochastic, m::Model, x::Array{T})  where {T<:AbstractNode}
     d.value = x
     d.distr = d.eval(m)
 

@@ -72,7 +72,7 @@ end # function from_df
 
 Creates a newick represnetation of the tree.
 """
-function newick(root::T)::String  where T<:Node
+function newick(root::T)::String  where T<:AbstractNode
     # get the newickstring
     newickstring = newick(root, "")
 
@@ -83,11 +83,11 @@ function newick(root::T)::String  where T<:Node
 end
 
 """
-    newick(root::T, newickstring::AbstractString) where T<:Node
+    newick(root::T, newickstring::AbstractString) where T<:AbstractNode
 
 Do the newick recursion. It is meant as the internal iterator function.
 """
-function newick(root::T, newickstring::AbstractString) where T<:Node
+function newick(root::T, newickstring::AbstractString) where T<:AbstractNode
     if root.nchild != 0
         # internal node
         newickstring = string(newickstring, "(")
@@ -110,7 +110,7 @@ function to_covariance(tree::TreeStochastic)::Array{T,2} where T <: Real
     to_covariance(tree.value, blv)
 end # end to_covariance
 
-function to_covariance(tree::N) where {N<: Node, T <: Real}
+function to_covariance(tree::N) where {N<:AbstractNode, T <: Real}
     blv = get_branchlength_vector(tree)
     to_covariance(tree, blv)
 end # end to_covariance
@@ -124,7 +124,7 @@ end # end to_covariance
 
 Get the covariance matrix of the ultrametric version of `tree` with height 1.
 """
-function to_covariance_ultra(tree::N)::Array{T,2} where {T<: Real, N <: Node}
+function to_covariance_ultra(tree::N)::Array{T,2} where {T<: Real, N <:AbstractNode}
     # scale the branchlength between 0 and 1
     blv = get_branchlength_vector(tree)
     blv ./= tree_height(tree)
@@ -142,11 +142,11 @@ end # end function to_covariance_ultra
 
 #################### To Matrix convertes ####################
 """
-    to_distance_matrix(tree::T)::Array{Float64,2} where T <: Node
+    to_distance_matrix(tree::T)::Array{Float64,2} where T <:AbstractNode
 
 Calculate the distance matrix over the set of leaves.
 """
-function to_distance_matrix(tree::T)::Array{Float64,2} where T <: Node
+function to_distance_matrix(tree::T)::Array{Float64,2} where T <:AbstractNode
     leaves::Vector{T} = get_leaves(tree)
     ll = length(leaves)
     covmat = zeros(Float64, ll, ll)
@@ -163,13 +163,13 @@ function to_distance_matrix(tree::T)::Array{Float64,2} where T <: Node
 end # function to_distance_matrix
 
 """
-    to_covariance(tree::N, blv::Array{T})::Array{T,2} where {N<:Node,T<: Real}
+    to_covariance(tree::N, blv::Array{T})::Array{T,2} where {N<:AbstractNode,T<: Real}
 
 Calcualte the variance-covariance matrix from `tree`. An entry (i,j) of the matrix
 is defined as the length of the path connecting the latest common ancestor
 of i and j with the root of the tree.
 """
-function to_covariance(tree::N, blv::Array{T})::Array{T,2} where {N<:Node,T<: Real}
+function to_covariance(tree::N, blv::Array{T})::Array{T,2} where {N<:AbstractNode,T<: Real}
     leaves::Vector{N} = get_leaves(tree)
     ll = length(leaves)
     covmat = zeros(T, ll, ll)

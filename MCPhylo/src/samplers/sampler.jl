@@ -28,7 +28,7 @@ function SamplerVariate(x::AbstractVector{U}, tune::T) where {T<:SamplerTune, U<
   SamplerVariate{T}(x, tune)
 end
 
-function SamplerVariate(x::AbstractVector{U}, tune::T) where {T<:SamplerTune, U<:Node}
+function SamplerVariate(x::AbstractVector{U}, tune::T) where {T<:SamplerTune, U<:AbstractNode}
   SamplerVariate{T}(x, tune)
 end
 
@@ -53,7 +53,7 @@ end
 
 function SamplerVariate(x::AbstractVector{U},
                         s::Sampler{T}, iter::Integer,
-                        pargs...; kargs...) where {T<:SamplerTune, U<:Node}
+                        pargs...; kargs...) where {T<:SamplerTune, U<:AbstractNode}
   if iter == 1
     v = SamplerVariate{T}(x, pargs...; kargs...)
     s.tune = v.tune
@@ -125,11 +125,11 @@ function logpdf!(block::SamplingBlock, x::AbstractArray{T}) where {T<:Real}
   logpdf!(block.model, x, block.index, block.transform)
 end
 
-function logpdf!(block::SamplingBlock, x::AbstractArray{Node}) where {T<:Node}
+function logpdf!(block::SamplingBlock, x::AbstractArray{Node}) where {T<:AbstractNode}
   logpdf!(block.model, x[1])
 end
 
-function logpdf!(block::SamplingBlock, x::Node) where {T<:Node}
+function logpdf!(block::SamplingBlock, x::Node) where {T<:AbstractNode}
   logpdf!(block.model, x, block.index, block.transform)
 end
 
@@ -167,7 +167,7 @@ function relist(block::SamplingBlock, x::AbstractArray{T}) where {T<:Real}
   relist(block.model, x, block.index, block.transform)
 end
 
-function relist(block::SamplingBlock, x::AbstractArray{T}) where {T<:Node}
+function relist(block::SamplingBlock, x::AbstractArray{T}) where {T<:AbstractNode}
 
   relist(block.model, x, block.index, block.transform)
 end

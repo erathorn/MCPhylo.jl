@@ -84,7 +84,7 @@ function logpdf!(m::Model, x::Node, block::Integer=0,
   lp
 end
 
-function gradlogpdf!(m::Model, x::AbstractArray{T}, block::Integer=0,transform::Bool=false)where {T<:Node}
+function gradlogpdf!(m::Model, x::AbstractArray{T}, block::Integer=0,transform::Bool=false)where {T<:AbstractNode}
   gradlogpdf!(m, x[1], block, transform)
 end
 
@@ -98,14 +98,16 @@ function gradlogpdf!(m::Model, x::Node, block::Integer=0,transform::Bool=false)
 
   # use thread parallelism
   # prior
-  prior_res = @spawn gradlogpdf(m[params[1]], x)
+  #prior_res = @spawn gradlogpdf(m[params[1]], x)
+  prior_res =  gradlogpdf(m[params[1]], x)
 
   # likelihood
   v, grad = gradlogpdf(m[targets[1]])
 
   # get results from threads
-  vp, gradp = fetch(prior_res)
-  
+  #vp, gradp = fetch(prior_res)
+  vp, gradp = prior_res
+
 
   v+vp, grad.+gradp
 end
@@ -179,7 +181,7 @@ function relist(m::Model, x::AbstractArray{T}, block::Integer=0,
 end
 
 function relist(m::Model, x::AbstractArray{T}, block::Integer=0,
-                transform::Bool=false) where {T<:Node}
+                transform::Bool=false) where {T<:AbstractNode}
 
   relist(m, x, keys(m, :block, block), transform)
 end
@@ -234,7 +236,7 @@ function assign!(m::Model, key::Symbol, value::T) where T <: Real
   m[key].value = value
 end
 
-function assign!(m::Model, key::Symbol, value::T) where T <: Node
+function assign!(m::Model, key::Symbol, value::T) where T <:AbstractNode
   m[key].value = value
 end
 

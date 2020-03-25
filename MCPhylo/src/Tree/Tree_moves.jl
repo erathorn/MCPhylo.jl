@@ -2,7 +2,7 @@
 #TODO: RSPR
 
 """
-    NNI(root::T, target::T, lor::Bool)::Int64   where T<:Node
+    NNI(root::T, target::T, lor::Bool)::Int64   where T<:AbstractNode
 
 This function does a nearest neighbour interchange (NNI) move on the tree specified
 by `root`. The parameter `target` specifies the node which performs the interchange
@@ -10,7 +10,7 @@ move using the left or right child of the target node. If the left child should
 be used `lor=true`.
 The function returns 1 if the move was successfull and 0 else.
 """
-function NNI!(root::T, target::T, lor::Bool)::Int64  where T<:Node
+function NNI!(root::T, target::T, lor::Bool)::Int64  where T<:AbstractNode
     # NNI move would be illegal
     if target.nchild === 0 || target.root
         return 0
@@ -32,26 +32,26 @@ function NNI!(root::T, target::T, lor::Bool)::Int64  where T<:Node
 end # function
 
 """
-    NNI!(root::T, target::Int64)::Int64  where T<:Node
+    NNI!(root::T, target::Int64)::Int64  where T<:AbstractNode
 
 This function does a nearest neighbour interchange (NNI) move on the tree specified
 by `root`. The target is identified by the number of the target node.
 The function returns 1 if the move was successfull and 0 else.
 """
-function NNI!(root::T, target::Int64)::Int64  where T<:Node
+function NNI!(root::T, target::Int64)::Int64  where T<:AbstractNode
    tn::T = find_num(root, target)
    lor::Bool = 0.5 > rand()
    NNI!(root, tn, lor)
 end #function
 
 """
-    NNI!(root::T)::Int64  where T<:Node
+    NNI!(root::T)::Int64  where T<:AbstractNode
 
 This function does a nearest neighbour interchange (NNI) move on the tree specified
 by `root`. The target is identified by the number of the target node.
 The function returns 1 if the move was successfull and 0 else.
 """
-function NNI!(root::T)::Int64  where T<:Node
+function NNI!(root::T)::Int64  where T<:AbstractNode
     n = rand(1:size(root)[1])
     tn::T = find_num(root, n)
     lor::Bool = 0.5 > rand()
@@ -127,7 +127,7 @@ This function randomizes the tree topology by performing a number of nearest
 neighbour interchange (NNI) moves. The number of NNI moves is specified in
 the parameter num.
 """
-function randomize!(root::T, num::Int64=100)::Nothing where T <: Node
+function randomize!(root::T, num::Int64=100)::Nothing where T <:AbstractNode
     n_nodes = size(root)[1]
     i = 0
     while i < num
@@ -146,7 +146,7 @@ end
 Change the incomming length of node1 and node2 while keeping there combined length
 constant.
 """
-function slide!(node1::T, node2::T, proportion::Float64) where T <: Node
+function slide!(node1::T, node2::T, proportion::Float64) where T <:AbstractNode
     total::Float64 = node1.inc_length + node2.inc_length
     fp::Float64 = total*proportion
     sp::Float64 = total-fp

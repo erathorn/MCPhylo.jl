@@ -5,7 +5,7 @@
 This function calculates the log-likelihood of an evolutiuonary model using the
 Felsensteins pruning algorithm.
 """
-function FelsensteinFunction(tree_postorder::Vector{Node_ncu}, pi_::T, rates::Vector{Float64}, data::Array, n_c::Int64, blv::S) where {S<:AbstractArray, T<:Number}
+function FelsensteinFunction(tree_postorder::Vector{Node}, pi_::T, rates::Vector{Float64}, data::Array, n_c::Int64, blv::S) where {S<:AbstractArray, T<:Number}
     r::Float64 = 1.0
     mu =  1.0 / (2.0 * pi_ * (1-pi_))
     mml = calc_trans.(blv, pi_, mu, r)
@@ -27,11 +27,11 @@ function FelsensteinFunction(tree_postorder::Vector{Node_ncu}, pi_::T, rates::Ve
     return likelihood_root(root_node, pi_)#res
 end # function
 
-@inline function likelihood_root(root::T, pi_::S)::Real where {S<:Number, T<:Node}
+@inline function likelihood_root(root::T, pi_::S)::Real where {S<:Number, T<:AbstractNode}
     sum(log.(sum(root.data .* Array([pi_, 1.0-pi_]), dims=1))+root.scaler)
 end
 
-function node_loop(node::T, mml::Array{Array{S, 2},1})::Array{S,2} where {T<:Node, S<:Real}
+function node_loop(node::T, mml::Array{Array{S, 2},1})::Array{S,2} where {T<:AbstractNode, S<:Real}
     reduce(pointwise_reduce, bc.(node.children, Ref(mml)))
 end
 
@@ -39,22 +39,10 @@ end
     x.*y
 end
 
-@inline function bc(node::T, mml::Array{Array{S,2},1})::Array{S} where {T<:Node, S<:Real}
+@inline function bc(node::T, mml::Array{Array{S,2},1})::Array{S} where {T<:AbstractNode, S<:Real}
     mml[node.num]*node.data
 end
 
-
-function calc_trans(node::N, pi_::T, mu::S, r::S, time::Array{S})::Nothing where {S<:Number, T<:Number, N<:Node}
-
-    @inbounds t = @view time[node.num]
-    v::Float64 = exp(-r*t*mu)
-    @inbounds node.trprobs[1] = pi_ - (pi_ - 1)*v
-    @inbounds node.trprobs[2] = pi_ - pi_* v
-    @inbounds node.trprobs[3] = (pi_ - 1)*(v - 1)
-    @inbounds node.trprobs[4] = pi_*(v - 1) + 1
-    nothing
-
-end
 
 function calc_trans(time::R, pi_::T, mu::S, r::S) where {S<:Real, T<:Number, R<:Real}
 
@@ -68,7 +56,7 @@ function calc_trans(time::R, pi_::T, mu::S, r::S) where {S<:Real, T<:Number, R<:
     return mm
 end
 
-function nf(node::T, blv::Vector, pi_::S, mu::Float64, r::Float64, mm::Array{Float64,2}) where {T<:Node, S<:Number}
+function nf(node::T, blv::Vector, pi_::S, mu::Float64, r::Float64, mm::Array{Float64,2}) where {T<:AbstractNode, S<:Number}
     md::Array{Float64, 2} = node.data
     @inbounds m_num::Int64 = node.num
     @inbounds minc::Float64 = blv[m_num]

@@ -3,7 +3,7 @@
 #################### Conversions ####################
 
 Base.convert(::Type{Bool}, v::ScalarVariate) = convert(Bool, v.value)
-Base.convert(::Type{T}, v::TreeVariate) where T<:Node = v.value
+Base.convert(::Type{T}, v::TreeVariate) where T<:AbstractNode = v.value
 Base.convert(::Type{T}, v::ScalarVariate) where T<:Integer = convert(T, v.value)
 Base.convert(::Type{T}, v::ScalarVariate) where T<:AbstractFloat =
   convert(T, v.value)

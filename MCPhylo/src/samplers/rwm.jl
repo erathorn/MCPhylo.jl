@@ -58,7 +58,7 @@ end
 sample!(v::RWMVariate) = sample!(v, v.tune.logf)
 
 function sample!(v::RWMVariate, logf::Function)
-  typeof(v[1]) <: Node ? sample_node!(v, logf) : sample_number!(v, logf)
+  typeof(v[1]) <:AbstractNode ? sample_node!(v, logf) : sample_number!(v, logf)
 end
 
 
