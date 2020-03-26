@@ -11,9 +11,9 @@ stored in the node.
 * `binary` specifies the path from the root to the Node. `1` and `0` represent left and right turns respectively.
 """
 
-abstract type AbstractNode{T,A,B,I} end
+abstract type AbstractNode end
 
-mutable struct Node_cu{T<:Real, A<:AbstractArray,B<:AbstractArray, I<:Integer} <: AbstractNode{T,A,B,I}
+mutable struct Node_cu{T<:Real, A<:AbstractArray,B<:AbstractArray, I<:Integer} <: AbstractNode
     name::String
     data::A#{Float64, 2}
     mother::Union{Node_cu, Missing}
@@ -30,7 +30,7 @@ mutable struct Node_cu{T<:Real, A<:AbstractArray,B<:AbstractArray, I<:Integer} <
  end
 
 
-mutable struct Node{T<:Real, A<:AbstractArray,B<:AbstractArray, I<:Integer} <: AbstractNode{T,A,B,I}
+mutable struct Node{T<:Real, A<:AbstractArray,B<:AbstractArray, I<:Integer} <: AbstractNode
     name::String
     data::A
     mother::Union{Node, Missing}

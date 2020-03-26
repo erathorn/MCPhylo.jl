@@ -430,7 +430,7 @@ end # function random_node
 
 Get the vector of branch lengths of the tree.
 """
-function get_branchlength_vector(root::N)::Vector  where {N <:AbstractNode}
+function get_branchlength_vector(root::N)::Vector{Float64}  where {N <:AbstractNode}
     get_branchlength_vector(root, root.blv)
     return root.blv
 end # function get_branchlength_vector
@@ -440,7 +440,7 @@ end # function get_branchlength_vector
 
 Get the vector of branch lengths of the tree.
 """
-function get_branchlength_vector(t::TreeStochastic)
+function get_branchlength_vector(t::TreeStochastic)::Vector{Float64}
     get_branchlength_vector(t.value)
 end # function
 
@@ -463,7 +463,7 @@ end
 
 Do post order traversal to retrieve a vector of branch lengths.
 """
-function get_branchlength_vector(root::N, vec::Nothing)::Vector where {N<:AbstractNode, T<:Real}
+function get_branchlength_vector(root::N, vec::Nothing)::Vector{Float64} where {N<:AbstractNode, T<:Real}
     root.blv = Vector{Float64}(undef, length(post_order(root))-1)
     vec = root.blv
     get_branchlength_vector(root, vec)
