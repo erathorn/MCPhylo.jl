@@ -123,7 +123,7 @@ function sample_node!(v::SliceMultivariate, logf::Function)
     end
     set_branchlength_vector!(tree, blv)
   end
-  #v[:] = x
+
   v.value[1] = tree
   v
 end

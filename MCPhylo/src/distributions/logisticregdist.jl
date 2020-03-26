@@ -26,22 +26,15 @@ function my_bernoulli_logpdf(θ::T, x::S)::T where {S <: Real, T<: Real}
 end
 
 function mlpdf(mu::Array{Float64,2}, tree::Node, blv::Vector{T}, sigmai::Vector{Float64},
-      P::Array{Float64,2}, scaler, chars::Int64, data::Array{Float64,2}) where T<:Real
+               P::Array{Float64,2}, scaler, chars::Int64, data::Array{Float64,2}) where T<:Real
 
     mycov::Array{T,2} = MCPhylo.to_covariance(tree, blv)
     rv::T = 0.0
     rv_a = zeros(T,chars)
-     @inbounds @simd for i in 1:chars
-
-
+    @inbounds @simd for i in 1:chars
         mat = (cholesky(sigmai[i].*mycov).L*P[:,i]+mu[:,i])
         rv_a[i] = sum(my_bernoulli_logpdf.(loginvlogit.(mat, Ref(scaler)), data[:,i]))
-        #myvalue = sum(logpdf.(Bernoulli.(invlogit.(mat, Ref(scaler))), data[:,i]))
-
-        #myvalue
-
     end
-    #println(rv_a)
     sum(rv_a)
 end
 
@@ -56,5 +49,5 @@ function gradlogpdf(d::BrownianPhylo, x::AbstractArray{T, 2}) where T<:Real
 
     grad = DiffResults.gradient(res)
 
-    DiffResults.value(res), grad#DiffResults.gradient(res)
+    DiffResults.value(res), grad
 end

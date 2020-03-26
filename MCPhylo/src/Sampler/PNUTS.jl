@@ -86,13 +86,7 @@ function sample!(v::PNUTSVariate, logfgrad::Function; adapt::Bool=false)
     tune.m += 1
 
     nuts_sub!(v, tune.epsilon, logfgrad)
-    #println("m: ",tune.m)
-    #println("t0: ",tune.t0)
     p = 1.0 / (tune.m + tune.t0)
-    #println("p: ",p)
-    #println("Hbar: ", tune.Hbar)
-    #println("nα: ", tune.nalpha)
-    #println("α: ", tune.alpha)
     tune.Hbar = (1.0 - p) * tune.Hbar +
                 p * (tune.target - tune.alpha / tune.nalpha)
     tune.epsilon = exp(tune.mu - sqrt(tune.m) * tune.Hbar / tune.gamma)
@@ -194,27 +188,25 @@ function refraction(v::T, r::Vector{Float64}, pm::Int64,
 
     blenvec::Vector{Float64} = get_branchlength_vector(v1)
     fac::Vector{Float64} = scale_fac.(blenvec, delta)
-    #println("blen ", blenvec)
-    #println("Refr ", ref_r)
+
     ref_r = @. ref_r + (epsilon * 0.5) * (grad * fac)
-    #println("Refr 2 ", ref_r)
+
     tmpB = @. blenvec + (epsilon * ref_r)
-    #println("tmp1 ",tmpB)
-    nni = 0
+
+    nni = zero(Int64)
 
     if minimum(tmpB) <= 0
         v1, tmpB, ref_r, nni = ref_NNI(v1, tmpB, ref_r, epsilon, blenvec, delta, logfgrad, sz, rescale)
 
     end
-    #println("tmp2 ",tmpB)
+
     blenvec = molifier.(tmpB, delta)
-    #println("blenvec mol ",blenvec)
+
     set_branchlength_vector!(v1, blenvec)
+
     rescale && rescale_length(v1)
 
-
     logf, grad = logfgrad(v1, sz, true, true)
-
     fac = scale_fac.(blenvec, delta)
     ref_r = @. ref_r + (epsilon * 0.5) * (grad * fac)
 
@@ -241,7 +233,6 @@ function ref_NNI(v::T, tmpB::Vector{Float64}, r::Vector{Float64}, epsilon::Float
 
      temp = epsilon-t+timelist[ref_index]
      blv = @. blv + (temp * r)
-     #println("tmp while ", tmpB)
      r[ref_index] *= -1.0
 
      if intext[ref_index] == 1
@@ -344,9 +335,7 @@ function nouturn(xminus::T, xplus::T,
                 rminus::Vector{Float64}, rplus::Vector{Float64}, gradminus::Vector{Float64},gradplus::Vector{Float64},
                 epsilon::Float64, logfgrad::Function, delta::Float64, sz::Int64, j::Int64, rescale::Bool)  where T<:AbstractNode
 
-        if j < 10
-          return false
-        end
+
         curr_l, curr_h = BHV_bounds(xminus, xplus)
 
         # use thread parallelism to calculuate both directions at once
@@ -374,16 +363,11 @@ function nutsepsilon(x::Node, logfgrad::Function, delta::Float64, rescale::Bool)
 
   x0 = deepcopy(x)
   epsilon = 1.0
-  #println(grad0)
+
   _, rprime, logfprime, gradprime,_ = refraction(x0, r0, 1, grad0,  epsilon, logfgrad, delta, n, rescale)
 
   prob = exp(logfprime - logf0 - 0.5 * (dot(rprime) - dot(r0)))
-  #println(logfprime)
-  #println(logf0)
-  #println(rprime)
-  #println(r0)
-  #println(logfprime - logf0 - 0.5 * (dot(rprime) - dot(r0)))
-  #println(prob)
+
   pm = 2 * (prob > 0.5) - 1
 
   while prob^pm > 0.5^pm

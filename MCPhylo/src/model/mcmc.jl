@@ -101,11 +101,11 @@ function mcmc_worker!(args::Vector)
   end
 
   reset!(meter)
-  @sync for i in window
+  for i in window
 
     sample!(m)
     if i > burnin && (i - burnin) % thin == 0
-    #if i % thin == 0
+    
       sim[i, :, 1] = unlist(m, true)
 
       if store_trees
