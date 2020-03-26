@@ -116,7 +116,7 @@ end
 
 
 
-function nuts_sub!(mt::N, epsilon::Float64, delta::Float64, rescale::Bool, logfgrad::Function)::Tuple{N, Int64, Float64, Int64} where N<: Node{T,A,B,I} where {T<: Real, A<: AbstractArray, B<:AbstractArray, I<:Integer}
+function nuts_sub!(mt::N, epsilon::Float64, delta::Float64, rescale::Bool, logfgrad::Function)::Tuple{N, Int64, Float64, Int64} where N<:AbstractNode
 
   nl::Int64 = size(mt)[1]-1
   r = randn(nl)
@@ -175,7 +175,7 @@ end
 
 function refraction(v::T, r::Vector{Float64}, pm::Int64,
                     grad::Vector{Float64}, epsilon::Float64, logfgrad::Function,
-                    delta::Float64, sz::Int64, rescale::Bool)::Tuple{T, Vector{Float64}, Float64, Vector{Float64}, Int64} where T<:Node{R,A,B,I} where {R<:Real, A<:AbstractArray, B<:AbstractArray, I<:Integer}
+                    delta::Float64, sz::Int64, rescale::Bool)::Tuple{T, Vector{Float64}, Float64, Vector{Float64}, Int64} where T<:AbstractNode
 
     v1::T = deepcopy(v)
 
@@ -215,7 +215,7 @@ end
 
 
 function ref_NNI(v::T, tmpB::Vector{Float64}, r::Vector{Float64}, epsilon::Float64, blv::Vector{Float64},
-                 delta::Float64, logfgrad::Function, sz::Int64, rescale::Bool)::Tuple{T,Vector{Float64},Vector{Float64},Int64}  where T<:Node{R,A,B,I} where {R<:Real, A<:AbstractArray, B<:AbstractArray, I<:Integer}
+                 delta::Float64, logfgrad::Function, sz::Int64, rescale::Bool)::Tuple{T,Vector{Float64},Vector{Float64},Int64}  where T<:AbstractNode
 
   intext::Vector{Int64} = internal_external(v)
   t = zero(Float64)
@@ -274,7 +274,7 @@ end
 function buildtree(x::T, r::Vector{Float64},
                    grad::Vector{Float64}, pm::Int64, j::Integer,
                    epsilon::Float64, logfgrad::Function, logp0::Real, logu0::Real,
-                   delta::Float64, sz::Int64, rescale::Bool)::Tuple{T, Vector{Float64}, Vector{Float64}, T,Vector{Float64},Vector{Float64},T,Int64,Bool,Float64,Int64,Int64} where T<:Node{R,A,B,I} where {R<:Real, A<:AbstractArray, B<:AbstractArray, I<:Integer}
+                   delta::Float64, sz::Int64, rescale::Bool)::Tuple{T, Vector{Float64}, Vector{Float64}, T, Vector{Float64},Vector{Float64},T,Int64,Bool,Float64,Int64,Int64} where T<:AbstractNode
 
 
   if j == 0
@@ -329,9 +329,11 @@ end
 
 function nouturn(xminus::T, xplus::T,
                 rminus::Vector{Float64}, rplus::Vector{Float64}, gradminus::Vector{Float64}, gradplus::Vector{Float64},
-                epsilon::Float64, logfgrad::Function, delta::Float64, sz::Int64, j::Int64, rescale::Bool)::Bool   where T<:Node{R,A,B,I} where {R<:Real, A<:AbstractArray, B<:AbstractArray, I<:Integer}
+                epsilon::Float64, logfgrad::Function, delta::Float64, sz::Int64, j::Int64, rescale::Bool)::Bool  where T<:AbstractNode#Node{R,A,B,I} where {R<:Real, A<:AbstractArray, B<:AbstractArray, I<:Integer}
 
-
+        if j > 10
+          return false
+        end
         curr_l, curr_h = BHV_bounds(xminus, xplus)
 
         # use thread parallelism to calculuate both directions at once
@@ -350,7 +352,7 @@ end
 
 #################### Auxilliary Functions ####################
 
-function nutsepsilon(x::T, logfgrad::Function, delta::Float64, rescale::Bool)::Float64  where T<:Node{R,A,B,I} where {R<:Real, A<:AbstractArray, B<:AbstractArray, I<:Integer}
+function nutsepsilon(x::T, logfgrad::Function, delta::Float64, rescale::Bool)::Float64  where T<:AbstractNode
 
   x0::T = deepcopy(x)
   n = size(x)[1] - 1

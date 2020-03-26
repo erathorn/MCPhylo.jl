@@ -14,9 +14,7 @@ maximum(d::BrownianPhylo) = +Inf
 Base.size(d::BrownianPhylo) = (d.leaves, d.chars)
 
 function logpdf(d::BrownianPhylo, x::AbstractArray{T, 2})::Float64 where T<:Real
-
     blv::Vector{Float64} = get_branchlength_vector(d.tree)
-
     mlpdf(d.mu, d.tree, blv, d.sigmai, d.P, d.scaler, d.chars, x)
 
 end
@@ -29,7 +27,6 @@ function mlpdf(mu::Array{Float64,2}, tree::Node, blv::Vector{T}, sigmai::Vector{
                P::Array{Float64,2}, scaler, chars::Int64, data::Array{Float64,2})::T where T<:Real
 
     mycov::Array{T,2} = MCPhylo.to_covariance(tree, blv)
-    rv::T = 0.0
     rv_a = zeros(T,chars)
     @inbounds @simd for i in 1:chars
         mat = (cholesky(sigmai[i].*mycov).L*P[:,i]+mu[:,i])
