@@ -566,7 +566,7 @@ function internal_external_map(post_order::Vector{T})::Vector{Int64}  where T<:A
     return my_map
 end
 
-function internal_external(root::T)  where T<:AbstractNode
+function internal_external(root::T)::Vector{Int64}  where T<:AbstractNode
     v = root.IntExtMap
     if v === nothing
         v = internal_external_map(root)

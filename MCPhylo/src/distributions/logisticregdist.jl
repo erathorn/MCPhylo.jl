@@ -26,7 +26,7 @@ function my_bernoulli_logpdf(θ::T, x::S)::T where {S <: Real, T<: Real}
 end
 
 function mlpdf(mu::Array{Float64,2}, tree::Node, blv::Vector{T}, sigmai::Vector{Float64},
-               P::Array{Float64,2}, scaler, chars::Int64, data::Array{Float64,2}) where T<:Real
+               P::Array{Float64,2}, scaler, chars::Int64, data::Array{Float64,2})::T where T<:Real
 
     mycov::Array{T,2} = MCPhylo.to_covariance(tree, blv)
     rv::T = 0.0
@@ -38,7 +38,7 @@ function mlpdf(mu::Array{Float64,2}, tree::Node, blv::Vector{T}, sigmai::Vector{
     sum(rv_a)
 end
 
-function gradlogpdf(d::BrownianPhylo, x::AbstractArray{T, 2}) where T<:Real
+function gradlogpdf(d::BrownianPhylo, x::AbstractArray{T, 2})::Tuple{Float64, Vector{Float64}} where T<:Real
 
     blv = get_branchlength_vector(d.tree)
 

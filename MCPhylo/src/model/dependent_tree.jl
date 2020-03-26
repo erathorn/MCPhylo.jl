@@ -25,7 +25,6 @@ function unlist(d::TreeStochastic)
     y = tree_height(d.value)
     x = vec([n.height for n in post_order(d.value) if n.root !== true])
     vcat(y, tree_length(d.value), x)
-
 end
 
 function unlist(d::TreeLogical)
@@ -35,6 +34,6 @@ function unlist(d::TreeLogical)
 end
 
 
-function unlist(s::AbstractStochastic, x::Node, transform::Bool=false)
-    s.value
+function unlist(s::AbstractStochastic, x::N, transform::Bool=false)::Vector{N}  where N <: AbstractNode
+    [s.value]
 end

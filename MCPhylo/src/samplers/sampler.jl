@@ -136,18 +136,11 @@ end
 
 function _gradlogpdf!(m::Model, x::AbstractArray, block::Integer, dtype::Symbol=:provided)
   targets = keys(m, :target, block)
-  #outl = []
-  #for t in targets
+  
   node = m[targets[1]]
   update!(node, m)
   return gradlogpdf(node)
-  #end
-  #return outl
-  #for i in outl
-  #  if i != 0
-  #    return i
-#    end
-  #end
+
 end
 
 
