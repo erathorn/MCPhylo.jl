@@ -20,6 +20,7 @@ General Features:
   ☐ tree plotting
   ☐ Message Passing
   ☐ proper error messages for model initialization (setinits functions)
+  ☐ Make SamplerVariate type distinguish between a field for tree and numeric value
 
 Likelihood Computation:
   ☐ Jukes Cantor

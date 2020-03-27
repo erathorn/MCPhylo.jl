@@ -65,9 +65,9 @@ end
 
 dot(x) = dot(x, x)
 
-logit(x::Real) = log(x / (1.0 - x))
-invlogit(x::Real, λ::Real=1.0) = 1.0 / (exp(-λ*x) + 1.0)
-loginvlogit(x::Real, λ::Real=1.0) = -log(exp(-λ*x)+1.0)
+@inline logit(x::Real) = log(x / (1.0 - x))
+@inline invlogit(x::Real, λ::Real=1.0) = 1.0 / (exp(-λ*x) + 1.0)
+@inline loginvlogit(x::Real, λ::Real=1.0) = -log(exp(-λ*x)+1.0)
 
 ## Csorgo S and Faraway JJ. The exact and asymptotic distributions of the
 ## Cramer-von Mises statistic. Journal of the Royal Statistical Society,

@@ -89,7 +89,7 @@ function gradlogpdf!(m::Model, x::AbstractArray{T}, block::Integer=0,transform::
 end
 
 
-function gradlogpdf!(m::Model, x::Node, block::Integer=0,transform::Bool=false)
+function gradlogpdf!(m::Model, x::Node, block::Integer=0,transform::Bool=false)::Tuple{Float64, Vector{Float64}}
   params = keys(m, :block, block)
   targets = keys(m, :target, block)
   m[params] = relist(m, x, params, transform)
@@ -129,23 +129,26 @@ end
 
 
 function sample!(m::Model, block::Integer=0)
-  ov_t = keys_output(m)[1]
   m.iter += 1
   isoneblock = block != 0
   blocks = isoneblock ? block : 1:length(m.samplers)
   for b in blocks
     sampler = m.samplers[b]
-    value = sampler.eval(m, b)
+    value = sampler.eval(m::Model, b::Int)
     if value != nothing
       m[sampler.params] = value
       update!(m, b)
     end
   end
   m.iter -= isoneblock
-  m.likelihood = logpdf(m[ov_t])
+  m.likelihood = logpdf(m)
   m
 end
 
+
+function final_likelihood(model::Model)::Float64
+  logpdf(model[keys_output(model)[1]])
+end
 
 function unlist(m::Model, block::Integer=0, transform::Bool=false)
   unlist(m, keys(m, :block, block), transform)

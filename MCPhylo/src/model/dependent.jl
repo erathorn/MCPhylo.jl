@@ -319,7 +319,20 @@ function gradlogpdf(s::AbstractStochastic, x::AbstractArray)
 end
 
 
-function logpdf(s::AbstractStochastic, x, transform::Bool=false)
+
+function logpdf(s::AbstractStochastic, x::AbstractArray, transform::Bool=false)
+  logpdf_sub(s.distr, x, transform)
+end
+
+
+
+function logpdf(s::AbstractStochastic, x::Real, transform::Bool=false)
+  logpdf_sub(s.distr, x, transform)
+end
+
+
+
+function logpdf(s::AbstractStochastic, x::Node, transform::Bool=false)
   logpdf_sub(s.distr, x, transform)
 end
 

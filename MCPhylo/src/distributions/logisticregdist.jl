@@ -1,7 +1,7 @@
 
 mutable struct BrownianPhylo <: DiscreteMatrixDistribution
         mu::Array{Float64,2}
-        tree::Node{T,A,B,I} where {T<: Real, A<: AbstractArray, B<:AbstractArray, I<:Integer}
+        tree::AbstractNode#Node{T,A,B,I} where {T<: Real, A<: AbstractArray, B<:AbstractArray, I<:Integer}
         sigmai::Vector{Float64}
         P::Array{Float64,2}
         scaler::Float64
@@ -19,7 +19,7 @@ function logpdf(d::BrownianPhylo, x::AbstractArray{T, 2})::Float64 where T<:Real
 
 end
 
-function my_bernoulli_logpdf(θ::T, x::S)::T where {S <: Real, T<: Real}
+@inline function my_bernoulli_logpdf(θ::T, x::S)::T where {S <: Real, T<: Real}
     x == 1 ? θ : log(1-exp(θ))
 end
 
@@ -28,7 +28,7 @@ function mlpdf(mu::Array{Float64,2}, tree::Node, blv::Vector{T}, sigmai::Vector{
 
     mycov::Array{T,2} = MCPhylo.to_covariance(tree, blv)
     rv_a = zeros(T,chars)
-    @inbounds @simd for i in 1:chars
+    @views Base.Threads.@threads for i in 1:chars
         mat = (cholesky(sigmai[i].*mycov).L*P[:,i]+mu[:,i])
         rv_a[i] = sum(my_bernoulli_logpdf.(loginvlogit.(mat, Ref(scaler)), data[:,i]))
     end

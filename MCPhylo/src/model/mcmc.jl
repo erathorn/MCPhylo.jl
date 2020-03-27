@@ -78,7 +78,7 @@ end
 
 
 function mcmc_worker!(args::Vector)
-  m, state, window, burnin, thin, meter, store_trees = args
+  m::Model, state::ModelState, window::UnitRange{Int}, burnin::Integer, thin::Integer, meter::ChainProgress, store_trees::Bool = args
   llname::AbstractString = "likelihood"
   treeind = 1
   simind = 1
@@ -105,7 +105,7 @@ function mcmc_worker!(args::Vector)
 
     sample!(m)
     if i > burnin && (i - burnin) % thin == 0
-    
+
       sim[i, :, 1] = unlist(m, true)
 
       if store_trees

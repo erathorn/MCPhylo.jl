@@ -30,7 +30,7 @@ mutable struct PNUTSTune <: SamplerTune
   end
 end
 
-PNUTSTune(x::Vector{T}, logfgrad::Function, ::NullFunction, delta::Float64=0.003, rescale::Bool=false; args...) where T<:AbstractNode =
+PNUTSTune(x::Vector{T}, logfgrad::Function, ::NullFunction, delta::Float64=0.003, rescale::Bool=false; args...) where T<:Node =
   PNUTSTune(x, nutsepsilon(x[1], logfgrad, delta, rescale), logfgrad, rescale=rescale; args...)
 
 PNUTSTune(x::Vector{T}, logfgrad::Function, delta::Float64, rescale::Bool=false; args...) where T<:AbstractNode =
@@ -58,37 +58,32 @@ end
 
 #################### Sampling Functions ####################
 
-function mlogpdfgrad!(block::SamplingBlock, x::T, sz::Int64, ll::Bool=false, gr::Bool=false)::Tuple{Float64, Vector{Float64}}  where T<:AbstractNode
+function mlogpdfgrad!(block::SamplingBlock, x::T, sz::Int64, ll::Bool=false, gr::Bool=false)::Tuple{Float64, Vector{Float64}}  where T<:Node
   grad = Vector{Float64}(undef, sz)
   lp = zero(Float64)
 
   if gr
-    lp, grad = gradlogpdf!(block, x)
+    lp, grad = gradlogpdf!(block, x)::Tuple{Float64, Vector{Float64}}
   elseif ll
-    lp = logpdf!(block, x)
+    lp = logpdf!(block, x)::Float64
   end
   lp, grad
 end
 
 sample!(v::PNUTSVariate; args...) = sample!(v, v.tune.logfgrad; args...)
 
-function sample!(v::PNUTSVariate, logfgrad::Function; adapt::Bool=false)
+function sample!(v::PNUTSVariate, logfgrad::Function; adapt::Bool=false)::PNUTSVariate
 
   tune = v.tune
   setadapt!(v, adapt)
-  mt::Node = v.value[1]
+
   if tune.adapt
     tune.m += 1
-
-    mt, nni, alpha, nalpha = nuts_sub!(mt, tune.epsilon, tune.delta, tune.rescale, logfgrad)
-    v.tune.alpha, v.tune.nalpha  = alpha, nalpha
-
+    nuts_sub!(v, logfgrad)
     p = 1.0 / (tune.m + tune.t0)
     tune.Hbar = (1.0 - p) * tune.Hbar +
                 p * (tune.target - tune.alpha / tune.nalpha)
     tune.epsilon = exp(tune.mu - sqrt(tune.m) * tune.Hbar / tune.gamma)
-
-
 
     p = tune.m^-tune.kappa
     tune.epsilonbar = exp(p * log(tune.epsilon) +
@@ -96,10 +91,9 @@ function sample!(v::PNUTSVariate, logfgrad::Function; adapt::Bool=false)
   else
     if (tune.m > 0) tune.epsilon = tune.epsilonbar end
 
-    mt, nni, _, _ = nuts_sub!(mt, tune.epsilon, tune.delta, tune.rescale, logfgrad)
+    nuts_sub!(v, logfgrad)
   end
-  v.value[1] = mt
-  v.tune.moves += nni
+
   v
 end
 
@@ -116,15 +110,18 @@ end
 
 
 
-function nuts_sub!(mt::N, epsilon::Float64, delta::Float64, rescale::Bool, logfgrad::Function)::Tuple{N, Int64, Float64, Int64} where N<:AbstractNode
-
+function nuts_sub!(v::PNUTSVariate, logfgrad::Function)::PNUTSVariate
+  mt::Node = v.value[1]
+  epsilon::Float64 = v.tune.epsilon
+  delta::Float64 = v.tune.delta
+  rescale::Bool = v.tune.rescale
   nl::Int64 = size(mt)[1]-1
   r = randn(nl)
   g = zeros(nl)
 
   nni = zero(Int64)
 
-  x::N, r::Vector{Float64}, logf::Float64, grad::Vector{Float64}, nni = refraction(mt, r, 1, g, epsilon, logfgrad, delta, nl, rescale)
+  x::Node, r::Vector{Float64}, logf::Float64, grad::Vector{Float64}, nni = refraction(mt, r, 1, g, epsilon, logfgrad, delta, nl, rescale)
 
 
 
@@ -132,13 +129,12 @@ function nuts_sub!(mt::N, epsilon::Float64, delta::Float64, rescale::Bool, logfg
   logu0::Float64 = logp0 + log(rand())
   rminus::Vector{Float64} = rplus::Vector{Float64} = r
   gradminus::Vector{Float64} = gradplus::Vector{Float64} = grad
-  xminus::N = xplus::N = x
+  xminus::Node = xplus::Node = x
 
   j = 0
   n = 1
   s = true
-  alpha = zero(Float64)
-  nalpha = zero(Int)
+
   while s
 
     pm =2 * (rand() > 0.5) - 1
@@ -158,24 +154,23 @@ function nuts_sub!(mt::N, epsilon::Float64, delta::Float64, rescale::Bool, logfg
     end#if pm
 
     if sprime && rand() < nprime / n
-        #v.value[1]
-        mt = xprime
+        v.value[1] = xprime
     end
     j += 1
     n += nprime
     s = sprime && nouturn(xminus, xplus, rminus, rplus, gradminus, gradplus, epsilon, logfgrad, delta, nl, j ,rescale)
-    #v.tune.alpha, v.tune.nalpha = alpha, nalpha
+    v.tune.alpha, v.tune.nalpha = alpha, nalpha
     nni += nni1
   end
-  #v.tune.moves += nni
-
-  mt, nni, alpha, nalpha
+  v.tune.moves += nni
+  v
+  #mt, nni, alpha, nalpha
 end
 
 
 function refraction(v::T, r::Vector{Float64}, pm::Int64,
                     grad::Vector{Float64}, epsilon::Float64, logfgrad::Function,
-                    delta::Float64, sz::Int64, rescale::Bool)::Tuple{T, Vector{Float64}, Float64, Vector{Float64}, Int64} where T<:AbstractNode
+                    delta::Float64, sz::Int64, rescale::Bool)::Tuple{T, Vector{Float64}, Float64, Vector{Float64}, Int64} where T<:Node
 
     v1::T = deepcopy(v)
 
@@ -215,7 +210,7 @@ end
 
 
 function ref_NNI(v::T, tmpB::Vector{Float64}, r::Vector{Float64}, epsilon::Float64, blv::Vector{Float64},
-                 delta::Float64, logfgrad::Function, sz::Int64, rescale::Bool)::Tuple{T,Vector{Float64},Vector{Float64},Int64}  where T<:AbstractNode
+                 delta::Float64, logfgrad::Function, sz::Int64, rescale::Bool)::Tuple{T,Vector{Float64},Vector{Float64},Int64}  where T<:Node
 
   intext::Vector{Int64} = internal_external(v)
   t = zero(Float64)
@@ -274,7 +269,7 @@ end
 function buildtree(x::T, r::Vector{Float64},
                    grad::Vector{Float64}, pm::Int64, j::Integer,
                    epsilon::Float64, logfgrad::Function, logp0::Real, logu0::Real,
-                   delta::Float64, sz::Int64, rescale::Bool)::Tuple{T, Vector{Float64}, Vector{Float64}, T, Vector{Float64},Vector{Float64},T,Int64,Bool,Float64,Int64,Int64} where T<:AbstractNode
+                   delta::Float64, sz::Int64, rescale::Bool)::Tuple{T, Vector{Float64}, Vector{Float64}, T, Vector{Float64},Vector{Float64},T,Int64,Bool,Float64,Int64,Int64} where T<:Node
 
 
   if j == 0
@@ -329,7 +324,7 @@ end
 
 function nouturn(xminus::T, xplus::T,
                 rminus::Vector{Float64}, rplus::Vector{Float64}, gradminus::Vector{Float64}, gradplus::Vector{Float64},
-                epsilon::Float64, logfgrad::Function, delta::Float64, sz::Int64, j::Int64, rescale::Bool)::Bool  where T<:AbstractNode#Node{R,A,B,I} where {R<:Real, A<:AbstractArray, B<:AbstractArray, I<:Integer}
+                epsilon::Float64, logfgrad::Function, delta::Float64, sz::Int64, j::Int64, rescale::Bool)::Bool  where T<:Node
 
         if j > 10
           return false
@@ -352,7 +347,7 @@ end
 
 #################### Auxilliary Functions ####################
 
-function nutsepsilon(x::T, logfgrad::Function, delta::Float64, rescale::Bool)::Float64  where T<:AbstractNode
+function nutsepsilon(x::T, logfgrad::Function, delta::Float64, rescale::Bool)::Float64  where T<:Node
 
   x0::T = deepcopy(x)
   n = size(x)[1] - 1
