@@ -143,7 +143,7 @@ function sample_number!(v::SliceUnivariate, logf::Function)
     x = v[i]
     v[i] = rand(Uniform(lower[i], upper[i]))
     while true
-      logf0 = logf(v.value::SliceUnivariate)
+      logf0 = logf(v.value)
       logf0 < p0 || break
       value = v[i]
       if value < x
