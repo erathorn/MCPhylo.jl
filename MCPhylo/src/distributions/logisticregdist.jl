@@ -1,7 +1,7 @@
 
 mutable struct BrownianPhylo <: DiscreteMatrixDistribution
         mu::Array{Float64,2}
-        tree::AbstractNode#Node{T,A,B,I} where {T<: Real, A<: AbstractArray, B<:AbstractArray, I<:Integer}
+        tree::AbstractNode#NodeS#Node{T,A,B,I} where {T<: Real, A<: AbstractArray, B<:AbstractArray, I<:Integer}
         sigmai::Vector{Float64}
         P::Array{Float64,2}
         scaler::Float64

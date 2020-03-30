@@ -66,6 +66,7 @@ end
 dot(x) = dot(x, x)
 
 @inline logit(x::Real) = log(x / (1.0 - x))
+@inline invexpit(x::Real) = 1.0 / (x - x^2)
 @inline invlogit(x::Real, λ::Real=1.0) = 1.0 / (exp(-λ*x) + 1.0)
 @inline loginvlogit(x::Real, λ::Real=1.0) = -log(exp(-λ*x)+1.0)
 
