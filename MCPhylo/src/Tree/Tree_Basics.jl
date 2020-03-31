@@ -273,7 +273,8 @@ end # function tree_length
 This function calculates the tree height.
 """
 function tree_height(root::T)::Float64  where T<:AbstractNode
-    return node_height(root, -Inf)
+    node_height(root)
+    return root.height
 end
 
 """
@@ -281,26 +282,14 @@ end
 
 Calculate the height of a node.
 """
-function node_height(root::T, mv::Float64)::Float64  where T<:AbstractNode
-    if !root.root
-        if isdefined(root, :mother)
-            rmh = root.mother.height
+function node_height(root::T)  where T<:AbstractNode
+    for node in post_order(root)
+        if node.nchild == 0
+            node.height = 0
         else
-            rmh = -Inf
-        end # if
-        root.height = rmh+root.inc_length
-    end # if
-    if root.nchild != 0
-        for child in root.children
-            mv = node_height(child, mv)
-        end # for
-    else
-        if root.height>mv
-            mv = root.height
-        end # if
-    end # if
-
-    return mv
+            node.height = maximum([child.inc_length+child.height for child in node.children])
+        end
+    end
 end # function node_height
 
 
@@ -318,7 +307,7 @@ end
 
 function get_path(ancestor::T, descendant::T)::Vector{Int64} where T<:AbstractNode
     path::Vector{Int64} = []
-    while descendant.binary != ancestor.binary
+    while descendant.num != ancestor.num
         push!(path, descendant.num)
         descendant = descendant.mother
     end
@@ -406,7 +395,7 @@ end # fuction number_nodes
 Get all the leaves of this Node. It is meant as a wrapper, only the root node
 needs to be supplied
 """
-@inline function get_leaves(root::T)::Vector{T}  where T<:AbstractNode
+@inline function notget_leaves(root::T)::Vector{T}  where T<:AbstractNode
     [i for i in post_order(root) if i.nchild == 0]
 end # function get_leaves
 
@@ -590,7 +579,7 @@ function find_lca(tree::T, node_l::Array{T})::T  where T<:AbstractNode
         lca = find_lca(tree, n1, n2)
         while length(node_l) !== 0
             n1 = popfirst!(node_l)
-            lca = find_lca(lca, n1)
+            lca = find_lca(tree, lca, n1)
         end
         return lca
     end
