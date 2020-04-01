@@ -29,6 +29,43 @@ function post_order(root::T)::Vector{T} where T<:AbstractNode
     return t
 end # function post_order
 
+"""
+    post_order(root::T, traversal::Vector{T})::Vector{T} where T<:AbstractNode
+
+This function performs a post order traversal through the tree. It is assumed that `root` is the
+root of the tree. Thus, if `root` is not the root, the subtree defined by the root `root` is
+used for the post order traversal.
+"""
+function get_leaves(root::T, traversal::Vector{T})::Vector{T} where T<:AbstractNode
+   if root.nchild != 0
+        for child in root.children
+            get_leaves(child, traversal)
+        end
+   else
+       push!(traversal, root)
+   end # if
+      
+   return traversal
+end # function post_order_trav
+
+
+"""
+    post_order(root::T)::Vector{T} where T<:AbstractNode
+
+This function does post order traversal. Only the root node needs to be supplied.
+"""
+function get_leaves(root::T)::Vector{T} where T<:AbstractNode
+    t::Vector{T} = []
+    get_leaves(root, t)
+    return t
+end # function post_order
+
+
+
+
+
+
+
 #################### Pre order traversal ####################
 
 """

@@ -169,32 +169,29 @@ Calcualte the variance-covariance matrix from `tree`. An entry (i,j) of the matr
 is defined as the length of the path connecting the latest common ancestor
 of i and j with the root of the tree.
 """
-function to_covariance(tree::N, blv::Array{T})::Array{T,2} where {N<:AbstractNode,T<: Real}
+function to_covariance(tree::N, blv::Vector{T})::Array{T,2} where {N<:AbstractNode,T<: Real}
     leaves::Vector{N} = get_leaves(tree)
     ll = length(leaves)
     covmat = zeros(T, ll, ll)
-    @inbounds @simd for i in 1:ll
-        @inbounds for j in 1:ll
-            if i >= j
-                node1 = leaves[i]
-                if i == j
+    #@inbounds for ((ind,itm),(jnd,jtm)) in Iterators.product(enumerate(leaves), enumerate(leaves))
+    @inbounds for ind = 1:ll, jnd = 1:ind
+        itm = leaves[ind]
+        if ind == jnd
+            covmat[ind,jnd] = reduce(+, @view blv[get_path(tree, itm)])
+        else
 
-                    covmat[i,j] = reduce(+, @view blv[get_path(tree, node1)])
-                else
-                    lca = find_lca(tree, node1, leaves[j])
-                    if !lca.root
-                        tmp = reduce(+, @view blv[get_path(tree, lca)])
-                    
-                        covmat[i,j] = tmp
-                        covmat[j,i] = tmp
-
-                    end # if
-                end # if
+            lca = find_lca(tree, itm, leaves[jnd])
+            if !lca.root
+                tmp = reduce(+, @view blv[get_path(tree, lca)])
+                covmat[ind,jnd] = tmp
+                covmat[jnd,ind] = tmp
             end # if
-        end # for
+        end # if
+
     end # for
     covmat
 end# function to_covariance
+
 
 function to_covariance_ultra(tree::Node) where T<: Real
     mv = tree_height(tree)

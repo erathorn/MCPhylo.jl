@@ -111,7 +111,7 @@ end
 
 
 function nuts_sub!(v::PNUTSVariate, logfgrad::Function)::PNUTSVariate
-  mt::Node = v[1]
+  mt::Node = deepcopy(v[1])
   epsilon::Float64 = v.tune.epsilon
   delta::Float64 = v.tune.delta
   rescale::Bool = v.tune.rescale
@@ -152,9 +152,12 @@ function nuts_sub!(v::PNUTSVariate, logfgrad::Function)::PNUTSVariate
                   logu0, delta, nl, rescale)
 
     end#if pm
-
+    #println(xprime)
     if sprime && rand() < nprime / n
-        v[1] = xprime
+        #println(xprime)
+        v.value[1] = xprime
+        #println(v.value[1])
+        #println("---")
     end
     j += 1
     n += nprime

@@ -72,6 +72,12 @@ function Base.show(io::IO, v::AbstractVariate)
   show(io, v.value)
 end
 
+
+function Base.summary(io::IO, d::N) where N <: TreeVariate
+    summary(io, "Tree Variate")
+end
+
+
 #################### Auxiliary Functions ####################
 
 function names(v::ScalarVariate, prefix)

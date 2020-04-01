@@ -70,6 +70,7 @@ function Base.summary(io::IO, d::N) where N <: AbstractNode
     summary(io, d.name)
 end
 
+
 function Base.show(io::IO, d::N) where N <: AbstractNode
     print(io, "Tree with root:\n")
     show(io, d.name)

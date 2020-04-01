@@ -79,14 +79,17 @@ present in the tree.
 Do not use this function if you are unsure wheter the node is in the tree at all.
 """
 function find_binary(root::T, bin::String)::T where T<:AbstractNode
-    rn = Vector{T}(undef, 1)
-    find_binary(root, bin, rn)
-    return rn[1]
+    rv = root
+    for i in bin[2:end]
+        rv = rv.children[parse(Int64, i)+1]
+    end
+    rv
 end
 
 
 function find_binary(root::T, bin::String, rn::Vector{T})::Bool  where T<:AbstractNode
     # if the current node is the correct one store it in rn
+    println(root.num)
     if root.binary == bin
         rn[1] = root
         found = true
