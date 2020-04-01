@@ -98,7 +98,7 @@ end
 
 function _logpdf(d::exponentialBL, x::Node)
     bl = get_branchlength_vector(x)
-    sum(bl)/d.scale - log(d.scale)*length(bl)
+    sum(logpdf.(Exponential(d.scale), bl))
 end
 
 function insupport(d::exponentialBL, x::Node)
@@ -111,7 +111,10 @@ end # function insupport
 
 function gradlogpdf(d::exponentialBL, x::Node)
     bl = get_branchlength_vector(x)
-    _logpdf(d, x), ones(length(bl))./d.scale
+    g(y) = sum(logpdf.(Exponential(d.scale), y))
+    r = val_der(g, bl)
+
+    r[1], r[2][1]
 end
 
 
