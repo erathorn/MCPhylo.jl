@@ -10,7 +10,7 @@ function to_file(model::ModelChains, outpath::AbstractString, thin::Int64)
             tdf = DataFrame(model.trees[:,:,run])
             to_file(df, tdf, outpath, string(run), thin)
         else
-            to_file(df, outpath, string(run))
+            to_file(df, outpath, string(run), thin)
         end
     end
 
