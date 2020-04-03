@@ -295,14 +295,9 @@ end # function node_height
 
 
 
-
-function node_distance(node1::T, node2::T, lca::T)::Float64 where T<:AbstractNode
-    path_length(lca, node1)+path_length(lca,node2)
-end
-
 function node_distance(tree::T, node1::T, node2::T)::Float64 where T<:AbstractNode
     lca = find_lca(tree, node1, node2)
-    node_distance(node1, node2, lca)
+    path_length(lca, node1)+path_length(lca,node2)    
 end
 
 function get_path(ancestor::T, descendant::T)::Vector{Int64} where T<:AbstractNode
