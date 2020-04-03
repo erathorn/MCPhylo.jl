@@ -44,7 +44,7 @@ function get_leaves(root::T, traversal::Vector{T})::Vector{T} where T<:AbstractN
    else
        push!(traversal, root)
    end # if
-      
+
    return traversal
 end # function post_order_trav
 
@@ -60,7 +60,9 @@ function get_leaves(root::T)::Vector{T} where T<:AbstractNode
     return t
 end # function post_order
 
-
+function get_leaves(root::T) where T<:TreeVariate
+    get_leaves(root.value)
+end # function post_order
 
 
 
