@@ -16,7 +16,7 @@ function load_newick(filename::String)
     open(filename, "r") do file
         global content = readlines(file)
     end
-    content, content[1]
+    content[1]
 end
 
 # TODO:check if the brackets match etc
