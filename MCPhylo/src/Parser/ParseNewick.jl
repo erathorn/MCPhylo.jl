@@ -9,7 +9,9 @@ function ParseNewick(filename::String)
     content = load_newick(filename)
     if !is_valid_newick_string(content)
         throw("$filename is not a Newick file!")
+    end # if
     #the parse thing
+    # TODO: actually useful part of the code goes here
 
 end
 
@@ -54,6 +56,17 @@ function is_valid_newick_string(newick::String)
     end # else
     return true
 end
+
+
+function parse_name_length(newick::String)
+    if occursin(':',newick)
+        name, length = split(newick,':')
+        return name, length
+    end # if
+    newick, nothing
+end
+
+print(parse_name_length("A:1"))
 
 # TODO: create a dataframe, similar to the nexus file
 function createNewickdf
