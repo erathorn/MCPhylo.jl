@@ -74,74 +74,93 @@ function parsing_the_newick(newick::String,current_node::Any, cur_loc::Int)
         cur_loc = 1
         count = 0
         current_node = Node()
+        copy_of_the_string = newick
         println("Starting up!")
+        println("The string is looking like that ", newick)
     end # setting things up
 
-    if newick[cur_loc] == '('
+    if newick[1] == '('
 
-        cur_loc+=1
-        println("Current location is updated, it's ", cur_loc)
+        newick = SubString(newick,2)
+        println("Parsing... ",newick)
 
-        if newick[cur_loc] == '('
+        if newick[1] == '('
             # YOUR RECURSION IS HERE
-
-            left_child = parsing_the_newick(string(SubString(newick,cur_loc)),current_node,cur_loc)
-            println("We went down in the recursion in the openning bracket part! Right now we are working with the string ", string(SubString(newick,cur_loc)))
-            cur_loc+=1
+            println("Left bracket is detected!")
+            left_child = parsing_the_newick(newick)
+            newick = SubString(newick,2)
             println("Plus one happy kid gets a mom!")
             add_child!(current_node,left_child)
-
+            println("Parsing... ",newick)
         end # if (the recursive call one)
-        node_boarder = match(r"[();,]",string(SubString(newick,cur_loc))).offset
-        println("The node boarder is ",node_boarder)
-        name,length = parse_name_length(string(SubString(newick,cur_loc,node_boarder)))
+
+        node_boarder = match(r"[();,]",newick).offset
+        println("Trying to detect the name and length from the ", string(SubString(newick,1,node_boarder-1)))
+        name,length = parse_name_length(string(SubString(newick,1,node_boarder-1)))
+
         if name != "no_name" || length!=nothing
             println("This node has a name or length provided")
             left_child = Node()
             left_child.name = name
             left_child.inc_length = length
-            left_child.mother = current_node
-            current_node.nchild +=1
+            add_child!(current_node,left_child)
             left_child.num = count
             count+=1
-            cur_loc += (node_boarder-1)
-            println("Now after all of this we're working with the string ",string(SubString(newick,cur_loc)))
+            newick = SubString(newick,node_boarder)
+            println("The left child was succesfully attached. Continiue to parse ",newick)
         else
             println("We get here, if no information is provided about the node (it's nameless and lengthless).")
+            left_child = Node()
+            left_child.name = "no_name"
+            left_child.inc_length = 0
+            add_child!(current_node,left_child)
+            left_child.num = count
+            count+=1
+            newick = SubString(newick,node_boarder)
+            println("The left child was succesfully attached. Continiue to parse ",newick)
         end # if_else
     end # if "("
 
 #TODO: this can be heavily optimized and shortened too (the things basically repeat themselves)
-#TODO: is there actually any sense in go with the cursor, can we just like shrink the string?
-    if newick[cur_loc] == ','
-        cur_loc+=1
-        println("Our current location is " ,cur_loc )
 
-        if newick[cur_loc] == '('
-            println("Welcome to the branch, yo")
-            right_child = parsing_the_newick(string(SubString(newick,cur_loc)),current_node,cur_loc)
-            println("We went down in the recursion with the comma! Right now we are working with the string ", string(SubString(newick,cur_loc)))
-            cur_loc+=1
+    if newick[1] == ','
+
+        newick = SubString(newick,2)
+        println("Parsing... ",newick)
+
+        if newick[1] == '('
+            println("Welcome to the internal node.")
+            right_child = parsing_the_newick(newick)
+            println("Moving on! The current string is ", newick)
+            newick = SubString(newick,2)
             println("Plus one happy kid gets a mom!")
             add_child!(current_node,right_child)
         end # if (the recursive call one)
 
-        node_boarder = match(r"[();,]",string(SubString(newick,cur_loc))).offset
-        println("The node boarder is ",node_boarder)
-        name,length = parse_name_length(string(SubString(newick,cur_loc,node_boarder)))
+        node_boarder = match(r"[();,]",newick).offset
+        println("Trying to detect the name and length from the ", string(SubString(newick,1,node_boarder-1)))
+        name,length = parse_name_length(string(SubString(newick,1,node_boarder-1)))
+
         if name != "no_name" || length!=nothing
             println("This node has a name or length provided")
             right_child = Node()
             right_child.name = name
             right_child.inc_length = length
-            right_child.mother = current_node
-            current_node.nchild +=1
+            add_child!(current_node,right_child)
             right_child.num = count
             count+=1
-            cur_loc += (node_boarder-1)
-            println("Now after all of this we're working with the string ",string(SubString(newick,cur_loc)))
+            newick = SubString(newick,node_boarder)
+            println("The right child was succesfully attached. Continiue to parse ", newick)
         else
             println("We get here, if no information is provided about the node (it's nameless and lengthless).")
+            right_child = Node()
+            right_child.name = "no_name"
+            right_child.inc_length = 0
+            add_child!(current_node,right_child)
+            right_child.num = count
+            count+=1
+            newick = SubString(newick,node_boarder)
+            println("The left child was succesfully attached. Continiue to parse ",newick)
         end # if_else
     end # if ","
 
