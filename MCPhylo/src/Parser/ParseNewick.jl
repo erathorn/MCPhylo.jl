@@ -1,6 +1,5 @@
 
-# TODO: organize imports in some reasonable way
-#include("../Tree/Node_Type.jl")
+# that's very far from ideal, but atom and I don't understand each other otherwise
 include("../MCPhylo.jl")
 
 """
@@ -73,22 +72,27 @@ function parsing_the_newick(newick::String,current_node::Any, cur_loc::Int)
         cur_loc = 1
         count = 0
         current_node = Node()
+        println("Starting up!")
     end # setting things up
 
     if newick[cur_loc] == '('
+
         cur_loc+=1
+        println("Current location is updated, it's ", cur_loc)
 
         if newick[cur_loc] == '('
             # YOUR RECURSION IS HERE
-            println(string(SubString(newick,cur_loc)))
-            println(current_node)
-            println(cur_loc)
+
             left_child = parsing_the_newick(string(SubString(newick,cur_loc)),current_node,cur_loc)
+            println("Right now we are working with the string ", string(SubString(newick,cur_loc)))
+            cur_loc+=1
             add_child!(current_node,left_child)
         end # if (the recursive call one)
-        node_boarder = match(r"[();]",newick).offset
-        name,length = parse_name_length(string(SubString(newick,cur_loc,node_boarder)))
-        if name!="no_name"
+        node_boarder = match(r"[();,]",string(SubString(newick,cur_loc))).offset
+        println("The node boarder is ",node_boarder)
+        name,length = parse_name_length(string(SubString(newick,cur_loc,node_boarder+1)))
+        if name != "no_name"
+            println("This node has a name and length")
             left_child = Node()
             left_child.name = name
             left_child.inc_length = length
@@ -97,11 +101,31 @@ function parsing_the_newick(newick::String,current_node::Any, cur_loc::Int)
             left_child.num = count
             count++
             cur_loc = node_boarder
+            print(left_child.mother)
         else
             println("You're nameless/And that's your future from now on.")
         end # if_else
     end # first if
+    return current_node
 end # the function
+
+
+"""
+    parse_name_length(newick::String)
+
+This function parses two optional elements of the tree, name and length. In case, when neither of this is provided, empty string and nothing are return
+"""
+
+function parse_name_length(newick::String)
+    if occursin(':',newick)
+        name, length = split(newick,':')
+        return string(name), parse(Float64, length)
+    end # if
+    "no_name", nothing
+end
+
+
+
 
 parsing_the_newick("((B:0.2,(C:0.3,D:0.4)E:0.5)A:0.1)F;",nothing,1)
 
@@ -125,21 +149,6 @@ parsing_the_newick("((B:0.2,(C:0.3,D:0.4)E:0.5)A:0.1)F;",nothing,1)
 
 
 
-
-
-"""
-    parse_name_length(newick::String)
-
-This function parses two optional elements of the tree, name and length. In case, when neither of this is provided, empty string and nothing are return
-"""
-
-function parse_name_length(newick::String)
-    if occursin(':',newick)
-        name, length = split(newick,':')
-        return name, length
-    end # if
-    "no_name", nothing
-end
 
 
 # TODO: rewrite this one
