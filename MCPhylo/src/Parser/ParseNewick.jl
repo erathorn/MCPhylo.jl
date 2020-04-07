@@ -66,6 +66,8 @@ end
 
 ###########
 
+#DISCLAIMER: this function is heavily inspired by the pseudocode provided by https://eddiema.ca/2010/06/25/parsing-a-newick-tree-with-recursive-descent/
+
 function parsing_the_newick(newick::String,current_node::Any, cur_loc::Int)
 
     if current_node == nothing
@@ -84,28 +86,66 @@ function parsing_the_newick(newick::String,current_node::Any, cur_loc::Int)
             # YOUR RECURSION IS HERE
 
             left_child = parsing_the_newick(string(SubString(newick,cur_loc)),current_node,cur_loc)
-            println("Right now we are working with the string ", string(SubString(newick,cur_loc)))
+            println("We went down in the recursion in the openning bracket part! Right now we are working with the string ", string(SubString(newick,cur_loc)))
             cur_loc+=1
+            println("Plus one happy kid gets a mom!")
             add_child!(current_node,left_child)
+
         end # if (the recursive call one)
         node_boarder = match(r"[();,]",string(SubString(newick,cur_loc))).offset
         println("The node boarder is ",node_boarder)
-        name,length = parse_name_length(string(SubString(newick,cur_loc,node_boarder+1)))
-        if name != "no_name"
-            println("This node has a name and length")
+        name,length = parse_name_length(string(SubString(newick,cur_loc,node_boarder)))
+        if name != "no_name" || length!=nothing
+            println("This node has a name or length provided")
             left_child = Node()
             left_child.name = name
             left_child.inc_length = length
             left_child.mother = current_node
             current_node.nchild +=1
             left_child.num = count
-            count++
-            cur_loc = node_boarder
-            print(left_child.mother)
+            count+=1
+            cur_loc += (node_boarder-1)
+            println("Now after all of this we're working with the string ",string(SubString(newick,cur_loc)))
         else
-            println("You're nameless/And that's your future from now on.")
+            println("We get here, if no information is provided about the node (it's nameless and lengthless).")
         end # if_else
-    end # first if
+    end # if "("
+
+#TODO: this can be heavily optimized and shortened too (the things basically repeat themselves)
+#TODO: is there actually any sense in go with the cursor, can we just like shrink the string?
+    if newick[cur_loc] == ','
+        cur_loc+=1
+        println("Our current location is " ,cur_loc )
+
+        if newick[cur_loc] == '('
+            println("Welcome to the branch, yo")
+            right_child = parsing_the_newick(string(SubString(newick,cur_loc)),current_node,cur_loc)
+            println("We went down in the recursion with the comma! Right now we are working with the string ", string(SubString(newick,cur_loc)))
+            cur_loc+=1
+            println("Plus one happy kid gets a mom!")
+            add_child!(current_node,right_child)
+        end # if (the recursive call one)
+
+        node_boarder = match(r"[();,]",string(SubString(newick,cur_loc))).offset
+        println("The node boarder is ",node_boarder)
+        name,length = parse_name_length(string(SubString(newick,cur_loc,node_boarder)))
+        if name != "no_name" || length!=nothing
+            println("This node has a name or length provided")
+            right_child = Node()
+            right_child.name = name
+            right_child.inc_length = length
+            right_child.mother = current_node
+            current_node.nchild +=1
+            right_child.num = count
+            count+=1
+            cur_loc += (node_boarder-1)
+            println("Now after all of this we're working with the string ",string(SubString(newick,cur_loc)))
+        else
+            println("We get here, if no information is provided about the node (it's nameless and lengthless).")
+        end # if_else
+    end # if ","
+
+
     return current_node
 end # the function
 
@@ -127,7 +167,7 @@ end
 
 
 
-parsing_the_newick("((B:0.2,(C:0.3,D:0.4)E:0.5)A:0.1)F;",nothing,1)
+parsing_the_newick("(A:0.1,B:0.2,(C:0.3,D:0.4)E:0.5)F;",nothing,1)
 
 
 
