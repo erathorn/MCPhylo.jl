@@ -1,6 +1,7 @@
 
 # TODO: organize imports in some reasonable way
 #include("../Tree/Node_Type.jl")
+include("../MCPhylo.jl")
 
 """
     ParseNewick(filename::String)
@@ -62,6 +63,70 @@ function is_valid_newick_string(newick::String)
     return true
 end
 
+# the grand line between functions which are we more certain in and experimental functions on which we are still working on
+
+###########
+
+function parsing_the_newick(newick::String,current_node::Any, cur_loc::Int)
+
+    if current_node == nothing
+        cur_loc = 1
+        count = 0
+        current_node = Node()
+    end # setting things up
+
+    if newick[cur_loc] == '('
+        cur_loc+=1
+
+        if newick[cur_loc] == '('
+            # YOUR RECURSION IS HERE
+            println(string(SubString(newick,cur_loc)))
+            println(current_node)
+            println(cur_loc)
+            left_child = parsing_the_newick(string(SubString(newick,cur_loc)),current_node,cur_loc)
+            add_child!(current_node,left_child)
+        end # if (the recursive call one)
+        node_boarder = match(r"[();]",newick).offset
+        name,length = parse_name_length(string(SubString(newick,cur_loc,node_boarder)))
+        if name!="no_name"
+            left_child = Node()
+            left_child.name = name
+            left_child.inc_length = length
+            left_child.mother = current_node
+            current_node.nchild +=1
+            left_child.num = count
+            count++
+            cur_loc = node_boarder
+        else
+            println("You're nameless/And that's your future from now on.")
+        end # if_else
+    end # first if
+end # the function
+
+parsing_the_newick("((B:0.2,(C:0.3,D:0.4)E:0.5)A:0.1)F;",nothing,1)
+
+
+
+
+
+       # // try to find a valid $name next at the current cursor position //
+       # if $name = $newick_string [ $cursor ] . regex match ("^[0-9A-Za-z_|]+") {
+       #     // Then the $left node is a leaf node: parse the leaf data //
+       #     $this.left = new Object;
+       #     $this.left.name = $name;
+       #     $this.left.serial = $count;
+       #     $count ++;
+       #     $this.left.parent = $this;
+       #     $cursor += length of $name;
+       #     // move cursor to position after matched name.
+       # }
+
+
+
+
+
+
+
 """
     parse_name_length(newick::String)
 
@@ -75,6 +140,7 @@ function parse_name_length(newick::String)
     end # if
     "no_name", nothing
 end
+
 
 # TODO: rewrite this one
 #
@@ -99,9 +165,6 @@ end
 #     return parent
 # end #function
 #
-# tmp = Node()
-# println("our thing")
-# println(make_node(";"))
 
 
 function parse_siblings(newick::String)
@@ -123,7 +186,3 @@ function parse_siblings(newick::String)
         end #if
     end #for
 end #function
-
-# TODO: create a dataframe, similar to the nexus file
-function createNewickdf
-end
