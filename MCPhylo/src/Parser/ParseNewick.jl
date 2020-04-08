@@ -201,12 +201,14 @@ This function parses two optional elements of the tree, name and length. In case
 
 function parse_name_length(newick::String)
     if occursin(':',newick)
-        name, length = split(newick,':')
-        return string(name), parse(Float64, length)
+        name, len = split(newick,':')
+        return string(name), parse(Float64, len)
     end # if
-    if length(newick)!=0
-        return newick,nothing
-    "no_name", nothing
+    println(newick)
+    if length(newick)!=nothing
+        return newick, 0.0
+    end
+    "no_name", 0.0
 end
 
 
