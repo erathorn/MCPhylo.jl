@@ -68,11 +68,11 @@ end
 
 #DISCLAIMER: this function is heavily inspired by the pseudocode provided by https://eddiema.ca/2010/06/25/parsing-a-newick-tree-with-recursive-descent/
 
-function parsing_the_newick(newick::String,current_node::Any)
+function parsing_the_newick(newick::String,current_node::Any,count::Integer)
 
     if current_node == nothing
         cur_loc = 1
-        global count = 0
+        count = 0
         current_node = Node()
         copy_of_the_string = newick
         println("Starting up!")
@@ -87,7 +87,7 @@ while true
         if newick[1] == '('
             # YOUR RECURSION IS HERE
             println("Left bracket is detected!")
-            left_child = parsing_the_newick(newick,current_node)
+            left_child = parsing_the_newick(newick,current_node,count)
             newick = SubString(newick,2)
             println("Plus one happy kid gets a mom!")
             add_child!(current_node,left_child)
@@ -131,7 +131,7 @@ while true
 
         if newick[1] == '('
             println("Welcome to the internal node.")
-            right_child = parsing_the_newick(string(newick),current_node)
+            right_child = parsing_the_newick(string(newick),current_node,count)
             println("Moving on! The current string is ", newick)
             newick = SubString(newick,2)
             println("Plus one happy kid gets a mom!")
@@ -210,8 +210,8 @@ end
 
 
 
-node = parsing_the_newick("(A,B,(C,D));",nothing)
-println(show(node))
+node = parsing_the_newick("(A,B,(C,D));",nothing,0)
+println(node)
 
 
 
