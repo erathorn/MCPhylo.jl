@@ -68,17 +68,17 @@ end
 
 #DISCLAIMER: this function is heavily inspired by the pseudocode provided by https://eddiema.ca/2010/06/25/parsing-a-newick-tree-with-recursive-descent/
 
-function parsing_the_newick(newick::String,current_node::Any, cur_loc::Int)
+function parsing_the_newick(newick::String,current_node::Any)
 
     if current_node == nothing
         cur_loc = 1
-        count = 0
+        global count = 0
         current_node = Node()
         copy_of_the_string = newick
         println("Starting up!")
         println("The string is looking like that ", newick)
     end # setting things up
-
+while true
     if newick[1] == '('
 
         newick = SubString(newick,2)
@@ -87,7 +87,7 @@ function parsing_the_newick(newick::String,current_node::Any, cur_loc::Int)
         if newick[1] == '('
             # YOUR RECURSION IS HERE
             println("Left bracket is detected!")
-            left_child = parsing_the_newick(newick)
+            left_child = parsing_the_newick(newick,current_node)
             newick = SubString(newick,2)
             println("Plus one happy kid gets a mom!")
             add_child!(current_node,left_child)
@@ -99,6 +99,7 @@ function parsing_the_newick(newick::String,current_node::Any, cur_loc::Int)
         name,length = parse_name_length(string(SubString(newick,1,node_boarder-1)))
 
         if name != "no_name" || length!=nothing
+
             println("This node has a name or length provided")
             left_child = Node()
             left_child.name = name
@@ -130,11 +131,12 @@ function parsing_the_newick(newick::String,current_node::Any, cur_loc::Int)
 
         if newick[1] == '('
             println("Welcome to the internal node.")
-            right_child = parsing_the_newick(newick)
+            right_child = parsing_the_newick(string(newick),current_node)
             println("Moving on! The current string is ", newick)
             newick = SubString(newick,2)
             println("Plus one happy kid gets a mom!")
             add_child!(current_node,right_child)
+
         end # if (the recursive call one)
 
         node_boarder = match(r"[();,]",newick).offset
@@ -160,11 +162,33 @@ function parsing_the_newick(newick::String,current_node::Any, cur_loc::Int)
             right_child.num = count
             count+=1
             newick = SubString(newick,node_boarder)
-            println("The left child was succesfully attached. Continiue to parse ",newick)
+            println("The right child was succesfully attached. Continiue to parse ",newick)
         end # if_else
     end # if ","
 
+    if newick[1] == ')'
+        println("Some right brakcet was detected!")
+        newick = SubString(newick,2)
+        println("Continiue to parse... ", newick)
+end # if with the ")" bracket
 
+    if newick[1] == match(r"^[0-9A-Za-z_|]+",newick) || newick[1] == ':'
+        println("We're getting the information of the current node")
+        node_boarder = match(r"[();,]",newick).offset
+        println("Trying to detect the name and length from the ", string(SubString(newick,1,node_boarder-1)))
+        name,length = parse_name_length(string(SubString(newick,1,node_boarder-1)))
+        current_node.name = name
+        current_node.inc_length = length
+        current_node.num = count
+        count+=1
+        newick = SubString(newick,node_boarder)
+        println("Information about the current node was written down. Continue to parse... ",newick)
+    end # if length one
+    if newick[1] == ';'
+        println("We have reached the end!")
+        return current_node
+    end # the last one
+end #while
     return current_node
 end # the function
 
@@ -186,7 +210,8 @@ end
 
 
 
-parsing_the_newick("(A:0.1,B:0.2,(C:0.3,D:0.4)E:0.5)F;",nothing,1)
+node = parsing_the_newick("(A,B,(C,D));",nothing)
+println(show(node))
 
 
 
