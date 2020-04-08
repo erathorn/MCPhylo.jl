@@ -204,6 +204,8 @@ function parse_name_length(newick::String)
         name, length = split(newick,':')
         return string(name), parse(Float64, length)
     end # if
+    if length(newick)!=0
+        return newick,nothing
     "no_name", nothing
 end
 
