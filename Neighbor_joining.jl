@@ -1,10 +1,12 @@
+include("./MCPhylo/MCPhylo.jl")
+
 """
 neighbor_joining(dm::Array{Int64,2}, tree::T)
 
 This function returns a phylogenetic tree by using neighbor joining
 on the given tree.
 """
-# Tree structure, node naming, node numbers needed?, example tree? 
+# Tree structure, node naming, node numbers needed?, example tree?, let blocks?
 function neighbor_joining(dm::Array{Int64,2}, tree::T) where {T<:AbstractNode}
 
     n = size(dm)[1]
@@ -15,7 +17,8 @@ function neighbor_joining(dm::Array{Int64,2}, tree::T) where {T<:AbstractNode}
         for i = 1:n
             for j = i+1:n
                 q1[i, j] =
-                q1[j, i] = (n - 2) * dm[i, j] - sum(dm[i, :]) - sum(dm[j, :])
+                    q1[j, i] =
+                        (n - 2) * dm[i, j] - sum(dm[i, :]) - sum(dm[j, :])
             end # end for
         end # end for
         count = 1
@@ -31,16 +34,22 @@ function neighbor_joining(dm::Array{Int64,2}, tree::T) where {T<:AbstractNode}
         insert!(leaves, 1, new_node)
 
         first_node.inc_length =
-        0.5 * dm[index] + (1 / (2 * (n - 2))) * (sum(dm[index[1], :]) - sum(dm[index[2], :]))
+            0.5 * dm[index] +
+            (1 / (2 * (n - 2))) * (sum(dm[index[1], :]) - sum(dm[index[2], :]))
         second_node.inc_length = dm[index] - first_node.inc_length
 
-        next_dm = zeros(Float64, n-1, n-1)
+        next_dm = zeros(Float64, n - 1, n - 1)
         let j = 1
             for i = 2:n-1
-                while  j == index[1] || j == index[2]
+                while j == index[1] || j == index[2]
                     j += 1
                 end # end while
-                next_dm[i,1] = next_dm[1,i] =  0.5 * (dm[index[1],j] + dm[index[2],j] - dm[index[1], index[2]])
+                next_dm[i, 1] =
+                    next_dm[1, i] =
+                        0.5 * (
+                            dm[index[1], j] + dm[index[2], j] -
+                            dm[index[1], index[2]]
+                        )
                 j += 1
             end # end for
         end # end let
@@ -54,7 +63,7 @@ function neighbor_joining(dm::Array{Int64,2}, tree::T) where {T<:AbstractNode}
                 if j == index[1] || j == index[2]
                     continue
                 else
-                    append!(entries, dm[i,j])
+                    append!(entries, dm[i, j])
                 end # end else
             end # end for
         end # end for
@@ -62,7 +71,7 @@ function neighbor_joining(dm::Array{Int64,2}, tree::T) where {T<:AbstractNode}
         let z = 1
             for k = 2:n-1
                 for l = 2:n-1
-                    next_dm[k,l] = entries[z]
+                    next_dm[k, l] = entries[z]
                     z += 1
                 end   # end for
             end # end for
