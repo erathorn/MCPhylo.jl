@@ -2,6 +2,7 @@
 # that's very far from ideal, but atom and I don't understand each other otherwise
 include("../MCPhylo.jl")
 
+
 """
     ParseNewick(filename::String)
 
@@ -68,6 +69,10 @@ end
 
 #DISCLAIMER: this function is heavily inspired by the pseudocode provided by https://eddiema.ca/2010/06/25/parsing-a-newick-tree-with-recursive-descent/
 
+#currently we shrink the string instead of following it with the cursor. Cursor should be less time complex, but string is more visual
+# TODO: rewrite to the cursor version, remove all exessive println'es, etc
+
+
 function parsing_the_newick(newick::String,current_node::Any,count::Integer)
 
     if current_node == nothing
@@ -87,7 +92,7 @@ while true
         if newick[1] == '('
             # YOUR RECURSION IS HERE
             println("Left bracket is detected!")
-            left_child = parsing_the_newick(newick,current_node,count)
+            left_child = parsing_the_newick(string(newick),current_node,count)
             newick = SubString(newick,2)
             println("Plus one happy kid gets a mom!")
             add_child!(current_node,left_child)
@@ -98,7 +103,7 @@ while true
         println("Trying to detect the name and length from the ", string(SubString(newick,1,node_boarder-1)))
         name,length = parse_name_length(string(SubString(newick,1,node_boarder-1)))
 
-        if name != "no_name" || length!=nothing
+        if name != "no_name" || length!=0.0
 
             println("This node has a name or length provided")
             left_child = Node()
@@ -121,8 +126,11 @@ while true
             println("The left child was succesfully attached. Continiue to parse ",newick)
         end # if_else
     end # if "("
+if newick[1] == ','
+    sibling_parsing = true
+    while sibling_parsing
 
-#TODO: this can be heavily optimized and shortened too (the things basically repeat themselves)
+    println("Got into the while")
 
     if newick[1] == ','
 
@@ -130,7 +138,7 @@ while true
         println("Parsing... ",newick)
 
         if newick[1] == '('
-            println("Welcome to the internal node.")
+            println("Welcome to the internal node. Here starts the recursion.")
             right_child = parsing_the_newick(string(newick),current_node,count)
             println("Moving on! The current string is ", newick)
             newick = SubString(newick,2)
@@ -143,7 +151,7 @@ while true
         println("Trying to detect the name and length from the ", string(SubString(newick,1,node_boarder-1)))
         name,length = parse_name_length(string(SubString(newick,1,node_boarder-1)))
 
-        if name != "no_name" || length!=nothing
+        if name != "no_name" || length!=0.0
             println("This node has a name or length provided")
             right_child = Node()
             right_child.name = name
@@ -151,7 +159,7 @@ while true
             add_child!(current_node,right_child)
             right_child.num = count
             count+=1
-            newick = SubString(newick,node_boarder)
+            newick = string(SubString(newick,node_boarder))
             println("The right child was succesfully attached. Continiue to parse ", newick)
         else
             println("We get here, if no information is provided about the node (it's nameless and lengthless).")
@@ -161,18 +169,23 @@ while true
             add_child!(current_node,right_child)
             right_child.num = count
             count+=1
-            newick = SubString(newick,node_boarder)
+            newick = string(SubString(newick,node_boarder))
             println("The right child was succesfully attached. Continiue to parse ",newick)
+            # TODO: the problem is here. If there's another ',' it should parse it as a sibling
         end # if_else
+else
+    sibling_parsing=false
     end # if ","
+end # while
+end # if ','
 
     if newick[1] == ')'
         println("Some right brakcet was detected!")
-        newick = SubString(newick,2)
+        newick = string(SubString(newick,2))
         println("Continiue to parse... ", newick)
 end # if with the ")" bracket
 
-    if newick[1] == match(r"^[0-9A-Za-z_|]+",newick) || newick[1] == ':'
+if occursin(r"^[0-9A-Za-z_|]+",string(newick[1])) || newick[1] == ':'
         println("We're getting the information of the current node")
         node_boarder = match(r"[();,]",newick).offset
         println("Trying to detect the name and length from the ", string(SubString(newick,1,node_boarder-1)))
@@ -200,22 +213,21 @@ This function parses two optional elements of the tree, name and length. In case
 """
 
 function parse_name_length(newick::String)
+    newick = strip(newick)
+    if length(newick) < 1
+        return newick, 0.0
+    end
     if occursin(':',newick)
         name, len = split(newick,':')
         return string(name), parse(Float64, len)
     end # if
-    println(newick)
-    if length(newick)!=nothing
-        return newick, 0.0
-    end
-    "no_name", 0.0
+    return "no_name", 0.0
 end
 
 
 
-
-node = parsing_the_newick("(A,B,(C,D));",nothing,0)
-println(node)
+nn = parsing_the_newick("(,,(,));",nothing,0)
+#node = parsing_the_newick("(A,B,(C,D));",nothing,0)
 
 
 
