@@ -3,6 +3,7 @@
 include("../MCPhylo.jl")
 
 
+
 """
     ParseNewick(filename::String)
 
@@ -76,14 +77,14 @@ end
 function parsing_the_newick(newick::String,current_node::Any,count::Integer)
 
     if current_node == nothing
-        cur_loc = 1
         count = 0
         current_node = Node()
-        copy_of_the_string = newick
         println("Starting up!")
         println("The string is looking like that ", newick)
     end # setting things up
+
 while true
+
     if newick[1] == '('
 
         newick = SubString(newick,2)
@@ -95,7 +96,7 @@ while true
             left_child = parsing_the_newick(string(newick),current_node,count)
             newick = SubString(newick,2)
             println("Plus one happy kid gets a mom!")
-            add_child!(current_node,left_child)
+            left_child.mother = current_node
             println("Parsing... ",newick)
         end # if (the recursive call one)
 
@@ -103,34 +104,18 @@ while true
         println("Trying to detect the name and length from the ", string(SubString(newick,1,node_boarder-1)))
         name,length = parse_name_length(string(SubString(newick,1,node_boarder-1)))
 
-        if name != "no_name" || length!=0.0
-
-            println("This node has a name or length provided")
-            left_child = Node()
-            left_child.name = name
-            left_child.inc_length = length
-            add_child!(current_node,left_child)
-            left_child.num = count
-            count+=1
-            newick = SubString(newick,node_boarder)
-            println("The left child was succesfully attached. Continiue to parse ",newick)
-        else
-            println("We get here, if no information is provided about the node (it's nameless and lengthless).")
-            left_child = Node()
-            left_child.name = "no_name"
-            left_child.inc_length = 0
-            add_child!(current_node,left_child)
-            left_child.num = count
-            count+=1
-            newick = SubString(newick,node_boarder)
-            println("The left child was succesfully attached. Continiue to parse ",newick)
-        end # if_else
+        left_child = Node()
+        left_child.name = name
+        left_child.inc_length = length
+        left_child.num = count
+        count+=1
+        newick = SubString(newick,node_boarder)
+        println("The left child was succesfully attached. Continiue to parse ",newick)
     end # if "("
 if newick[1] == ','
+
     sibling_parsing = true
     while sibling_parsing
-
-    println("Got into the while")
 
     if newick[1] == ','
 
@@ -143,7 +128,7 @@ if newick[1] == ','
             println("Moving on! The current string is ", newick)
             newick = SubString(newick,2)
             println("Plus one happy kid gets a mom!")
-            add_child!(current_node,right_child)
+            right_child.mother = current_node
 
         end # if (the recursive call one)
 
@@ -151,31 +136,17 @@ if newick[1] == ','
         println("Trying to detect the name and length from the ", string(SubString(newick,1,node_boarder-1)))
         name,length = parse_name_length(string(SubString(newick,1,node_boarder-1)))
 
-        if name != "no_name" || length!=0.0
-            println("This node has a name or length provided")
-            right_child = Node()
-            right_child.name = name
-            right_child.inc_length = length
-            add_child!(current_node,right_child)
-            right_child.num = count
-            count+=1
-            newick = string(SubString(newick,node_boarder))
-            println("The right child was succesfully attached. Continiue to parse ", newick)
-        else
-            println("We get here, if no information is provided about the node (it's nameless and lengthless).")
-            right_child = Node()
-            right_child.name = "no_name"
-            right_child.inc_length = 0
-            add_child!(current_node,right_child)
-            right_child.num = count
-            count+=1
-            newick = string(SubString(newick,node_boarder))
-            println("The right child was succesfully attached. Continiue to parse ",newick)
-            # TODO: the problem is here. If there's another ',' it should parse it as a sibling
-        end # if_else
+        right_child = Node()
+        right_child.name = name
+        right_child.inc_length = length
+        right_child.num = count
+        count+=1
+        newick = string(SubString(newick,node_boarder))
+        println("The right child was succesfully attached. Continiue to parse ", newick)
 else
     sibling_parsing=false
     end # if ","
+
 end # while
 end # if ','
 
@@ -190,6 +161,7 @@ if occursin(r"^[0-9A-Za-z_|]+",string(newick[1])) || newick[1] == ':'
         node_boarder = match(r"[();,]",newick).offset
         println("Trying to detect the name and length from the ", string(SubString(newick,1,node_boarder-1)))
         name,length = parse_name_length(string(SubString(newick,1,node_boarder-1)))
+
         current_node.name = name
         current_node.inc_length = length
         current_node.num = count
@@ -199,6 +171,7 @@ if occursin(r"^[0-9A-Za-z_|]+",string(newick[1])) || newick[1] == ':'
     end # if length one
     if newick[1] == ';'
         println("We have reached the end!")
+        println(current_node.name)
         return current_node
     end # the last one
 end #while
@@ -216,40 +189,18 @@ function parse_name_length(newick::String)
     newick = strip(newick)
     if length(newick) < 1
         return newick, 0.0
-    end
+    end # if length
     if occursin(':',newick)
         name, len = split(newick,':')
         return string(name), parse(Float64, len)
-    end # if
+    end # if occusrsin
     return "no_name", 0.0
-end
-
-
-
-nn = parsing_the_newick("(,,(,));",nothing,0)
-#node = parsing_the_newick("(A,B,(C,D));",nothing,0)
+end # function
 
 
 
 
-
-       # // try to find a valid $name next at the current cursor position //
-       # if $name = $newick_string [ $cursor ] . regex match ("^[0-9A-Za-z_|]+") {
-       #     // Then the $left node is a leaf node: parse the leaf data //
-       #     $this.left = new Object;
-       #     $this.left.name = $name;
-       #     $this.left.serial = $count;
-       #     $count ++;
-       #     $this.left.parent = $this;
-       #     $cursor += length of $name;
-       #     // move cursor to position after matched name.
-       # }
-
-
-
-
-
-
+F = parsing_the_newick("A,B,(C,D)E)F;",nothing,0)
 
 # TODO: rewrite this one
 #
