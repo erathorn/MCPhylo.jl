@@ -149,11 +149,11 @@ Calculate the distance matrix over the set of leaves.
 function to_distance_matrix(tree::T)::Array{Float64,2} where T <:AbstractNode
     leaves::Vector{T} = get_leaves(tree)
     ll = length(leaves)
-    covmat = zeros(Float64, ll, ll)
+    distance_mat = zeros(Float64, ll, ll)
     for i in 1:ll
         for j in 1:ll
             if i>j
-                d = node_distance(leaves[i], leaves[j])
+                d = node_distance(tree, leaves[i], leaves[j])
                 distance_mat[i,j] = d
                 distance_mat[j,i] = d
             end # if
