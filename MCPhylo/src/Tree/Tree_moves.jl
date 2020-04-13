@@ -12,7 +12,7 @@ The function returns 1 if the move was successfull and 0 else.
 """
 function NNI!(root::T, target::T, lor::Bool)::Int64  where T<:AbstractNode
     # NNI move would be illegal
-    if target.nchild === 0 || target.root
+    if target.nchild == 0 || target.root
         return 0
     end # if
 
