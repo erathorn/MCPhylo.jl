@@ -1,6 +1,8 @@
 
 # that's very far from ideal, but atom and I don't understand each other otherwise
 include("../MCPhylo.jl")
+#include("../Tree/Node_Type.jl")
+#include("../Tree/Tree_Basics.jl")
 
 
 
@@ -97,6 +99,7 @@ while true
             newick = SubString(newick,2)
             println("Plus one happy kid gets a mom!")
             left_child.mother = current_node
+            push!(current_node.children,left_child)
             println("Parsing... ",newick)
         end # if (the recursive call one)
 
@@ -109,6 +112,7 @@ while true
         left_child.inc_length = length
         left_child.num = count
         count+=1
+        push!(current_node.children,left_child)
         newick = SubString(newick,node_boarder)
         println("The left child was succesfully attached. Continiue to parse ",newick)
     end # if "("
@@ -129,6 +133,8 @@ if newick[1] == ','
             newick = SubString(newick,2)
             println("Plus one happy kid gets a mom!")
             right_child.mother = current_node
+            push!(current_node.children,right_child)
+
 
         end # if (the recursive call one)
 
@@ -141,6 +147,7 @@ if newick[1] == ','
         right_child.inc_length = length
         right_child.num = count
         count+=1
+        push!(current_node.children,right_child)
         newick = string(SubString(newick,node_boarder))
         println("The right child was succesfully attached. Continiue to parse ", newick)
 else
@@ -198,33 +205,39 @@ function parse_name_length(newick::String)
 end # function
 
 
-
-
-F = parsing_the_newick("A,B,(C,D)E)F;",nothing,0)
-
+println("it begins")
+F = parsing_the_newick("(A:0.1,(B:0.1,C:0.1));",nothing,0)
+println("it is finished")
+bla = F.children
+for x in bla
+    name = x.name
+    children = x.children
+    mother = x.mother
+    println("HELLO I AM ",name, " MY CHILDREN ARE ", children, " MY MOTHER IS ", mother)
+end #for
 # TODO: rewrite this one
 #
-# function make_node(newick::String)
-#     parts = split(newick, ')')
-#     if length(parts) == 1
-#         label = newick
-#         children = Vector{Node}(undef, 0)
-#         name, inc_length = parse_name_length(label)
-#         return Node{Float64,Array{Float64,2},Array{Float64},Int64}(name,ones(3,3),missing,children,ones(3),3,false,inc_length,"0",1,0.5,nothing,nothing,true)
-#     else
-#         # TODO: why can't we use length? check
-#         len_minus_one = size(parts,1)-1
-#         children = list(parse_siblings(join(parts[len_minus_one],')')[2:size(parts,1)]))
-#         label = parts[len_minus_one]
-#     end #if
-#     name, inc_length = parse_name_length(label)
-#     parent = Node(name,ones(3,3),missing,children,length(children),false,inc_length,"0",1,0.5,nothing,nothing,true)
-#     for x in children
-#         x.mother=parent
-#     end #for
-#     return parent
-# end #function
-#
+function make_node(newick::String)
+    parts = split(newick, ')')
+    if length(parts) == 1
+        label = newick
+        children = Vector{Node}(undef, 0)
+        name, inc_length = parse_name_length(label)
+        return Node{Float64,Array{Float64,2},Array{Float64},Int64}(name,ones(3,3),missing,children,ones(3),3,false,inc_length,"0",1,0.5,nothing,nothing,true)
+    else
+        # TODO: why can't we use length? check
+        len_minus_one = size(parts,1)-1
+        children = list(parse_siblings(join(parts[len_minus_one],')')[2:size(parts,1)]))
+        label = parts[len_minus_one]
+    end #if
+    name, inc_length = parse_name_length(label)
+    parent = Node(name,ones(3,3),missing,children,length(children),false,inc_length,"0",1,0.5,nothing,nothing,true)
+    for x in children
+        x.mother=parent
+    end #for
+    return parent
+end #function
+
 
 
 function parse_siblings(newick::String)
