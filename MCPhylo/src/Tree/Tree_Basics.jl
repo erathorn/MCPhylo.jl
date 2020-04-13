@@ -283,21 +283,38 @@ end
 Calculate the height of a node.
 """
 function node_height(root::T)  where T<:AbstractNode
-    for node in post_order(root)
-        if node.nchild == 0
-            node.height = 0
-        else
-            node.height = maximum([child.inc_length+child.height for child in node.children])
+
+    if root.nchild != 0
+        for node in root.children
+            node_height(node)
         end
+        root.height = maximum([child.inc_length+child.height for child in root.children])
+    else
+        root.height = 0.0
     end
 end # function node_height
 
+function node_height_vec(root::T, vec::Vector{N})  where {T<:AbstractNode, N<:Real}
 
+    if root.nchild != 0
+        for node in root.children
+            node_height_vec(node, vec)
+        end
+    end
+    vec[root.num] = root.height
+end # function node_height
+
+
+function node_height_vec(root::T)::Vector{Float64} where T<:AbstractNode
+    t = zeros(length(post_order(root)))
+    node_height_vec(root, t)
+    t
+end # function node_height
 
 
 function node_distance(tree::T, node1::T, node2::T)::Float64 where T<:AbstractNode
     lca = find_lca(tree, node1, node2)
-    path_length(lca, node1)+path_length(lca,node2)    
+    path_length(lca, node1)+path_length(lca,node2)
 end
 
 function get_path(ancestor::T, descendant::T)::Vector{Int64} where T<:AbstractNode
