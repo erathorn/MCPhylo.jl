@@ -168,7 +168,6 @@ if occursin(r"^[0-9A-Za-z_|]+",string(newick[1])) || newick[1] == ':'
         node_boarder = match(r"[();,]",newick).offset
         println("Trying to detect the name and length from the ", string(SubString(newick,1,node_boarder-1)))
         name,length = parse_name_length(string(SubString(newick,1,node_boarder-1)))
-
         current_node.name = name
         current_node.inc_length = length
         current_node.num = count
@@ -178,7 +177,6 @@ if occursin(r"^[0-9A-Za-z_|]+",string(newick[1])) || newick[1] == ':'
     end # if length one
     if newick[1] == ';'
         println("We have reached the end!")
-        println(current_node.name)
         return current_node
     end # the last one
 end #while
@@ -195,18 +193,18 @@ This function parses two optional elements of the tree, name and length. In case
 function parse_name_length(newick::String)
     newick = strip(newick)
     if length(newick) < 1
-        return newick, 0.0
+        return "no_name", 0.0
     end # if length
     if occursin(':',newick)
         name, len = split(newick,':')
         return string(name), parse(Float64, len)
     end # if occusrsin
-    return "no_name", 0.0
+    return newick, 0.0
 end # function
 
 
 println("it begins")
-F = parsing_the_newick("(A:0.1,(B:0.1,C:0.1));",nothing,0)
+F = parsing_the_newick("(A,B,(C,D)E)F;",nothing,0)
 println("it is finished")
 bla = F.children
 for x in bla
@@ -215,6 +213,10 @@ for x in bla
     mother = x.mother
     println("HELLO I AM ",name, " MY CHILDREN ARE ", children, " MY MOTHER IS ", mother)
 end #for
+
+
+
+
 # TODO: rewrite this one
 #
 function make_node(newick::String)
