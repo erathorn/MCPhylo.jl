@@ -1,8 +1,9 @@
 
 # that's very far from ideal, but atom and I don't understand each other otherwise
 include("../MCPhylo.jl")
-#include("../Tree/Node_Type.jl")
-#include("../Tree/Tree_Basics.jl")
+# include("../Tree/Node_Type.jl")
+# include("../Tree/Tree_Basics.jl")
+# include("../Tree/Tree_Traversal.jl")
 
 
 
@@ -112,7 +113,7 @@ while true
         left_child.inc_length = length
         left_child.num = count
         count+=1
-        push!(current_node.children,left_child)
+        add_child!(current_node,left_child)
         newick = SubString(newick,node_boarder)
         println("The left child was succesfully attached. Continiue to parse ",newick)
     end # if "("
@@ -147,7 +148,7 @@ if newick[1] == ','
         right_child.inc_length = length
         right_child.num = count
         count+=1
-        push!(current_node.children,right_child)
+        add_child!(current_node,right_child)
         newick = string(SubString(newick,node_boarder))
         println("The right child was succesfully attached. Continiue to parse ", newick)
 else
@@ -203,16 +204,19 @@ function parse_name_length(newick::String)
 end # function
 
 
-println("it begins")
-F = parsing_the_newick("(A,B,(C,D)E)F;",nothing,0)
-println("it is finished")
-bla = F.children
-for x in bla
-    name = x.name
-    children = x.children
-    mother = x.mother
-    println("HELLO I AM ",name, " MY CHILDREN ARE ", children, " MY MOTHER IS ", mother)
-end #for
+# minimal setting up examples
+
+
+# println("it begins")
+# F = parsing_the_newick("(A,B,E)F;",nothing,0)
+# println("it is finished")
+# bla = F.children
+# for x in bla
+#     name = x.name
+#     children = x.children
+#     mother = x.mothe
+#     println("HELLO I AM ",name, " MY CHILDREN ARE ", children, " MY MOTHER IS ", mother)
+# end #for
 
 
 
