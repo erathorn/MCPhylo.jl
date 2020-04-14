@@ -58,16 +58,35 @@ function gradlogpdf(d::CompoundDirichlet, x::Node)
     blv = get_branchlength_vector(x)
 
 
-    g(mt) = internal_logpdf(d, mt, int_ext)
+    f(mt) = internal_logpdf(d, mt, int_ext)
 
-    r = val_der(g, blv)
+    r2 = DiffResults.GradientResult(blv)
+    res = ForwardDiff.gradient!(r2, f, blv)
 
-    r[1], r[2][1]
+    grad = DiffResults.gradient(res)
+
+    DiffResults.value(res), grad
+
+
+
+    #r[1], r[2][1]
 end
 
 function val_der(f, y...)
-    gs1 = Flux.pullback(f, y...)
-    gs1[1], gs1[2](1.0)
+
+
+
+    #f(y) =mlpdf(d.mu, d.tree, y, d.sigmai, d.P,d.scaler, d.chars, x)
+
+    r2 = DiffResults.GradientResult(y[1])
+    res = ForwardDiff.gradient!(r2, f, y...)
+
+    grad = DiffResults.gradient(res)
+
+    DiffResults.value(res), grad
+
+    #gs1 = Flux.pullback(f, y...)
+    #gs1[1], gs1[2](1.0)
 end
 
 
