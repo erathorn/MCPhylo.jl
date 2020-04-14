@@ -1,4 +1,34 @@
 
+function Felsenstein_Recursion(root::N, pi_::T, rates::Vector{Float64}, data::Array{Float64,3}, n_c::Int64, trmats::Array{Array{S, 2},1}, od_scaler::Array{Real, 2})::Array{S,2}  where {S<:Real, T<:Number, N<:AbstractNode}
+
+    if root.nchild == 0
+        # I am a leave
+        return data[:,:,root.num]#, od_scaler
+    else
+        # here happens the intresting stuff
+        num_v = [node.num for node in root.children]
+
+        rv = reduce(pointwise_reduce, trmats[num_v] .* Felsenstein_Recursion.(root.children, Ref(pi_), Ref(rates), Ref(data), n_c, Ref(trmats), Ref(od_scaler)))
+        if !root.root
+            scaler = Base.maximum(rv, dims=1)
+            od_scaler[root.num,:]  .+= log.(scaler)[:]
+            rv ./= scaler
+        end
+        return rv
+    end
+end
+
+
+function FelsensteinFunction(root::N, pi_::T, rates::Vector{Float64}, data::Array{Float64,3}, n_c::Int64, blv::Array{S})::S where {S<:Real, T<:Number, N<:AbstractNode}
+    r::Float64 = 1.0
+    mu =  1.0 / (2.0 * pi_ * (1-pi_))
+    mml = calc_trans.(blv, pi_, mu, r)
+    od_scaler = zeros(Real, length(blv), n_c)
+    rv = Felsenstein_Recursion(root, pi_, rates, data, n_c, mml, od_scaler)
+
+    sum(log.(sum(rv .* Array([pi_, 1.0-pi_]), dims=1))+sum(od_scaler, dims=1))
+end
+
 """
     FelsensteinFunction(tree_postorder::Vector{Node}, pi::Float64, rates::Vector{Float64}, data::Array{Float64,3}, n_c::Int64)::Float64
 
