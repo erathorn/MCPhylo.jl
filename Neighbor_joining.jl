@@ -1,17 +1,24 @@
 include("./MCPhylo/src/MCPhylo.jl")
 
 """
-neighbor_joining(dm::ArrayFloat64,2}, tree::T)
+neighbor_joining(dm::Array{Int64,2}, Array{String,1})
 
 This function returns a phylogenetic tree by using neighbor joining
-based on a given distance matrix
+based on a given distance matrix and an array of leaf names
 """
-# Tree structure, node naming, node numbers needed?, example tree?, let blocks?
-# use RF function to check topology
-function neighbor_joining(dm::Array{Float64,2}, leaves::Vector{T}) where {T>:AbstractNode}
+function neighbor_joining(dm::Array{Float64,2}, leaf_names::Array{String,1})
 
     n = size(dm)[1]
+    leaves = AbstractNode[]
+    for leaf in leaf_names
+        new_leaf = Node()
+        new_leaf.name = leaf
+        push!(leaves, new_leaf)
+    end # end for
+    # count for node names
+    count = 1
     while n > 2
+        # build Q1 matrix
         q1 = zeros(Float64, n, n)
         for i = 1:n
             for j = i+1:n
@@ -20,56 +27,49 @@ function neighbor_joining(dm::Array{Float64,2}, leaves::Vector{T}) where {T>:Abs
                         (n - 2) * dm[i, j] - sum(dm[i, :]) - sum(dm[j, :])
             end # end for
         end # end for
-
-        println(q1)
-
-        count = 1
+        # locate minimum of Q1
         index = findmin(q1)[2]
+
         first_node = leaves[index[2]]
         second_node = leaves[index[1]]
         new_node = Node()
         new_node.name = "Node_$count"
+        count += 1
         new_node.children = [first_node, second_node]
         new_node.nchild = 2
-
-        println(new_node)
-
         first_node.mother = new_node
         second_node.mother = new_node
-        if index[1] < index[2]
-            deleteat!(leaves, [index[1], index[2]])
-        else
-            deleteat!(leaves, [index[2], index[1]])
-        end
 
+        println(new_node.name)
+        println(first_node.name)
+        println(second_node.name)
+        # update array with leaf names
+        deleteat!(leaves, [index[2]])
+        deleteat!(leaves, [index[1] - 1])
         insert!(leaves, 1, new_node)
+        # calculate distance
+        first_node.inc_length =
+            0.5 * dm[index] +
+            (1 / (2 * (n - 2))) * (sum(dm[index[2], :]) - sum(dm[index[1], :]))
+        second_node.inc_length = dm[index] - first_node.inc_length
 
-        dummy = 0.5 * dm[index] + (1 / (2 * (n - 2))) * (sum(dm[index[2], :]) - sum(dm[index[1], :]))
+        println([first_node.inc_length, second_node.inc_length])
 
-        println(dummy)
-
-        first_node.inc_length = dummy
-        second_node.inc_length = dm[index] - dummy
-
-        println(first_node)
-        println(second_node)
-
+        # initalize next distance matrix
         next_dm = zeros(Float64, n - 1, n - 1)
-        let j = 1
-            for i = 2:n-1
-                while j == index[1] || j == index[2]
-                    j += 1
-                end # end while
-                next_dm[i, 1] =
-                    next_dm[1, i] =
-                        0.5 * (
-                            dm[index[1], j] + dm[index[2], j] -
-                            dm[index[1], index[2]]
-                        )
+        # fill first row and column of next distance matrix
+        j = 1
+        for i = 2:n-1
+            while j == index[1] || j == index[2]
                 j += 1
-            end # end for
-        end # end let
-
+            end # end while
+            next_dm[i, 1] =
+                next_dm[1, i] =
+                    0.5 *
+                    (dm[index[1], j] + dm[index[2], j] - dm[index[1], index[2]])
+            j += 1
+        end # end for
+        # copy values of last distance matrix to fill the next one
         entries = Float64[]
         for i = 1:n
             if i == index[1] || i == index[2]
@@ -83,37 +83,51 @@ function neighbor_joining(dm::Array{Float64,2}, leaves::Vector{T}) where {T>:Abs
                 end # end else
             end # end for
         end # end for
-
-        let z = 1
-            for k = 2:n-1
-                for l = 2:n-1
-                    next_dm[k, l] = entries[z]
-                    z += 1
-                end   # end for
-            end # end for
-        end # end let
+        # fill remaining cells of next distance matrix
+        z = 1
+        for k = 2:n-1
+            for l = 2:n-1
+                next_dm[k, l] = entries[z]
+                z += 1
+            end   # end for
+        end # end for
         n -= 1 # update matrix dimension
         dm = next_dm
-        #println(dm)
-        count += 1
+        # add final (root) node to tree
+        if n == 2
+            root = last(leaves)
+            root.root = true
+            child_node = leaves[1]
+            root.children = [child_node]
+            root.nchild = 1
+            child_node.mother = root
+            child_node.inc_length = dm[index]
+            println(child_node.inc_length)
+            return root
+        end # end if
     end # end while
-    root = last(leaves)
-    root.children = [leaves[1]]
-    root.nchild = 1
-    leaves[1].mother = root
-
-    return root
 end # end function neighbor_joining
 
+"""
+neighbor_joining(dm::Array{Int64,2}, Array{String,1})
 
+This function returns a phylogenetic tree by using neighbor joining
+based on a given distance matrix
+"""
 function neighbor_joining(dm::Array{Float64,2})
 
     n = size(dm)[1]
     leaves = AbstractNode[]
+    # build array of dummy leaves
     for i = 1:n
-        append!(leaves, Node("leaf_$i"))
-    end
+        new_leaf = Node()
+        new_leaf.name = "leaf_$i"
+        push!(leaves, new_leaf)
+    end # end for
+    # count for node names
+    count = 1
     while n > 2
+        # build Q1 matrix
         q1 = zeros(Float64, n, n)
         for i = 1:n
             for j = i+1:n
@@ -122,41 +136,50 @@ function neighbor_joining(dm::Array{Float64,2})
                         (n - 2) * dm[i, j] - sum(dm[i, :]) - sum(dm[j, :])
             end # end for
         end # end for
-        count = 1
+        # locate minimum of Q1
         index = findmin(q1)[2]
 
-        first_node = leaves[index[1]]
-        second_node = leaves[index[2]]
+        first_node = leaves[index[2]]
+        second_node = leaves[index[1]]
         new_node = Node()
         new_node.name = "Node_$count"
+        count += 1
         new_node.children = [first_node, second_node]
         new_node.nchild = 2
         first_node.mother = new_node
         second_node.mother = new_node
-        deleteat!(leaves, [index[1], index[2]])
-        insert!(leaves, 1, new_node)
 
+        println(new_node.name)
+        println(first_node.name)
+        println(second_node.name)
+        # update array with leaves
+        deleteat!(leaves, [index[2]])
+        deleteat!(leaves, [index[1] - 1])
+        insert!(leaves, 1, new_node)
+        # calculate distance
         first_node.inc_length =
             0.5 * dm[index] +
-            (1 / (2 * (n - 2))) * (sum(dm[index[1], :]) - sum(dm[index[2], :]))
+            (1 / (2 * (n - 2))) * (sum(dm[index[2], :]) - sum(dm[index[1], :]))
         second_node.inc_length = dm[index] - first_node.inc_length
 
-        next_dm = zeros(Float64, n - 1, n - 1)
-        let j = 1
-            for i = 2:n-1
-                while j == index[1] || j == index[2]
-                    j += 1
-                end # end while
-                next_dm[i, 1] =
-                    next_dm[1, i] =
-                        0.5 * (
-                            dm[index[1], j] + dm[index[2], j] -
-                            dm[index[1], index[2]]
-                        )
-                j += 1
-            end # end for
-        end # end let
+        println([first_node.inc_length, second_node.inc_length])
 
+        # initalize next distance matrix
+        next_dm = zeros(Float64, n - 1, n - 1)
+        # fill first row and column of next distance matrix
+        j = 1
+        for i = 2:n-1
+            while j == index[1] || j == index[2]
+                j += 1
+            end # end while
+            next_dm[i, 1] =
+                next_dm[1, i] =
+                    0.5 *
+                    (dm[index[1], j] + dm[index[2], j] - dm[index[1], index[2]])
+            j += 1
+        end # end for
+
+        # copy values of last distance matrix to fill the next one
         entries = Float64[]
         for i = 1:n
             if i == index[1] || i == index[2]
@@ -170,42 +193,27 @@ function neighbor_joining(dm::Array{Float64,2})
                 end # end else
             end # end for
         end # end for
-
-        let z = 1
-            for k = 2:n-1
-                for l = 2:n-1
-                    next_dm[k, l] = entries[z]
-                    z += 1
-                end   # end for
-            end # end for
-        end # end let
+        # fill remaining cells of next distance matrix
+        z = 1
+        for k = 2:n-1
+            for l = 2:n-1
+                next_dm[k, l] = entries[z]
+                z += 1
+            end   # end for
+        end # end for
         n -= 1 # update matrix dimension
         dm = next_dm
-        count += 1
+        # add final (root) node to tre
+        if n == 2
+            root = last(leaves)
+            root.root = true
+            child_node = leaves[1]
+            root.children = [child_node]
+            root.nchild = 1
+            child_node.mother = root
+            child_node.inc_length = dm[index]
+            println(child_node.inc_length)
+            return root
+        end # end if
     end # end while
-    root = last(leaves)
-    root.children = [leaves[1]]
-    root.nchild = 1
-    leaves[1].mother = root
-
-    return root
 end # end function neighbor_joining
-
-function test_nj()
-
-    dm = [0.0 5.0 9.0 9.0 8.0;5.0 0.0 10.0 10.0 9.0;9.0 10.0 0.0 8.0 7.0;
-    9.0 10.0 8.0 0.0 3.0;8.0 9.0 7.0 3.0 0.0]
-    a = Node()
-    a.name = "a"
-    b = Node()
-    b.name = "b"
-    c = Node()
-    c.name = "c"
-    d = Node()
-    d.name = "d"
-    e = Node()
-    e.name = "e"
-    leaves = [a, b, c, d, e]
-    neighbor_joining(dm, leaves)
-
-end # end function test_nj
