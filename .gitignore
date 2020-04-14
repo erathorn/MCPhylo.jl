@@ -18,3 +18,5 @@ rt.jl
 gputest.jl
 *params*.log
 notes.txt
+untracked_files/
+align*.jl
