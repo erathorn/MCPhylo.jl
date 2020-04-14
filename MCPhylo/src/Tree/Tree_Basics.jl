@@ -300,6 +300,9 @@ function node_height_vec(root::T, vec::Vector{N})  where {T<:AbstractNode, N<:Re
         for node in root.children
             node_height_vec(node, vec)
         end
+        root.height = maximum([child.inc_length+child.height for child in root.children])
+    else
+        root.height = 0.0
     end
     vec[root.num] = root.height
 end # function node_height
@@ -450,13 +453,14 @@ end # function
 
 Do post order traversal to retrieve a vector of branch lengths.
 """
-function get_branchlength_vector(root::N, out_vec::Vector{T}) where {N<:AbstractNode, T<:Real}
+function get_branchlength_vector(root::N, out_vec::Vector{T})::Nothing where {N<:AbstractNode, T<:Real}
     for child in root.children
         get_branchlength_vector(child, out_vec)
     end
     if !root.root
         out_vec[root.num] = root.inc_length
     end
+    nothing
 end
 
 """

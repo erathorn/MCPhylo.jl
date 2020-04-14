@@ -30,12 +30,12 @@ mutable struct Node_cu{T<:Real, A<:AbstractArray,B<:AbstractArray, I<:Integer} <
  end
 
 
-mutable struct Node{T<:Real, A<:AbstractArray,B<:AbstractArray, I<:Integer} <: AbstractNode
+mutable struct Node{T<:Real, A<:Real,B<:Real, I<:Integer} <: AbstractNode
     name::String
-    data::A
-    mother::Union{Node, Missing}
-    children::Vector{Node}
-    scaler::B
+    data::AbstractArray{A}
+    mother::Union{Node{T,A,B,I}, Missing}
+    children::Vector{Node{T,A,B,I}}
+    scaler::AbstractArray{B}
     nchild::I
     root::Bool
     inc_length::T
@@ -51,11 +51,11 @@ end # struct Node
 #const NodeS = Node{Float64,Array{Float64,2},Array{Float64,1},Int64}
 
 function Node()::Node
-        Node{Float64,Array{Float64,2},Array{Float64},Int64}("no_name", ones(3,3), missing,Vector{Node}(undef, 0) ,ones(3),0,true,0.5,"0",1,0.5,nothing,nothing,false)
+        Node{Float64,Float64,Float64,Int64}("no_name", ones(3,3), missing,Vector{Node{Float64,Float64,Float64,Int64}}(undef, 0) ,ones(3),0,true,0.5,"0",1,0.5,nothing,nothing,false)
 end
 
-function Node(name::String; data::A)::Node where A<:AbstractArray
-        Node{Float64,A,Array{Float64},Int64}(name, data ,missing, Vector{Node}(undef, 0), ones(3), 0, true, 0.5, "0", 1, 0.5, nothing, nothing, false)
+function Node(name::String; data::AbstractArray{A})::Node where A<:Real
+        Node{Float64,A,Float64,Int64}(name, data ,missing, Vector{Node{Float64,A,Float64,Int64}}(undef, 0), ones(3), 0, true, 0.5, "0", 1, 0.5, nothing, nothing, false)
 end
 
 
