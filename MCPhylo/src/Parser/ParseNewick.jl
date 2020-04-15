@@ -76,6 +76,45 @@ end
 #currently we shrink the string instead of following it with the cursor. Cursor should be less time complex, but string is more visual
 # TODO: rewrite to the cursor version, remove all exessive println'es, etc
 
+#the possible alternative parsing method, who knows
+function testing_new_strat(newick::String, current_node::Any, count::Integer)
+    if current_node == nothing
+        count = 0
+        current_node = Node()
+    end #if
+    while true
+        if newick[1] == '('
+            #this deals with the open parenthesis
+            newick = SubString(newick,2)
+
+            if newick[1] == '(' #TODO
+                #this is recursion; if we're looking at an internal node this should happen
+                childs_section = match("\(([^()]|(?R))*\)",newick) #should return only the descendants of the current child node, check https://regex101.com/r/lF0fI1/1 for proof of this regex working the way it should
+                cur_child = testing_new_strat(string(childs_section),current_node,count) #where the magic happens
+                newick = SubString(newick,2) #TODO: make newick = whatever comes after childs_section
+                cur_child.mother = current_node
+                push!(current_node.children,cur_child)
+            end #if
+
+            if occursin(r"^[0-9A-Za-z_|]+",string(newick[1])) || newick[1] == ':' #TODO
+                #this should happen if the current node's a leaf node
+                node_boarder = match(r"[();,]",newick).offset
+                name,length = parse_name_length(string(SubString(newick,1,node_boarder-1)))
+                cur_child = Node()
+                cur_child.name = name
+                cur_child.length = length
+                cur_child.num = count
+                cur_child.mother = current_node
+                push!(current_node.children,cur_child)
+                newick = SubString(newick,node_boarder)
+            end #if
+            if newick[1] == ';'
+                #the third possibility; should just return the current node, move out of recursion, etc
+                return current_node
+            end #if
+        end #if
+    end #while
+end #function
 
 function parsing_the_newick(newick::String,current_node::Any,count::Integer)
 
