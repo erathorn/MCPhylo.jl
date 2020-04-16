@@ -453,7 +453,7 @@ end # function
 
 Do post order traversal to retrieve a vector of branch lengths.
 """
-function get_branchlength_vector(root::N, out_vec::Vector{T})::Nothing where {N<:AbstractNode, T<:Real}
+function get_branchlength_vector(root::N, out_vec::Vector{T})::Nothing where {N<:Node{<:Real,<:Real,<:Real,<:Integer}, T<:Real}
     for child in root.children
         get_branchlength_vector(child, out_vec)
     end

@@ -7,7 +7,7 @@ This function performs a post order traversal through the tree. It is assumed th
 root of the tree. Thus, if `root` is not the root, the subtree defined by the root `root` is
 used for the post order traversal.
 """
-function post_order(root::T, traversal::Vector{T})::Vector{T} where T<:AbstractNode
+function post_order(root::T, traversal::Vector{T})::Vector{T} where T<:Node{<:Real,<:Real,<:Real,<:Integer}
    if root.nchild != 0
         for child in root.children
             post_order(child, traversal)
