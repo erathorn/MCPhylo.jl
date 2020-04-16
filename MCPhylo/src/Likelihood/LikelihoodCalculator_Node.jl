@@ -1,25 +1,26 @@
 
-function Felsenstein_Recursion(root::N, pi_::T, rates::Vector{Float64}, data::Array{S,3},
+@views function Felsenstein_Recursion(root::N, pi_::T, rates::Vector{Float64}, data::Array{S,3},
                                n_c::Int64, trmats::Array{Array{S, 2},1},
-                               od_scaler::Array{S, 2})::Array{S,2}  where {S<:Real, T<:Real, N<:AbstractNode}
+                               od_scaler::Array{S, 2})::Tuple{Array{S,2},Array{S,2}}  where {S<:Real, T<:Real, N<:AbstractNode}
 
-    if root.nchild == 0
-        # I am a leave
 
-        # this is actually not type stable!!
-        return data[:,:,root.num]
-    else
-        # here happens the intresting stuff
-        child_data::Array{Array{S,2},1} = Felsenstein_Recursion.(root.children, Ref(pi_), Ref(rates), Ref(data), n_c, Ref(trmats), Ref(od_scaler))
-        num_v::Array{Array{S,2},1} = [trmats[node.num] for node in root.children]
-        rv::Array{S,2} = reduce(pointwise_reduce, num_v .* child_data)
-        if !root.root
-            scaler = maximum(rv, dims=1)
-            od_scaler[root.num,:]  .+= log.(scaler)[:]
-            rv ./= scaler
-        end
-        return rv
-    end
+   if root.nchild == 0
+       return data[:,:,root.num], od_scaler
+   end
+
+   # here happens the intresting stuff
+   child_data::Array{Tuple{Array{S,2},Array{S,2}},1} = Felsenstein_Recursion.(root.children, Ref(pi_), Ref(rates), Ref(data), n_c, Ref(trmats), Ref(od_scaler))
+
+   num_v::Array{Array{S,2},1} = [trmats[node.num] for node in root.children]
+   rv::Array{S,2} = reduce(pointwise_reduce, num_v .* first.(child_data))
+   od_scaler = sum(last.(child_data))
+   if !root.root
+       scaler = Base.maximum(rv, dims=1)
+       od_scaler = od_scaler + log.(scaler)
+       rv = rv ./ scaler
+   end
+   return rv, od_scaler
+
 end
 
 
@@ -27,11 +28,12 @@ function FelsensteinFunction(root::N, pi_::T, rates::Vector{Float64}, data::Arra
     r::Float64 = 1.0
     mu =  1.0 / (2.0 * pi_ * (1-pi_))
     mml = calc_trans.(blv, pi_, mu, r)
-    od_scaler = zeros(eltype(blv), length(blv), n_c)
-    data_v = convert(Array{S, 3}, data)
-    rv = Felsenstein_Recursion(root, pi_, rates, data_v, n_c, mml, od_scaler)
-    ods::Array{S,2} = sum(od_scaler, dims=1)
-    sum(log.(sum(rv .* Array([pi_, 1.0-pi_]), dims=1))+ods)
+    od_scaler = zeros(S, 1, n_c)
+
+    rv, od_scaler = Felsenstein_Recursion(root, pi_, rates, data, n_c, mml, od_scaler)
+
+
+    sum(log.(sum(rv .* Array([pi_, 1.0-pi_]), dims=1)) + od_scaler)
 end
 
 """
@@ -40,53 +42,57 @@ end
 This function calculates the log-likelihood of an evolutiuonary model using the
 Felsensteins pruning algorithm.
 """
-function FelsensteinFunction(tree_postorder::Vector{N}, pi_::T, rates::Vector{Float64}, data::Array, n_c::Int64, blv::S) where {S<:AbstractArray, T<:Number, N<:AbstractNode}
+function FelsensteinFunction(tree_postorder::Vector{N}, pi_::T, rates::Vector{Float64},
+                             data::Array{Float64,3}, n_c::Int64, blv::Vector{Float64}) where {T<:Real, N<:Node{<:Real,Float64,Float64,<:Integer}}
     r::Float64 = 1.0
     mu =  1.0 / (2.0 * pi_ * (1-pi_))
     mml = calc_trans.(blv, pi_, mu, r)
 
     root_node = last(tree_postorder)
-    root_node.scaler = zeros(size(root_node.scaler))
-
+    root_node.scaler = zeros(1, n_c)
+    #rns = zeros(S, 1, n_c)
     @views for node in tree_postorder
         if node.nchild > 0
             node.data = node_loop(node, mml)
             if !node.root
                 node.scaler = Base.maximum(node.data, dims=1)
-                root_node.scaler += log.(node.scaler)
+                root_node.scaler = root_node.scaler + log.(node.scaler)
                 node.data = node.data ./ node.scaler
             end #if
         end #if
     end # for
 
-    return likelihood_root(root_node, pi_)#res
+    return likelihood_root(root_node.data, pi_, root_node.scaler)#res
 end # function
 
-@inline function likelihood_root(root::T, pi_::S)::Real where {S<:Number, T<:AbstractNode}
-    sum(log.(sum(root.data .* Array([pi_, 1.0-pi_]), dims=1))+root.scaler)
+@inline function likelihood_root(root::Array{A,2}, pi_::S, rns::Array{A,2})::A where {S<:Real, A<:Real}
+    sum(log.(sum(root .* Array([pi_, 1.0-pi_]), dims=1))+rns)
 end
 
-function node_loop(node::T, mml::Array{Array{S, 2},1})::Array{S,2} where {T<:AbstractNode, S<:Real}
-    reduce(pointwise_reduce, bc.(node.children, Ref(mml)))
+function node_loop(node::N, mml::Array{Array{Float64, 2},1})::Array{Float64,2} where {N<:Node{<:Real,Float64,Float64,<:Integer}, S<:Real}
+    r = bc.(node.children, Ref(mml))
+    reduce(pointwise_reduce, r)
 end
 
-@inline function pointwise_reduce(x::S, y::Array{T})::Array{T} where {S<:Array, T<:Real}
+@inline function pointwise_reduce(x::Array{T,N}, y::Array{T,N})::Array{T,N} where {N, T<:Real}
     x.*y
 end
 
-@inline function bc(node::T, mml::Array{Array{S,2},1})::Array{S} where {T<:AbstractNode, S<:Real}
-    mml[node.num]*node.data
+@inline function bc(node::N, mml::Array{Array{Float64,2},1})::Array{Float64,2} where {N<:Node{<:Real,Float64,Float64,<:Integer}, S<:Real}
+    r = node.data
+    s = mml[node.num]
+    s*r
 end
 
 
-function calc_trans(time::R, pi_::T, mu::S, r::S)::Array{R} where {S<:Real, T<:Real, R<:Real}
+function calc_trans(time::Float64, pi_::S, mu::Float64, r::Float64)::Array{Float64,2} where {S<:Real}
 
     v = exp(-r*time*mu)
     v1 = pi_ - (pi_ - 1)*v
     v2 = pi_ - pi_* v
     v3 = (pi_ - 1)*(v - 1)
     v4 = pi_*(v - 1) + 1
-    mm::Array{R}=[v1 v3;
+    mm::Array{Float64}=[v1 v3;
                   v2 v4]
     return mm
 end
