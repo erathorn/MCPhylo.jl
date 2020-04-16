@@ -58,15 +58,22 @@ function gradlogpdf(d::CompoundDirichlet, x::Node)
     blv = get_branchlength_vector(x)
 
 
-    f(mt) = internal_logpdf(d, mt, int_ext)
+    #f(mt) = internal_logpdf(d, mt, int_ext)
 
-    r2 = DiffResults.GradientResult(blv)
-    res = ForwardDiff.gradient!(r2, f, blv)
+    #r2 = DiffResults.GradientResult(blv)
+    #res = ForwardDiff.gradient!(r2, f, blv)
 
-    grad = DiffResults.gradient(res)
+    #grad = DiffResults.gradient(res)
 
-    DiffResults.value(res), grad
+    #DiffResults.value(res), grad
 
+    f(y) =  internal_logpdf(d, y, int_ext)
+
+
+    r = Zygote.pullback(f, blv)
+    #r2 = r[2](1.0)[1]::Vector{Float64}
+    #r1 = r[1]::Float64
+    r[1],r[2](1.0)[1]
 
 
     #r[1], r[2][1]
