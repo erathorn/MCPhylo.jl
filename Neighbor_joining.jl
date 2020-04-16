@@ -43,7 +43,7 @@ function neighbor_joining(dm::Array{Float64,2}, leaf_names::Array{String,1})
         println(new_node.name)
         println(first_node.name)
         println(second_node.name)
-        # update array with leaf names
+        # update array with leaves
         deleteat!(leaves, [index[2]])
         deleteat!(leaves, [index[1] - 1])
         insert!(leaves, 1, new_node)
