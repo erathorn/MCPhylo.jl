@@ -9,7 +9,7 @@ function names(d::TreeStochastic, nodekey::Symbol)
     sort!(n_names)
     n_names = vec(AbstractString["node "*string(n) for n in n_names])
     AbstractString["Tree height", "Tree length"]
-    vcat(AbstractString["Tree height", "Tree length"], n_names)
+    vcat(n_names,AbstractString["Tree height", "Tree length"])
 end
 
 function names(d::TreeLogical, nodekey::Symbol)
@@ -17,20 +17,20 @@ function names(d::TreeLogical, nodekey::Symbol)
     sort!(n_names)
     n_names = vec(AbstractString["node "*string(n) for n in n_names])
     AbstractString["Tree height", "Tree length"]
-    vcat(AbstractString["Tree height", "Tree length"], n_names)
+    vcat(n_names, AbstractString["Tree height", "Tree length"])
 end
 
 
 function unlist(root::Node)
-    y = tree_height(root)
-    x = node_height_vec(root)[1:end-1]
+    #y = tree_height(root)
+    x = node_height_vec(root)
     # tester = [n.height for n in get_leaves(root)]
     # if any(tester .!= 0.0)
     #     println("never happen")
     #     println(tester)
     # end
     # x = vec([n.height for n in post_order(root) if n.root != true])
-    vcat(y, tree_length(root), x)
+    vcat(x, tree_length(root))
 end
 
 function unlist(d::TreeStochastic)
