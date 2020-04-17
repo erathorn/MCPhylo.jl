@@ -74,10 +74,21 @@ to_file(sim, "t_dev", 5)
 blv = get_branchlength_vector(mt)
 using BenchmarkTools
 using Zygote
-rec(y) = MCPhylo.FelsensteinFunction(mt, 0.8, ones(3), df, 231, y)
-nrec(y) = MCPhylo.FelsensteinFunction(po, 0.8, ones(3), df, 231, y)
+
+nrec(y) = MCPhylo.FelsensteinFunction(ct, pi_, ones(3), df, 231, y)
+
+pi_ = 0.5
+nrec(blv)
+mt2 = deepcopy(mt)
+randomize!(mt2)
+po2 = post_order(mt2)
+ct = po2
+
+d1 = nrec'(blv)
+d2 = nrec'(blv)
 
 
+d2 == d1
 function rtest(mt, blv, pi_, df)#::Tuple{Float64, Vector{Float64}}
     po = post_order(mt)
 
