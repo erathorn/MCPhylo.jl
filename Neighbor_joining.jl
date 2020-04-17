@@ -2,23 +2,6 @@ using Serialization
 include("./MCPhylo/src/MCPhylo.jl")
 using .MCPhylo
 
-"""
-function nj(dm)
-    ll = create leavelist()
-    tree = nj_int(dm, ll)
-    set_binary!(tree)
-    number_nodes!(tree) # sets unique identifier
-    tree
-end
-
-function nj(dm, namevec)
-    ll = create leavlist(namevec)
-    nj_int(dm, ll)
-end
-
-
-"""
-
 
 """
 neighbor_joining(dm::Array{Int64,2}, Array{String,1})
@@ -26,27 +9,37 @@ neighbor_joining(dm::Array{Int64,2}, Array{String,1})
 This function returns a phylogenetic tree by using neighbor joining
 based on a given distance matrix and an array of leaf names
 """
-function neighbor_joining(dm::Array{Float64,2}, leaf_names::Array{String,1}, rooted::Bool=false)
+function neighbor_joining(
+    dm::Array{Float64,2},
+    leaf_names::Array{String,1},
+    rooted::Bool = false,
+)
 
-    leaves::Vector{N} = [] where N<:AbstractNode
+    leaves::Vector{N} = [] where {N<:AbstractNode}
     for leaf in leaf_names
         new_leaf = Node(leaf)
         push!(leaves, new_leaf)
     end # end for
     neighbor_joining_int(dm, leaves, rooted)
+end
 
-function neighbor_joining(dm::Array{Float64,2}, rooted::Bool=false)
+function neighbor_joining(dm::Array{Float64,2}, rooted::Bool = false)
 
     n = size(dm)[1]
-    leaves::Vector{N} = [] where N<:AbstractNode
+    leaves::Vector{N} = [] where {N<:AbstractNode}
     # build array of dummy leaves
     for i = 1:n
         new_leaf = Node("leaf_$i")
         push!(leaves, new_leaf)
     end # end for
     neighbor_joining_int(dm, leaves, rooted)
+end
 
-function neighbor_joining_int(dm::Array{Float64,2}, leaves::Vector{N}, rooted::Bool) where N<:AbstractNode
+function neighbor_joining_int(
+    dm::Array{Float64,2},
+    leaves::Vector{N},
+    rooted::Bool,
+) where {N<:AbstractNode}
 
     n = size(dm)[1]
     # count for node names
@@ -100,45 +93,17 @@ function neighbor_joining_int(dm::Array{Float64,2}, leaves::Vector{N}, rooted::B
         end # end for
         # copy values of last distance matrix to fill the next one
         """
-        dm[1:end .!= colind1 || .!= colind2, 1:end .!= rowind]
-        [i if i not in(colind1, colind2) for i=1:n]
-
         # cartesian index https://julialang.org/blog/2016/02/iteration/
         => next_dm[2:end,2:end] .= dm[1:end .!= colind, 1:end .!= rowind]
 
-        dm[[1,3,4,5],[1,3,4,5]]
-        [1,5,3,4]
-
         """
-
-        entries = Float64[]
-        for i = 1:n
-            if i == index[1] || i == index[2]
-                continue
-            end # end if
-            for j = 1:n
-                if j == index[1] || j == index[2]
-                    continue
-                else
-                    append!(entries, dm[i, j])
-                end # end else
-            end # end for
-        end # end for
-        # fill remaining cells of next distance matrix
-        z = 1
-        for k = 2:n-1
-            for l = 2:n-1
-                next_dm[k, l] = entries[z]
-                z += 1
-            end   # end for
-        end # end for
-        n -= 1 # update matrix dimension
-        dm = next_dm
-
+        array = [1:1:n;]
+        deleteat!!(array, [index[1], index[2]])
+        next_dm[2:end, 2:end] .= dm[array, array]
         # add final node to tree
         if n == 2 && !rooted
-            final_leaf = last(leaves)
-            final_leaf.inc_length = dm[1,2]
+            final_leaf = pop!(leaves)
+            final_leaf.inc_length = dm[1, 2]
             add_child!(new_node, leaves)
         end # end if
     end # end while
