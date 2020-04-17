@@ -1,9 +1,8 @@
 
-# that's very far from ideal, but atom and I don't understand each other otherwise
-include("../MCPhylo.jl")
+# include("../Tree/Tree_Traversal.jl")
+# #include("../MCPhylo.jl")
 #include("../Tree/Node_Type.jl")
 #include("../Tree/Tree_Basics.jl")
-include("../Tree/Tree_Traversal.jl")
 
 
 
@@ -78,6 +77,7 @@ end
 
 #the possible alternative parsing method, who knows
 function testing_new_strat(newick::String, current_node::Any, count::Integer)
+
     if current_node == nothing
         count = 0
         current_node = Node()
@@ -130,30 +130,25 @@ function testing_new_strat(newick::String, current_node::Any, count::Integer)
             end #if
         end #while
     end #function
+
 function parsing_the_newick(newick::String,current_node::Any,count::Integer)
 
     if current_node == nothing
         count = 0
         current_node = Node()
-        println("Starting up!")
         println("The string is looking like that ", newick)
     end # setting things up
 
-while true
 
-    if newick[1] == '('
-
+    if newick[1] == '(' || newick[1] == ','
         newick = SubString(newick,2)
         println("Parsing... ",newick)
 
         if newick[1] == '('
             # YOUR RECURSION IS HERE
-            println("Left bracket is detected!")
+            println("THATS WHAT MATTERS",current_node)
             left_child = parsing_the_newick(string(newick),current_node,count)
             newick = SubString(newick,2)
-            println("Plus one happy kid gets a mom!")
-            left_child.mother = current_node
-            push!(current_node.children,left_child)
             println("Parsing... ",newick)
         end # if (the recursive call one)
 
@@ -161,58 +156,17 @@ while true
         println("Trying to detect the name and length from the ", string(SubString(newick,1,node_boarder-1)))
         name,length = parse_name_length(string(SubString(newick,1,node_boarder-1)))
 
-        left_child = Node()
-        left_child.name = name
-        left_child.inc_length = length
-        left_child.num = count
+        child = Node()
+        child.name = name
+        child.inc_length = length
+        child.num = count
         count+=1
-        add_child!(current_node,left_child)
+        add_child!(current_node,child)
         newick = SubString(newick,node_boarder)
-        println("The left child was succesfully attached. Continiue to parse ",newick)
-    end # if "("
-if newick[1] == ','
-
-    sibling_parsing = true
-    while sibling_parsing
-
-    if newick[1] == ','
-
-        newick = SubString(newick,2)
-        println("Parsing... ",newick)
-
-        if newick[1] == '('
-            println("Welcome to the internal node. Here starts the recursion.")
-            right_child = parsing_the_newick(string(newick),current_node,count)
-            println("Moving on! The current string is ", newick)
-            newick = SubString(newick,2)
-            println("Plus one happy kid gets a mom!")
-            right_child.mother = current_node
-            push!(current_node.children,right_child)
-
-
-        end # if (the recursive call one)
-
-        node_boarder = match(r"[();,]",newick).offset
-        println("Trying to detect the name and length from the ", string(SubString(newick,1,node_boarder-1)))
-        name,length = parse_name_length(string(SubString(newick,1,node_boarder-1)))
-
-        right_child = Node()
-        right_child.name = name
-        right_child.inc_length = length
-        right_child.num = count
-        count+=1
-        add_child!(current_node,right_child)
-        newick = string(SubString(newick,node_boarder))
-        println("The right child was succesfully attached. Continiue to parse ", newick)
-else
-    sibling_parsing=false
-    end # if ","
-
-end # while
-end # if ','
+        println("The child was succesfully attached. Continiue to parse ",newick)
+end # if "("
 
     if newick[1] == ')'
-        println("Some right brakcet was detected!")
         newick = string(SubString(newick,2))
         println("Continiue to parse... ", newick)
 end # if with the ")" bracket
@@ -238,6 +192,7 @@ end #while
 end # the function
 
 
+
 """
     parse_name_length(newick::String)
 
@@ -256,47 +211,31 @@ function parse_name_length(newick::String)
     return newick, 0.0
 end # function
 
-print(testing_new_strat("(Swedish_0:0.1034804,(Welsh_N_0:0.1422432,(Sardinian_N_0:0.02234697,(Italian_0:0.01580386,Rumanian_List_0:0.03388825):0.008238525):0.07314805):0.03669193,(((Marathi_0:0.04934081,Oriya_0:0.02689862):0.1193376,Pashto_0:0.1930713):0.05037896,Slovenian_0:0.0789572):0.03256979);",nothing,0))
-
-# minimal setting up examples
-
-
-# println("it begins")
-# F = parsing_the_newick("(A,B,E)F;",nothing,0)
-# println("it is finished")
-# bla = F.children
-# for x in bla
-#     name = x.name
-#     children = x.children
-#     mother = x.mothe
-#     println("HELLO I AM ",name, " MY CHILDREN ARE ", children, " MY MOTHER IS ", mother)
-# end #for
-
-
-
-
-# TODO: rewrite this one
+# function make_node(newick::String)
+#     node_list = []
+#     parts = split(newick, ')')
+#     if length(parts) ==1
+#         children, current_level = [],parts[1]
+#         current_level.split(',')
+#         for x in current_level
+#             name, length = parse_name_length(x)
+#             x = Node()
+#             x.name =
+#     else
+#         println("so why are we here again?")
 #
-function make_node(newick::String)
-    parts = split(newick, ')')
-    if length(parts) == 1
-        label = newick
-        children = Vector{Node}(undef, 0)
-        name, inc_length = parse_name_length(label)
-        return Node{Float64,Array{Float64,2},Array{Float64},Int64}(name,ones(3,3),missing,children,ones(3),3,false,inc_length,"0",1,0.5,nothing,nothing,true)
-    else
-        # TODO: why can't we use length? check
-        len_minus_one = size(parts,1)-1
-        children = list(parse_siblings(join(parts[len_minus_one],')')[2:size(parts,1)]))
-        label = parts[len_minus_one]
-    end #if
-    name, inc_length = parse_name_length(label)
-    parent = Node(name,ones(3,3),missing,children,length(children),false,inc_length,"0",1,0.5,nothing,nothing,true)
-    for x in children
-        x.mother=parent
-    end #for
-    return parent
-end #function
+    # if len(parts)
+    # len_minus_one = size(parts,1)-1
+    # children = list(parse_siblings(join(parts[len_minus_one],')')[2:size(parts,1)]))
+    # label = parts[len_minus_one]
+    # end #if
+    # name, inc_length = parse_name_length(label)
+    # parent = Node(name,ones(3,3),missing,children,length(children),false,inc_length,"0",1,0.5,nothing,nothing,true)
+    # for x in children
+    #     x.mother=parent
+    # end #for
+    # return parent
+#end #function
 
 
 
