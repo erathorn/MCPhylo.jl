@@ -15,21 +15,29 @@ function neighbor_joining(
     rooted::Bool = false,
 )
 
-    leaves::Vector{N} = [] where {N<:AbstractNode}
+    leaves = []
     for leaf in leaf_names
-        new_leaf = Node(leaf)
+        new_leaf = Node()
+        new_leaf.name = leaf
         push!(leaves, new_leaf)
     end # end for
     neighbor_joining_int(dm, leaves, rooted)
 end
 
+"""
+neighbor_joining(dm::Array{Int64,2}, Array{String,1})
+
+This function returns a phylogenetic tree by using neighbor joining
+based on a given distance matrix and an array of leaf names
+"""
 function neighbor_joining(dm::Array{Float64,2}, rooted::Bool = false)
 
     n = size(dm)[1]
-    leaves::Vector{N} = [] where {N<:AbstractNode}
+    leaves = []
     # build array of dummy leaves
     for i = 1:n
-        new_leaf = Node("leaf_$i")
+        new_leaf = Node()
+        new_leaf.name = "leaf_$i"
         push!(leaves, new_leaf)
     end # end for
     neighbor_joining_int(dm, leaves, rooted)
@@ -37,9 +45,9 @@ end
 
 function neighbor_joining_int(
     dm::Array{Float64,2},
-    leaves::Vector{N},
+    leaves::Vector{Node},
     rooted::Bool,
-) where {N<:AbstractNode}
+)
 
     n = size(dm)[1]
     # count for node names
@@ -58,7 +66,8 @@ function neighbor_joining_int(
         index = findmin(q1)[2]
         first_node = leaves[index[2]]
         second_node = leaves[index[1]]
-        new_node = Node("Node_$count")
+        new_node = Node()
+        new_node.name = "Node_$count"
         count += 1
         # calculate distance
         first_node.inc_length =
@@ -91,16 +100,11 @@ function neighbor_joining_int(
                     (dm[index[1], j] + dm[index[2], j] - dm[index[1], index[2]])
             j += 1
         end # end for
-        # copy values of last distance matrix to fill the next one
-        """
-        # cartesian index https://julialang.org/blog/2016/02/iteration/
-        => next_dm[2:end,2:end] .= dm[1:end .!= colind, 1:end .!= rowind]
-
-        """
+        # copy values of last distance matrix to finish filling the next one
         array = [1:1:n;]
         deleteat!!(array, [index[1], index[2]])
         next_dm[2:end, 2:end] .= dm[array, array]
-        # add final node to tree
+        # if unrooted, add final node to tree
         if n == 2 && !rooted
             final_leaf = pop!(leaves)
             final_leaf.inc_length = dm[1, 2]
@@ -123,12 +127,12 @@ a newick string and save it into a file as follows
 """
 tree = neighbor_joining(distance_matrix, leaves_list)
 
-#MCPhylo.node_height(tree)
 tree_height(tree)
 println(tree)
 println(typeof(tree))
 println(tree.name)
 println(tree.height)
+
 
 f = open("newick_output.nwk", "w")
 println(f, newick(tree))
