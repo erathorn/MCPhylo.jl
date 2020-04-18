@@ -136,20 +136,21 @@ function parsing_the_newick(newick::String,current_node::Any,count::Integer)
     if current_node == nothing
         count = 0
         current_node = Node()
-        println("The string is looking like that ", newick)
+        println()
+        println()
+        println()
     end # setting things up
 
+    # the child case
 
     if newick[1] == '(' || newick[1] == ','
+
         newick = SubString(newick,2)
-        println("Parsing... ",newick)
 
         if newick[1] == '('
             # YOUR RECURSION IS HERE
-            println("THATS WHAT MATTERS",current_node)
-            left_child = parsing_the_newick(string(newick),current_node,count)
-            newick = SubString(newick,2)
-            println("Parsing... ",newick)
+            child = parsing_the_newick(string(newick),current_node,count)
+            add_child!(current_node,child)
         end # if (the recursive call one)
 
         node_boarder = match(r"[();,]",newick).offset
@@ -163,10 +164,9 @@ function parsing_the_newick(newick::String,current_node::Any,count::Integer)
         count+=1
         add_child!(current_node,child)
         newick = SubString(newick,node_boarder)
-        println("The child was succesfully attached. Continiue to parse ",newick)
 end # if "("
 
-    if newick[1] == ')'
+if newick[1] == ')'
         newick = string(SubString(newick,2))
         println("Continiue to parse... ", newick)
 end # if with the ")" bracket
@@ -182,13 +182,11 @@ if occursin(r"^[0-9A-Za-z_|]+",string(newick[1])) || newick[1] == ':'
         count+=1
         newick = SubString(newick,node_boarder)
         println("Information about the current node was written down. Continue to parse... ",newick)
-    end # if length one
+end # if length one
     if newick[1] == ';'
         println("We have reached the end!")
-        return current_node
     end # the last one
-end #while
-    return current_node
+return newick, current_node
 end # the function
 
 
@@ -201,7 +199,11 @@ This function parses two optional elements of the tree, name and length. In case
 
 function parse_name_length(newick::String)
     newick = strip(newick)
+    print(newick)
     if length(newick) < 1
+        println("i an here")
+        println(length(newick))
+        println(newick)
         return "no_name", 0.0
     end # if length
     if occursin(':',newick)
