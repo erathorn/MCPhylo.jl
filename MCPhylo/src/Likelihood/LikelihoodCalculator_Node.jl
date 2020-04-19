@@ -1,4 +1,6 @@
 
+
+
 @views function Felsenstein_Recursion(root::N, pi_::T, rates::Vector{Float64}, data::Array{S,3},
                                n_c::Int64, trmats::Array{Array{S, 2},1},
                                od_scaler::Array{S, 2})::Tuple{Array{S,2},Array{S,2}}  where {S<:Real, T<:Real, N<:AbstractNode}
@@ -36,6 +38,10 @@ function FelsensteinFunction(root::N, pi_::T, rates::Vector{Float64}, data::Arra
     sum(log.(sum(rv .* Array([pi_, 1.0-pi_]), dims=1)) + od_scaler)
 end
 
+
+g_num(node::Node{<:Real,Float64,Float64,<:Integer})::Int64 = node.num
+g_data(node::Node{<:Real,Float64,Float64,<:Integer})::Array{Float64,2} = node.data
+
 """
     FelsensteinFunction(tree_postorder::Vector{Node}, pi::Float64, rates::Vector{Float64}, data::Array{Float64,3}, n_c::Int64)::Float64
 
@@ -49,20 +55,22 @@ function FelsensteinFunction(tree_postorder::Vector{N}, pi_::T, rates::Vector{Fl
     mml = calc_trans.(blv, pi_, mu, r)
 
     root_node = last(tree_postorder)
-    root_node.scaler = zeros(1, n_c)
-    #rns = zeros(S, 1, n_c)
+    #root_node.scaler = zeros(1, n_c)
+    rns = zeros(Float64, 1, n_c)
+    res = ones(Float64, 2, n_c)
     @views for node in tree_postorder
         if node.nchild > 0
-            node.data = node_loop(node, mml)
+            res = node_loop(node, mml)
             if !node.root
-                node.scaler = Base.maximum(node.data, dims=1)
-                root_node.scaler = root_node.scaler + log.(node.scaler)
-                node.data = node.data ./ node.scaler
+                scaler = Base.maximum(res, dims=1)
+                rns = rns + Base.log.(scaler)
+                res = res ./ scaler
             end #if
+            node.data = res
         end #if
     end # for
 
-    return likelihood_root(root_node.data, pi_, root_node.scaler)#res
+    return likelihood_root(res, pi_, rns)#res
 end # function
 
 @inline function likelihood_root(root::Array{A,2}, pi_::S, rns::Array{A,2})::A where {S<:Real, A<:Real}

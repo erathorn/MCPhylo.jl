@@ -65,20 +65,29 @@ setsamplers!(model, scheme);
 
 # do the mcmc simmulation. if trees=true the trees are stored and can later be
 # flushed ot a file output.
-sim = mcmc(model, my_data, inits, 5000, burnin=1000,thin=5, chains=1, trees=true)
+#sim = mcmc(model, my_data, inits, 5000, burnin=1000,thin=5, chains=1, trees=true)
 
 #sim = mcmc(sim, 1000, trees=true)
 
 # write the output to a path specified as the second argument
-to_file(sim, "t_dev", 5)
+#to_file(sim, "t_dev", 5)
 blv = get_branchlength_vector(mt)
 using BenchmarkTools
 using Zygote
 
-nrec(y) = MCPhylo.FelsensteinFunction(ct, pi_, ones(3), df, 231, y)
+nrec(y) = MCPhylo.FelsensteinFunction(po, pi_, ones(3), df, 231, y)
+
+"""
+https://github.com/FluxML/Zygote.jl/issues/292
+"""
+
 
 pi_ = 0.5
 nrec(blv)
+nrec'(blv)
+@benchmark nrec(blv)
+@benchmark nrec'($blv)
+
 mt2 = deepcopy(mt)
 randomize!(mt2)
 po2 = post_order(mt2)
@@ -87,8 +96,48 @@ ct = po2
 d1 = nrec'(blv)
 d2 = nrec'(blv)
 
+function test(mt, pi_, df)
+    blv = get_branchlength_vector(mt)
+    po = post_order(mt)
+    MCPhylo.FelsensteinFunction(po, pi_, ones(3), df, 231, blv)
+end
+
+function g_test(mt, pi_, df)
+    blv = get_branchlength_vector(mt)
+    po = post_order(mt)
+    #f(y) = MCPhylo.FelsensteinFunction(po, pi_, ones(3), df, 231, y)
+
+    return Zygote.pullback(MCPhylo.FelsensteinFunction, po, pi_, ones(3), df, 231, blv)
+end
+Zygote.@code_adjoint MCPhylo.FelsensteinFunction(po, pi_, ones(3), df, 231, blv)
+import Zygote.literal_getproperty
+Zygote.@adjoint function literal_getproperty( t::S,::Val{T}) where T
+	println( "generic literal_getproperty ")
+    getproperty(t, T), Δ ->getpropertyAdj(Δ,t,T)
+end
+
+ct = mt
+ct = mt2
+f = g_test(mt, pi_, df)
+f2 = g_test(mt2, pi_, df)
+
+mt3 = deepcopy(mt2)
+randomize!(mt2)
+mytest = f2[2](1.0)[end]
+mytest2 = f2[2](1.0)[end]
+
+
+
+r = Zygote.pullback(MCPhylo.FelsensteinFunction, po, pi_, ones(3), df, 231, blv)
+@benchmark r[2](1.0)[end]
+@benchmark g_test(mt, pi_, df)
+@benchmark test(mt, pi_, df)
+
 
 d2 == d1
+
+
+
 function rtest(mt, blv, pi_, df)#::Tuple{Float64, Vector{Float64}}
     po = post_order(mt)
 
