@@ -33,6 +33,7 @@ function gradlogpdf(d::PhyloDist, x::AbstractArray)
 
     blv = get_branchlength_vector(d.my_tree.value)
     mt = post_order(d.my_tree.value)
+    blv = round.(blv, digits=5)
     f(y) = FelsensteinFunction(mt, d.mypi, d.rates, x, d.nsites, y)
     r = Zygote.pullback(f, blv)
     #r2 = DiffResults.GradientResult(blv)

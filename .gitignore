@@ -19,4 +19,4 @@ gputest.jl
 *params*.log
 notes.txt
 untracked_files/
-align*.jl
+test_newick.jl
