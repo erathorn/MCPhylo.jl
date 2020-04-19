@@ -15,11 +15,12 @@ function neighbor_joining(
     rooted::Bool = false,
 )
 
-    leaves = []
-    for leaf in leaf_names
-        new_leaf = Node()
-        new_leaf.name = leaf
-        push!(leaves, new_leaf)
+    leaves = Array{Node, 1}(undef,size(dm, 1))
+    for (ind,leaf) in enumerate(leaf_names)
+        new_leaf = Node(leaf)
+        #new_leaf.name = leaf
+        leaves[ind] = new_leaf
+        #push!(leaves, new_leaf)
     end # end for
     neighbor_joining_int(dm, leaves, rooted)
 end
@@ -33,12 +34,13 @@ based on a given distance matrix and an array of leaf names
 function neighbor_joining(dm::Array{Float64,2}, rooted::Bool = false)
 
     n = size(dm)[1]
-    leaves = []
+    leaves = Array{Node, 1}(undef, n)
     # build array of dummy leaves
     for i = 1:n
-        new_leaf = Node()
-        new_leaf.name = "leaf_$i"
-        push!(leaves, new_leaf)
+        new_leaf = Node("leaf_$i")
+        #new_leaf.name = "leaf_$i"
+        leaves[n] = new_leaf
+        #push!(leaves, new_leaf)
     end # end for
     neighbor_joining_int(dm, leaves, rooted)
 end
@@ -46,7 +48,7 @@ end
 function neighbor_joining_int(
     dm::Array{Float64,2},
     leaves::Vector{Node},
-    rooted::Bool,
+    rooted::Bool
 )
 
     n = size(dm)[1]
