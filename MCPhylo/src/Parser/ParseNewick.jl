@@ -1,6 +1,6 @@
 
-# include("../Tree/Tree_Traversal.jl")
-# #include("../MCPhylo.jl")
+include("../Tree/Tree_Traversal.jl")
+#include("../MCPhylo.jl")
 #include("../Tree/Node_Type.jl")
 #include("../Tree/Tree_Basics.jl")
 
@@ -77,10 +77,10 @@ end
 
 #the possible alternative parsing method, who knows
 function testing_new_strat(newick::String, current_node::Any, count::Integer)
-
     if current_node == nothing
         count = 0
         current_node = Node()
+        current_node.name = "Root"
     end #if
     println("it begins")
     println("current newick: ",newick)
@@ -89,8 +89,18 @@ function testing_new_strat(newick::String, current_node::Any, count::Integer)
          # if newick[1] == '('
          #     #this deals with the open parenthesis
          #     newick = SubString(newick,2)
+         if newick == ""
+             println("grats, it's over and it went perfectly without any need for further work")
+             #the third possibility; should just return the current node, move out of recursion, etc
+             return current_node
+         end #if
+         if newick[1] == ',' #we don't need these i don't think, just gotta look at the next thing
+             newick = SubString(newick,2)
+             println("what follows is a sibling")
+             println("sibling: ",newick)
+         end #if
 
-            if newick[1] == '(' #TODO
+            if newick[1] == '('
                 #this is recursion; if we're looking at an internal node this should happen
                 println("ALERT: recursion needed")
                 childs_section = match(r"\(([^()]|(?R))*\)",newick) #should return only the descendants of the current child node, check https://regex101.com/r/lF0fI1/1 for proof of this regex working the way it should
@@ -101,6 +111,9 @@ function testing_new_strat(newick::String, current_node::Any, count::Integer)
                 childs_section = SubString(childs_section,2,findlast(')',childs_section)-1)
                 cur_child = Node()
                 add_child!(current_node,testing_new_strat(string(childs_section),cur_child,count)) #where the magic happens
+                if newick == ""
+                    return current_node
+                end #if
                 if newick[1] == ':'
                     node_boarder = match(r"[();,]",newick).offset
                     name,length = parse_name_length(string(SubString(newick,1,node_boarder-1)))
@@ -111,25 +124,36 @@ function testing_new_strat(newick::String, current_node::Any, count::Integer)
             end #if
 
             if occursin(r"^[0-9A-Za-z_|]+",string(newick[1])) || newick[1] == ':'
+                println("uhoh gamers we found a leaf")
+
                 #this should happen if the current node's a leaf node
-                node_boarder = match(r"[();,]",newick).offset
-                name,length = parse_name_length(string(SubString(newick,1,node_boarder-1)))
-                cur_child = Node()
-                cur_child.name = name
-                cur_child.inc_length = length
-                cur_child.num = count
-                add_child!(current_node,cur_child)
-                newick = SubString(newick,node_boarder)
-            end #if
-            if newick[1] == ',' #we don't need these i don't think, just gotta look at the next thing
-                newick = SubString(newick,2)
-            end #if
-            if newick[1] == ""
-                #the third possibility; should just return the current node, move out of recursion, etc
-                return current_node
+                if match(r"[();,]",newick) == nothing
+                    println("leaf is: ", newick)
+                    thing = lastindex(newick)
+                    name,length = parse_name_length(string(SubString(newick,1,thing)))
+                    cur_child = Node()
+                    cur_child.name = name
+                    cur_child.inc_length = length
+                    cur_child.num = count
+                    add_child!(current_node,cur_child)
+                    newick = ""
+                else
+                    node_boarder = match(r"[();,]",newick).offset
+                    println("leaf is: ", string(SubString(newick,1,node_boarder-1)))
+                    name,length = parse_name_length(string(SubString(newick,1,node_boarder-1)))
+                    cur_child = Node()
+                    cur_child.name = name
+                    cur_child.inc_length = length
+                    cur_child.num = count
+                    add_child!(current_node,cur_child)
+                    newick = SubString(newick,node_boarder)
             end #if
         end #while
     end #function
+end
+
+
+
 
 function parsing_the_newick(newick::String,current_node::Any,count::Integer)
 
@@ -260,3 +284,20 @@ function parse_siblings(newick::String)
         end #if
     end #for
 end #function
+the_string = "(Swedish_0:0.1034804,(Welsh_N_0:0.1422432,(Sardinian_N_0:0.02234697,(Italian_0:0.01580386,Rumanian_List_0:0.03388825):0.008238525):0.07314805):0.03669193,(((Marathi_0:0.04934081,Oriya_0:0.02689862):0.1193376,Pashto_0:0.1930713):0.05037896,Slovenian_0:0.0789572):0.03256979);"
+println("begin of new test is here")
+println("")
+println("")
+println("")
+println("")
+println("")
+println("")
+
+bla = testing_new_strat(the_string,nothing,0)
+kids = bla.children
+println(length(kids))
+grandkids = kids[1].children
+println(length(grandkids))
+println(grandkids[1])
+greatgrandkids = grandkids[2].children
+println(greatgrandkids[1])
