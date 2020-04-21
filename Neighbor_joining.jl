@@ -81,8 +81,7 @@ function neighbor_joining_int(
             return new_node
         end # end if
         # update array with leaves
-        deleteat!(leaves, [index[2]])
-        deleteat!(leaves, [index[1] - 1])
+        deleteat!(leaves, [index[2], index[1]])
         insert!(leaves, 1, new_node)
         # initalize next distance matrix
         next_dm = zeros(Float64, n - 1, n - 1)
@@ -100,7 +99,7 @@ function neighbor_joining_int(
         end # end for
         # copy values of last distance matrix to finish filling the next one
         array = [1:1:n;]
-        deleteat!!(array, [index[1], index[2]])
+        deleteat!(array, [index[1], index[2]])
         next_dm[2:end, 2:end] .= dm[array, array]
         # if unrooted, add final node to tree
         if n == 2 && !rooted
