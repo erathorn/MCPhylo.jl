@@ -64,9 +64,15 @@ function neighbor_joining_int(
         index = findmin(q1)[2]
         first_node = leaves[index[2]]
         second_node = leaves[index[1]]
-        new_node = Node()
-        new_node.name = "Node_$count"
+        new_node = Node("Node_$count")
         count += 1
+        if n == 2 && rooted
+            # set_binary!(new_node)
+            # number_nodes!(new_node)
+            first_node.inc_length = dm[1,2]
+            addchild!(second_node, first_node)
+            return
+        end # end if
         # calculate distance
         first_node.inc_length =
             0.5 * dm[index] +
@@ -75,19 +81,15 @@ function neighbor_joining_int(
         add_child!(new_node, first_node)
         add_child!(new_node, second_node)
         # check if root node is reached
-        if n == 2 && rooted
-            set_binary!(new_node)
-            number_nodes!(new_node)
-            return new_node
-        end # end if
         # update array with leaves
         deleteat!(leaves, [index[2], index[1]])
         insert!(leaves, 1, new_node)
+        n -= 1
         # initalize next distance matrix
-        next_dm = zeros(Float64, n - 1, n - 1)
+        next_dm = zeros(Float64, n, n)
         # fill first row and column of next distance matrix
         j = 1
-        for i = 2:n-1
+        for i = 2:n
             while j == index[1] || j == index[2]
                 j += 1
             end # end while
@@ -98,14 +100,18 @@ function neighbor_joining_int(
             j += 1
         end # end for
         # copy values of last distance matrix to finish filling the next one
-        array = [1:1:n;]
-        deleteat!(array, [index[1], index[2]])
+        array = [1:1:n+1;]
+        deleteat!(array, [index[2], index[1]])
         next_dm[2:end, 2:end] .= dm[array, array]
         # if unrooted, add final node to tree
+        dm = next_dm
         if n == 2 && !rooted
-            final_leaf = pop!(leaves)
-            final_leaf.inc_length = dm[1, 2]
-            add_child!(new_node, leaves)
+            final_node = pop!(leaves)
+            new_node.inc_length = dm[1, 2]
+            add_child!(final_node, new_node)
+            # set_binary!(new_node)
+            # number_nodes!(new_node)
+            return final_node
         end # end if
     end # end while
 end # end function neighbor_joining
@@ -115,7 +121,9 @@ There are three distance matrices and lists of leaves, which you can read into
 a julia object as shown here
 """
 distance_matrix = deserialize("dm_1.jls")
+# distance_matrix = [0.0 5.0 9.0 9.0 8.0;5.0 0.0 10.0 10.0 9.0;9.0 10.0 0.0 8.0 7.0;9.0 10.0 8.0 0.0 3.0;8.0 9.0 7.0 3.0 0.0]
 leaves_list = deserialize("leaves_1.jls")
+# leaves_list = ["a","b","c","d","e"]
 
 
 """
@@ -123,14 +131,6 @@ After creating a tree with the neighbor joining method, you can save the tree as
 a newick string and save it into a file as follows
 """
 tree = neighbor_joining(distance_matrix, leaves_list)
-
-tree_height(tree)
-println(tree)
-println(typeof(tree))
-println(tree.name)
-println(tree.height)
-
-
 f = open("newick_output.nwk", "w")
 println(f, newick(tree))
 close(f)
