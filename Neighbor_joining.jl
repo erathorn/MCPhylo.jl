@@ -15,7 +15,7 @@ function neighbor_joining(
     rooted::Bool = false,
 )
     n = size(dm)[1]
-    if n != size(leaf_names)
+    if n != size(leaf_names, 1)
         throw("Distance Matrix and Leaf Names size do not match")
     end # end if
     # build array of leaves from leaf names
@@ -124,9 +124,9 @@ end # end function neighbor_joining
 There are three distance matrices and lists of leaves, which you can read into
 a julia object as shown here
 """
-distance_matrix = deserialize("dm_1.jls")
+distance_matrix = deserialize("dm_2.jls")
 # distance_matrix = [0.0 5.0 9.0 9.0 8.0;5.0 0.0 10.0 10.0 9.0;9.0 10.0 0.0 8.0 7.0;9.0 10.0 8.0 0.0 3.0;8.0 9.0 7.0 3.0 0.0]
-leaves_list = deserialize("leaves_1.jls")
+leaves_list = deserialize("leaves_2.jls")
 # leaves_list = ["a","b","c","d","e"]
 
 
