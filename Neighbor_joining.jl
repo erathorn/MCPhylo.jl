@@ -14,7 +14,11 @@ function neighbor_joining(
     leaf_names::Array{String,1},
     rooted::Bool = false,
 )
-
+    n = size(dm)[1]
+    if n != size(leaf_names)
+        throw("Distance Matrix and Leaf Names size do not match")
+    end # end if
+    # build array of leaves from leaf names
     leaves = Array{Node, 1}(undef,size(dm, 1))
     for (ind,leaf) in enumerate(leaf_names)
         new_leaf = Node(leaf)
@@ -30,7 +34,6 @@ This function returns a phylogenetic tree by using neighbor joining
 based on a given distance matrix and an array of leaf names
 """
 function neighbor_joining(dm::Array{Float64,2}, rooted::Bool = false)
-
     n = size(dm)[1]
     leaves = Array{Node, 1}(undef, n)
     # build array of dummy leaves
@@ -70,8 +73,8 @@ function neighbor_joining_int(
             # set_binary!(new_node)
             # number_nodes!(new_node)
             first_node.inc_length = dm[1,2]
-            addchild!(second_node, first_node)
-            return
+            add_child!(second_node, first_node)
+            return second_node
         end # end if
         # calculate distance
         first_node.inc_length =
@@ -106,12 +109,13 @@ function neighbor_joining_int(
         # if unrooted, add final node to tree
         dm = next_dm
         if n == 2 && !rooted
-            final_node = pop!(leaves)
-            new_node.inc_length = dm[1, 2]
-            add_child!(final_node, new_node)
+            final_leaf = pop!(leaves)
+            final_leaf.inc_length = dm[1, 2]
+            # add third child to new node created previously
+            add_child!(new_node, final_leaf)
             # set_binary!(new_node)
             # number_nodes!(new_node)
-            return final_node
+            return new_node
         end # end if
     end # end while
 end # end function neighbor_joining
