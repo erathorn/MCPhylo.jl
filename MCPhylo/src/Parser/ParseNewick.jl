@@ -1,6 +1,11 @@
 
-include("../Tree/Tree_Traversal.jl")
-#include("../MCPhylo.jl")
+#include("../Tree/Tree_Traversal.jl")
+include("../MCPhylo.jl")
+using ..MCPhylo
+
+#include("./MCPhylo/src/MCPhylo.jl")
+#using .MCPhylo #  ==> depending on the level of embeding
+
 #include("../Tree/Node_Type.jl")
 #include("../Tree/Tree_Basics.jl")
 
@@ -43,15 +48,15 @@ end
 This function checks if the given string is valid: is the brackets number matches and if the string ends with ";"
 """
 
-function is_valid_newick_string(newick::String)
+function is_valid_newick_string(newick::String) #TODO: possibly not necessary; could be done as part of recursion, MAYBE
     # Step one: does the stripped string ends with ';'
     if endswith(strip(newick),";")
         # Step two: check for the equal amount of brackets
         bracket_level = 0
-        for char in newick
-            if char == '('
+        for letter in newick # => char is a type in Julia
+            if letter == '('
                 bracket_level += 1
-            elseif char == ')'
+            elseif letter == ')'
                     bracket_level -= 1
             end # elseif
         end # for
@@ -76,7 +81,7 @@ This function parses the string in newick format and returns Node
 """
 
 #parses the string, creating nodes/recursing as needed
-function newick_parse(newick::String, current_node::Any,my_nodes::Array{Any,1}=[])
+function newick_parse(newick::String, current_node::Any,my_nodes::Array{Any,1}=[]) #TODO: INSTEAD OF DOING RECURSION ON ALL DESCENDANTS AT ONCE, RECURSE FOR EVERY CHILD
     #first time function runs on a given string, no node(or an empty node) should be input
     #if no node is input, this happens
 
@@ -110,6 +115,58 @@ function newick_parse(newick::String, current_node::Any,my_nodes::Array{Any,1}=[
              index=findlast(")",childs_section)[1]+1
              the_rest = SubString(childs_section,index)
              newick = the_rest
+
+             """
+             parse_newick((A,B),C)
+             (A,B)C;
+             add_child!(C, parse_newick(A))
+             add_child!(C, parse_newick(B))
+
+             function parse_newick(me)
+                 if I am leave
+                     me, []
+                     just return me
+                 else
+                     me, my_children = parse_newick(me)
+                     if my_children is empty
+                         return me, []
+                    else
+                        add my_children to me
+                        return me, []
+        test on these:
+            A; => Base case A
+            (A,B)C;
+            ((A,B),C)E;
+            (C,(A,B))E;
+             ((A,B),(C,D))E;
+
+        test on these ^
+        newick(rootnode)
+
+        (A,B)C
+        (B,A)C
+        [n.name for n in post_order!]
+
+        UI Level
+            1 sanity check => is there a semicolon
+            2 root = internal recursion
+            ####
+            3 set_binary!(root)
+            4 number_nodes!(root)
+
+            return root
+
+
+             add_child!(E, (A,B))
+             add_child!(E, (C,D))
+
+             ((A,B),(C,D));
+
+             using Juno
+             @enter newick_parser()
+
+
+             """
              childs_section = SubString(childs_section,2,findlast(')',childs_section)-1)
              push!(my_nodes,current_node)
              cur_child = Node()
@@ -164,14 +221,18 @@ This function parses two optional elements of the tree, name and length. In case
 
 function parse_name_length(newick::String)
     newick = strip(newick)
+    #name, my_length = split(newick, ":")
+    # if name == "" #=> no name is given, use dummy
+
+    # if my_length == "" #=> no length is given, use dummy
     if length(newick) < 1
-        return "no_name", 0.0
+        return "nameless", 1.0
     end # if length
     if occursin(':',newick)
         name, len = split(newick,':')
         return string(name), parse(Float64, len)
     end # if occusrsin
-    return newick, 0.0
+    return newick, 1.0
 end # function
 
 ###
@@ -188,8 +249,10 @@ println("")
 println("")
 println("")
 
+# -> dendroscpoe
+
+the_easiest_one = "(A,B)C;"
 # (,,(,));                               no nodes are named
-no_named_nodes = "(,,(,));"             #does not work
 # (A,B,(C,D));                           leaf nodes are named
 named_leaf_nodes = "(A,B,(C,D));"           #makes nodelist,makes correct tree, names leaf nodes correctly
 # (A,B,(C,D)E)F;                         all nodes are named
@@ -205,6 +268,10 @@ distance_and_all_names = "(A:0.1,B:0.2,(C:0.3,D:0.4)E:0.5)F;"#nodelist, tree, le
 # ((B:0.2,(C:0.3,D:0.4)E:0.5)A:0.1)F;    a tree rooted on a leaf node (rare)
 the_rare_one = "((B:0.2,(C:0.3,D:0.4)E:0.5)A:0.1)F;" #nodelist, tree, leaf names all fine
 
+#newick(rootnode) <--- will return a newick string representation of a tree; can use to test instead of trying to print every node
+#post_order <--- will return a vector of nodes in post order
+#pre_order <--- same, but pre order
+#level_order <--- same, but level order
 
 test1,nodelist = newick_parse(the_string_2,nothing)
 println("the useless root node is: ", test1)
@@ -331,7 +398,7 @@ println(nodelist)
 #     for c in  (newick * ',')
 #         if c == ','
 #             if bracket_lvl == 0
-#                 yield(make_node(join(current,"")))
+#                 yield(make_node(join(current,""))) => this is not Julia
 #                 current = []
 #             else
 #                 if c == '('
