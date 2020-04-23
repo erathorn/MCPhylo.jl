@@ -5,10 +5,11 @@ mutable struct Alignment <: DiscreteMatrixDistribution
         py::AbstractArray{Float64}
 		a::Float64
 		r::Float64
-		timemat::AbstractArray{Float64}
+		tree::MCPhylo.Node
         langs::Int64
         concs::Int64
 		wsize::Int64
+		lang_dict::Dict{String, Int64}
 end
 
 Base.minimum(d::Alignment) = -Inf
@@ -16,7 +17,7 @@ Base.maximum(d::Alignment) = +Inf
 Base.size(d::Alignment) = (d.langs, d.concs, d.wsize)
 
 function logpdf(d::Alignment, x::AbstractArray{T, 3})::Float64 where T<:Real
-	calcl_ll(convert.(Int64,x), d.emp, d.px, d.py, d.a, d.r, d.timemat)
+	calcl_ll(convert.(Int64,x), d.emp, d.px, d.py, d.a, d.r, d.tree, d.lang_dict)
 end
 
 function vl(d::Alignment, x::AbstractArray{T, 3}) where T<:Real
@@ -24,7 +25,7 @@ function vl(d::Alignment, x::AbstractArray{T, 3}) where T<:Real
 end
 
 function cognate_statements(d::Alignment, x::AbstractArray{T,3}; quant::Float64=0.9) where T <: Real
-	res = calc_viterbi(convert.(Int64,x), d.emp, d.px, d.py, d.a, d.r, d.timemat)
+	res = calc_viterbi(convert.(Int64,x), d.emp, d.px, d.py, d.a, d.r, d.tree, d.langd_dict)
 	out = Array{Bool, 3}(undef, d.langs, d.langs, d.concs)
 	for l1=1:d.langs, l2=1:l1
 		if l1 != l2
@@ -215,19 +216,21 @@ function read_cognate_data(filename)
 		end
 		alldatamat[indlang, indconc, 16] = l
 	end
-	return alldatamat, alphabet
+	return alldatamat, alphabet, langs
 end
 
 
 
 function calcl_ll(datamat::Array{Int64,3}, submat::AbstractArray{Float64,2}, gx::AbstractArray{Float64}, gy::AbstractArray{Float64},
-					a::Float64, r::Float64, timemat::AbstractArray{Float64})::Float64
+					a::Float64, r::Float64, tree::MCPhylo.Node, lang_dict::Dict{String, Int64})::Float64
 	l_size, c_size, w_size = size(datamat)
 	score = Base.Threads.Atomic{Float64}(0)
+	timemat, leaves = mto_distance_matrix_i(tree)
+	lmap = [n.name for n in leaves]
 	@inbounds @views Base.Threads.@threads for l1=1:l_size
 		for l2=1:l1
 				if l1 != l2
-					t = timemat[l1, l2]
+					t = timemat[lang_dict[lmap[l1]], lang_dict[lmap[l2]]]
 					emmat = log.(exp(submat*t))
 					tra = tr_td(r, t, a)
 					for c=1:c_size
@@ -247,14 +250,17 @@ end
 
 
 function calc_viterbi(datamat::Array{Int64,3}, submat::AbstractArray{Float64,2}, gx::AbstractArray{Float64}, gy::AbstractArray{Float64},
-					a::Float64, r::Float64, timemat::AbstractArray{Float64})
+					a::Float64, r::Float64, tree::MCPhylo.Node, lang_dict::Dict{String, Int64})
 	l_size, c_size, w_size = size(datamat)
 	scores = zeros(l_size, l_size, c_size, c_size)
 	scores .= -Inf
+	timemat, leaves = mto_distance_matrix_i(tree)
+	lmap = [n.name for n in leaves]
 	@inbounds @views Base.Threads.@threads for l1=1:l_size
 		for l2=1:l_size
 				if l1 != l2
-					t = timemat[l1, l2]
+
+					t = timemat[lang_dict[lmap[l1]], lang_dict[lmap[l2]]]
 					emmat = log.(exp(submat*t))
 					tra = tr_td(r, t, a)
 					for c=1:c_size
@@ -390,9 +396,9 @@ end
 
 Calculate the distance matrix over the set of leaves.
 """
-function mto_distance_matrix_i(tree::T)::Array{Float64,2} where T <:MCPhylo.AbstractNode
+function mto_distance_matrix_i(tree::T)::Tuple{Array{Float64,2}, Vector{T}} where T <:MCPhylo.AbstractNode
     leaves::Vector{T} = MCPhylo.get_leaves(tree)
-	sort!(leaves, by=y->parse(Int64, y.name))
+	#sort!(leaves, by=y->parse(Int64, y.name))
     ll = length(leaves)
     distance_mat = zeros(Float64, ll, ll)
     for i in 1:ll
@@ -404,9 +410,9 @@ function mto_distance_matrix_i(tree::T)::Array{Float64,2} where T <:MCPhylo.Abst
             end # if
         end # for
     end #for
-    distance_mat
+    distance_mat, leaves
 end # function to_distance_matrix
 
 function mto_distance_matrix(tree::T)::Array{Float64,2} where T <:MCPhylo.TreeVariate
-    mto_distance_matrix_i(tree.value)
+    mto_distance_matrix_i(tree.value)[1]
 end # function to_distance_matrix
