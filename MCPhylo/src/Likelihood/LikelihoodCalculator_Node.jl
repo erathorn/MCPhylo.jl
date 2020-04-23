@@ -55,15 +55,15 @@ function FelsensteinFunction(tree_postorder::Vector{N}, pi_::T, rates::Vector{Fl
     mml = calc_trans.(blv, pi_, mu, r)
 
     root_node = last(tree_postorder)
-    #root_node.scaler = zeros(1, n_c)
+
     rns = zeros(Float64, 1, n_c)
-    res = ones(Float64, 2, n_c)
+    res::Array{Float64, 2} = ones(Float64, 2, n_c)
     @views for node in tree_postorder
         if node.nchild > 0
             res = node_loop(node, mml)
             if !node.root
-                scaler = Base.maximum(res, dims=1)
-                rns = rns + Base.log.(scaler)
+                scaler = maximum(res, dims=1)
+                rns = rns + log.(scaler)
                 res = res ./ scaler
             end #if
             node.data = res
@@ -78,8 +78,11 @@ end # function
 end
 
 function node_loop(node::N, mml::Array{Array{Float64, 2},1})::Array{Float64,2} where {N<:Node{<:Real,Float64,Float64,<:Integer}, S<:Real}
-    r = bc.(node.children, Ref(mml))
-    reduce(pointwise_reduce, r)
+    out = ones(size(node.data))
+    @inbounds @views for child in node.children
+            out = out .* (mml[child.num]*child.data)
+    end
+    out
 end
 
 @inline function pointwise_reduce(x::Array{T,N}, y::Array{T,N})::Array{T,N} where {N, T<:Real}
@@ -87,9 +90,7 @@ end
 end
 
 @inline function bc(node::N, mml::Array{Array{Float64,2},1})::Array{Float64,2} where {N<:Node{<:Real,Float64,Float64,<:Integer}, S<:Real}
-    r = node.data
-    s = mml[node.num]
-    s*r
+    mml[node.num]*node.data
 end
 
 

@@ -49,21 +49,17 @@ function mlpdf(mu::Array{Float64,2}, cov_fun_mat::Array{Function,2}, blv::Vector
     result::Float64 = zero(Float64)
 
     @views @inbounds for i=1:chars
-
         ch = LinearAlgebra.cholesky(sigmai[i]*mycov)
-
         chl = ch.L
-
         ichl = inv(chl)
         si = transpose(ichl) * ichl
         ds = logdet(chl)
         v1 = -n_langs*l2pi-ds
-       r::Array{Float64,1} = chl * P[:,i]
-       result = result + mymvlogpdf_2(v1, si, r)
-       for j in 1:n_langs
-
-           result = result + my_bernoulli_logpdf(loginvlogit(r[j] + mu[j], scaler), data[j,i])::Float64
-       end
+        r::Array{Float64,1} = chl * P[:,i]
+        result = result + mymvlogpdf_2(v1, si, r)
+        for j in 1:n_langs
+            result = result + my_bernoulli_logpdf(loginvlogit(r[j] + mu[j], scaler), data[j,i])::Float64
+        end
     end
     result
 end

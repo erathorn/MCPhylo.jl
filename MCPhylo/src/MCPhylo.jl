@@ -15,8 +15,7 @@ using CuArrays
 using GPUArrays
 using CUDAnative
 using CUDAdrv
-#import Flux
-using SliceMap
+
 using Zygote
 using ForwardDiff
 using Calculus
