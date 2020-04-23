@@ -44,24 +44,17 @@ my_data = Dict{Symbol, Any}(
 
 model =  Model(
     arrn = Stochastic(2,
-    (μi, mtree, P, scaler) -> BrownianPhylo(μi, mtree, my_data[:σi], P, scaler,  my_data[:residuals], my_data[:leaves]),false),
-
+    (μi, mtree, P, σi, scaler) -> BrownianPhylo(μi, mtree, σi, P, scaler,  my_data[:residuals], my_data[:leaves]),false),
     μi = Logical(2, (μ)->(ones(my_data[:residuals],my_data[:leaves]) .= μ)', false),
     μ = Stochastic(1, (μH, σH) -> Normal(μH, σH), false),
-
     μH = Stochastic(()->Normal()),
     σH = Stochastic(()->Exponential()),
     P = Stochastic(2, ()  -> Normal(),false),
-
-    #σii = Logical(1, σi -> σi.^2,false),
-    #σi = Stochastic(1,(λ) -> Exponential(λ), false),
-    #σi = Stochastic(1,() -> Gamma(2,2), false),
-    scaler = Stochastic(()-> Beta(1,1)),
-    #λ = Stochastic(() -> Exponential()),
+    σi = Stochastic(1,(λ) -> Exponential(λ), false),
+    scaler = Stochastic(()-> Exponential()),
+    λ = Stochastic(() -> Exponential()),
     mtree = Stochastic(Node(), () -> CompoundDirichlet(1.0,1.0,0.100,1.0), my_data[:nnodes]+1, true),
-    #mtree = Stochastic(Node(), () -> MCPhylo.exponentialBL(0.5), my_data[:nnodes]+1, true),
-
-     )
+    )
 
 
 # intial model values
@@ -75,34 +68,24 @@ inits = [Dict{Symbol, Union{Any, Real}}(
     :μH => rand(),
     :σH => rand(),
     :μ => randn(my_data[:residuals]),
-    :λ => 1,
+    :λ => rand(),
     :σi => ones(my_data[:residuals]),
-    :scaler => 0.02#one(Float64)#rand()
+    :scaler => rand()
     )
     ]
 
-scheme = [#RWM(:mtree, 1),
-          #Slice(:mtree, 0.05, Multivariate),
-          PNUTS(:mtree),
-          #Slice(:μH, 0.05, Univariate),
-
-          Slice(:P, 0.1, Multivariate),
-          #RWM(:P, 1),
-          #SliceSimplex(:ζ),
-          #, :λ
-          #Slice(:σi, 0.05, Univariate),
-          #:σH,
-          Slice([:σH,:μH ,:scaler], 0.05, Multivariate)
+scheme = [PNUTS(:mtree),
+          Slice(:P, 0.1, Univariate),
+          Slice([:σi,:σH], 0.05, Multivariate),
+          Slice([:μH ,:scaler, :λ], 0.05, Multivariate)
           ]
 
 setsamplers!(model, scheme);
-using Zygote
 
-Zygote.@nograd isposdef
 # do the mcmc simmulation. if trees=true the trees are stored and can later be
 # flushed ot a file output.
 sim = mcmc(model, my_data, inits, 20, burnin=10,thin=2, chains=1, trees=true)
-#sim = mcmc(sim, 10, trees=true)
+sim = mcmc(sim, 50, trees=true)
 
 # write the output to a path specified as the second argument
 to_file(sim, "multiv", 2)
