@@ -71,7 +71,31 @@ end
 
 
 function parsing_newick_string(newick::String)
-    if
+    if newick[1] != ')' and occursin(r"^[a-zA-Z]+[:]?[0-9]*",newick)
+        leaf_node = Node()
+        name,length = parse_name_length(newick)
+        leaf_node.name = name
+        leaf_node.length = length
+        return leaf_node
+        # base case
+    else
+        current_node = Node()
+        childrenstring = Substring(newick,2,*index of close parenthesis*)
+        # internal node possibility >>> ???
+        child_list = split(childrenstring,',')
+
+        for x in child_list
+            add_child!(current_node,parsing_newick_string(x))
+        end #for
+        child_list = []
+        return current_node
+    end #recursion part
+    return nothing
+        """
+        ((A,B),(C,D));
+         (A,B)C;
+         ((),(C,D))
+        """
 
     end # if check for a leaf
 
@@ -79,14 +103,38 @@ end #function
 
 
 
+"""
+    parse_name_length(newick::String)
+
+This function parses two optional elements of the tree, name and length. In case, when neither of this is provided, empty string and nothing are return
+"""
+
+function parse_name_length(newick::String)
+    newick = strip(newick)
+    #name, my_length = split(newick, ":")
+    # if name == "" #=> no name is given, use dummy
+
+    # if my_length == "" #=> no length is given, use dummy
+    if length(newick) < 1
+        return "nameless", 1.0
+    end # if length
+    if occursin(':',newick)
+        name, len = split(newick,':')
+        return string(name), parse(Float64, len)
+    end # if occusrsin
+    return newick, 1.0
+end # function
+
+
              """
+             ((A,B),(C,D));
              parse_newick((A,B),C)
              (A,B)C;
              add_child!(C, parse_newick(A))
              add_child!(C, parse_newick(B))
 
              function parse_newick(me)
-                 if I am leave
+                 if I am leaf
                      me, []
                      just return me
                  else
@@ -97,8 +145,8 @@ end #function
                         add my_children to me
                         return me, []
         test on these:
-            A; => Base case A
-            (A,B)C;
+             A; => Base case A
+            ((D,E)A,B)C;
             ((A,B),C)E;
             (C,(A,B))E;
              ((A,B),(C,D))E;
@@ -194,7 +242,7 @@ end #function
 #                 end #if
 #             end #if
 #
-#             if occursin(r"^[0-9A-Za-z_|]+",string(newick[1])) || newick[1] == ':'
+#             if occursin(r"^[a-zA-Z]*[:]?[0-9]+",string(newick[1])) || newick[1] == ':'
 #                 println("we found a leaf")
 #
 #                 #this should happen if the current node's a leaf node
@@ -223,28 +271,6 @@ end #function
 #     end #function
 # end
 
-
-"""
-    parse_name_length(newick::String)
-
-This function parses two optional elements of the tree, name and length. In case, when neither of this is provided, empty string and nothing are return
-"""
-
-function parse_name_length(newick::String)
-    newick = strip(newick)
-    #name, my_length = split(newick, ":")
-    # if name == "" #=> no name is given, use dummy
-
-    # if my_length == "" #=> no length is given, use dummy
-    if length(newick) < 1
-        return "nameless", 1.0
-    end # if length
-    if occursin(':',newick)
-        name, len = split(newick,':')
-        return string(name), parse(Float64, len)
-    end # if occusrsin
-    return newick, 1.0
-end # function
 
 ###
 # TESTING THE FUNCTIONS
