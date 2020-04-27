@@ -69,52 +69,15 @@ function is_valid_newick_string(newick::String) #TODO: possibly not necessary; c
     return true
 end
 
-# the grand line between functions which are we more certain in and experimental functions on which we are still working on
 
-###########
+function parsing_newick_string(newick::String)
+    if
 
-# TODO: meaningful comment
-"""
-    newick_parse(newick::String, current_node::Any)
+    end # if check for a leaf
 
-This function parses the string in newick format and returns Node
-"""
+end #function
 
-#parses the string, creating nodes/recursing as needed
-function newick_parse(newick::String, current_node::Any,my_nodes::Array{Any,1}=[]) #TODO: INSTEAD OF DOING RECURSION ON ALL DESCENDANTS AT ONCE, RECURSE FOR EVERY CHILD
-    #first time function runs on a given string, no node(or an empty node) should be input
-    #if no node is input, this happens
 
-    if current_node == nothing
-        newick = strip(newick)
-        current_node = Node()
-        current_node.name = "Root"
-        my_nodes::Array{Any,1} = []
-    end #if
-    println("it begins")
-    println("current newick: ",newick)
-
-    while true
-        #happens when input string is fully parsed; ends recursion as well
-         if newick == "" || newick == ";"
-             println("grats, it's over and it went perfectly without any need for further work")
-             return current_node, my_nodes
-         end #if
-         #commas are basically ignored; if there's a parenthesis it means we need to recurse, if there's
-         #letters it means we just make a leaf node. This just removes commas from the string.
-         if newick[1] == ',' #we don't need these i don't think, just gotta look at the next thing
-             newick = SubString(newick,2)
-             println("what follows is a sibling")
-             println("sibling: ",newick)
-         end #if
-         if newick[1] == '('
-             #this is recursion; if we're looking at an internal node this should happen
-             println("ALERT: recursion needed")
-             childs_section = match(r"\(([^()]|(?R))*\)",newick) #should return only the descendants of the current child node, check https://regex101.com/r/lF0fI1/1 for proof of this regex working the way it should
-             childs_section = childs_section.match
-             index=findlast(")",childs_section)[1]+1
-             the_rest = SubString(childs_section,index)
-             newick = the_rest
 
              """
              parse_newick((A,B),C)
@@ -167,50 +130,98 @@ function newick_parse(newick::String, current_node::Any,my_nodes::Array{Any,1}=[
 
 
              """
-             childs_section = SubString(childs_section,2,findlast(')',childs_section)-1)
-             push!(my_nodes,current_node)
-             cur_child = Node()
-             add_child!(current_node,newick_parse(string(childs_section),cur_child,my_nodes)[1]) #where the magic happens
-             if newick == ""
-                 return current_node,my_nodes
-             end #if
-                if newick[1] == ':' #parses name and length of current node
-                    node_boarder = match(r"[();,]",newick).offset
-                    name,length = parse_name_length(string(SubString(newick,1,node_boarder-1)))
-                    current_node.inc_length = length
-                     push!(my_nodes,current_node)
-                    newick = SubString(newick,node_boarder)
-                end #if
-            end #if
 
-            if occursin(r"^[0-9A-Za-z_|]+",string(newick[1])) || newick[1] == ':'
-                println("we found a leaf")
+# the grand line between functions which are we more certain in and experimental functions on which we are still working on
 
-                #this should happen if the current node's a leaf node
-                if match(r"[();,]",newick) == nothing #if we're parsing the last leaf node; prevents index out of bounds errors
-                    println("leaf is: ", newick)
-                    endpoint = lastindex(newick)
-                    name,length = parse_name_length(string(SubString(newick,1,endpoint)))
-                    cur_child = Node()
-                    cur_child.name = name
-                    cur_child.inc_length = length
-                    add_child!(current_node,cur_child)
-                    push!(my_nodes,cur_child)
-                    newick = ""
-                else
-                    node_boarder = match(r"[();,]",newick).offset #handles creation of every leaf node BUT the last one, which is handled ^
-                    println("leaf is: ", string(SubString(newick,1,node_boarder-1)))
-                    name,length = parse_name_length(string(SubString(newick,1,node_boarder-1)))
-                    cur_child = Node()
-                    cur_child.name = name
-                    cur_child.inc_length = length
-                    add_child!(current_node,cur_child)
-                    push!(my_nodes,cur_child)
-                    newick = SubString(newick,node_boarder)
-            end #if
-        end #while
-    end #function
-end
+###########
+
+# # TODO: meaningful comment
+# """
+#     newick_parse(newick::String, current_node::Any)
+#
+# This function parses the string in newick format and returns Node
+# """
+#
+# #parses the string, creating nodes/recursing as needed
+# function newick_parse(newick::String, current_node::Any,my_nodes::Array{Any,1}=[]) #TODO: INSTEAD OF DOING RECURSION ON ALL DESCENDANTS AT ONCE, RECURSE FOR EVERY CHILD
+#     #first time function runs on a given string, no node(or an empty node) should be input
+#     #if no node is input, this happens
+#
+#     if current_node == nothing
+#         newick = strip(newick)
+#         current_node = Node()
+#         current_node.name = "Root"
+#         my_nodes::Array{Any,1} = []
+#     end #if
+#     println("it begins")
+#     println("current newick: ",newick)
+#
+#     while true
+#         #happens when input string is fully parsed; ends recursion as well
+#          if newick == "" || newick == ";"
+#              println("grats, it's over and it went perfectly without any need for further work")
+#              return current_node, my_nodes
+#          end #if
+#          #commas are basically ignored; if there's a parenthesis it means we need to recurse, if there's
+#          #letters it means we just make a leaf node. This just removes commas from the string.
+#          if newick[1] == ',' #we don't need these i don't think, just gotta look at the next thing
+#              newick = SubString(newick,2)
+#              println("what follows is a sibling")
+#              println("sibling: ",newick)
+#          end #if
+#          if newick[1] == '('
+#              #this is recursion; if we're looking at an internal node this should happen
+#              println("ALERT: recursion needed")
+#              childs_section = match(r"\(([^()]|(?R))*\)",newick) #should return only the descendants of the current child node, check https://regex101.com/r/lF0fI1/1 for proof of this regex working the way it should
+#              childs_section = childs_section.match
+#              index=findlast(")",childs_section)[1]+1
+#              the_rest = SubString(childs_section,index)
+#              newick = the_rest
+#
+#              childs_section = SubString(childs_section,2,findlast(')',childs_section)-1)
+#              push!(my_nodes,current_node)
+#              cur_child = Node()
+#              add_child!(current_node,newick_parse(string(childs_section),cur_child,my_nodes)[1]) #where the magic happens
+#              if newick == ""
+#                  return current_node,my_nodes
+#              end #if
+#                 if newick[1] == ':' #parses name and length of current node
+#                     node_boarder = match(r"[();,]",newick).offset
+#                     name,length = parse_name_length(string(SubString(newick,1,node_boarder-1)))
+#                     current_node.inc_length = length
+#                      push!(my_nodes,current_node)
+#                     newick = SubString(newick,node_boarder)
+#                 end #if
+#             end #if
+#
+#             if occursin(r"^[0-9A-Za-z_|]+",string(newick[1])) || newick[1] == ':'
+#                 println("we found a leaf")
+#
+#                 #this should happen if the current node's a leaf node
+#                 if match(r"[();,]",newick) == nothing #if we're parsing the last leaf node; prevents index out of bounds errors
+#                     println("leaf is: ", newick)
+#                     endpoint = lastindex(newick)
+#                     name,length = parse_name_length(string(SubString(newick,1,endpoint)))
+#                     cur_child = Node()
+#                     cur_child.name = name
+#                     cur_child.inc_length = length
+#                     add_child!(current_node,cur_child)
+#                     push!(my_nodes,cur_child)
+#                     newick = ""
+#                 else
+#                     node_boarder = match(r"[();,]",newick).offset #handles creation of every leaf node BUT the last one, which is handled ^
+#                     println("leaf is: ", string(SubString(newick,1,node_boarder-1)))
+#                     name,length = parse_name_length(string(SubString(newick,1,node_boarder-1)))
+#                     cur_child = Node()
+#                     cur_child.name = name
+#                     cur_child.inc_length = length
+#                     add_child!(current_node,cur_child)
+#                     push!(my_nodes,cur_child)
+#                     newick = SubString(newick,node_boarder)
+#             end #if
+#         end #while
+#     end #function
+# end
 
 
 """
