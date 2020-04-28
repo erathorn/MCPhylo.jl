@@ -98,7 +98,7 @@ end # function
 
 
 function parsing_newick_string(newick::String)
-    if newick[end] == ';'
+    if newick[end] == ';' #no need for semicolon
         newick = SubString(newick,1,lastindex(newick)-1)
     end #if
 
@@ -107,19 +107,18 @@ function parsing_newick_string(newick::String)
         name,length = parse_name_length(newick)
         leaf_node.name = name
         leaf_node.inc_length = length
-        println("BASE CASE IS HAPPENING")
         return leaf_node
-        # base case
+        # base case; only triggered at end of recursion OR if a single node-tree is input
     else
-        println("OTHER CASE")
         current_node = Node()
-        childrenstring_with_parenthesis = (match(r"\(([^()]|(?R))*\)",newick)).match
+        childrenstring_with_parenthesis = (match(r"\(([^()]|(?R))*\)",newick)).match #returns section of newick corresponding to descendants of current node, check https://regex101.com/r/lF0fI1/1
         index=findlast(')',childrenstring_with_parenthesis)[1]
-        childrenstring = SubString(childrenstring_with_parenthesis,2,index-1)
+        childrenstring = SubString(childrenstring_with_parenthesis,2,index-1) #... so that we can remove the superfluous parentheses here
+
         child_list = []
         counter = ""
         bracket_depth = 0
-        for x in (childrenstring * ",")
+        for x in (childrenstring * ",") # splits string identified above into a list, where each element corresponds to a child of current_node
             if x == ',' && bracket_depth == 0
                 push!(child_list,counter)
                 counter = ""
@@ -133,44 +132,28 @@ function parsing_newick_string(newick::String)
             end #if
             counter = counter * x
         end #for
-            """
-            ((A,B),(C,D));
-             (A,B)C;
-             ((),(C,D))
-            """
-        for x in child_list
-            println("THE FOLLOWING IS GOING INTO RECURSION: ", x)
+
+        for x in child_list #recursion happens here
             add_child!(current_node,parsing_newick_string(x))
         end #for
+
         child_list = []
-        info_of_current_node = split(newick,")")
+        info_of_current_node = split(newick,")") #info of current node should always follow the last ")"
         if lastindex(info_of_current_node) == 1
-            println("MAYBE THIS IS HAPPENING NOT THE ELSE")
             name,length = parse_name_length(newick)
         else
             test = string(info_of_current_node[lastindex(info_of_current_node)])
-            println(test)
             name,length = parse_name_length(string(test))
             current_node.name = name
             current_node.inc_length = length
         end #else
         return current_node
     end #recursion part
-    return nothing
-        """
-        ((A,B),(C,D));
-         (A,B)C;
-         ((),(C,D))
-        """
+    return nothing #if this happens something went wrong, could do exception handling and whatnot eventually, possible #TODO
+
 
 
 end #function
-
-println(parsing_newick_string("((A,B),(C,D));"))
-root = parsing_newick_string("((A,B),(C,D));")
-println(newick(root))
-
-
 
              """
              ((A,B),(C,D));
