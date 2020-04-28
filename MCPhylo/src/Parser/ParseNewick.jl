@@ -146,7 +146,7 @@ function ParseNewick(filename::String)
     if !is_valid_newick_string(content)
         throw("$filename is not a Newick file!")
     end # if
-    MCPhylo.newick(parsing_newick_string(string(content)))
+    newick(parsing_newick_string(string(content)))
 end
 println(parsing_newick_string("(A:11,B:3)C;"))
 println(ParseNewick("tree2.nwk"))
