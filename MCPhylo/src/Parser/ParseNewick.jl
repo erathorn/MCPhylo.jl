@@ -3,8 +3,8 @@
 include("../MCPhylo.jl")
 using ..MCPhylo
 
-#include("./MCPhylo/src/MCPhylo.jl")
-#using .MCPhylo #  ==> depending on the level of embeding
+# include("./MCPhylo/src/MCPhylo.jl")
+# using .MCPhylo #  ==> depending on the level of embeding
 
 #include("../Tree/Node_Type.jl")
 #include("../Tree/Tree_Basics.jl")
@@ -70,24 +70,90 @@ function is_valid_newick_string(newick::String) #TODO: possibly not necessary; c
 end
 
 
+"""
+    parse_name_length(newick::String)
+
+This function parses two optional elements of the tree, name and length. In case, when neither of this is provided, empty string and nothing are return
+"""
+
+function parse_name_length(newick::String)
+    println("that's what we got in parse_name", newick)
+    if occursin(':',newick)
+        name, len = split(strip(newick),':')
+        if name == ""
+            name = "nameless"
+        end # if
+        if len == ""
+            len = 1.0
+        end # if
+    end # main if
+    if length(newick)<1
+        return "nameless",1.0
+    else
+        return string(newick),1.0
+    end #else
+    return string(name), parse(Float64, len)
+end # function
+
+
+
 function parsing_newick_string(newick::String)
-    if newick[1] != ')' and occursin(r"^[a-zA-Z]+[:]?[0-9]*",newick)
+    if newick[end] == ';'
+        newick = SubString(newick,1,lastindex(newick)-1)
+    end #if
+
+    if newick[1] != ')' && occursin(r"^[a-zA-Z]+[:]?[0-9]*",newick)
         leaf_node = Node()
         name,length = parse_name_length(newick)
         leaf_node.name = name
-        leaf_node.length = length
+        leaf_node.inc_length = length
+        println("BASE CASE IS HAPPENING")
         return leaf_node
         # base case
     else
+        println("OTHER CASE")
         current_node = Node()
-        childrenstring = Substring(newick,2,*index of close parenthesis*)
-        # internal node possibility >>> ???
-        child_list = split(childrenstring,',')
-
+        childrenstring_with_parenthesis = (match(r"\(([^()]|(?R))*\)",newick)).match
+        index=findlast(')',childrenstring_with_parenthesis)[1]
+        childrenstring = SubString(childrenstring_with_parenthesis,2,index-1)
+        child_list = []
+        counter = ""
+        bracket_depth = 0
+        for x in (childrenstring * ",")
+            if x == ',' && bracket_depth == 0
+                push!(child_list,counter)
+                counter = ""
+                continue
+            end #if
+            if x == '('
+                bracket_depth += 1
+            end #if
+            if x == ')'
+                bracket_depth -= 1
+            end #if
+            counter = counter * x
+        end #for
+            """
+            ((A,B),(C,D));
+             (A,B)C;
+             ((),(C,D))
+            """
         for x in child_list
+            println("THE FOLLOWING IS GOING INTO RECURSION: ", x)
             add_child!(current_node,parsing_newick_string(x))
         end #for
         child_list = []
+        info_of_current_node = split(newick,")")
+        if lastindex(info_of_current_node) == 1
+            println("MAYBE THIS IS HAPPENING NOT THE ELSE")
+            name,length = parse_name_length(newick)
+        else
+            test = string(info_of_current_node[lastindex(info_of_current_node)])
+            println(test)
+            name,length = parse_name_length(string(test))
+            current_node.name = name
+            current_node.inc_length = length
+        end #else
         return current_node
     end #recursion part
     return nothing
@@ -97,33 +163,13 @@ function parsing_newick_string(newick::String)
          ((),(C,D))
         """
 
-    end # if check for a leaf
 
 end #function
 
+println(parsing_newick_string("((A,B),(C,D));"))
+root = parsing_newick_string("((A,B),(C,D));")
+println(newick(root))
 
-
-"""
-    parse_name_length(newick::String)
-
-This function parses two optional elements of the tree, name and length. In case, when neither of this is provided, empty string and nothing are return
-"""
-
-function parse_name_length(newick::String)
-    newick = strip(newick)
-    #name, my_length = split(newick, ":")
-    # if name == "" #=> no name is given, use dummy
-
-    # if my_length == "" #=> no length is given, use dummy
-    if length(newick) < 1
-        return "nameless", 1.0
-    end # if length
-    if occursin(':',newick)
-        name, len = split(newick,':')
-        return string(name), parse(Float64, len)
-    end # if occusrsin
-    return newick, 1.0
-end # function
 
 
              """
@@ -278,13 +324,13 @@ end # function
 
 the_string = "(Swedish_0:0.1034804,(Welsh_N_0:0.1422432,(Sardinian_N_0:0.02234697,(Italian_0:0.01580386,Rumanian_List_0:0.03388825):0.008238525):0.07314805):0.03669193,(((Marathi_0:0.04934081,Oriya_0:0.02689862):0.1193376,Pashto_0:0.1930713):0.05037896,Slovenian_0:0.0789572):0.03256979);"
 the_string_2 = "((((Dra.NORTHERN_DRAVIDIAN.KURUKH:0.823074875737579,Dra.SOUTH_CENTRAL_DRAVIDIAN.DORLI_GONDI:0.28822305943964277)51:0.9096574009527566,Dra.SOUTH_CENTRAL_DRAVIDIAN.KUVI:0.15108563362392177)64:0.6885640496300766,(Dra.SOUTH_CENTRAL_DRAVIDIAN.SOUTH_EASTERN_GONDI:0.9621464574054764,((Dra.SOUTH_CENTRAL_DRAVIDIAN.KUI:0.7660539461805399,(Dra.SOUTHERN_DRAVIDIAN.TAMIL:0.22241296989623094,(Dra.SOUTH_CENTRAL_DRAVIDIAN.WESTERN_GONDI:0.700208475875382,Dra.SOUTH_CENTRAL_DRAVIDIAN.ADILABAD_GONDI:0.00636902086929546)45:0.2568376168446603)46:0.31195689986105074)50:0.5280782014653551,(Dra.SOUTH_CENTRAL_DRAVIDIAN.PENGO:0.3805497140792932,Dra.SOUTHERN_DRAVIDIAN.IRULA:0.24313087586739268)47:0.5514806675227825)54:0.40644694508297363)56:0.7481616281899098)70:0.6308545527775923,(((((Dra.SOUTH_CENTRAL_DRAVIDIAN.SOUTHERN_GONDI:0.14981318626586068,Dra.SOUTHERN_DRAVIDIAN.TULU:0.3189677711581785)52:0.18701136213491754,Dra.SOUTH_CENTRAL_DRAVIDIAN.ABUJHMARIA:0.9570448784020357)55:0.7996910080326368,(Dra.CENTRAL_DRAVIDIAN.NORTHWESTERN_KOLAMI:0.46552096552619276,Dra.SOUTHERN_DRAVIDIAN.PALIYAN:0.005423542225934379)44:0.5563938421755457)68:0.6220646419257747,((Dra.NORTHERN_DRAVIDIAN.KURUX_NEPALI:0.4546646140265832,Dra.SOUTHERN_DRAVIDIAN.RAVULA:0.9779586706039829)60:0.7619109389692604,((Dra.NORTHERN_DRAVIDIAN.KUMARBHAG_PAHARIA:0.8299924660663025,Dra.SOUTH_CENTRAL_DRAVIDIAN.TELUGU_2:0.6170375335378135)49:0.4061078279052086,(Dra.SOUTHERN_DRAVIDIAN.OLD_TAMIL:0.25825955834703956,Dra.SOUTH_CENTRAL_DRAVIDIAN.NORTH_BASTAR_GONDI:0.6154523803114922)59:0.3592581704448605)62:0.20575614618578816)67:0.8445878101331729)69:0.4277614887197028,((Dra.SOUTH_CENTRAL_DRAVIDIAN.TELUGU:0.05936684953610001,(Dra.SOUTHERN_DRAVIDIAN.KURUMBA_ALU:0.39761369422055753,Dra.SOUTH_CENTRAL_DRAVIDIAN.NORTHERN_GONDI:0.3512494180801804)43:0.024384381704830566)61:0.6159956440241587,((((Dra.SOUTHERN_DRAVIDIAN.BETTA_KURUMBA:0.556468834623374,((Dra.NORTHERN_DRAVIDIAN.SAURIA_PAHARIA:0.7344814114120296,Dra.SOUTH_CENTRAL_DRAVIDIAN.SOUTHERN_GONDI_2:0.7759235873330327)53:0.14971493972622438,Dra.SOUTHERN_DRAVIDIAN.KORAGA_KORRA:0.7802715667203111)57:0.5978920373858239)58:0.5125071989391269,(Dra.SOUTH_CENTRAL_DRAVIDIAN.SOUTH_BASTAR_GONDI:0.4634536648108183,((Dra.NORTHERN_DRAVIDIAN.BRAHUI:0.4481324381951019,Dra.SOUTHERN_DRAVIDIAN.KANNADA:0.4493635834393417)40:0.5017018479452859,Dra.SOUTHERN_DRAVIDIAN.MALAYALAM:0.6569175054247594)48:0.36416624962676897)63:0.9195968543725148)65:0.31970982925608965,(Dra.SOUTHERN_DRAVIDIAN.TODA:0.8335870971561289,(Dra.CENTRAL_DRAVIDIAN.PARJI:0.05328619625991444,Dra.SOUTHERN_DRAVIDIAN.ULLATAN:0.9638487161160924)39:0.6271628983114025)41:0.19457266408948884)66:0.4234684186473759,((Dra.SOUTH_CENTRAL_DRAVIDIAN.MANDA_INDIA:0.8101005415604958,Dra.SOUTHERN_DRAVIDIAN.BADAGA:0.13465908110800426)42:0.8025801334975355,Dra.SOUTH_CENTRAL_DRAVIDIAN.HILL_MARIA_GONDI:0.8975962746953261)71:0.26228038217619115)72:0.23390480938782518)73:0.22512880787981576)74:0.7485699845253884)75:0.5;"
-println("begin of new test is here")
-println("")
-println("")
-println("")
-println("")
-println("")
-println("")
+# println("begin of new test is here")
+# println("")
+# println("")
+# println("")
+# println("")
+# println("")
+# println("")
 
 # -> dendroscpoe
 
@@ -310,37 +356,37 @@ the_rare_one = "((B:0.2,(C:0.3,D:0.4)E:0.5)A:0.1)F;" #nodelist, tree, leaf names
 #pre_order <--- same, but pre order
 #level_order <--- same, but level order
 
-test1,nodelist = newick_parse(the_string_2,nothing)
-println("the useless root node is: ", test1)
-println("LIST FOLLOWS")
-println("")
-println("")
-println("")
-println("")
-println("")
-println("")
-println("")
-println(nodelist)
- kids = test1.children
-  for x in kids
-     println("child of the above node is: ",x)
-     grandkids = x.children
-     for y in grandkids
-         println("children of ",x.name, " are :", y)
-         greatgrandkids = y.children
-         for z in greatgrandkids
-             println("children of ",y.name, " are: ",z)
-             greatgreat = z.children
-             for blah in greatgreat
-                 println("children of ",z.name, " are: ",blah)
-                 greatgreatgreat = blah.children
-                 for blahblah in greatgreatgreat
-                     println("children of ",blah.name, " are: ",blahblah)
-                 end
-             end
-         end
-     end
- end
+#test1,nodelist = newick_parse(the_string_2,nothing)
+# println("the useless root node is: ", test1)
+# println("LIST FOLLOWS")
+# println("")
+# println("")
+# println("")
+# println("")
+# println("")
+# println("")
+# println("")
+# println(nodelist)
+#  kids = test1.children
+#   for x in kids
+#      println("child of the above node is: ",x)
+#      grandkids = x.children
+#      for y in grandkids
+#          println("children of ",x.name, " are :", y)
+#          greatgrandkids = y.children
+#          for z in greatgrandkids
+#              println("children of ",y.name, " are: ",z)
+#              greatgreat = z.children
+#              for blah in greatgreat
+#                  println("children of ",z.name, " are: ",blah)
+#                  greatgreatgreat = blah.children
+#                  for blahblah in greatgreatgreat
+#                      println("children of ",blah.name, " are: ",blahblah)
+#                  end
+#              end
+#          end
+#      end
+#  end
 
 
 ###
