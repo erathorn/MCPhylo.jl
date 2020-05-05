@@ -13,6 +13,13 @@ This function loads a newick from file
 # rn it assumed that there are no extra line breaks (\n\n) and there is only one tree pro file. That should be fixed.
 
 function load_newick(filename::String)
+    """
+    let this function always return a list of strings.
+
+    if there is more than one tree in the file, the newick parser can just return
+    a list of trees.
+
+    """
     open(filename, "r") do file
         global content = readlines(file)
     end
