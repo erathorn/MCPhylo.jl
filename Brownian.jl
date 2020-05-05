@@ -94,6 +94,7 @@ to_file(sim, "multiv", 2)
 m = (ones(my_data[:leaves],my_data[:residuals]) .= transpose(inits[1][:μ]))
 blv = get_branchlength_vector(mt)
 cov_fun_mat = MCPhylo.to_covariance_func(mt)
+r = p_apply_array.(cov_fun_mat, Ref(blv))
 si = inits[1][:σi]
 P = inits[1][:P]
 f(y) = mlpdf_h(Array(m), cov_fun_mat, y, si, P, 0.02, my_data[:residuals], arrn)
