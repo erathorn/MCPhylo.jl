@@ -4,15 +4,15 @@ using .MCPhylo
 
 
 """
-    neighbor_joining(dm::Array{Float64,2}, Array{String,1}, rooted::Bool = false)
+    neighbor_joining(dm::Array{Float64,2}, Array{String,1})
 
-This function returns a phylogenetic tree by using neighbor-joining
-based on a given distance matrix and an array of leaf names.
+This function returns a phylogenetic tree by using neighbor-joining based on a
+given distance matrix and an array of leaf names. Returns a node of the
+resulting tree, from which it can be traversed.
 """
 function neighbor_joining(
     dm::Array{Float64,2},
-    leaf_names::Array{String,1},
-    rooted::Bool = false,
+    leaf_names::Array{String,1}
 )
     n = size(dm)[1]
     if n != size(leaf_names, 1)
@@ -24,16 +24,17 @@ function neighbor_joining(
         new_leaf = Node(leaf)
         leaves[ind] = new_leaf
     end # end for
-    neighbor_joining_int(dm, leaves, rooted)
+    neighbor_joining_int(dm, leaves)
 end
 
 """
-    neighbor_joining(dm::Array{Float64,2},rooted::Bool = false)
+    neighbor_joining(dm::Array{Float64,2})
 
-This function returns a phylogenetic tree by using neighbor-joining
-based on a given distance matrix
+This function returns a phylogenetic tree by using neighbor-joining based on a
+given distance matrix. Creates an array of nodes to be used as leaves. Returns
+a node of the resulting tree, from which it can be traversed.
 """
-function neighbor_joining(dm::Array{Float64,2}, rooted::Bool = false)
+function neighbor_joining(dm::Array{Float64,2})
     n = size(dm)[1]
     leaves = Array{Node, 1}(undef, n)
     # build array of dummy leaves
@@ -41,19 +42,20 @@ function neighbor_joining(dm::Array{Float64,2}, rooted::Bool = false)
         new_leaf = Node("leaf_$i")
         leaves[i] = new_leaf
     end # end for
-    neighbor_joining_int(dm, leaves, rooted)
+    neighbor_joining_int(dm, leaves)
 end
 
 """
-    neighbor_joining_int(dm::Array{Float64,2},leaves::Vector{Node},rooted::Bool)
+    neighbor_joining_int(dm::Array{Float64,2},leaves::Vector{Node})
 
 Internal function that is called by both neighbor_joining methods. Contains the
-actual neighbor-joining algorithm.
+actual neighbor-joining algorithm, i.e. builds a phylogenetic tree from the
+given distance matrix and array of leaves. Returns a node of that tree, from
+which it can be traversed.
 """
 function neighbor_joining_int(
     dm::Array{Float64,2},
     leaves::Vector{Node},
-    rooted::Bool
 )
 
     n = size(dm)[1]
@@ -75,21 +77,12 @@ function neighbor_joining_int(
         second_node = leaves[index[1]]
         new_node = Node("Node_$count")
         count += 1
-        if n == 2 && rooted
-            # set_binary!(new_node)
-            # number_nodes!(new_node)
-            first_node.inc_length = dm[1,2]
-            add_child!(second_node, first_node)
-            return second_node
-        end # end if
-        # calculate distance
         first_node.inc_length =
             0.5 * dm[index] +
             (1 / (2 * (n - 2))) * (sum(dm[index[2], :]) - sum(dm[index[1], :]))
         second_node.inc_length = dm[index] - first_node.inc_length
         add_child!(new_node, first_node)
         add_child!(new_node, second_node)
-        # check if root node is reached
         # update array with leaves
         deleteat!(leaves, [index[2], index[1]])
         insert!(leaves, 1, new_node)
@@ -112,9 +105,9 @@ function neighbor_joining_int(
         array = [1:1:n+1;]
         deleteat!(array, [index[2], index[1]])
         next_dm[2:end, 2:end] .= dm[array, array]
-        # if unrooted, add final node to tree
+        # add final node to tree, if only 2 nodes are left in the list of nodes
         dm = next_dm
-        if n == 2 && !rooted
+        if n == 2
             final_leaf = pop!(leaves)
             final_leaf.inc_length = dm[1, 2]
             # add third child to new node created previously
