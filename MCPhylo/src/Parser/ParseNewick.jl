@@ -54,6 +54,16 @@ This function parses two optional elements of the tree, name and length. In case
 """
 
 function parse_name_length(newick::String)
+    """
+    always do split(newick, ":"), there is no error if ":" does not occur, it
+    will just return an array containing the newick string
+
+    r = split("", ":")
+    r
+    > [""]
+
+    This streamlines the function
+    """
     if occursin(':',newick)
         name, len = split(strip(newick),':')
         if name == ""
@@ -78,6 +88,10 @@ end # function
 
 
 function parsing_newick_string(newick::String)
+    """
+    The comming PR of the Neighbor Joining branch contains cleaner node constructors
+    use them later on
+    """
     if newick[end] == ';' #no need for semicolon
         newick = chop(newick)
     end #if
@@ -96,6 +110,11 @@ function parsing_newick_string(newick::String)
         index=findlast(')',childrenstring_with_parenthesis)[1]
         childrenstring = SubString(childrenstring_with_parenthesis,2,index-1) #... so that we can remove the superfluous parentheses here
 
+
+        """
+        move this for loop into a separate function
+         -> easier maintainance
+        """
         child_list = []
         counter = ""
         bracket_depth = 0
@@ -132,6 +151,9 @@ function parsing_newick_string(newick::String)
         return current_node
     end #recursion part
     return nothing #if this happens something went wrong, could do exception handling and whatnot eventually, possible #TODO
+    """
+    exceptions in julia are raised using the "throw()" command.
+    """
 end #function
 
 
@@ -143,10 +165,9 @@ This function parses a Newick file
 """
 function ParseNewick(filename::String)
     content = load_newick(filename)
+    println(typeof(content))
     if !is_valid_newick_string(content)
         throw("$filename is not a Newick file!")
     end # if
     newick(parsing_newick_string(string(content)))
 end
-println(parsing_newick_string("(A:11,B:3)C;"))
-println(ParseNewick("tree2.nwk"))
