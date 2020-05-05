@@ -4,10 +4,10 @@ using .MCPhylo
 
 
 """
-neighbor_joining(dm::Array{Int64,2}, Array{String,1})
+    neighbor_joining(dm::Array{Float64,2}, Array{String,1}, rooted::Bool = false)
 
-This function returns a phylogenetic tree by using neighbor joining
-based on a given distance matrix and an array of leaf names
+This function returns a phylogenetic tree by using neighbor-joining
+based on a given distance matrix and an array of leaf names.
 """
 function neighbor_joining(
     dm::Array{Float64,2},
@@ -28,10 +28,10 @@ function neighbor_joining(
 end
 
 """
-neighbor_joining(dm::Array{Int64,2}, Array{String,1})
+    neighbor_joining(dm::Array{Float64,2},rooted::Bool = false)
 
-This function returns a phylogenetic tree by using neighbor joining
-based on a given distance matrix and an array of leaf names
+This function returns a phylogenetic tree by using neighbor-joining
+based on a given distance matrix
 """
 function neighbor_joining(dm::Array{Float64,2}, rooted::Bool = false)
     n = size(dm)[1]
@@ -44,6 +44,12 @@ function neighbor_joining(dm::Array{Float64,2}, rooted::Bool = false)
     neighbor_joining_int(dm, leaves, rooted)
 end
 
+"""
+    neighbor_joining_int(dm::Array{Float64,2},leaves::Vector{Node},rooted::Bool)
+
+Internal function that is called by both neighbor_joining methods. Contains the
+actual neighbor-joining algorithm.
+"""
 function neighbor_joining_int(
     dm::Array{Float64,2},
     leaves::Vector{Node},
@@ -125,9 +131,7 @@ There are three distance matrices and lists of leaves, which you can read into
 a julia object as shown here
 """
 distance_matrix = deserialize("dm_2.jls")
-# distance_matrix = [0.0 5.0 9.0 9.0 8.0;5.0 0.0 10.0 10.0 9.0;9.0 10.0 0.0 8.0 7.0;9.0 10.0 8.0 0.0 3.0;8.0 9.0 7.0 3.0 0.0]
 leaves_list = deserialize("leaves_2.jls")
-# leaves_list = ["a","b","c","d","e"]
 
 
 """
