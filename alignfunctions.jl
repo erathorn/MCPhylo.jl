@@ -269,14 +269,10 @@ function calcl_ll(datamat::Array{Int64,3}, submat::AbstractArray{Float64,2}, gx:
 	timemat, leaves = mto_distance_matrix_i(tree)
 	lmap = [n.name for n in leaves]
 	μs = zeros(29)
-	reroots = Base.Threads.@spawn  reroots_and_covs(tree, lmap)
+	reroots = Base.Threads.@spawn reroots_and_covs(tree, lang_dict)
 	out = Array{Float64,3}(undef, l_size, l_size, c_size)
-    if r < 0
-		return -Inf
-	end
-	if a < 0
-		return -Inf
-	end
+
+
 	@inbounds @views Base.Threads.@threads for l1=1:l_size
 
 		for l2=1:l1
@@ -295,6 +291,7 @@ function calcl_ll(datamat::Array{Int64,3}, submat::AbstractArray{Float64,2}, gx:
 						fws = forward_log(w1, w2, m, n, emmat, gx, gy, tra)
 						rs = random_model(w1, w2, m, n, gx, gy)
 						t_s = sigmoid(fws-rs)
+						
 						Base.Threads.atomic_add!(score, fws)
 						out[l1, l2, c] = t_s
 						out[l2, l1, c] = t_s
@@ -306,35 +303,43 @@ function calcl_ll(datamat::Array{Int64,3}, submat::AbstractArray{Float64,2}, gx:
 			end # if l1!=l2
 		end# for l2
 	end# for l1
+	#if any(isinf.(out))
+	#	throw("not all set")
+	#end
 	score1 = score[]
 
 	score = Base.Threads.Atomic{Float64}(0)
 	cov_list = fetch(reroots)
-	@inbounds Base.Threads.@threads for l1=1:l_size
+	@inbounds Base.Threads.@threads	for l1=1:l_size
         rv = cov_list[l1]
 		cov = rv[1]
 		leavelist = rv[2]
 		mn = Distributions.MvNormal(μs, cov)
 		inds = [lang_dict[leave] for leave in leavelist]
+
+
 		for c=1:c_size
-			mnvec = out[l1, :, c]
-			mnvec = mnvec[inds]
-				Base.Threads.atomic_add!(score, logpdf(mn, mnvec))
+			mnvec_raw = out[l1, :, c]
+			mnvec = mnvec_raw[inds]
+			thisscore = logpdf(mn, mnvec)
+
+			Base.Threads.atomic_add!(score, thisscore)
 		end
 	end
 
-	score[]+score1
+	result = score[]+score1
+
+	result
 end
 
 
-function reroots_and_covs(tree, lmap)
-	out=[]
-	for l1 in lmap
-		new_tree = MCPhylo.reroot(tree, l1)
+function reroots_and_covs(tree, langdict)
+	out=Vector{Tuple{Array, Vector}}(undef, length(langdict))
+	for (lang, langind) in langdict
+		new_tree = MCPhylo.reroot(tree, lang)
 		cov = MCPhylo.to_covariance(new_tree)
 		l = [i.name for i in MCPhylo.get_leaves(new_tree)]
-
-		push!(out, (cov, l))
+		out[langind] = (cov, l)
 	end
 	out
 end
@@ -474,7 +479,7 @@ function indices2values(maparr::Array{Int64,2}, vec::AbstractArray{Float64}, fre
 			end
 		end
 	end
-	x ./= sum(tril!(x))
+	x ./= sum(tril(x))
 	@inbounds @simd for i=1:nchar
 		for j=1:i
 			if i!=j

@@ -65,26 +65,23 @@ inits = [Dict{Symbol, Union{Any, Real}}(
  :emr => rand(Dirichlet(68,1)),
  :a => rand(),
  :r => rand(),
- :μi => randn(),
- :σ => rand(),
- :μ => randn(),
- :mtime => rand(666),
  :mt => mt
  )
 ]
-
+rand()
+rand()
 
 scheme = [SliceSimplex(:gxr),
 		SliceSimplex(:emr),
-		Slice(:mt, 0.05, Multivariate),
+		Slice(:mt, 0.1, Multivariate),
 		RWM(:mt, 1),
-		Slice([:a, :r], 0.05, Multivariate),
+		Slice([:a, :r], 0.1, Multivariate),
 ]
 
 
 setsamplers!(model, scheme);
 
-sim = mcmc(model, my_data, inits, 500, burnin=100,thin=2, chains=1, trees=true)
+sim = mcmc(model, my_data, inits, 50, burnin=10,thin=2, chains=1, trees=true)
 sim = mcmc(sim, 1000, trees=true)
 
 to_file(sim, "alg", 2)
