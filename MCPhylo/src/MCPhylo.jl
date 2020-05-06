@@ -255,7 +255,6 @@ include("distributions/pdmatdistribution.jl")
 include("distributions/transformdistribution.jl")
 include("distributions/Phylodist.jl")
 include("distributions/TreeConstraints.jl")
-include("distributions/logisticregdist.jl")
 
 include("model/dependent.jl")
 include("model/dependent_tree.jl")
