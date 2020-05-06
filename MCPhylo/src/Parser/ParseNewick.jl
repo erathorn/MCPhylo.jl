@@ -77,10 +77,7 @@ end # function
 
 
 function parsing_newick_string(newick::String)
-    """
-    The comming PR of the Neighbor Joining branch contains cleaner node constructors
-    use them later on
-    """
+
     if  newick[end] == ';' #no need for semicolon
         newick = chop(newick)
     end #if
@@ -98,30 +95,7 @@ function parsing_newick_string(newick::String)
         childrenstring_with_parenthesis = (match(r"\(([^()]|(?R))*\)",newick)).match #returns section of newick corresponding to descendants of current node, check https://regex101.com/r/lF0fI1/1
         index=findlast(')',childrenstring_with_parenthesis)[1]
         childrenstring = SubString(childrenstring_with_parenthesis,2,index-1) #... so that we can remove the superfluous parentheses here
-
-
-        """
-        move this for loop into a separate function
-         -> easier maintainance
-        """
         child_list = Sibling_parse(String(childrenstring))
-        # child_list = []
-        # counter = ""
-        # bracket_depth = 0
-        # for x in (childrenstring * ",") # splits string identified above into a list, where each element corresponds to a child of current_node
-        #     if x == ',' && bracket_depth == 0
-        #         push!(child_list,counter)
-        #         counter = ""
-        #         continue
-        #     end #if
-        #     if x == '('
-        #         bracket_depth += 1
-        #     end #if
-        #     if x == ')'
-        #         bracket_depth -= 1
-        #     end #if
-        #     counter = counter * x
-        # end #for
 
         for x in child_list #recursion happens here
             add_child!(current_node,parsing_newick_string(x))
@@ -183,6 +157,3 @@ function ParseNewick(filename::String)
     end # for
     list_of_newicks
 end
-
-#println(ParseNewick("tree2.nwk"))
-println(parsing_newick_string("(A,B)C"))
