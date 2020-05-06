@@ -9,17 +9,14 @@ This function returns a phylogenetic tree by using UPGMA based on a
 given distance matrix and an array of leaf names. Returns a node of the
 resulting tree, from which it can be traversed.
 """
-function upgma(
-    dm::Array{Float64,2},
-    leaf_names::Array{String,1}
-)
+function upgma(dm::Array{Float64,2}, leaf_names::Array{String,1})
     n = size(dm)[1]
     if n != size(leaf_names, 1)
         throw("Distance Matrix and leaf Names size do not match")
     end # end if
     # build array of leaves from leaf names
-    leaves = Array{Tuple{Node, Float64, Int64}, 1}(undef, size(dm, 1))
-    for (ind,leaf) in enumerate(leaf_names)
+    leaves = Array{Tuple{Node,Float64,Int64},1}(undef, size(dm, 1))
+    for (ind, leaf) in enumerate(leaf_names)
         new_leaf = Node(leaf)
         leaves[ind] = (new_leaf, 0.0, 1)
     end # end for
@@ -35,9 +32,9 @@ a node of the resulting tree, from which it can be traversed.
 """
 function upgma(dm::Array{Float64,2})
     n = size(dm)[1]
-    leaves = Array{Tuple{Node, Float64, Int64}, 1}(undef, n)
+    leaves = Array{Tuple{Node,Float64,Int64},1}(undef, n)
     # build array of dummy leaves
-    for i = 1:n
+    for i in 1:n
         new_leaf = Node("leaf_$i")
         leaves[n] = (new_leaf, 0.0, 1)
     end # end for
@@ -52,7 +49,10 @@ actual UPGMA algorithm, i.e. builds a phylogenetic tree from the
 given distance matrix and array of leaves. Returns a node of that tree, from
 which it can be traversed.
 """
-function upgma_int(dm::Array{Float64,2},clusters::Array{Tuple{Node, Float64, Int64},1})
+function upgma_int(
+    dm::Array{Float64,2},
+    clusters::Array{Tuple{Node,Float64,Int64},1},
+)
 
     n = size(dm)[1]
     # count for node names
@@ -63,14 +63,14 @@ function upgma_int(dm::Array{Float64,2},clusters::Array{Tuple{Node, Float64, Int
         index = findmin(dm)[2]
         first_cluster = clusters[index[2]]
         second_cluster = clusters[index[1]]
-        # create new Node
+        # create new Nodecluster
         new_cluster = Node("Cluster_$count")
         count += 1
         # calculate length of new branches
         total_path_length = dm[index] / 2
         first_cluster[1].inc_length = total_path_length - first_cluster[2]
         second_cluster[1].inc_length = total_path_length - second_cluster[2]
-        # add children to the new node
+        # add children to the new Nodecluster
         add_child!(new_cluster, first_cluster[1])
         add_child!(new_cluster, second_cluster[1])
         # return (root) node when algorithm is finished
@@ -87,17 +87,20 @@ function upgma_int(dm::Array{Float64,2},clusters::Array{Tuple{Node, Float64, Int
         next_dm = zeros(Float64, n, n)
         # fill first row and column of next distance matrix
         j = 1
-        for i = 2:n
+        for i in 2:n
             while j == index[1] || j == index[2]
                 j += 1
             end # end while
             next_dm[i, 1] =
                 next_dm[1, i] =
-                    (dm[index[2], j] * first_cluster_weight + dm[index[1], j]
-                    * second_cluster_weight) / (first_cluster_weight + second_cluster_weight)
+                    (
+                        dm[index[2], j] * first_cluster_weight +
+                        dm[index[1], j] * second_cluster_weight
+                    ) / (first_cluster_weight + second_cluster_weight)
             j += 1
         end # end for
-        # copy values of the last distance matrix to fill the remaining rows and columns of the new one
+        # copy values of the last distance matrix to fill
+        # the remaining rows and columns of the new one
         array = [1:1:n+1;]
         deleteat!(array, [index[2], index[1]])
         next_dm[2:end, 2:end] .= dm[array, array]
@@ -106,10 +109,13 @@ function upgma_int(dm::Array{Float64,2},clusters::Array{Tuple{Node, Float64, Int
         new_cluster_weight = first_cluster_weight + second_cluster_weight
         # update array with leaves
         deleteat!(clusters, [index[2], index[1]])
-        insert!(clusters, 1, (new_cluster, total_path_length, new_cluster_weight))
+        insert!(
+            clusters,
+            1,
+            (new_cluster, total_path_length, new_cluster_weight),
+        )
     end # end while
 end # end function upgma
-
 
 """
     neighbor_joining(dm::Array{Float64,2}, Array{String,1})
@@ -118,17 +124,14 @@ This function returns a phylogenetic tree by using neighbor-joining based on a
 given distance matrix and an array of leaf names. Returns a node of the
 resulting tree, from which it can be traversed.
 """
-function neighbor_joining(
-    dm::Array{Float64,2},
-    leaf_names::Array{String,1}
-)
+function neighbor_joining(dm::Array{Float64,2}, leaf_names::Array{String,1})
     n = size(dm)[1]
     if n != size(leaf_names, 1)
         throw("Distance Matrix and leaf names array size do not match")
     end # end if
     # build array of leaves from leaf names
-    leaves = Array{Node, 1}(undef,size(dm, 1))
-    for (ind,leaf) in enumerate(leaf_names)
+    leaves = Array{Node,1}(undef, size(dm, 1))
+    for (ind, leaf) in enumerate(leaf_names)
         new_leaf = Node(leaf)
         leaves[ind] = new_leaf
     end # end for
@@ -144,9 +147,9 @@ a node of the resulting tree, from which it can be traversed.
 """
 function neighbor_joining(dm::Array{Float64,2})
     n = size(dm)[1]
-    leaves = Array{Node, 1}(undef, n)
+    leaves = Array{Node,1}(undef, n)
     # build array of dummy leaves
-    for i = 1:n
+    for i in 1:n
         new_leaf = Node("leaf_$i")
         leaves[i] = new_leaf
     end # end for
@@ -161,10 +164,7 @@ actual neighbor-joining algorithm, i.e. builds a phylogenetic tree from the
 given distance matrix and array of leaves. Returns a node of that tree, from
 which it can be traversed.
 """
-function neighbor_joining_int(
-    dm::Array{Float64,2},
-    leaves::Vector{Node},
-)
+function neighbor_joining_int(dm::Array{Float64,2}, leaves::Vector{Node})
 
     n = size(dm)[1]
     # count for node names
@@ -172,8 +172,8 @@ function neighbor_joining_int(
     while n > 1
         # build Q1 matrix
         q1 = zeros(Float64, n, n)
-        for i = 1:n
-            for j = i+1:n
+        for i in 1:n
+            for j in i+1:n
                 q1[i, j] =
                     q1[j, i] =
                         (n - 2) * dm[i, j] - sum(dm[i, :]) - sum(dm[j, :])
@@ -199,7 +199,7 @@ function neighbor_joining_int(
         next_dm = zeros(Float64, n, n)
         # fill first row and column of next distance matrix
         j = 1
-        for i = 2:n
+        for i in 2:n
             while j == index[1] || j == index[2]
                 j += 1
             end # end while
