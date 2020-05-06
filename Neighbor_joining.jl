@@ -16,7 +16,7 @@ function neighbor_joining(
 )
     n = size(dm)[1]
     if n != size(leaf_names, 1)
-        throw("Distance Matrix and Leaf Names size do not match")
+        throw("Distance Matrix and leaf names array size do not match")
     end # end if
     # build array of leaves from leaf names
     leaves = Array{Node, 1}(undef,size(dm, 1))
