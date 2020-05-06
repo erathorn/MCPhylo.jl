@@ -56,7 +56,7 @@ end
 
 
 function Node(name::String; data::A=ones(3))::Node where A<:AbstractArray
-        Node{Float64,A,Array{Float64},Int64}(name, data ,missing, Vector{Node}(undef, 0), data, 0, true, 0.5, "0", 1, 0.5, nothing, nothing, false)
+        Node{Float64,A,Array{Float64},Int64}(name, data ,missing, Vector{Node}(undef, 0), data, 0, true, 1.0, "0", 1, 0.5, nothing, nothing, false)
 end
 
 
