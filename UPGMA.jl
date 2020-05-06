@@ -55,10 +55,10 @@ which it can be traversed.
 function upgma_int(dm::Array{Float64,2},clusters::Array{Tuple{Node, Float64, Int64},1})
 
     n = size(dm)[1]
+    # count for node names
     count = 1
-
     while true
-
+        # set 0 entries to infinity, to enable use of findmin method
         dm[CartesianIndex.(1:n, 1:n)] .= Inf
         index = findmin(dm)[2]
         first_cluster = clusters[index[2]]
@@ -107,10 +107,3 @@ function upgma_int(dm::Array{Float64,2},clusters::Array{Tuple{Node, Float64, Int
         insert!(clusters, 1, (new_cluster, total_path_length, new_cluster_weight))
     end # end while
 end # end function upgma
-
-distance_matrix = [0.0 17.0 21.0 31.0 23.0;17.0 0.0 30.0 34.0 21.0;21.0 30.0 0.0 28.0 39.0;31.0 34.0 28.0 0.0 43.0;23.0 21.0 39.0 43.0 0.0]
-leaves_list = ["a","b","c","d","e"]
-tree = upgma(distance_matrix, leaves_list)
-f = open("newick_output.nwk", "w")
-println(f, newick(tree))
-close(f)
