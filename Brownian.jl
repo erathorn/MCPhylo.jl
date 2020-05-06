@@ -45,11 +45,11 @@ my_data = Dict{Symbol, Any}(
 model =  Model(
     arrn = Stochastic(2,
     (μi, mtree, P, σi, scaler) -> BrownianPhylo(μi, mtree, σi, P, scaler,  my_data[:residuals], my_data[:leaves]),false),
-    μi = Logical(2, (μ)->(ones(my_data[:residuals],my_data[:leaves]) .= μ)', false),
+    μi = Logical(1, (μ) -> ones(size(μ)).= μ),
     μ = Stochastic(1, (μH, σH) -> Normal(μH, σH), false),
     μH = Stochastic(()->Normal()),
     σH = Stochastic(()->Exponential()),
-    P = Stochastic(2, ()  -> Normal(),false),
+    P = Stochastic(1, ()  -> Normal(),false),
     σi = Stochastic(1,(λ) -> Exponential(λ), false),
     scaler = Stochastic(()-> Exponential()),
     λ = Stochastic(() -> Exponential()),
@@ -64,17 +64,18 @@ inits = [Dict{Symbol, Union{Any, Real}}(
     :nnodes => my_data[:nnodes],
     :nl => my_data[:nnodes],
     :nsites => my_data[:residuals],
-    :P => randn(my_data[:leaves], my_data[:residuals]),
+    :P => randn(my_data[:leaves]* my_data[:residuals]),
     :μH => rand(),
     :σH => rand(),
-    :μ => randn(my_data[:residuals]),
+    :μ => randn(my_data[:residuals]*my_data[:leaves]),
     :λ => rand(),
     :σi => ones(my_data[:residuals]),
     :scaler => rand()
     )
     ]
 
-scheme = [PNUTS(:mtree),
+scheme = [RWM(:mtree, 1),
+          Slice(:mtree, 0.05, Multivariate),
           Slice(:P, 0.1, Univariate),
           Slice([:σi,:σH], 0.05, Multivariate),
           Slice([:μH ,:scaler, :λ], 0.05, Multivariate)
