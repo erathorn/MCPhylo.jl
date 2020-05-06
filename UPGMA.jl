@@ -76,6 +76,8 @@ function upgma_int(dm::Array{Float64,2},clusters::Array{Tuple{Node, Float64, Int
         # return (root) node when algorithm is finished
         n -= 1
         if n == 1
+            set_binary!(new_node)
+            number_nodes!(new_node)
             return new_cluster
         end
         # initalize cluster weights
