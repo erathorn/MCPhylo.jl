@@ -1,30 +1,21 @@
 include("../MCPhylo.jl")
 using ..MCPhylo
 
-# using .MCPhylo #  ==> depending on the level of embeding
-
-
 
 """
     load_newick(filename::String)
 
-This function loads a newick from file
+This function loads all tree representations from a file
 """
-# rn it assumed that there are no extra line breaks (\n\n) and there is only one tree pro file. That should be fixed.
 
 function load_newick(filename::String)
-    """
-    let this function always return a list of strings.
 
-    if there is more than one tree in the file, the newick parser can just return
-    a list of trees.
-
-    """
     open(filename, "r") do file
         global content = readlines(file)
     end
-    content[1]
+    split(content,'\n')
 end
+
 
 """
     is_valid_newick_string(newick::String)
@@ -61,16 +52,7 @@ This function parses two optional elements of the tree, name and length. In case
 """
 
 function parse_name_length(newick::String)
-    """
-    always do split(newick, ":"), there is no error if ":" does not occur, it
-    will just return an array containing the newick string
-
-    r = split("", ":")
-    r
-    > [""]
-
-    This streamlines the function
-    """
+    
     if occursin(':',newick)
         name, len = split(strip(newick),':')
         if name == ""
@@ -154,13 +136,9 @@ function parsing_newick_string(newick::String)
             current_node.name = name
             current_node.inc_length = len
         end #else
-
         return current_node
     end #recursion part
-    return nothing #if this happens something went wrong, could do exception handling and whatnot eventually, possible #TODO
-    """
-    exceptions in julia are raised using the "throw()" command.
-    """
+    throw("You left recursion somehow.")
 end #function
 
 
@@ -171,10 +149,16 @@ end #function
 This function parses a Newick file
 """
 function ParseNewick(filename::String)
-    content = load_newick(filename)
-    println(typeof(content))
-    if !is_valid_newick_string(content)
-        throw("$filename is not a Newick file!")
-    end # if
-    newick(parsing_newick_string(string(content)))
+    list_of_trees = load_newick(filename)
+    list_of_newicks = Any[]
+    for content in list_of_trees[1]
+        if content == ""
+            continue
+        end # if
+        if !is_valid_newick_string(content)
+            throw("$content is not correctly formatted!")
+        end # if
+        push!(list_of_newicks,newick(parsing_newick_string(string(content))))
+    end # for
+    list_of_newicks
 end
