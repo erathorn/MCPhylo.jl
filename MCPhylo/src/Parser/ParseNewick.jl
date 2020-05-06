@@ -81,11 +81,11 @@ function parsing_newick_string(newick::String)
     The comming PR of the Neighbor Joining branch contains cleaner node constructors
     use them later on
     """
-    if newick[end] == ';' #no need for semicolon
+    if  newick[end] == ';' #no need for semicolon
         newick = chop(newick)
     end #if
 
-    if newick[1] != ')' && occursin(r"^[a-zA-Z]+[:]?[0-9]*",newick)
+    if  newick[1] != ')' && occursin(r"^[a-zA-Z]+[:]?[0-9]*",newick)
         leaf_node = Node()
         name,len = parse_name_length(newick)
         leaf_node.name = name
@@ -104,23 +104,24 @@ function parsing_newick_string(newick::String)
         move this for loop into a separate function
          -> easier maintainance
         """
-        child_list = []
-        counter = ""
-        bracket_depth = 0
-        for x in (childrenstring * ",") # splits string identified above into a list, where each element corresponds to a child of current_node
-            if x == ',' && bracket_depth == 0
-                push!(child_list,counter)
-                counter = ""
-                continue
-            end #if
-            if x == '('
-                bracket_depth += 1
-            end #if
-            if x == ')'
-                bracket_depth -= 1
-            end #if
-            counter = counter * x
-        end #for
+        child_list = Sibling_parse(String(childrenstring))
+        # child_list = []
+        # counter = ""
+        # bracket_depth = 0
+        # for x in (childrenstring * ",") # splits string identified above into a list, where each element corresponds to a child of current_node
+        #     if x == ',' && bracket_depth == 0
+        #         push!(child_list,counter)
+        #         counter = ""
+        #         continue
+        #     end #if
+        #     if x == '('
+        #         bracket_depth += 1
+        #     end #if
+        #     if x == ')'
+        #         bracket_depth -= 1
+        #     end #if
+        #     counter = counter * x
+        # end #for
 
         for x in child_list #recursion happens here
             add_child!(current_node,parsing_newick_string(x))
@@ -141,6 +142,26 @@ function parsing_newick_string(newick::String)
     throw("You left recursion somehow.")
 end #function
 
+function Sibling_parse(childrenstring::String) #returns list of children of a node
+    child_list = []
+    counter = ""
+    bracket_depth = 0
+    for x in (childrenstring * ",") # splits string identified above into a list, where each element corresponds to a child of current_node
+        if x == ',' && bracket_depth == 0
+            push!(child_list,counter)
+            counter = ""
+            continue
+        end #if
+        if x == '('
+            bracket_depth += 1
+        end #if
+        if x == ')'
+            bracket_depth -= 1
+        end #if
+        counter = counter * x
+    end #for
+    return child_list
+end #function
 
 
 """
@@ -163,4 +184,5 @@ function ParseNewick(filename::String)
     list_of_newicks
 end
 
-println(ParseNewick("tree2.nwk"))
+#println(ParseNewick("tree2.nwk"))
+println(parsing_newick_string("(A,B)C"))
