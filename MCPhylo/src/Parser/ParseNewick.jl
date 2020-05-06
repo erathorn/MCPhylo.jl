@@ -1,5 +1,5 @@
 include("../MCPhylo.jl")
-using ..MCPhylo
+using ..MCPhylo: Node, newick, add_child!
 
 
 """
@@ -52,7 +52,7 @@ This function parses two optional elements of the tree, name and length. In case
 """
 
 function parse_name_length(newick::String)
-    
+
     if occursin(':',newick)
         name, len = split(strip(newick),':')
         if name == ""
@@ -162,3 +162,5 @@ function ParseNewick(filename::String)
     end # for
     list_of_newicks
 end
+
+println(ParseNewick("tree2.nwk"))
