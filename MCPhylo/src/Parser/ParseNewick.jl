@@ -1,7 +1,3 @@
-include("../MCPhylo.jl")
-using ..MCPhylo: Node, newick, add_child!
-
-
 """
     load_newick(filename::String)
 
@@ -74,7 +70,11 @@ function parse_name_length(newick::String)
     end #if-else
 end # function
 
+"""
+    parsing_newick_string(newick::String)
 
+In this function main parsing process happens, it uses recursive method to parse newick formated string
+"""
 
 function parsing_newick_string(newick::String)
 
@@ -141,8 +141,9 @@ end #function
 """
     ParseNewick(filename::String)
 
-This function parses a Newick file
+This is the main function, which parses a file, containing Newick strings. 
 """
+
 function ParseNewick(filename::String)
     list_of_trees = load_newick(filename)
     list_of_newicks = Any[]
