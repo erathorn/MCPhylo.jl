@@ -141,12 +141,12 @@ end #function
 """
     ParseNewick(filename::String)
 
-This is the main function, which parses a file, containing Newick strings. 
+This is the main function, which parses a file, containing Newick strings.
 """
 
-function ParseNewick(filename::String)
+function ParseNewick(filename::String)::Vector{T} where T<:AbstractNode
     list_of_trees = load_newick(filename)
-    list_of_newicks = Any[]
+    list_of_newicks::Vector{T} = []
     for content in list_of_trees[1]
         if content == ""
             continue
@@ -154,7 +154,10 @@ function ParseNewick(filename::String)
         if !is_valid_newick_string(content)
             throw("$content is not correctly formatted!")
         end # if
-        push!(list_of_newicks,newick(parsing_newick_string(string(content))))
+        tree = parsing_newick_string(string(content))
+        set_binary!(tree)
+        number_nodes!(tree)
+        push!(list_of_newicks,tree)
     end # for
     list_of_newicks
 end
