@@ -1,47 +1,4 @@
 
-
-
-@views function Felsenstein_Recursion(root::N, pi_::T, rates::Vector{Float64}, data::Array{S,3},
-                               n_c::Int64, trmats::Array{Array{S, 2},1},
-                               od_scaler::Array{S, 2})::Tuple{Array{S,2},Array{S,2}}  where {S<:Real, T<:Real, N<:AbstractNode}
-
-
-   if root.nchild == 0
-       return data[:,:,root.num], od_scaler
-   end
-
-   # here happens the intresting stuff
-   child_data::Array{Tuple{Array{S,2},Array{S,2}},1} = Felsenstein_Recursion.(root.children, Ref(pi_), Ref(rates), Ref(data), n_c, Ref(trmats), Ref(od_scaler))
-
-   num_v::Array{Array{S,2},1} = [trmats[node.num] for node in root.children]
-   rv::Array{S,2} = reduce(pointwise_reduce, num_v .* first.(child_data))
-   od_scaler = sum(last.(child_data))
-   if !root.root
-       scaler = Base.maximum(rv, dims=1)
-       od_scaler = od_scaler + log.(scaler)
-       rv = rv ./ scaler
-   end
-   return rv, od_scaler
-
-end
-
-
-function FelsensteinFunction(root::N, pi_::T, rates::Vector{Float64}, data::Array{Float64,3}, n_c::Int64, blv::Array{S})::S where {S<:Real, T<:Real, N<:AbstractNode}
-    r::Float64 = 1.0
-    mu =  1.0 / (2.0 * pi_ * (1-pi_))
-    mml = calc_trans.(blv, pi_, mu, r)
-    od_scaler = zeros(S, 1, n_c)
-
-    rv, od_scaler = Felsenstein_Recursion(root, pi_, rates, data, n_c, mml, od_scaler)
-
-
-    sum(log.(sum(rv .* Array([pi_, 1.0-pi_]), dims=1)) + od_scaler)
-end
-
-
-g_num(node::Node{<:Real,Float64,Float64,<:Integer})::Int64 = node.num
-g_data(node::Node{<:Real,Float64,Float64,<:Integer})::Array{Float64,2} = node.data
-
 """
     FelsensteinFunction(tree_postorder::Vector{Node}, pi::Float64, rates::Vector{Float64}, data::Array{Float64,3}, n_c::Int64)::Float64
 
@@ -70,7 +27,7 @@ function FelsensteinFunction(tree_postorder::Vector{N}, pi_::T, rates::Vector{Fl
         end #if
     end # for
 
-    return likelihood_root(res, pi_, rns)#res
+    return likelihood_root(res, pi_, rns)
 end # function
 
 @inline function likelihood_root(root::Array{A,2}, pi_::S, rns::Array{A,2})::A where {S<:Real, A<:Real}
