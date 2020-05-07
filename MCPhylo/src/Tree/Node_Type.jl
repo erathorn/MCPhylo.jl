@@ -48,8 +48,6 @@ mutable struct Node{T<:Real, A<:Real,B<:Real, I<:Integer} <: AbstractNode
 end # struct Node
 
 
-#const NodeS = Node{Float64,Array{Float64,2},Array{Float64,1},Int64}
-
 function Node()::Node
         Node{Float64,Float64,Float64,Int64}("no_name", ones(3,3), missing,Vector{Node{Float64,Float64,Float64,Int64}}(undef, 0) ,ones(1,3),0,true,0.5,"0",1,0.5,nothing,nothing,false)
 end

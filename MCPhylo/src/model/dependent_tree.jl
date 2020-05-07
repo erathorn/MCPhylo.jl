@@ -22,14 +22,7 @@ end
 
 
 function unlist(root::Node)
-    #y = tree_height(root)
     x = node_height_vec(root)
-    # tester = [n.height for n in get_leaves(root)]
-    # if any(tester .!= 0.0)
-    #     println("never happen")
-    #     println(tester)
-    # end
-    # x = vec([n.height for n in post_order(root) if n.root != true])
     vcat(x, tree_length(root))
 end
 

@@ -17,7 +17,6 @@ using CUDAnative
 using CUDAdrv
 
 using Zygote
-#using ForwardDiff
 using Calculus
 
 import Calculus: gradient
