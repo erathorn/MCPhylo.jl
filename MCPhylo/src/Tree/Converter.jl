@@ -1,5 +1,4 @@
 
-#TODO: Nexus support
 #TODO: Newick parser
 
 """

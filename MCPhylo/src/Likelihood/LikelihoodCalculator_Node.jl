@@ -49,3 +49,16 @@ end
 @inline function bc(node::N, mml::Array{Array{Float64,2},1})::Array{Float64,2} where {N<:Node{<:Real,Float64,Float64,<:Integer}, S<:Real}
     mml[node.num]*node.data
 end
+
+
+function calc_trans(time::Float64, pi_::S, mu::Float64, r::Float64)::Array{Float64,2} where {S<:Real}
+
+    v = exp(-r*time*mu)
+    v1 = pi_ - (pi_ - 1)*v
+    v2 = pi_ - pi_* v
+    v3 = (pi_ - 1)*(v - 1)
+    v4 = pi_*(v - 1) + 1
+    mm::Array{Float64}=[v1 v3;
+                  v2 v4]
+    return mm
+end
