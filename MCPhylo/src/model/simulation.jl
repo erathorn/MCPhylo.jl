@@ -102,7 +102,7 @@ function gradlogpdf!(m::Model, x::Node, block::Integer=0,transform::Bool=false):
   #prior_res =  gradlogpdf(m[params[1]], x)
 
   # likelihood
-  v, grad = gradlogpdf(m[targets[1]]::ArrayStochastic{2})
+  v, grad = gradlogpdf(m[targets[1]])
 
   # get results from threads
   vp, gradp = fetch(prior_res)

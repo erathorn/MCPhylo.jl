@@ -48,6 +48,7 @@ function RWM(params::ElementOrVector{Symbol},
     v = SamplerVariate(block, scale; args...)
     sample!(v, x -> logpdf!(block, x))
     relist(block, v)
+    nothing
   end
   Sampler(params, samplerfx, RWMTune())
 end
@@ -74,7 +75,7 @@ function sample_node!(v::RWMVariate, logf::Function)
   else
     v[1] = tc
   end
-  v  
+  v
 end
 
 function sample_number!(v::RWMVariate, logf::Function)

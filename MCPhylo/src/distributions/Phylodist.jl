@@ -21,22 +21,18 @@ Base.size(d::PhyloDist) = (d.nbase, d.nsites, d.nnodes)
 function logpdf(d::PhyloDist, x::AbstractArray)
 
     mt = post_order(d.my_tree.value)
-
     get_branchlength_vector(d.my_tree.value, d.blv)
-
-
     return FelsensteinFunction(mt, d.mypi, d.rates, x, d.nsites, d.blv)
 end
 
 
 function gradlogpdf(d::PhyloDist, x::AbstractArray)
 
+    blv = get_branchlength_vector(d.my_tree.value)
     mt = post_order(d.my_tree.value)
 
-    get_branchlength_vector(d.my_tree.value, d.blv)
+    f(y) = FelsensteinFunction(mt, d.mypi, d.rates, x, d.nsites, y)
+    r = Zygote.pullback(f, blv)
 
-    f(z,y, a) = FelsensteinFunction(a, z, d.rates, x, d.nsites, y)
-    r = val_der(f, d.mypi, d.blv, mt)
-
-    r[1], r[2][2]
+    r[1], r[2](1.0)[1]
 end

@@ -30,12 +30,12 @@ mutable struct Node_cu{T<:Real, A<:AbstractArray,B<:AbstractArray, I<:Integer} <
  end
 
 
-mutable struct Node{T<:Real, A<:AbstractArray,B<:AbstractArray, I<:Integer} <: AbstractNode
+mutable struct Node{T<:Real, A<:Real,B<:Real, I<:Integer} <: AbstractNode
     name::String
-    data::A
-    mother::Union{Node, Missing}
-    children::Vector{Node}
-    scaler::B
+    data::Array{A,2}
+    mother::Union{Node{T,A,B,I}, Missing}
+    children::Vector{Node{T,A,B,I}}
+    scaler::Array{B,2}
     nchild::I
     root::Bool
     inc_length::T
@@ -48,10 +48,8 @@ mutable struct Node{T<:Real, A<:AbstractArray,B<:AbstractArray, I<:Integer} <: A
 end # struct Node
 
 
-#const NodeS = Node{Float64,Array{Float64,2},Array{Float64,1},Int64}
-
 function Node()::Node
-        Node{Float64,Array{Float64,2},Array{Float64},Int64}("no_name", ones(3,3), missing,Vector{Node}(undef, 0) ,ones(3),0,true,0.5,"0",1,0.5,nothing,nothing,false)
+        Node{Float64,Float64,Float64,Int64}("no_name", ones(3,3), missing,Vector{Node{Float64,Float64,Float64,Int64}}(undef, 0) ,ones(1,3),0,true,0.5,"0",1,0.5,nothing,nothing,false)
 end
 
 
