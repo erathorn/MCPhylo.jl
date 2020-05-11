@@ -310,6 +310,7 @@ include("Tree/Tree_Clustering.jl")
 include("Parser/Parser.jl")
 include("Parser/ParseCSV.jl")
 include("Parser/ParseNexus.jl")
+include("Parser/ParseNewick.jl")
 
 
 include("Sampler/PNUTS.jl")
@@ -462,7 +463,6 @@ export
   mm,
   pt,
   px
-
 
 #################### Deprecated ####################
 
