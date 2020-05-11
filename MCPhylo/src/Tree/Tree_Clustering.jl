@@ -1,7 +1,3 @@
-using Serialization
-include("../MCPhylo.jl")
-using .MCPhylo
-
 """
     upgma(dm::Array{Float64,2}, Array{String,1})
 
