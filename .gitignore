@@ -19,5 +19,5 @@ gputest.jl
 *params*.log
 notes.txt
 untracked_files/
-development*t
+development*.t
 test_cu.jl

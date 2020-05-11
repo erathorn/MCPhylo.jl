@@ -283,26 +283,41 @@ end
 Calculate the height of a node.
 """
 function node_height(root::T)  where T<:AbstractNode
-    for node in post_order(root)
-        if node.nchild == 0
-            node.height = 0
-        else
-            node.height = maximum([child.inc_length+child.height for child in node.children])
+
+    if root.nchild != 0
+        for node in root.children
+            node_height(node)
         end
+        root.height = maximum([child.inc_length+child.height for child in root.children])
+    else
+        root.height = 0.0
     end
 end # function node_height
 
+function node_height_vec(root::T, vec::Vector{N})  where {T<:AbstractNode, N<:Real}
+
+    if root.nchild != 0
+        for node in root.children
+            node_height_vec(node, vec)
+        end
+        root.height = maximum([child.inc_length+child.height for child in root.children])
+    else
+        root.height = 0.0
+    end
+    vec[root.num] = root.height
+end # function node_height
 
 
+function node_height_vec(root::T)::Vector{Float64} where T<:AbstractNode
+    t = zeros(length(post_order(root)))
+    node_height_vec(root, t)
+    t
+end # function node_height
 
-
-function node_distance(node1::T, node2::T, lca::T)::Float64 where T<:AbstractNode
-    path_length(lca, node1)+path_length(lca,node2)
-end
 
 function node_distance(tree::T, node1::T, node2::T)::Float64 where T<:AbstractNode
     lca = find_lca(tree, node1, node2)
-    node_distance(node1, node2, lca)
+    path_length(lca, node1)+path_length(lca,node2)
 end
 
 function get_path(ancestor::T, descendant::T)::Vector{Int64} where T<:AbstractNode
@@ -438,13 +453,14 @@ end # function
 
 Do post order traversal to retrieve a vector of branch lengths.
 """
-function get_branchlength_vector(root::N, out_vec::Vector{T}) where {N<:AbstractNode, T<:Real}
+function get_branchlength_vector(root::N, out_vec::Vector{T})::Nothing where {N<:Node{<:Real,<:Real,<:Real,<:Integer}, T<:Real}
     for child in root.children
         get_branchlength_vector(child, out_vec)
     end
     if !root.root
         out_vec[root.num] = root.inc_length
     end
+    nothing
 end
 
 """

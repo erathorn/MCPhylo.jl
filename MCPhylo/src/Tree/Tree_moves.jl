@@ -12,7 +12,7 @@ The function returns 1 if the move was successfull and 0 else.
 """
 function NNI!(root::T, target::T, lor::Bool)::Int64  where T<:AbstractNode
     # NNI move would be illegal
-    if target.nchild === 0 || target.root
+    if target.nchild == 0 || target.root
         return 0
     end # if
 
@@ -153,3 +153,40 @@ function slide!(node1::T, node2::T, proportion::Float64) where T <:AbstractNode
     node1.inc_length = fp
     node2.inc_length = sp
 end # function slide!
+
+
+### Experimental rerooting
+
+
+
+function reroot(root::T, new_root::String)::T where T<:Node
+
+    new_tree = deepcopy(root)
+    root_node = find_by_name(new_tree, new_root)
+
+    mother = root_node.mother
+
+    recursive_invert(mother, root_node)
+
+    root_node.root = true
+    new_tree.root = false
+
+
+    set_binary!(root_node)
+    number_nodes!(root_node)
+    return root_node
+end
+
+
+function recursive_invert(old_mother::T, old_daughter::T)::T where T
+    if old_mother.root == true
+        # arrived at the root
+        od = remove_child!(old_mother, old_daughter)
+        add_child!(od, old_mother)
+        return od
+    end
+        od1 = recursive_invert(old_mother.mother, old_mother)
+        od = remove_child!(od1, old_daughter)
+        add_child!(od, od1)
+        return od
+end

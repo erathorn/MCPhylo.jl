@@ -1,5 +1,4 @@
 
-#TODO: Nexus support
 #TODO: Newick parser
 
 """
@@ -149,11 +148,11 @@ Calculate the distance matrix over the set of leaves.
 function to_distance_matrix(tree::T)::Array{Float64,2} where T <:AbstractNode
     leaves::Vector{T} = get_leaves(tree)
     ll = length(leaves)
-    covmat = zeros(Float64, ll, ll)
+    distance_mat = zeros(Float64, ll, ll)
     for i in 1:ll
         for j in 1:ll
             if i>j
-                d = node_distance(leaves[i], leaves[j])
+                d = node_distance(tree, leaves[i], leaves[j])
                 distance_mat[i,j] = d
                 distance_mat[j,i] = d
             end # if
@@ -177,14 +176,14 @@ function to_covariance(tree::N, blv::Vector{T})::Array{T,2} where {N<:AbstractNo
     @inbounds for ind = 1:ll, jnd = 1:ind
         itm = leaves[ind]
         if ind == jnd
-            covmat[ind,jnd] = reduce(+, @view blv[get_path(tree, itm)])
+            covmat[ind,jnd] = covmat[ind,jnd] + reduce(+, @view blv[get_path(tree, itm)])
         else
 
             lca = find_lca(tree, itm, leaves[jnd])
             if !lca.root
                 tmp = reduce(+, @view blv[get_path(tree, lca)])
-                covmat[ind,jnd] = tmp
-                covmat[jnd,ind] = tmp
+                covmat[ind,jnd] = covmat[ind,jnd] + tmp
+                covmat[jnd,ind] = covmat[jnd,ind] + tmp
             end # if
         end # if
 
@@ -192,6 +191,33 @@ function to_covariance(tree::N, blv::Vector{T})::Array{T,2} where {N<:AbstractNo
     covmat
 end# function to_covariance
 
+
+function to_covariance_func(tree::N)::Array{Function,2} where {N<: AbstractNode}
+    leaves = get_leaves(tree)
+    ll = length(leaves)
+    covmat = Array{Function, 2}(undef, ll, ll)
+    @inbounds for ind = 1:ll, jnd = 1:ind
+        itm = leaves[ind]
+        if ind == jnd
+            sympath = get_path(tree, itm)
+            covmat[ind,jnd] = y -> sum(y[sympath])
+        else
+
+            lca = find_lca(tree, itm, leaves[jnd])
+            if !lca.root
+                sympath = get_path(tree, lca)
+                covmat[ind,jnd] = y -> sum(y[sympath])
+                covmat[jnd,ind] = y -> covmat[ind,jnd](y)
+            else
+                covmat[ind,jnd] = y -> 0.0
+                covmat[jnd,ind] = y -> 0.0
+            end # if
+
+        end # if
+
+    end # for
+    covmat
+end# function to_covariance
 
 function to_covariance_ultra(tree::Node) where T<: Real
     mv = tree_height(tree)
