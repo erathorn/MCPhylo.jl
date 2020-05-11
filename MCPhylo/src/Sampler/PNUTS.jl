@@ -152,12 +152,9 @@ function nuts_sub!(v::PNUTSVariate, logfgrad::Function)::PNUTSVariate
                   logu0, delta, nl, rescale)
 
     end#if pm
-    #println(xprime)
+
     if sprime && rand() < nprime / n
-        #println(xprime)
         v.value[1] = xprime
-        #println(v.value[1])
-        #println("---")
     end
     j += 1
     n += nprime
@@ -167,7 +164,7 @@ function nuts_sub!(v::PNUTSVariate, logfgrad::Function)::PNUTSVariate
   end
   v.tune.moves += nni
   v
-  #mt, nni, alpha, nalpha
+
 end
 
 
@@ -236,7 +233,7 @@ function ref_NNI(v::T, tmpB::Vector{Float64}, r::Vector{Float64}, epsilon::Float
        rescale && rescale_length(v)
        # use thread parallelism
        res_before = @spawn logfgrad(v, sz, true, false) # still with molified branch length
-       #U_before_nni, _ = logfgrad(v, sz, true, false) # still with molified branch length
+
        v_copy::T = deepcopy(v)
        tmp_NNI_made::Int64 = NNI!(v_copy, ref_index)
 
@@ -251,7 +248,6 @@ function ref_NNI(v::T, tmpB::Vector{Float64}, r::Vector{Float64}, epsilon::Float
             delta_U::Float64 = 2.0*(U_after_nni - U_before_nni)
             my_v::Float64 = r[ref_index]^2
             if my_v > delta_U
-              #println("made")
               nni += tmp_NNI_made
               r[ref_index] = sqrt(my_v - delta_U)
               v = v_copy
@@ -329,9 +325,7 @@ function nouturn(xminus::T, xplus::T,
                 rminus::Vector{Float64}, rplus::Vector{Float64}, gradminus::Vector{Float64}, gradplus::Vector{Float64},
                 epsilon::Float64, logfgrad::Function, delta::Float64, sz::Int64, j::Int64, rescale::Bool)::Bool  where T<:Node
 
-        if j > 10
-          return false
-        end
+
         curr_l, curr_h = BHV_bounds(xminus, xplus)
 
         # use thread parallelism to calculuate both directions at once

@@ -1,9 +1,9 @@
 
 #=
 tester:
-- Julia version: 1.3.0
+- Julia version: 1.3.1
 - Author: erathorn
-- Date: 2019-05-07
+- Date: 2020-05-06
 =#
 
 include("./MCPhylo/src/MCPhylo.jl")
@@ -32,21 +32,19 @@ my_data = Dict{Symbol, Any}(
 
 # model setup
 model =  Model(
-    df = Stochastic(3,
-    (mtree, mypi, rates, nnodes, nbase, nsites) -> PhyloDist(mtree, mypi, rates, nbase, nsites, nnodes), false, false),
-    mypi = Stochastic( () -> Uniform(0,1)),
-    mtree = Stochastic(MCPhylo.Node_ncu(), () -> CompoundDirichlet(1.0,1.0,0.100,1.0), my_data[:nnodes]+1, true),
+    df = Stochastic(3, (mtree, pi, rates, nnodes, nbase, nsites) -> PhyloDist(mtree, pi, rates, nbase, nsites, nnodes), false, false),
+    pi = Logical( (mypi) -> mypi[1], false),
+    mypi = Stochastic(1, () -> Dirichlet(2,1)),
+    mtree = Stochastic(MCPhylo.Node(), () -> CompoundDirichlet(1.0,1.0,0.100,1.0), my_data[:nnodes]+1, true),
     rates = Logical(1,(mymap, av) -> [av[convert(UInt8,i)] for i in mymap],false),
     mymap = Stochastic(1,() -> Categorical([0.25, 0.25, 0.25, 0.25]), false),
     av = Stochastic(1,() -> Dirichlet([1.0, 1.0, 1.0, 1.0]), false)
      )
 
-
-
 # intial model values
 inits = [ Dict{Symbol, Union{Any, Real}}(
     :mtree => mt,
-    :mypi=> rand(),
+    :mypi=> rand(Dirichlet(2, 1)),
     :df => my_data[:df],
     :nnodes => my_data[:nnodes],
     :nbase => my_data[:nbase],
@@ -57,16 +55,17 @@ inits = [ Dict{Symbol, Union{Any, Real}}(
     ]
 
 scheme = [PNUTS(:mtree),
-          Slice(:mypi, 0.05, Univariate)
+          SliceSimplex(:mypi)
           ]
 
 setsamplers!(model, scheme);
 
 # do the mcmc simmulation. if trees=true the trees are stored and can later be
 # flushed ot a file output.
-sim = mcmc(model, my_data, inits, 5000, burnin=3000,thin=5, chains=1, trees=true)
+sim = mcmc(model, my_data, inits, 50, burnin=10,thin=2, chains=1, trees=true)
 
-sim = mcmc(sim, 2000, trees=true)
+# request more runs
+sim = mcmc(sim, 5000, trees=true)
 
 # write the output to a path specified as the second argument
-to_file(sim, "t_Drav_2", 5)
+to_file(sim, "example_run", 5)

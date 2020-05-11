@@ -7,7 +7,7 @@ This function performs a post order traversal through the tree. It is assumed th
 root of the tree. Thus, if `root` is not the root, the subtree defined by the root `root` is
 used for the post order traversal.
 """
-function post_order(root::T, traversal::Vector{T})::Vector{T} where T<:AbstractNode
+function post_order(root::T, traversal::Vector{T})::Vector{T} where T<:Node{<:Real,<:Real,<:Real,<:Integer}
    if root.nchild != 0
         for child in root.children
             post_order(child, traversal)
@@ -44,7 +44,7 @@ function get_leaves(root::T, traversal::Vector{T})::Vector{T} where T<:AbstractN
    else
        push!(traversal, root)
    end # if
-      
+
    return traversal
 end # function post_order_trav
 
@@ -60,7 +60,9 @@ function get_leaves(root::T)::Vector{T} where T<:AbstractNode
     return t
 end # function post_order
 
-
+function get_leaves(root::T) where T<:TreeVariate
+    get_leaves(root.value)
+end # function post_order
 
 
 

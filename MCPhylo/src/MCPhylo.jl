@@ -15,8 +15,8 @@ using CuArrays
 using GPUArrays
 using CUDAnative
 using CUDAdrv
-import Flux
-using ForwardDiff
+
+using Zygote
 using Calculus
 
 import Calculus: gradient
@@ -254,7 +254,6 @@ include("distributions/pdmatdistribution.jl")
 include("distributions/transformdistribution.jl")
 include("distributions/Phylodist.jl")
 include("distributions/TreeConstraints.jl")
-include("distributions/logisticregdist.jl")
 
 include("model/dependent.jl")
 include("model/dependent_tree.jl")

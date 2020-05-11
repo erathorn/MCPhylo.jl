@@ -70,6 +70,25 @@ dot(x) = dot(x, x)
 @inline invlogit(x::Real, λ::Real=1.0) = 1.0 / (exp(-λ*x) + 1.0)
 @inline loginvlogit(x::Real, λ::Real=1.0) = -log(exp(-λ*x)+1.0)
 
+
+function loginvlogitder(x::T, λ::T)::T where T <: Real
+    λ/(exp(λ*x)+1)
+end
+
+function invlogder(x::T, λ::T)::T where T <: Real
+    invlogit(x, λ)*invlogit(-x, λ)
+end
+
+Zygote.@adjoint function invlogit(x::Real, λ::Real)
+    invlogit(x, λ), Δ -> (nothing, invlogder(Δ, λ))
+end
+
+Zygote.@adjoint function loginvlogit(x::Real, λ::Real)
+    loginvlogit(x, λ), Δ -> (nothing, loginvlogitder(Δ, λ))
+end
+
+
+
 ## Csorgo S and Faraway JJ. The exact and asymptotic distributions of the
 ## Cramer-von Mises statistic. Journal of the Royal Statistical Society,
 ## Series B, 58: 221-234, 1996.

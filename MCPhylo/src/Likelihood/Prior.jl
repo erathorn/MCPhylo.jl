@@ -57,17 +57,12 @@ function gradlogpdf(d::CompoundDirichlet, x::Node)
     int_ext = internal_external(x)
     blv = get_branchlength_vector(x)
 
+    f(y) =  internal_logpdf(d, y, int_ext)
 
-    g(mt) = internal_logpdf(d, mt, int_ext)
 
-    r = val_der(g, blv)
+    r = Zygote.pullback(f, blv)
 
-    r[1], r[2][1]
-end
-
-function val_der(f, y...)
-    gs1 = Flux.pullback(f, y...)
-    gs1[1], gs1[2](1.0)
+    r[1],r[2](1.0)[1]
 end
 
 
@@ -77,7 +72,7 @@ end # function _logpdf
 
 function insupport(d::CompoundDirichlet, x::Node)
     bl = get_branchlength_vector(x)
-    all(isfinite.(bl)) && all(0.0 .<= bl) && topological(x, d.constraints) && !any(isnan.(bl))
+    all(isfinite.(bl)) && all(0.0 .< bl) && topological(x, d.constraints) && !any(isnan.(bl))
 end # function insupport
 
 
@@ -112,9 +107,8 @@ end # function insupport
 function gradlogpdf(d::exponentialBL, x::Node)
     bl = get_branchlength_vector(x)
     g(y) = sum(logpdf.(Exponential(d.scale), y))
-    r = val_der(g, bl)
-
-    r[1], r[2][1]
+    r = Zygote.pullback(g, bl)
+    r[1],r[2](1.0)[1]
 end
 
 

@@ -18,3 +18,7 @@ rt.jl
 gputest.jl
 *params*.log
 notes.txt
+untracked_files/
+test_newick.jl
+development*.t
+test_cu.jl
