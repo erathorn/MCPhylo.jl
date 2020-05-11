@@ -144,9 +144,9 @@ end #function
 This is the main function, which parses a file, containing Newick strings.
 """
 
-function ParseNewick(filename::String)::Vector{T} where T<:AbstractNode
+function ParseNewick(filename::String)
     list_of_trees = load_newick(filename)
-    list_of_newicks::Vector{T} = []
+    list_of_newicks = []
     for content in list_of_trees[1]
         if content == ""
             continue
