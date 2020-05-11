@@ -52,8 +52,9 @@ function Node()::Node
         Node{Float64,Float64,Float64,Int64}("no_name", ones(3,3), missing,Vector{Node{Float64,Float64,Float64,Int64}}(undef, 0) ,ones(1,3),0,true,0.5,"0",1,0.5,nothing,nothing,false)
 end
 
-function Node(name::String; data::Array{A,2})::Node where A<:Real
-        Node{Float64,A,Float64,Int64}(name, data ,missing, Vector{Node{Float64,A,Float64,Int64}}(undef, 0), ones(3,1), 0, true, 0.5, "0", 1, 0.5, nothing, nothing, false)
+
+function Node(name::String; data::A=ones(3))::Node where A<:AbstractArray
+        Node{Float64,A,Array{Float64},Int64}(name, data ,missing, Vector{Node}(undef, 0), data, 0, true, 1.0, "0", 1, 0.5, nothing, nothing, false)
 end
 
 
