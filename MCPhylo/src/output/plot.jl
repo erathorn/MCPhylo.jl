@@ -105,6 +105,10 @@ function barplot(c::AbstractChains; legend::Bool=false,
                  position::Symbol=:stack, na...)
   nrows, nvars, nchains = size(c.value)
   plots = Array{Plot}(undef, nvars)
+
+  # new list initialization
+  plots = Array{Plots.Plot}(undef, nvars)
+
   pos = legend ? :right : :none
   for i in 1:nvars
     S = unique(c.value[:, i, :])
@@ -127,6 +131,14 @@ function barplot(c::AbstractChains; legend::Bool=false,
                     Guide.ylabel("Density", orientation=:vertical),
                     Guide.title(c.names[i]), Theme(key_position=pos),
                     Scale.y_continuous(minvalue=0.0, maxvalue=ymax))
+
+    # new plot creation block, based on StatsPlots with a GR backend
+    plots[i] = StatsPlots.groupedbar(vec(x),vec(y), bar_position = position,
+                                     group=repeat(chain,inner=[4]),
+                                     legendtitle="Chain", xlabel = "Value",
+                                     ylabel = "Density", title=c.names[i],
+                                     legend = pos, ylims=(0.0, ymax),
+                                     background_color=:black, gridalpha=1)
   end
   return plots
 end
