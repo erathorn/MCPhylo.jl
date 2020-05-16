@@ -32,12 +32,9 @@ function create_csvdf(filecontent::Array{String}, separator::AbstractString=",")
     for line in filecontent
         splitline = split(line,separator)
         push!(language,splitline[1])
-        lang_info = splitline[2:end]
-        push!(data,lang_info)
+        push!(data,splitline[2:end])
     end #for
-    df = DataFrame()
-    df.A = language
-    df.B = data
+    df = DataFrame(Language = language,Data = data)
     return df
 
     """
@@ -51,5 +48,6 @@ function create_csvdf(filecontent::Array{String}, separator::AbstractString=",")
     #end # while
     #return df
 
-
 end # function create_csvdf
+
+println(ParseCSV("test_data.csv"))
