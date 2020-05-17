@@ -120,7 +120,7 @@ function barplot(c::AbstractChains; legend::Bool=false,
   plots = Array{Plot}(undef, nvars)
 
   # new list initialization
-  plots = Array{Plots.Plot}(undef, nvars)
+  plots2 = Array{Plots.Plot}(undef, nvars)
 
   pos = legend ? :right : :none
   for i in 1:nvars
@@ -146,12 +146,13 @@ function barplot(c::AbstractChains; legend::Bool=false,
                     Scale.y_continuous(minvalue=0.0, maxvalue=ymax))
 
     # new plot creation block, based on StatsPlots with a GR backend
-    plots[i] = StatsPlots.groupedbar(vec(x),vec(y), bar_position = position,
+    plots2[i] = StatsPlots.groupedbar(vec(x),vec(y), bar_position = position,
                                      group=repeat(chain,inner=[4]),
                                      legendtitle="Chain", xlabel = "Value",
                                      ylabel = "Density", title=c.names[i],
                                      legend = pos, ylims=(0.0, ymax),
-                                     background_color=:black, gridalpha=1)
+                                     background_color=:black,
+                                     gridalpha=0.5, grid=:dash)
   end
   return plots
 end
@@ -159,6 +160,10 @@ end
 function contourplot(c::AbstractChains; bins::Integer=100, na...)
   nrows, nvars, nchains = size(c.value)
   plots = Plot[]
+
+  # new list initialization
+  plots2 = Plots.Plot[]
+
   offset = 1e4 * eps()
   n = nrows * nchains
   for i in 1:(nvars - 1)
@@ -185,7 +190,7 @@ function contourplot(c::AbstractChains; bins::Integer=100, na...)
       p = Plots.plot(mx, my, density, seriestype=:contour,
                      colorbar_title="Density", xlabel=c.names[i],
                      ylabel=c.names[i], background_color=:black)
-      push!(plots, p)
+      push!(plots2, p)
     end
   end
   return plots
@@ -195,6 +200,10 @@ function densityplot(c::AbstractChains; legend::Bool=false,
                      trim::Tuple{Real, Real}=(0.025, 0.975), na...)
   nrows, nvars, nchains = size(c.value)
   plots = Array{Plot}(undef, nvars)
+
+  # new list initialization
+  plots2 = Array{Plots.Plot}(undef, nvars)
+
   pos = legend ? :right : :none
   for i in 1:nvars
     val = Array{Vector{Float64}}(undef, nchains)
@@ -208,6 +217,12 @@ function densityplot(c::AbstractChains; legend::Bool=false,
                     Guide.xlabel("Value", orientation=:horizontal),
                     Guide.ylabel("Density", orientation=:vertical),
                     Guide.title(c.names[i]), Theme(key_position=pos))
+
+    plots2[i] = StatsPlots.plot([val...;], seriestype=:density,
+                     group=repeat(c.chains, inner=[length(c.range)]),
+                     legendtitle="Chain", xlabel="Value", ylabel="Density",
+                     title=c.names[i], legend=pos, ylims=(0.0, +Inf),
+                     background_color=:black, gridalpha=0.5, grid=:dash)
   end
   return plots
 end
