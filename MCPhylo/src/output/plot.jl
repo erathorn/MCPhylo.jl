@@ -85,6 +85,10 @@ function autocorplot(c::AbstractChains;
                      legend::Bool=false, na...)
   nrows, nvars, nchains = size(c.value)
   plots = Array{Plot}(undef, nvars)
+
+  # new list initialization
+  plots = Array{Plots.Plot}(undef, nvars)
+
   pos = legend ? :right : :none
   lags = 0:maxlag
   ac = autocor(c, lags=collect(lags))
@@ -97,6 +101,15 @@ function autocorplot(c::AbstractChains;
                     Guide.xlabel("Lag", orientation=:horizontal),
                     Guide.ylabel("Autocorrelation", orientation=:vertical),
                     Guide.title(c.names[i]), Theme(key_position=pos))
+
+    # new plot creation block, based on Plots with a GR backend
+    plots[i] = plot(repeat(collect(lags * step(c)), outer=[nchains]),
+                    vec(ac.value[i,:,:]), seriestype=:line,
+                    group=repeat(chain,inner=[length(lags)]),
+                    legendtitle="Chain", xlabel = "Lag",
+                    ylabel = "Autocorrelation", title=c.names[i],
+                    legend = pos, xlims=(0.0, +Inf),
+                    background_color=:black, grid=:dash; gridalpha=1)
   end
   return plots
 end
