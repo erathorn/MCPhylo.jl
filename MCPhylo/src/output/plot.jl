@@ -180,6 +180,12 @@ function contourplot(c::AbstractChains; bins::Integer=100, na...)
                Guide.xlabel(c.names[i], orientation=:horizontal),
                Guide.ylabel(c.names[j], orientation=:vertical))
       push!(plots, p)
+
+      # new plot creation block, based on StatsPlots with a GR backend
+      p = Plots.plot(mx, my, density, seriestype=:contour,
+                     colorbar_title="Density", xlabel=c.names[i],
+                     ylabel=c.names[i], background_color=:black)
+      push!(plots, p)
     end
   end
   return plots
