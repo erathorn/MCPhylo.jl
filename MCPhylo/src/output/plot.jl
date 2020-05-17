@@ -105,11 +105,11 @@ function autocorplot(c::AbstractChains;
     # new plot creation block, based on Plots with a GR backend
     plots[i] = plot(repeat(collect(lags * step(c)), outer=[nchains]),
                     vec(ac.value[i,:,:]), seriestype=:line,
-                    group=repeat(chain,inner=[length(lags)]),
+                    group=repeat(c.chains, inner=[length(lags)]),
                     legendtitle="Chain", xlabel = "Lag",
                     ylabel = "Autocorrelation", title=c.names[i],
-                    legend = pos, xlims=(0.0, +Inf),
-                    background_color=:black, grid=:dash; gridalpha=1)
+                    legend = pos, xlims=(0, +Inf),
+                    background_color=:black, grid=:dash; gridalpha=0.5)
   end
   return plots
 end
@@ -152,7 +152,7 @@ function barplot(c::AbstractChains; legend::Bool=false,
                                      ylabel = "Density", title=c.names[i],
                                      legend = pos, ylims=(0.0, ymax),
                                      background_color=:black,
-                                     gridalpha=0.5, grid=:dash)
+                                     grid=:dash, gridalpha=0.5)
   end
   return plots
 end
@@ -186,7 +186,7 @@ function contourplot(c::AbstractChains; bins::Integer=100, na...)
                Guide.ylabel(c.names[j], orientation=:vertical))
       push!(plots, p)
 
-      # new plot creation block, based on StatsPlots with a GR backend
+      # new plot creation block, based on Plots with a GR backend
       p = Plots.plot(mx, my, density, seriestype=:contour,
                      colorbar_title="Density", xlabel=c.names[i],
                      ylabel=c.names[i], background_color=:black)
@@ -218,11 +218,12 @@ function densityplot(c::AbstractChains; legend::Bool=false,
                     Guide.ylabel("Density", orientation=:vertical),
                     Guide.title(c.names[i]), Theme(key_position=pos))
 
+    # new plot creation block, based on StatsPlots with a GR backend
     plots2[i] = StatsPlots.plot([val...;], seriestype=:density,
                      group=repeat(c.chains, inner=[length(c.range)]),
                      legendtitle="Chain", xlabel="Value", ylabel="Density",
                      title=c.names[i], legend=pos, ylims=(0.0, +Inf),
-                     background_color=:black, gridalpha=0.5, grid=:dash)
+                     background_color=:black, grid=:dash, gridalpha=0.5)
   end
   return plots
 end
@@ -230,6 +231,10 @@ end
 function meanplot(c::AbstractChains; legend::Bool=false, na...)
   nrows, nvars, nchains = size(c.value)
   plots = Array{Plot}(undef, nvars)
+
+  # new list initialization
+  plots2 = Array{Plots.Plot}(undef, nvars)
+
   pos = legend ? :right : :none
   val = cummean(c.value)
   for i in 1:nvars
@@ -241,6 +246,15 @@ function meanplot(c::AbstractChains; legend::Bool=false, na...)
                     Guide.xlabel("Iteration", orientation=:horizontal),
                     Guide.ylabel("Mean", orientation=:vertical),
                     Guide.title(c.names[i]), Theme(key_position=pos))
+
+     # new plot creation block, based on Plots with a GR backend
+    plots2[i] = plot(repeat(collect(c.range), outer=[nchains]),
+                    vec(val[:, i, :]), seriestype=:line,
+                    group=repeat(c.chains, inner=[length(c.range)]),
+                    legendtitle="Chain", xlabel = "Iteration",
+                    ylabel = "Mean", title=c.names[i],
+                    legend = pos, background_color=:black,
+                    grid=:dash, gridalpha=0.5)
   end
   return plots
 end
