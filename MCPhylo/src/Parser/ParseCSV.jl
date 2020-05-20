@@ -36,18 +36,4 @@ function create_csvdf(filecontent::Array{String}, separator::AbstractString=",")
     end #for
     df = DataFrame(Language = language,Data = data)
     return df
-
-    """
-    previous method
-    """
-    #df = DataFrame(Language = String, Data = String[])
-    # while !isempty(filecontent)
-    #     line = popfirst!(filecontent)
-    #     line = rsplit(line,'_')
-    #     push!(df, Dict(:Language => string(line[1]), :Data => line[2]))
-    #end # while
-    #return df
-
 end # function create_csvdf
-
-println(ParseCSV("test_data.csv"))
