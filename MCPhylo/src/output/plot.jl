@@ -262,15 +262,27 @@ end
 function mixeddensityplot(c::AbstractChains;
                           barbounds::Tuple{Real, Real}=(0, Inf), args...)
   plots = Array{Plot}(undef, size(c, 2))
+
+  # new list initialization
+  plots2 = Array{Plots.Plot}(undef, size(c, 2))
+
   discrete = indiscretesupport(c, barbounds)
   plots[discrete] = plot(c[:, discrete, :], :bar; args...)
   plots[.!discrete] = plot(c[:, .!discrete, :], :density; args...)
+
+  plots2[discrete] = plot(c[:, discrete, :], :bar; args...)
+  plots2[.!discrete] = plot(c[:, .!discrete, :], :density; args...)
+  
   return plots
 end
 
 function traceplot(c::AbstractChains; legend::Bool=false, na...)
   nrows, nvars, nchains = size(c.value)
   plots = Array{Plot}(undef, nvars)
+
+  # new list initialization
+  plots2 = Array{Plots.Plot}(undef, nvars)
+
   pos = legend ? :right : :none
   for i in 1:nvars
     plots[i] = plot(y=vec(c.value[:, i, :]),
@@ -281,6 +293,14 @@ function traceplot(c::AbstractChains; legend::Bool=false, na...)
                     Guide.xlabel("Iteration", orientation=:horizontal),
                     Guide.ylabel("Value", orientation=:vertical),
                     Guide.title(c.names[i]), Theme(key_position=pos))
-  end
+
+    plots2[i] = plot(repeat(collect(c.range), outer=[nchains]),
+                    vec(c.value[:, i, :]), seriestype=:line,
+                    group=repeat(c.chains, inner=[length(c.range)]),
+                    legendtitle="Chain", xlabel = "Iteration",
+                    ylabel = "Value", title=c.names[i],
+                    legend = pos, widen=false,
+                    background_color=:black, grid=:dash, gridalpha=0.5m)
+end
   return plots
 end
