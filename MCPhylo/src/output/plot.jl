@@ -5,7 +5,7 @@
 function draw(p::Array{Plot}; fmt::Symbol=:svg, filename::AbstractString="",
               width::MeasureOrNumber=8inch, height::MeasureOrNumber=8inch,
               nrow::Integer=3, ncol::Integer=2, byrow::Bool=true,
-              ask::Bool=true)
+              ask::Bool=true, theme::Symbol=:solarized_light)
 
   fmt in [:pdf, :pgf, :png, :ps, :svg] ||
     throw(ArgumentError("unsupported draw format $fmt"))
@@ -24,6 +24,11 @@ function draw(p::Array{Plot}; fmt::Symbol=:svg, filename::AbstractString="",
   np = ceil(Int, ps / pp)        ## number of pages
 
   mat = Array{Context}(undef, pp)
+
+  mat2 = Array{Plots.Plot}(undef, pp)
+  # set theme for plots
+  theme(theme)
+
   for page in 1:np
     if ask && page > 1 && !addextension
       println("Press ENTER to draw next plot")
@@ -43,14 +48,26 @@ function draw(p::Array{Plot}; fmt::Symbol=:svg, filename::AbstractString="",
     for j in 1:pp
       if j <= nrem
         mat[j] = render(p[(page - 1) * pp + j])
+
+        # store all plots for the page in an array
+        mat2[j] = p[(page -1) * pp + j])
+
       else
         mat[j] = context()
+
+        # invisible empty plot
+        mat2[j] = plot(showaxis=:false, grid=:false)
       end
     end
     result = byrow ? permutedims(reshape(mat, ncol, nrow), [2, 1]) :
                      reshape(mat, nrow, ncol)
 
     draw(img, gridstack(result))
+
+    # draw plot and save to file
+    Plots.plot(mat2..., layout=(nrow,ncol), widen=false,
+               guidefontsize=8, titlefontsize=10)
+    savefig(fname)
   end
 
 end
@@ -272,7 +289,7 @@ function mixeddensityplot(c::AbstractChains;
 
   plots2[discrete] = plot(c[:, discrete, :], :bar; args...)
   plots2[.!discrete] = plot(c[:, .!discrete, :], :density; args...)
-  
+
   return plots
 end
 
@@ -300,7 +317,7 @@ function traceplot(c::AbstractChains; legend::Bool=false, na...)
                     legendtitle="Chain", xlabel = "Iteration",
                     ylabel = "Value", title=c.names[i],
                     legend = pos, widen=false,
-                    background_color=:black, grid=:dash, gridalpha=0.5m)
+                    background_color=:black, grid=:dash, gridalpha=0.5)
 end
   return plots
 end
