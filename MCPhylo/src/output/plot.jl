@@ -1,9 +1,10 @@
 #################### Posterior Plots ####################
 
 #################### Generic Methods ####################
+using Plots
+using StatsPlots
 
-function draw(p::Array{Plot}; fmt::Symbol=:svg, filename::AbstractString="",
-              width::MeasureOrNumber=8inch, height::MeasureOrNumber=8inch,
+function draw(p::Array{Plots.Plot}; fmt::Symbol=:svg, filename::AbstractString="",
               nrow::Integer=3, ncol::Integer=2, byrow::Bool=true,
               ask::Bool=true, theme::Symbol=:solarized_light)
 
@@ -17,15 +18,12 @@ function draw(p::Array{Plot}; fmt::Symbol=:svg, filename::AbstractString="",
 
   isexternalfile = length(filename) > 0
   addextension = isexternalfile && something(findfirst(isequal('.'), filename), 0) == 0
-  args = (width, height)
 
   pp = nrow * ncol               ## plots per page
   ps = length(p)                 ## number of plots
   np = ceil(Int, ps / pp)        ## number of pages
 
-  mat = Array{Context}(undef, pp)
-
-  mat2 = Array{Plots.Plot}(undef, pp)
+  mat = Array{Plots.Plot}(undef, pp)
   # set theme for plots
   theme(theme)
 
@@ -40,29 +38,21 @@ function draw(p::Array{Plot}; fmt::Symbol=:svg, filename::AbstractString="",
       if addextension
         fname = string(fname, '-', page, '.', fmt)
       end
-      args = (fname, width, height)
     end
-    img = f(args...)
 
     nrem = ps - (page - 1) * pp
     for j in 1:pp
       if j <= nrem
-        mat[j] = render(p[(page - 1) * pp + j])
-
         # store all plots for the page in an array
-        mat2[j] = p[(page -1) * pp + j])
+        mat[j] = p[(page -1) * pp + j]
 
       else
-        mat[j] = context()
-
         # invisible empty plot
-        mat2[j] = plot(showaxis=:false, grid=:false)
+        mat[j] = Plots.plot(showaxis=:false, grid=:false)
       end
     end
     result = byrow ? permutedims(reshape(mat, ncol, nrow), [2, 1]) :
                      reshape(mat, nrow, ncol)
-
-    draw(img, gridstack(result))
 
     # draw plot and save to file
     Plots.plot(mat2..., layout=(nrow,ncol), widen=false,
@@ -72,18 +62,18 @@ function draw(p::Array{Plot}; fmt::Symbol=:svg, filename::AbstractString="",
 
 end
 
-function plot(c::AbstractChains, ptype::Vector{Symbol}=[:trace, :density];
+function plotMC(c::AbstractChains, ptype::Vector{Symbol}=[:trace, :density];
               legend::Bool=false, args...)
   n = length(ptype)
   p = Array{Plot}(undef, n, size(c, 2))
   for i in 1:n
     showlegend = legend && i == n
-    p[i, :] = plot(c, ptype[i]; legend=showlegend, args...)
+    p[i, :] = plot_MC(c, ptype[i]; legend=legend, args...)
   end
   p
 end
 
-function plot(c::AbstractChains, ptype::Symbol; legend::Bool=false, args...)
+function plotMC(c::AbstractChains, ptype::Symbol; legend::Bool=false, args...)
   ptype == :autocor      ? autocorplot(c; legend=legend, args...) :
   ptype == :bar          ? barplot(c; legend=legend, args...) :
   ptype == :contour      ? contourplot(c; args...) :
@@ -110,17 +100,9 @@ function autocorplot(c::AbstractChains;
   lags = 0:maxlag
   ac = autocor(c, lags=collect(lags))
   for i in 1:nvars
-    plots[i] = plot(y=vec(ac.value[i, :, :]),
-                    x=repeat(collect(lags * step(c)), outer=[nchains]),
-                    Geom.line(),
-                    color=repeat(c.chains, inner=[length(lags)]),
-                    Scale.color_discrete(), Guide.colorkey(title="Chain"),
-                    Guide.xlabel("Lag", orientation=:horizontal),
-                    Guide.ylabel("Autocorrelation", orientation=:vertical),
-                    Guide.title(c.names[i]), Theme(key_position=pos))
 
     # new plot creation block, based on Plots with a GR backend
-    plots[i] = plot(repeat(collect(lags * step(c)), outer=[nchains]),
+    plots[i] = Plots.plot(repeat(collect(lags * step(c)), outer=[nchains]),
                     vec(ac.value[i,:,:]), seriestype=:line,
                     group=repeat(c.chains, inner=[length(lags)]),
                     legendtitle="Chain", xlabel = "Lag",
@@ -134,10 +116,7 @@ end
 function barplot(c::AbstractChains; legend::Bool=false,
                  position::Symbol=:stack, na...)
   nrows, nvars, nchains = size(c.value)
-  plots = Array{Plot}(undef, nvars)
-
-  # new list initialization
-  plots2 = Array{Plots.Plot}(undef, nvars)
+  plots = Array{Plots.Plot}(undef, nvars)
 
   pos = legend ? :right : :none
   for i in 1:nvars
@@ -154,16 +133,8 @@ function barplot(c::AbstractChains; legend::Bool=false,
       end
     end
     ymax = maximum(position == :stack ? mapslices(sum, y, dims=2) : y)
-    plots[i] = plot(x=vec(x), y=vec(y), Geom.bar(position=position),
-                    color=repeat(c.chains, inner=[n]),
-                    Scale.color_discrete(), Guide.colorkey(title="Chain"),
-                    Guide.xlabel("Value", orientation=:horizontal),
-                    Guide.ylabel("Density", orientation=:vertical),
-                    Guide.title(c.names[i]), Theme(key_position=pos),
-                    Scale.y_continuous(minvalue=0.0, maxvalue=ymax))
-
     # new plot creation block, based on StatsPlots with a GR backend
-    plots2[i] = StatsPlots.groupedbar(vec(x),vec(y), bar_position = position,
+    plots[i] = StatsPlots.groupedbar(vec(x),vec(y), bar_position = position,
                                      group=repeat(chain,inner=[4]),
                                      legendtitle="Chain", xlabel = "Value",
                                      ylabel = "Density", title=c.names[i],
@@ -176,10 +147,8 @@ end
 
 function contourplot(c::AbstractChains; bins::Integer=100, na...)
   nrows, nvars, nchains = size(c.value)
-  plots = Plot[]
-
   # new list initialization
-  plots2 = Plots.Plot[]
+  plots = Plots.Plot[]
 
   offset = 1e4 * eps()
   n = nrows * nchains
@@ -197,17 +166,12 @@ function contourplot(c::AbstractChains; bins::Integer=100, na...)
       for k in 1:n
         density[idx[k], idy[k]] += 1.0 / n
       end
-      p = plot(x=mx, y=my, z=density, Geom.contour(),
-               Guide.colorkey(title="Density"),
-               Guide.xlabel(c.names[i], orientation=:horizontal),
-               Guide.ylabel(c.names[j], orientation=:vertical))
-      push!(plots, p)
 
       # new plot creation block, based on Plots with a GR backend
       p = Plots.plot(mx, my, density, seriestype=:contour,
                      colorbar_title="Density", xlabel=c.names[i],
                      ylabel=c.names[i], background_color=:black)
-      push!(plots2, p)
+      push!(plots, p)
     end
   end
   return plots
@@ -216,10 +180,8 @@ end
 function densityplot(c::AbstractChains; legend::Bool=false,
                      trim::Tuple{Real, Real}=(0.025, 0.975), na...)
   nrows, nvars, nchains = size(c.value)
-  plots = Array{Plot}(undef, nvars)
-
   # new list initialization
-  plots2 = Array{Plots.Plot}(undef, nvars)
+  plots = Array{Plots.Plot}(undef, nvars)
 
   pos = legend ? :right : :none
   for i in 1:nvars
@@ -228,15 +190,9 @@ function densityplot(c::AbstractChains; legend::Bool=false,
       qs = quantile(c.value[:, i, j], [trim[1], trim[2]])
       val[j] = c.value[qs[1] .<= c.value[:, i, j] .<= qs[2], i, j]
     end
-    plots[i] = plot(x=[val...;], Geom.density(),
-                    color=repeat(c.chains, inner=[length(c.range)]),
-                    Scale.color_discrete(), Guide.colorkey(title="Chain"),
-                    Guide.xlabel("Value", orientation=:horizontal),
-                    Guide.ylabel("Density", orientation=:vertical),
-                    Guide.title(c.names[i]), Theme(key_position=pos))
 
     # new plot creation block, based on StatsPlots with a GR backend
-    plots2[i] = StatsPlots.plot([val...;], seriestype=:density,
+    plots[i] = StatsPlots.plot([val...;], seriestype=:density,
                      group=repeat(c.chains, inner=[length(c.range)]),
                      legendtitle="Chain", xlabel="Value", ylabel="Density",
                      title=c.names[i], legend=pos, ylims=(0.0, +Inf),
@@ -247,25 +203,15 @@ end
 
 function meanplot(c::AbstractChains; legend::Bool=false, na...)
   nrows, nvars, nchains = size(c.value)
-  plots = Array{Plot}(undef, nvars)
-
   # new list initialization
-  plots2 = Array{Plots.Plot}(undef, nvars)
+  plots = Array{Plots.Plot}(undef, nvars)
 
   pos = legend ? :right : :none
   val = cummean(c.value)
   for i in 1:nvars
-    plots[i] = plot(y=vec(val[:, i, :]),
-                    x=repeat(collect(c.range), outer=[nchains]),
-                    Geom.line(),
-                    color=repeat(c.chains, inner=[length(c.range)]),
-                    Scale.color_discrete(), Guide.colorkey(title="Chain"),
-                    Guide.xlabel("Iteration", orientation=:horizontal),
-                    Guide.ylabel("Mean", orientation=:vertical),
-                    Guide.title(c.names[i]), Theme(key_position=pos))
 
      # new plot creation block, based on Plots with a GR backend
-    plots2[i] = plot(repeat(collect(c.range), outer=[nchains]),
+    plots[i] = Plots.plot(repeat(collect(c.range), outer=[nchains]),
                     vec(val[:, i, :]), seriestype=:line,
                     group=repeat(c.chains, inner=[length(c.range)]),
                     legendtitle="Chain", xlabel = "Iteration",
@@ -278,40 +224,27 @@ end
 
 function mixeddensityplot(c::AbstractChains;
                           barbounds::Tuple{Real, Real}=(0, Inf), args...)
-  plots = Array{Plot}(undef, size(c, 2))
-
   # new list initialization
-  plots2 = Array{Plots.Plot}(undef, size(c, 2))
+  plots = Array{Plots.Plot}(undef, size(c, 2))
 
   discrete = indiscretesupport(c, barbounds)
-  plots[discrete] = plot(c[:, discrete, :], :bar; args...)
-  plots[.!discrete] = plot(c[:, .!discrete, :], :density; args...)
 
-  plots2[discrete] = plot(c[:, discrete, :], :bar; args...)
-  plots2[.!discrete] = plot(c[:, .!discrete, :], :density; args...)
+  plots[discrete] = plot_MC(c[:, discrete, :], :bar; args...)
+  plots[.!discrete] = plot_MC(c[:, .!discrete, :], :density; args...)
 
   return plots
 end
 
 function traceplot(c::AbstractChains; legend::Bool=false, na...)
   nrows, nvars, nchains = size(c.value)
-  plots = Array{Plot}(undef, nvars)
 
   # new list initialization
-  plots2 = Array{Plots.Plot}(undef, nvars)
+  plots = Array{Plots.Plot}(undef, nvars)
 
   pos = legend ? :right : :none
   for i in 1:nvars
-    plots[i] = plot(y=vec(c.value[:, i, :]),
-                    x=repeat(collect(c.range), outer=[nchains]),
-                    Geom.line(),
-                    color=repeat(c.chains, inner=[length(c.range)]),
-                    Scale.color_discrete(), Guide.colorkey(title="Chain"),
-                    Guide.xlabel("Iteration", orientation=:horizontal),
-                    Guide.ylabel("Value", orientation=:vertical),
-                    Guide.title(c.names[i]), Theme(key_position=pos))
 
-    plots2[i] = plot(repeat(collect(c.range), outer=[nchains]),
+    plots[i] = Plots.plot(repeat(collect(c.range), outer=[nchains]),
                     vec(c.value[:, i, :]), seriestype=:line,
                     group=repeat(c.chains, inner=[length(c.range)]),
                     legendtitle="Chain", xlabel = "Iteration",
