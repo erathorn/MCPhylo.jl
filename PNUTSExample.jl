@@ -13,7 +13,6 @@ Random.seed!(42)
 
 mt, df = make_tree_with_data("LangData/Dravidian.cc.phy.nex"); # load your own nexus file
 
-
 po = post_order(mt);
 for node in po
     node.data = df[:,:,node.num]
