@@ -48,7 +48,6 @@ function Slice(params::ElementOrVector{Symbol},
     v = SamplerVariate(block, width)
     sample!(v, x -> logpdf!(block, x))
     relist(block, v)
-    nothing
   end
   Sampler(params, samplerfx, SliceTune{F}())
 end
