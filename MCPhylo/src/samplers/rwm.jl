@@ -48,7 +48,6 @@ function RWM(params::ElementOrVector{Symbol},
     v = SamplerVariate(block, scale; args...)
     sample!(v, x -> logpdf!(block, x))
     relist(block, v)
-    nothing
   end
   Sampler(params, samplerfx, RWMTune())
 end
