@@ -44,7 +44,7 @@ Archive:
   ✔ Check if support for non binary trees is necessary, or even networks @done(2019-07-29 17:31) @project(Tree Functionionality)
   ✔ Check if a more general datatype for the node data is needed @done(2019-07-29 17:31) @project(Tree Functionionality)
   ✔ data containers need appropriate size for internal nodes @done(2019-05-31 16:01) @project(Tree Functionionality)
-  ✔ Phylo should be a model subtype of a Mamba model - NOT POSSIBLE AS OF YET @done(2019-07-29 17:31) @project(General Features)
+  ✔ Phylo should be a model subtype of a MCPhylo model - NOT POSSIBLE AS OF YET @done(2019-07-29 17:31) @project(General Features)
   ✔ setmonitor for TreeStochastic - NOT POSSIBLE AS OF YET  @done(2019-07-29 17:31) @project(General Features)
   ✔ Dealing with missing character values @done(2019-07-22 11:14) @project(Likelihood Computation)
   ✔ Node names as strings @done(2019-05-23 16:58) @project(Tree Functionionality)

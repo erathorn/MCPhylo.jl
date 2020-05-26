@@ -4,7 +4,7 @@
 ##   rho ~ Dirichlet(1, ..., 1)
 ################################################################################
 
-using Mamba
+using MCPhylo
 
 ## Data
 n, k = 100, 5
@@ -28,3 +28,6 @@ describe(sim)
 
 p = plot(sim)
 draw(p, filename = "slicesimplexplot")
+
+#mark that we got to the end of the test file succesfully
+@test true

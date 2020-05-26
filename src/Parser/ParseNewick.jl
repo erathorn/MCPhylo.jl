@@ -9,7 +9,7 @@ function load_newick(filename::String)
     open(filename, "r") do file
         global content = readlines(file)
     end
-    split(content,'\n')
+    content
 end
 
 
@@ -144,10 +144,10 @@ end #function
 This is the main function, which parses a file, containing Newick strings.
 """
 
-function ParseNewick(filename::String)
+function ParseNewick(filename::String)::Array{N, 1} where N <: AbstractNode
     list_of_trees = load_newick(filename)
     list_of_newicks = []
-    for content in list_of_trees[1]
+    for content in list_of_trees
         if content == ""
             continue
         end # if

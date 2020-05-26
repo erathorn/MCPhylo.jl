@@ -80,7 +80,7 @@ ElementOrVector{T} = Union{T, Vector{T}}
 
 abstract type ScalarVariate <: Real end
 abstract type ArrayVariate{N} <: DenseArray{Float64, N} end
-abstract type TreeVariate <: AbstractNode end
+abstract type TreeVariate <: Any end
 
 const AbstractVariate = Union{ScalarVariate, ArrayVariate, TreeVariate}
 const VectorVariate = ArrayVariate{1}
@@ -227,7 +227,7 @@ struct Chains <: AbstractChains
   range::StepRange{Int, Int}
   names::Vector{U} where U <: AbstractString
   chains::Vector{Int}
-  trees::Array{AbstractString, 3}
+  trees::Array{S, 3} where S <: AbstractString
   moves::Array{Int, 1}
 end
 
@@ -237,7 +237,7 @@ struct ModelChains <: AbstractChains
   names::Vector{U} where U <: AbstractString
   chains::Vector{Int}
   model::Model
-  trees::Array{AbstractString, 3}
+  trees::Array{S, 3} where S <: AbstractString
   moves::Array{Int, 1}
 end
 

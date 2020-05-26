@@ -13,6 +13,13 @@ function Chains(iters::Integer, params::Integer;
 end
 
 function Chains(value::Array{T, 3},
+               start::Integer=1, thin::Integer=1,
+               names::Vector{W}=AbstractString[], chains::Vector{V}=Int[], moves::Vector{V}=Int[0]) where {T<:Real, U<:AbstractString, V<:Integer, W <: AbstractString}
+   Chains(value, Array{String, 3}(undef, size(value)), start=start,
+          thin=thin, names=names, chains=chains, moves=moves)
+end
+
+function Chains(value::Array{T, 3},
                 value2::Array{U,3};
                start::Integer=1, thin::Integer=1,
                names::Vector{W}=W[], chains::Vector{<:Integer}=Integer[], moves::Vector{<:Integer}=Integer[0]) where {T<:Real, U<:AbstractString, W<:AbstractString}
@@ -37,7 +44,9 @@ end
 function Chains(value::Matrix{T};
                start::Integer=1, thin::Integer=1,
                names::Vector{U}=AbstractString[], chains::Integer=1) where {T<:Real, U<:AbstractString}
-  Chains(reshape(value, size(value, 1), size(value, 2), 1), start=start,
+  cont_vals = reshape(value, size(value, 1), size(value, 2), 1)
+  tree_vals = Array{String, 3}(undef, size(cont_vals))
+  Chains(cont_vals, tree_vals, start=start,
          thin=thin, names=names, chains=Int[chains])
 end
 
@@ -54,11 +63,18 @@ end
 function Base.getindex(c::Chains, window, names, chains)
   inds1 = window2inds(c, window)
   inds2 = names2inds(c, names)
-
-  Chains(c.value[inds1, inds2, chains], c.trees[inds1, :, chains],
-         start = first(c) + (first(inds1) - 1) * step(c),
-         thin = step(inds1) * step(c), names = c.names[inds2],
-         chains = c.chains[chains], moves = c.moves)
+  if !isdefined(c.trees, 1)
+    newsize=size(c.value[inds1, inds2, chains])
+    Chains(c.value[inds1, inds2, chains], Array{String, length(newsize)}(undef, newsize),
+           start = first(c) + (first(inds1) - 1) * step(c),
+           thin = step(inds1) * step(c), names = c.names[inds2],
+           chains = c.chains[chains], moves = c.moves)
+  else
+    Chains(c.value[inds1, inds2, chains], c.trees[inds1, :, chains],
+           start = first(c) + (first(inds1) - 1) * step(c),
+           thin = step(inds1) * step(c), names = c.names[inds2],
+           chains = c.chains[chains], moves = c.moves)
+  end
 end
 
 Base.lastindex(c::AbstractChains, i) = size(c, i)
@@ -130,7 +146,12 @@ function cat1(c1::AbstractChains, args::AbstractChains...)
     throw(ArgumentError("sets of chains differ"))
 
   value = cat(c1.value, map(c -> c.value, args)..., dims=1)
-  trees = cat(c1.trees, map(c -> c.trees, args)..., dims=1)
+
+  if isassigned(c1.trees,1)
+      trees = cat(c1.trees, map(c -> c.trees, args)..., dims=1)
+  else
+      trees = c1.trees
+  end
   moves = +(c1.moves, map(c -> c.moves, args)...)
 
   Chains(value, trees, start=first(range), thin=step(range), names=names,
@@ -156,8 +177,13 @@ function cat2(c1::AbstractChains, args::AbstractChains...)
     throw(ArgumentError("sets of chains differ"))
 
   value = cat(c1.value, map(c -> c.value, args)..., dims=2)
+  if isassigned(c1.trees,1)
+      trees = cat(c1.trees, map(c -> c.trees, args)..., dims=2)
+  else
+      trees = c1.trees
+  end
   moves = +(c1.moves, map(c -> c.moves, args)...)
-  Chains(value, start=first(range), thin=step(range), names=names,
+  Chains(value, trees, start=first(range), thin=step(range), names=names,
          chains=chains, moves=moves)
 end
 

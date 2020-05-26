@@ -5,7 +5,7 @@
 ##   s2 ~ invgamma(0.001, 0.001)
 ################################################################################
 
-using Mamba
+using MCPhylo
 
 ## Data
 data = Dict{Symbol, Any}(

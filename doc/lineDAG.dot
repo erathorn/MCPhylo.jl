@@ -1,0 +1,11 @@
+digraph MCPhyloModel {
+	"beta" [shape="ellipse"];
+		"beta" -> "mu";
+	"y" [shape="ellipse", style="filled", fillcolor="gray85"];
+	"mu" [shape="diamond", style="filled", fillcolor="gray85"];
+		"mu" -> "y";
+	"s2" [shape="ellipse"];
+		"s2" -> "y";
+	"xmat" [shape="box", style="filled", fillcolor="gray85"];
+		"xmat" -> "mu";
+}

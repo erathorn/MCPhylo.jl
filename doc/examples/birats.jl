@@ -1,5 +1,5 @@
 using Distributed
-@everywhere using Mamba, LinearAlgebra
+@everywhere using MCPhylo, LinearAlgebra
 
 ## Data
 birats = Dict{Symbol, Any}(

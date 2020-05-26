@@ -37,7 +37,7 @@ graph(m::Model) = ModelGraph(m)
 function graph2dot(m::Model)
   dag = ModelGraph(m)
   io = IOBuffer()
-  write(io, "digraph MambaModel {\n")
+  write(io, "digraph MCPhyloModel {\n")
   deps = keys(m, :dependent)
   for v in vertices(dag.graph)
     attr = Tuple{AbstractString, AbstractString}[]

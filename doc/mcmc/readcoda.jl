@@ -1,4 +1,4 @@
-using Mamba
+using MCPhylo
 
 ## Get the directory in which the example CODA files are saved
 dir = dirname(@__FILE__)
@@ -12,3 +12,6 @@ c = cat(c1, c2, dims=3)
 
 ## Compute summary statistics
 describe(c)
+
+#mark that we got to the end of the test file succesfully
+@test true

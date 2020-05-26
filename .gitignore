@@ -3,6 +3,7 @@ doc/make.bat
 test/*
 !test/*.jl
 !test/REQUIRE
+!test/Readme.md
 tmp/
 usr/
 *.bin
@@ -21,3 +22,5 @@ notes.txt
 untracked_files/
 development*.t
 test_cu.jl
+!newicktester.nwk
+explain.jl

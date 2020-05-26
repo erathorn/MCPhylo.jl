@@ -11,7 +11,7 @@ are implemented.
 
 **It is written in Julia 1.3.1. This package is not backwards compatible!**
 
-**This module is build on a forked instance of Mamba 0.12.0**
+**This module is build on a forked instance of MCPhylo 0.12.0**
 
 ## How to
 
@@ -24,9 +24,9 @@ package and place it in your workspace. Then use it as shown in `tester.jl`.
 **Note** This package uses multithreading. (https://docs.julialang.org/en/v1/base/multi-threading/)
 
 An initial running version is shown in the file `tester.jl`.
-The general setup is as in the original Mamba package.
+The general setup is as in the original MCPhylo package.
 
-In addition to the distributions supported by `Mamba` and the `Distributions` package
+In addition to the distributions supported by `MCPhylo` and the `Distributions` package
 there are currently three distributions for trees supported by the `MCPhylo` package.
 
 * CompoundDirichlet (Zhang, Rannala and Yang 2012. (DOI:10.1093/sysbio/sys030))
@@ -39,12 +39,12 @@ Only Nexus files are with binarised cognate judgments are currently supported.
 
 ### Recipe
 
-_Note:_ Only the steps which are different from the standard `Mamba` model setup
+_Note:_ Only the steps which are different from the standard `MCPhylo` model setup
 are listed here.
 
 1. Read in the nexus file using the `make_tree_with_data` function. It returns a
 tree object including the cognate information.
-2. Specify the Model using the standard `Mamba` syntax for specifying a model. To properly
+2. Specify the Model using the standard `MCPhylo` syntax for specifying a model. To properly
 use the Probabilistic Path approach, the objective should be a `PhyloDist` distribution object.
 3. The Probabilistic Path sampler is selected using the `ProbPathHMC` sampler. The parameters of this
 function are in this order:
@@ -54,7 +54,7 @@ function are in this order:
     4. smoothing threshold
     5. the `:provided` symbol to use the gradient which is provided by the package
 _Note:_ The Probabilistic Path sampler will not work, if you do not use the provided Gradient function
-4. The standard `mcmc` function from `Mamba` takes an extra boolean argument `trees` indicating if the
+4. The standard `mcmc` function from `MCPhylo` takes an extra boolean argument `trees` indicating if the
 sampled trees should be stored. If set to _true_ the trees will be stored. The default is _false_.
 5. You can flush the model parameters and the sampled trees to a file, using the `to_file` function.
 It takes as a first argument an MCMC object and second a path to a folder where the results should be stored.

@@ -1,4 +1,4 @@
-digraph MambaModel {
+digraph MCPhyloModel {
 	"mymap" [shape="ellipse", style="filled", fillcolor="gray85"];
 		"mymap" -> "rates";
 	"av" [shape="ellipse"];

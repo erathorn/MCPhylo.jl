@@ -1,5 +1,5 @@
 using Distributed
-@everywhere using Mamba, LinearAlgebra, SparseArrays
+@everywhere using MCPhylo, LinearAlgebra, SparseArrays
 
 ## Data
 data = [

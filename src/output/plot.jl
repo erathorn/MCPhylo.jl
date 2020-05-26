@@ -6,7 +6,7 @@ function draw(p::Array{T}; fmt::Symbol=:svg, filename::AbstractString="",
               nrow::Integer=3, ncol::Integer=2, byrow::Bool=false,
               ask::Bool=true) where T<:Plots.Plot
 
-  fmt in [:pdf, :pgf, :png, :ps, :svg] ||
+  fmt in [:pdf, :png, :ps, :svg] ||
     throw(ArgumentError("unsupported draw format $fmt"))
 
   isexternalfile = length(filename) > 0
