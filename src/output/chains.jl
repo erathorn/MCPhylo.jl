@@ -13,9 +13,16 @@ function Chains(iters::Integer, params::Integer;
 end
 
 function Chains(value::Array{T, 3},
+               start::Integer=1, thin::Integer=1,
+               names::Vector{W}=AbstractString[], chains::Vector{V}=Int[], moves::Vector{V}=Int[0]) where {T<:Real, U<:AbstractString, V<:Integer, W <: AbstractString}
+   Chains(value, Array{String, 3}(undef, size(value)), start=start,
+          thin=thin, names=names, chains=chains, moves=moves)
+end
+
+function Chains(value::Array{T, 3},
                 value2::Array{U,3};
                start::Integer=1, thin::Integer=1,
-               names::Vector{U}=AbstractString[], chains::Vector{V}=Int[], moves::Vector{V}=Int[0]) where {T<:Real, U<:AbstractString, V<:Integer}
+               names::Vector{W}=AbstractString[], chains::Vector{V}=Int[], moves::Vector{V}=Int[0]) where {T<:Real, U<:AbstractString, V<:Integer, W <: AbstractString}
   n, p, m = size(value)
 
   if isempty(names)
@@ -37,13 +44,15 @@ end
 function Chains(value::Matrix{T};
                start::Integer=1, thin::Integer=1,
                names::Vector{U}=AbstractString[], chains::Integer=1) where {T<:Real, U<:AbstractString}
-  Chains(reshape(value, size(value, 1), size(value, 2), 1), start=start,
+  cont_vals = reshape(value, size(value, 1), size(value, 2), 1)
+  tree_vals = Array{String, 3}(undef, size(cont_vals))
+  Chains(cont_vals, tree_vals, start=start,
          thin=thin, names=names, chains=Int[chains])
 end
 
 function Chains(value::Vector{T};
                start::Integer=1, thin::Integer=1,
-               names::AbstractString="Param1", chains::Integer=1) where {T<:Real}
+               names::U="Param1", chains::Integer=1) where {T<:Real, U <: AbstractString}
   Chains(reshape(value, length(value), 1, 1), start=start, thin=thin,
          names=AbstractString[names], chains=Int[chains])
 end
@@ -54,11 +63,18 @@ end
 function Base.getindex(c::Chains, window, names, chains)
   inds1 = window2inds(c, window)
   inds2 = names2inds(c, names)
-
-  Chains(c.value[inds1, inds2, chains], c.trees[inds1, :, chains],
-         start = first(c) + (first(inds1) - 1) * step(c),
-         thin = step(inds1) * step(c), names = c.names[inds2],
-         chains = c.chains[chains], moves = c.moves)
+  if !isdefined(c.trees, 1)
+    newsize=size(c.value[inds1, inds2, chains])
+    Chains(c.value[inds1, inds2, chains], Array{String, length(newsize)}(undef, newsize),
+           start = first(c) + (first(inds1) - 1) * step(c),
+           thin = step(inds1) * step(c), names = c.names[inds2],
+           chains = c.chains[chains], moves = c.moves)
+  else
+    Chains(c.value[inds1, inds2, chains], c.trees[inds1, :, chains],
+           start = first(c) + (first(inds1) - 1) * step(c),
+           thin = step(inds1) * step(c), names = c.names[inds2],
+           chains = c.chains[chains], moves = c.moves)
+  end
 end
 
 Base.lastindex(c::AbstractChains, i) = size(c, i)

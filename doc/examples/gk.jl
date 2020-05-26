@@ -1,5 +1,5 @@
 using Distributed
-@everywhere using Mamba
+@everywhere using MCPhylo
 
 @everywhere extensions = quote
   using Distributions

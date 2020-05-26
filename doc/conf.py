@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
-# Mamba.jl documentation build configuration file, created by
+# MCPhylo.jl documentation build configuration file, created by
 # sphinx-quickstart on Mon Mar 31 10:03:01 2014.
 #
 # This file is execfile()d with the current directory set to its
@@ -55,7 +55,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = 'Mamba.jl'
+project = 'MCPhylo.jl'
 copyright = '2014, Brian J Smith'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -191,7 +191,7 @@ html_domain_indices = False
 #html_file_suffix = None
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'Mambajldoc'
+htmlhelp_basename = 'MCPhylojldoc'
 
 
 # -- Options for LaTeX output ---------------------------------------------
@@ -211,7 +211,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-  ('index', 'Mambajl.tex', 'Mamba.jl Documentation',
+  ('index', 'MCPhylojl.tex', 'MCPhylo.jl Documentation',
    'Brian J Smith', 'manual'),
 ]
 
@@ -241,7 +241,7 @@ latex_domain_indices = False
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'mambajl', 'Mamba.jl Documentation',
+    ('index', 'MCPhylojl', 'MCPhylo.jl Documentation',
      ['Brian J Smith'], 1)
 ]
 
@@ -255,8 +255,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', 'Mambajl', 'Mamba.jl Documentation',
-   'Brian J Smith', 'Mambajl', 'Markov chain Monte Carlo for Bayesian analysis in julia.',
+  ('index', 'MCPhylojl', 'MCPhylo.jl Documentation',
+   'Brian J Smith', 'MCPhylojl', 'Markov chain Monte Carlo for Bayesian analysis in julia.',
    'Miscellaneous'),
 ]
 

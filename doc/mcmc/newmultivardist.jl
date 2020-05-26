@@ -1,6 +1,6 @@
 using Distributed
 
-## Define a new multivariate Distribution type for Mamba.
+## Define a new multivariate Distribution type for MCPhylo.
 ## The definition must be placed within an unevaluated quote block.
 @everywhere extensions = quote
 
@@ -39,10 +39,10 @@ Testing.insupport(d, [2.0, 3.0])
 Testing.logpdf(d, [2.0, 3.0])
 
 ## Add the extensions
-@everywhere using Mamba
+@everywhere using MCPhylo
 @everywhere eval(extensions)
 
-## Implement a Mamba model using the new distribution
+## Implement a MCPhylo model using the new distribution
 model = Model(
 
   y = Stochastic(1,
@@ -92,3 +92,5 @@ inits = [
 ## MCMC Simulation
 sim = mcmc(model, line, inits, 10000, burnin=250, thin=2, chains=3)
 describe(sim)
+
+@test true

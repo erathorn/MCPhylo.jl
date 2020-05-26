@@ -1,8 +1,8 @@
-The Mamba.jl package is licensed under the MIT License:
+The MCPhylo.jl package is licensed under the MIT License:
 
 > Copyright (c) 2014: Brian J Smith and other contributors:
 >
-> https://github.com/brian-j-smith/Mamba.jl/contributors
+> https://github.com/brian-j-smith/MCPhylo.jl/contributors
 >
 > Permission is hereby granted, free of charge, to any person obtaining
 > a copy of this software and associated documentation files (the

@@ -1,4 +1,4 @@
-using Mamba, Distributed
+using MCPhylo, Distributed
 @everywhere using Random
 
 include("utils.jl")

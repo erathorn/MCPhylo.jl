@@ -1,5 +1,5 @@
 using Distributed
-@everywhere using Mamba
+@everywhere using MCPhylo
 
 ## Data
 stacks = Dict{Symbol, Any}(

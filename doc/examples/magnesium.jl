@@ -1,5 +1,5 @@
 using Distributed
-@everywhere using Mamba, SpecialFunctions
+@everywhere using MCPhylo, SpecialFunctions
 
 ## Data
 magnesium = Dict{Symbol, Any}(

@@ -5,7 +5,7 @@
 ##   s2 ~ invgamma(0.001, 0.001)
 ################################################################################
 
-using Mamba
+using MCPhylo
 
 ## Data
 data = Dict(
@@ -42,3 +42,6 @@ for i in 1:n
   end
 end
 describe(sim)
+
+#mark that we got to the end of the test file succesfully
+@test true

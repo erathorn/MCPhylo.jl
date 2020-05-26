@@ -82,7 +82,7 @@ New known, unknown, or unnormalized univariate distributions can be created and 
 
         .. code-block:: julia
 
-            using Mamba
+            using MCPhylo
             @everywhere eval(extensions)
 
 Below is a univariate example based on the linear regression model in the :ref:`section-Line`.
@@ -171,7 +171,7 @@ New known, unknown, or unnormalized multivariate distributions can be created an
 
         .. code-block:: julia
 
-            using Mamba
+            using MCPhylo
             @everywhere eval(extensions)
 
 Below is a multivariate example based on the linear regression model in the :ref:`section-Line`.

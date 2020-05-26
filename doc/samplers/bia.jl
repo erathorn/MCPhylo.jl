@@ -4,7 +4,7 @@
 ##   gamma ~ DiscreteUniform(0, 1)
 ################################################################################
 
-using Mamba
+using MCPhylo
 
 ## Data
 n, p = 25, 10
@@ -27,3 +27,6 @@ for i in 1:t
   sim[i, :, 1] = gamma
 end
 describe(sim)
+
+#mark that we got to the end of the test file succesfully
+@test true
