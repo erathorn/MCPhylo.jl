@@ -1,8 +1,6 @@
 #################### Posterior Plots ####################
 
 #################### Generic Methods ####################
-using Plots
-using StatsPlots
 
 function draw(p::Array{Plots.Plot}; fmt::Symbol=:svg, filename::AbstractString="",
               nrow::Integer=3, ncol::Integer=2, byrow::Bool=true,
@@ -10,11 +8,6 @@ function draw(p::Array{Plots.Plot}; fmt::Symbol=:svg, filename::AbstractString="
 
   fmt in [:pdf, :pgf, :png, :ps, :svg] ||
     throw(ArgumentError("unsupported draw format $fmt"))
-
-  f(args...) = fmt == :pdf ? PDF(args...) :
-               fmt == :pgf ? PGF(args...) :
-               fmt == :png ? PNG(args...) :
-               fmt == :ps  ? PS(args...)  : SVG(args...)
 
   isexternalfile = length(filename) > 0
   addextension = isexternalfile && something(findfirst(isequal('.'), filename), 0) == 0
@@ -68,7 +61,7 @@ function plotMC(c::AbstractChains, ptype::Vector{Symbol}=[:trace, :density];
   p = Array{Plot}(undef, n, size(c, 2))
   for i in 1:n
     showlegend = legend && i == n
-    p[i, :] = plot_MC(c, ptype[i]; legend=legend, args...)
+    p[i, :] = plotMC(c, ptype[i]; legend=legend, args...)
   end
   p
 end
@@ -91,11 +84,7 @@ function autocorplot(c::AbstractChains;
                      maxlag::Integer=round(Int, 10 * log10(length(c.range))),
                      legend::Bool=false, na...)
   nrows, nvars, nchains = size(c.value)
-  plots = Array{Plot}(undef, nvars)
-
-  # new list initialization
   plots = Array{Plots.Plot}(undef, nvars)
-
   pos = legend ? :right : :none
   lags = 0:maxlag
   ac = autocor(c, lags=collect(lags))
@@ -117,7 +106,6 @@ function barplot(c::AbstractChains; legend::Bool=false,
                  position::Symbol=:stack, na...)
   nrows, nvars, nchains = size(c.value)
   plots = Array{Plots.Plot}(undef, nvars)
-
   pos = legend ? :right : :none
   for i in 1:nvars
     S = unique(c.value[:, i, :])
@@ -149,7 +137,6 @@ function contourplot(c::AbstractChains; bins::Integer=100, na...)
   nrows, nvars, nchains = size(c.value)
   # new list initialization
   plots = Plots.Plot[]
-
   offset = 1e4 * eps()
   n = nrows * nchains
   for i in 1:(nvars - 1)
@@ -182,7 +169,6 @@ function densityplot(c::AbstractChains; legend::Bool=false,
   nrows, nvars, nchains = size(c.value)
   # new list initialization
   plots = Array{Plots.Plot}(undef, nvars)
-
   pos = legend ? :right : :none
   for i in 1:nvars
     val = Array{Vector{Float64}}(undef, nchains)
@@ -205,7 +191,6 @@ function meanplot(c::AbstractChains; legend::Bool=false, na...)
   nrows, nvars, nchains = size(c.value)
   # new list initialization
   plots = Array{Plots.Plot}(undef, nvars)
-
   pos = legend ? :right : :none
   val = cummean(c.value)
   for i in 1:nvars
@@ -229,18 +214,16 @@ function mixeddensityplot(c::AbstractChains;
 
   discrete = indiscretesupport(c, barbounds)
 
-  plots[discrete] = plot_MC(c[:, discrete, :], :bar; args...)
-  plots[.!discrete] = plot_MC(c[:, .!discrete, :], :density; args...)
+  plots[discrete] = plotMC(c[:, discrete, :], :bar; args...)
+  plots[.!discrete] = plotMC(c[:, .!discrete, :], :density; args...)
 
   return plots
 end
 
 function traceplot(c::AbstractChains; legend::Bool=false, na...)
   nrows, nvars, nchains = size(c.value)
-
   # new list initialization
   plots = Array{Plots.Plot}(undef, nvars)
-
   pos = legend ? :right : :none
   for i in 1:nvars
 
