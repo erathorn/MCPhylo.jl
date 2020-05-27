@@ -58,7 +58,7 @@ end
 function plotMC(c::AbstractChains, ptype::Vector{Symbol}=[:trace, :density];
               legend::Bool=false, args...)
   n = length(ptype)
-  p = Array{Plot}(undef, n, size(c, 2))
+  p = Array{Plots.Plot}(undef, n, size(c, 2))
   for i in 1:n
     showlegend = legend && i == n
     p[i, :] = plotMC(c, ptype[i]; legend=legend, args...)
