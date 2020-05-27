@@ -15,8 +15,7 @@ using CuArrays
 using GPUArrays
 using CUDAnative
 using CUDAdrv
-import Plots
-import StatsPlots
+
 using Plots
 using StatsPlots
 
