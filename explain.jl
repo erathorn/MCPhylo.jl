@@ -30,9 +30,9 @@ samplers = [NUTS(:μ),
 
 setsamplers!(model, samplers)
 
-sim = mcmc(model, my_data, inits, 5000, burnin=500,thin=5, chains=2)
+sim = mcmc(model, my_data, inits, 50, burnin=5,thin=5, chains=2)
 
-draw(plotMC(sim))
+draw(MCPhylo.plotMC(sim))
 
 gelmandiag(sim)
 
