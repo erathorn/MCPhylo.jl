@@ -85,7 +85,7 @@ function logpdf!(m::Model, x::Node, block::Integer=0,
 end
 
 function gradlogpdf!(m::Model, x::AbstractArray{T}, block::Integer=0,transform::Bool=false)where {T<:AbstractNode}
-  gradlogpdf!(m, x[1], block, transform)
+  gradlogpdf!(m, x, block, transform)
 end
 
 
