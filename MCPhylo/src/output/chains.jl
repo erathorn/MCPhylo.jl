@@ -130,7 +130,12 @@ function cat1(c1::AbstractChains, args::AbstractChains...)
     throw(ArgumentError("sets of chains differ"))
 
   value = cat(c1.value, map(c -> c.value, args)..., dims=1)
-  trees = cat(c1.trees, map(c -> c.trees, args)..., dims=1)
+
+  if isassigned(c1.trees,1)
+      trees = cat(c1.trees, map(c -> c.trees, args)..., dims=3)
+  else
+      trees = c1.trees
+  end
   moves = +(c1.moves, map(c -> c.moves, args)...)
 
   Chains(value, trees, start=first(range), thin=step(range), names=names,
@@ -156,8 +161,13 @@ function cat2(c1::AbstractChains, args::AbstractChains...)
     throw(ArgumentError("sets of chains differ"))
 
   value = cat(c1.value, map(c -> c.value, args)..., dims=2)
+  if isassigned(c1.trees,1)
+      trees = cat(c1.trees, map(c -> c.trees, args)..., dims=3)
+  else
+      trees = c1.trees
+  end
   moves = +(c1.moves, map(c -> c.moves, args)...)
-  Chains(value, start=first(range), thin=step(range), names=names,
+  Chains(value, trees, start=first(range), thin=step(range), names=names,
          chains=chains, moves=moves)
 end
 
@@ -173,7 +183,7 @@ function cat3(c1::AbstractChains, args::AbstractChains...)
 
   value = cat(c1.value, map(c -> c.value, args)..., dims=3)
 
-  if isassigned(c1.trees,1)  
+  if isassigned(c1.trees,1)
       value2 = cat(c1.trees, map(c -> c.trees, args)..., dims=3)
   else
       value2 = c1.trees
