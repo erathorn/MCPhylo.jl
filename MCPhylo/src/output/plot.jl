@@ -4,7 +4,7 @@
 
 function draw(p::Array{Plots.Plot}; fmt::Symbol=:svg, filename::AbstractString="",
               nrow::Integer=3, ncol::Integer=2, byrow::Bool=true,
-              ask::Bool=true, theme::Symbol=:solarized_light)
+              ask::Bool=true)
 
   fmt in [:pdf, :pgf, :png, :ps, :svg] ||
     throw(ArgumentError("unsupported draw format $fmt"))
@@ -18,7 +18,7 @@ function draw(p::Array{Plots.Plot}; fmt::Symbol=:svg, filename::AbstractString="
 
   mat = Array{Plots.Plot}(undef, pp)
   # set theme for plots
-  theme(theme)
+  theme(:solarized_light)
 
   for page in 1:np
     if ask && page > 1 && !addextension
@@ -48,9 +48,12 @@ function draw(p::Array{Plots.Plot}; fmt::Symbol=:svg, filename::AbstractString="
                      reshape(mat, nrow, ncol)
 
     # draw plot and save to file
-    Plots.plot(mat2..., layout=(nrow,ncol), widen=false,
+    plots = Plots.plot(result..., layout=(nrow,ncol), widen=false,
                guidefontsize=8, titlefontsize=10)
-    savefig(fname)
+    display(plots)
+    if isexternalfile
+      savefig(fname)
+    end
   end
 
 end
@@ -226,7 +229,6 @@ function traceplot(c::AbstractChains; legend::Bool=false, na...)
   plots = Array{Plots.Plot}(undef, nvars)
   pos = legend ? :right : :none
   for i in 1:nvars
-
     plots[i] = Plots.plot(repeat(collect(c.range), outer=[nchains]),
                     vec(c.value[:, i, :]), seriestype=:line,
                     group=repeat(c.chains, inner=[length(c.range)]),
