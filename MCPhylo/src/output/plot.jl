@@ -3,7 +3,7 @@
 #################### Generic Methods ####################
 
 function draw(p::Array{Plots.Plot}; fmt::Symbol=:svg, filename::AbstractString="",
-              nrow::Integer=3, ncol::Integer=2, byrow::Bool=true,
+              nrow::Integer=3, ncol::Integer=2, byrow::Bool=false,
               ask::Bool=true)
 
   fmt in [:pdf, :pgf, :png, :ps, :svg] ||
@@ -64,7 +64,7 @@ function plotMC(c::AbstractChains, ptype::Vector{Symbol}=[:trace, :density];
   p = Array{Plots.Plot}(undef, n, size(c, 2))
   for i in 1:n
     showlegend = legend && i == n
-    p[i, :] = plotMC(c, ptype[1]; legend=legend, args...)
+    p[i, :] = plotMC(c, ptype[i]; legend=legend, args...)
   end
   p
 end
@@ -99,8 +99,7 @@ function autocorplot(c::AbstractChains;
                     group=repeat(c.chains, inner=[length(lags)]),
                     legendtitle="Chain", xlabel = "Lag",
                     ylabel = "Autocorrelation", title=c.names[i],
-                    legend = pos, xlims=(0, +Inf),
-                    background_color=:black, grid=:dash; gridalpha=0.5)
+                    legend = pos, xlims=(0, +Inf), grid=:dash; gridalpha=0.5)
   end
   return plots
 end
@@ -125,12 +124,11 @@ function barplot(c::AbstractChains; legend::Bool=false,
     end
     ymax = maximum(position == :stack ? mapslices(sum, y, dims=2) : y)
     # new plot creation block, based on StatsPlots with a GR backend
-    plots[i] = StatsPlots.groupedbar(vec(x),vec(y), bar_position = position,
+    plots[i] = Plots.groupedbar(vec(x),vec(y), bar_position = position,
                                      group=repeat(chain,inner=[4]),
                                      legendtitle="Chain", xlabel = "Value",
                                      ylabel = "Density", title=c.names[i],
                                      legend = pos, ylims=(0.0, ymax),
-                                     background_color=:black,
                                      grid=:dash, gridalpha=0.5)
   end
   return plots
@@ -160,7 +158,7 @@ function contourplot(c::AbstractChains; bins::Integer=100, na...)
       # new plot creation block, based on Plots with a GR backend
       p = Plots.plot(mx, my, density, seriestype=:contour,
                      colorbar_title="Density", xlabel=c.names[i],
-                     ylabel=c.names[i], background_color=:black)
+                     ylabel=c.names[i])
       push!(plots, p)
     end
   end
@@ -175,17 +173,21 @@ function densityplot(c::AbstractChains; legend::Bool=false,
   pos = legend ? :right : :none
   for i in 1:nvars
     val = Array{Vector{Float64}}(undef, nchains)
+    grouping = []
     for j in 1:nchains
       qs = quantile(c.value[:, i, j], [trim[1], trim[2]])
-      val[j] = c.value[qs[1] .<= c.value[:, i, j] .<= qs[2], i, j]
+      # keep all values between qs[1] and qs[2]
+      mask = [qs[1] .<= c.value[:, i, j] .<= qs[2]]
+      val[j] = c.value[mask[1], i, j]
+      grouping = vcat(grouping, repeat([j], inner=sum(mask[1])))
     end
 
     # new plot creation block, based on StatsPlots with a GR backend
     plots[i] = StatsPlots.plot([val...;], seriestype=:density,
-                     group=repeat(c.chains, inner=[length(c.range)]),
+                     group = grouping,
                      legendtitle="Chain", xlabel="Value", ylabel="Density",
                      title=c.names[i], legend=pos, ylims=(0.0, +Inf),
-                     background_color=:black, grid=:dash, gridalpha=0.5)
+                     grid=:dash, gridalpha=0.5)
   end
   return plots
 end
@@ -204,8 +206,7 @@ function meanplot(c::AbstractChains; legend::Bool=false, na...)
                     group=repeat(c.chains, inner=[length(c.range)]),
                     legendtitle="Chain", xlabel = "Iteration",
                     ylabel = "Mean", title=c.names[i],
-                    legend = pos, background_color=:black,
-                    grid=:dash, gridalpha=0.5)
+                    legend = pos, grid=:dash, gridalpha=0.5)
   end
   return plots
 end
@@ -226,16 +227,16 @@ end
 function traceplot(c::AbstractChains; legend::Bool=false, na...)
   nrows, nvars, nchains = size(c.value)
   # new list initialization
-  plots = Array{Plots.Plot}(undef, nvars)
+  plots = Any[]
   pos = legend ? :right : :none
   for i in 1:nvars
-    plots[i] = Plots.plot(repeat(collect(c.range), outer=[nchains]),
+    push!(plots, Plots.plot(repeat(collect(c.range), outer=[nchains]),
                     vec(c.value[:, i, :]), seriestype=:line,
                     group=repeat(c.chains, inner=[length(c.range)]),
                     legendtitle="Chain", xlabel = "Iteration",
                     ylabel = "Value", title=c.names[i],
                     legend = pos, widen=false,
-                    background_color=:black, grid=:dash, gridalpha=0.5)
+                    grid=:dash, gridalpha=0.5))
 end
   return plots
 end
