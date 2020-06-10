@@ -18,7 +18,7 @@ function draw(p::Array{Plots.Plot}; fmt::Symbol=:svg, filename::AbstractString="
 
   mat = Array{Plots.Plot}(undef, pp)
   # set theme for plots
-  theme(:solarized_light)
+  theme(:solarized)
 
   for page in 1:np
     if ask && page > 1 && !addextension
@@ -124,8 +124,9 @@ function barplot(c::AbstractChains; legend::Bool=false,
     end
     ymax = maximum(position == :stack ? mapslices(sum, y, dims=2) : y)
     # new plot creation block, based on StatsPlots with a GR backend
-    plots[i] = Plots.groupedbar(vec(x),vec(y), bar_position = position,
-                                     group=repeat(chain,inner=[4]),
+    plots[i] = StatsPlots.groupedbar(vec(x), vec(y), bar_position = position,
+                                     linecolor=:match,
+                                     group=repeat(c.chains, inner=[n]),
                                      legendtitle="Chain", xlabel = "Value",
                                      ylabel = "Density", title=c.names[i],
                                      legend = pos, ylims=(0.0, ymax),
