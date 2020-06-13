@@ -137,7 +137,6 @@ end
 
 function contourplot(c::AbstractChains; bins::Integer=100, na...)
   nrows, nvars, nchains = size(c.value)
-  # new list initialization
   plots = Plots.Plot[]
   offset = 1e4 * eps()
   n = nrows * nchains
@@ -155,11 +154,10 @@ function contourplot(c::AbstractChains; bins::Integer=100, na...)
       for k in 1:n
         density[idx[k], idy[k]] += 1.0 / n
       end
-
       # new plot creation block, based on Plots with a GR backend
       p = Plots.plot(mx, my, density, seriestype=:contour,
                      colorbar_title="Density", xlabel=c.names[i],
-                     ylabel=c.names[i])
+                     ylabel=c.names[j])
       push!(plots, p)
     end
   end
@@ -216,9 +214,7 @@ function mixeddensityplot(c::AbstractChains;
                           barbounds::Tuple{Real, Real}=(0, Inf), args...)
   # new list initialization
   plots = Array{Plots.Plot}(undef, size(c, 2))
-
   discrete = indiscretesupport(c, barbounds)
-
   plots[discrete] = plotMC(c[:, discrete, :], :bar; args...)
   plots[.!discrete] = plotMC(c[:, .!discrete, :], :density; args...)
 
