@@ -214,9 +214,20 @@ function mixeddensityplot(c::AbstractChains;
                           barbounds::Tuple{Real, Real}=(0, Inf), args...)
   # new list initialization
   plots = Array{Plots.Plot}(undef, size(c, 2))
-  discrete = indiscretesupport(c, barbounds)
-  plots[discrete] = plotMC(c[:, discrete, :], :bar; args...)
-  plots[.!discrete] = plotMC(c[:, .!discrete, :], :density; args...)
+  discrete = MCPhylo.indiscretesupport(c, barbounds)
+  if all(discrete)
+    plots = plotMC(c, :bar; args...)
+  elseif all(!, discrete)
+    discrete = .!discrete
+    plots = plotMC(c, :density; args...)
+  """
+  else
+    plots[discrete] = plotMC(c[:, discrete, :], :bar; args...)
+    plots[.!discrete] = plotMC(c[:, .!discrete, :], :density; args...)
+  end
+  """
+  return plots
+end
 
   return plots
 end
