@@ -58,18 +58,18 @@ function draw(p::Array{Plots.Plot}; fmt::Symbol=:svg, filename::AbstractString="
 
 end
 
-function plotMC(c::AbstractChains, ptype::Vector{Symbol}=[:trace, :density];
+function plot(c::AbstractChains, ptype::Vector{Symbol}=[:trace, :density];
               legend::Bool=false, args...)
   n = length(ptype)
   p = Array{Plots.Plot}(undef, n, size(c, 2))
   for i in 1:n
     showlegend = legend && i == n
-    p[i, :] = plotMC(c, ptype[i]; legend=legend, args...)
+    p[i, :] = plot(c, ptype[i]; legend=legend, args...)
   end
   p
 end
 
-function plotMC(c::AbstractChains, ptype::Symbol; legend::Bool=false, args...)
+function plot(c::AbstractChains, ptype::Symbol; legend::Bool=false, args...)
   ptype == :autocor      ? autocorplot(c; legend=legend, args...) :
   ptype == :bar          ? barplot(c; legend=legend, args...) :
   ptype == :contour      ? contourplot(c; args...) :
@@ -95,11 +95,11 @@ function autocorplot(c::AbstractChains;
 
     # new plot creation block, based on Plots with a GR backend
     plots[i] = Plots.plot(repeat(collect(lags * step(c)), outer=[nchains]),
-                    vec(ac.value[i,:,:]), seriestype=:line,
-                    group=repeat(c.chains, inner=[length(lags)]),
-                    legendtitle="Chain", xlabel = "Lag",
-                    ylabel = "Autocorrelation", title=c.names[i],
-                    legend = pos, xlims=(0, +Inf), grid=:dash; gridalpha=0.5)
+                          vec(ac.value[i,:,:]), seriestype=:line,
+                          group=repeat(c.chains, inner=[length(lags)]),
+                          xlabel="Lag", ylabel="Autocorrelation",
+                          title=c.names[i], legendtitle="Chain", legend=pos,
+                          xlims=(0, +Inf), grid=:dash; gridalpha=0.5)
   end
   return plots
 end
@@ -124,12 +124,11 @@ function barplot(c::AbstractChains; legend::Bool=false,
     end
     ymax = maximum(position == :stack ? mapslices(sum, y, dims=2) : y)
     # new plot creation block, based on StatsPlots with a GR backend
-    plots[i] = StatsPlots.groupedbar(vec(x), vec(y), bar_position = position,
-                                     linecolor=:match,
+    plots[i] = StatsPlots.groupedbar(vec(x), vec(y), bar_position=position,
                                      group=repeat(c.chains, inner=[n]),
-                                     legendtitle="Chain", xlabel = "Value",
-                                     ylabel = "Density", title=c.names[i],
-                                     legend = pos, ylims=(0.0, ymax),
+                                     xlabel="Value", ylabel="Density",
+                                     title=c.names[i], legendtitle="Chain",
+                                     legend=pos, ylims=(0.0, ymax),
                                      grid=:dash, gridalpha=0.5)
   end
   return plots
@@ -183,10 +182,10 @@ function densityplot(c::AbstractChains; legend::Bool=false,
 
     # new plot creation block, based on StatsPlots with a GR backend
     plots[i] = StatsPlots.plot([val...;], seriestype=:density,
-                     group = grouping,
-                     legendtitle="Chain", xlabel="Value", ylabel="Density",
-                     title=c.names[i], legend=pos, ylims=(0.0, +Inf),
-                     grid=:dash, gridalpha=0.5)
+                               group = grouping, xlabel="Value",
+                               ylabel="Density", title=c.names[i],
+                               legendtitle="Chain", legend=pos,
+                               ylims=(0.0, +Inf), grid=:dash, gridalpha=0.5)
   end
   return plots
 end
@@ -201,11 +200,11 @@ function meanplot(c::AbstractChains; legend::Bool=false, na...)
 
      # new plot creation block, based on Plots with a GR backend
     plots[i] = Plots.plot(repeat(collect(c.range), outer=[nchains]),
-                    vec(val[:, i, :]), seriestype=:line,
-                    group=repeat(c.chains, inner=[length(c.range)]),
-                    legendtitle="Chain", xlabel = "Iteration",
-                    ylabel = "Mean", title=c.names[i],
-                    legend = pos, grid=:dash, gridalpha=0.5)
+                          vec(val[:, i, :]), seriestype=:line,
+                          group=repeat(c.chains, inner=[length(c.range)]),
+                          xlabel="Iteration", ylabel="Mean", title=c.names[i],
+                          legendtitle="Chain", legend=pos,
+                          grid=:dash, gridalpha=0.5)
   end
   return plots
 end
@@ -214,8 +213,8 @@ function mixeddensityplot(c::AbstractChains;
                           barbounds::Tuple{Real, Real}=(0, Inf), args...)
   plots = Array{Plots.Plot}(undef, size(c, 2))
   discrete = MCPhylo.indiscretesupport(c, barbounds)
-  barplots = plotMC(c, :bar; args...)
-  densityplots = plotMC(c, :density; args...)
+  barplots = plot(c, :bar; args...)
+  densityplots = plot(c, :density; args...)
   for i in 1:length(discrete)
     if discrete[i] == true
       plots[i] = barplots[i]
@@ -233,12 +232,11 @@ function traceplot(c::AbstractChains; legend::Bool=false, na...)
   pos = legend ? :right : :none
   for i in 1:nvars
     push!(plots, Plots.plot(repeat(collect(c.range), outer=[nchains]),
-                    vec(c.value[:, i, :]), seriestype=:line,
-                    group=repeat(c.chains, inner=[length(c.range)]),
-                    legendtitle="Chain", xlabel = "Iteration",
-                    ylabel = "Value", title=c.names[i],
-                    legend = pos, widen=false,
-                    grid=:dash, gridalpha=0.5))
+                            vec(c.value[:, i, :]), seriestype=:line,
+                            group=repeat(c.chains, inner=[length(c.range)]),
+                            xlabel="Iteration", ylabel="Value",
+                            title=c.names[i], legendtitle="Chain", legend=pos,
+                            widen=false, grid=:dash, gridalpha=0.5))
 end
   return plots
 end
