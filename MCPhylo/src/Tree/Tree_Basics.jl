@@ -8,7 +8,7 @@ my_tree:
 #TODO: Automate export of automatically genereated funtions
 
 """
-    add_child(mother_node::Node, child::Node)
+    add_child!(mother_node::Node, child::Node)
 
 This function adds a child to the mother node.
 The arity of the mother node is increased by `1` and the root
@@ -410,7 +410,7 @@ end # fuction number_nodes
 Get all the leaves of this Node. It is meant as a wrapper, only the root node
 needs to be supplied
 """
-@inline function notget_leaves(root::T)::Vector{T}  where T<:AbstractNode
+@inline function get_leaves(root::T)::Vector{T}  where T<:AbstractNode
     [i for i in post_order(root) if i.nchild == 0]
 end # function get_leaves
 
