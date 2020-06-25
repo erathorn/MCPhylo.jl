@@ -399,10 +399,10 @@ function discretediagplot(c::AbstractChains; frac::Real=0.3,
 
   p1_new = Plots.plot(repeat(collect(c.range[start_iter:step_size:num_iters])/
                           1000, outer=[length(V)]),
-                       vcat([plot_vals_stat[:,j] for j in 1:length(V)]...)
+                       vcat([plot_vals_stat[:,j] for j in 1:length(V)]...),
                        seriestype=:line,
                        group=repeat(c.names[V],
-                          inner=[length(start_iter:step_size:num_iters)])
+                          inner=[length(start_iter:step_size:num_iters)]),
                        xlabel="Iteration (thousands)", ylabel="stat/df",
                        legendtitle="Variable")
 
@@ -421,8 +421,8 @@ function discretediagplot(c::AbstractChains; frac::Real=0.3,
                        vcat([plot_vals_pval[:,j] for j in 1:length(V)]...),
                        seriestype=:line,
                        group=repeat(c.names[V],
-                          inner=[length(start_iter:step_size:num_iters)])
-                      xlabel="Iteration (thousands)", ylabel="pval"
+                          inner=[length(start_iter:step_size:num_iters)]),
+                      xlabel="Iteration (thousands)", ylabel="pval",
                       legendtitle="Variable")
 
 
