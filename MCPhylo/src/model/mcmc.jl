@@ -64,10 +64,6 @@ function mcmc_master!(m::Model, window::UnitRange{Int}, burnin::Integer,
     for k in chains
   ]
   results = pmap2(mcmc_worker!, lsts)
-  #results = []
-  #for k in lsts
-  #   push!(results, mcmc_worker!(k))
-  #end
 
   sims  = Chains[results[k][1] for k in 1:K]
   model = results[1][2]
