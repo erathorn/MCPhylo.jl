@@ -11,8 +11,7 @@ using .MCPhylo
 using Random
 Random.seed!(42)
 
-mt, df = make_tree_with_data("LangData/Dravidian.cc.phy.nex"); # load your own nexus file
-
+mt, df = make_tree_with_data("LangData/Dravidian.cc.phy.nex", binary=true); # load your own nexus file
 
 po = post_order(mt);
 for node in po
@@ -62,10 +61,10 @@ setsamplers!(model, scheme);
 
 # do the mcmc simmulation. if trees=true the trees are stored and can later be
 # flushed ot a file output.
-sim = mcmc(model, my_data, inits, 50, burnin=10,thin=2, chains=1, trees=true)
+sim = mcmc(model, my_data, inits, 1000, burnin=500,thin=5, chains=1, trees=true)
 
 # request more runs
-sim = mcmc(sim, 5000, trees=true)
+sim = mcmc(sim, 500, trees=true)
 
 # write the output to a path specified as the second argument
 to_file(sim, "example_run", 5)
