@@ -132,7 +132,7 @@ function cat1(c1::AbstractChains, args::AbstractChains...)
   value = cat(c1.value, map(c -> c.value, args)..., dims=1)
 
   if isassigned(c1.trees,1)
-      trees = cat(c1.trees, map(c -> c.trees, args)..., dims=1)
+      trees = cat(c1.trees, map(c -> c.trees, args)..., dims=3)
   else
       trees = c1.trees
   end
@@ -162,7 +162,7 @@ function cat2(c1::AbstractChains, args::AbstractChains...)
 
   value = cat(c1.value, map(c -> c.value, args)..., dims=2)
   if isassigned(c1.trees,1)
-      trees = cat(c1.trees, map(c -> c.trees, args)..., dims=2)
+      trees = cat(c1.trees, map(c -> c.trees, args)..., dims=3)
   else
       trees = c1.trees
   end
