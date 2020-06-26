@@ -79,9 +79,9 @@ function tree_from_leaves(leaf_nodes::Vector{String},node_size::Int, final_lengt
         # create a new mother node to which the two first nodes are added as children
         # add the new mother node to the list and reshuffle
         first_child::Node = pop!(my_node_list)
-        first_child.inc_length = rand(Uniform(0.0015,1))#*0.1
+        first_child.inc_length = rand()#*0.1
         second_child::Node = pop!(my_node_list)
-        second_child.inc_length = rand(Uniform(0.0015,1))
+        second_child.inc_length = rand()
         curr_node::Node = Node(string(temp_name), data=zeros(Float64, (2, node_size)))
 
         add_child!(curr_node, first_child)
@@ -108,10 +108,10 @@ function create_tree_from_leaves_bin(leaf_nodes::Vector{String}, node_size::Int)
     root::Node = Node(string(temp_name), data=zeros(Float64, (2, node_size)))
 
     lchild = pop!(my_node_list)
-    lchild.inc_length = rand(Uniform(0.0015,1))
+    lchild.inc_length = rand()
 
     rchild = pop!(my_node_list)
-    rchild.inc_length = rand(Uniform(0.0015,1))
+    rchild.inc_length = rand()
     add_child!(root, lchild)
     add_child!(root, rchild)
 
@@ -136,11 +136,11 @@ function create_tree_from_leaves(leaf_nodes::Vector{String}, node_size::Int64 = 
 
     root::Node = Node(string(temp_name), data=zeros(Float64, (2, node_size)))
     lchild = pop!(my_node_list)
-    lchild.inc_length = rand(Uniform(0.0015,1))
+    lchild.inc_length = rand()
     mchild = pop!(my_node_list)
-    mchild.inc_length = rand(Uniform(0.0015,1))
+    mchild.inc_length = rand()
     rchild = pop!(my_node_list)
-    rchild.inc_length = rand(Uniform(0.0015,1))
+    rchild.inc_length = rand()
     add_child!(root, lchild, true)
     add_child!(root, rchild, false)
     add_child!(root, mchild, false, true)

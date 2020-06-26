@@ -79,7 +79,7 @@ ElementOrVector{T} = Union{T, Vector{T}}
 
 abstract type ScalarVariate <: Real end
 abstract type ArrayVariate{N} <: DenseArray{Float64, N} end
-abstract type TreeVariate <: AbstractNode end
+abstract type TreeVariate <: Any end
 
 const AbstractVariate = Union{ScalarVariate, ArrayVariate, TreeVariate}
 const VectorVariate = ArrayVariate{1}

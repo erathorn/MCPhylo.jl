@@ -19,8 +19,8 @@ function FelsensteinFunction(tree_postorder::Vector{N}, pi_::T, rates::Vector{Fl
         if node.nchild > 0
             res = node_loop(node, mml)
             if !node.root
-                scaler = maximum(res, dims=1)
-                rns = rns + log.(scaler)
+                scaler = Base.maximum(res, dims=1)
+                rns = rns + Base.log.(scaler)
                 res = res ./ scaler
             end #if
             node.data = res
