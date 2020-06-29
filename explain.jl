@@ -149,10 +149,10 @@ function discretediagplot(c::AbstractChains; frac::Real=0.3,
 
    p1_new = Plots.plot(repeat(collect(c.range[start_iter:step_size:num_iters])/
                           1000, outer=[length(V)]),
-                       vcat([plot_vals_stat[:,j] for j in 1:length(V)]...)
+                       vcat([plot_vals_stat[:,j] for j in 1:length(V)]...),
                        seriestype=:line,
                        group=repeat(c.names[V],
-                          inner=[length(start_iter:step_size:num_iters)])
+                          inner=[length(start_iter:step_size:num_iters)]),
                        xlabel="Iteration (thousands)", ylabel="stat/df",
                        legendtitle="Variable")
 
@@ -171,13 +171,40 @@ function discretediagplot(c::AbstractChains; frac::Real=0.3,
                        vcat([plot_vals_pval[:,j] for j in 1:length(V)]...),
                        seriestype=:line,
                        group=repeat(c.names[V],
-                          inner=[length(start_iter:step_size:num_iters)])
-                      xlabel="Iteration (thousands)", ylabel="pval"
+                          inner=[length(start_iter:step_size:num_iters)]),
+                      xlabel="Iteration (thousands)", ylabel="pval",
                       legendtitle="Variable")
 
 
   return [p1, p2]
 end
 
-myplots = discretediagplot(mysim)
+
+
+n, p = 25, 10
+X = randn(n, p)
+beta0 = randn(p)
+gamma0 = rand(0:1, p)
+y = X * (beta0 .* gamma0) + randn(n)
+
+## Log-transformed Posterior(gamma) + Constant
+logf = function(gamma::DenseVector)
+  logpdf(MvNormal(X * (beta0 .* gamma), 1.0), y)
+end
+
+## MCMC Simulation with Binary Metropolised Gibbs
+t = 10000
+
+
+sim1 = Chains(t, p, names = map(i -> "gamma[$i]", 1:p))
+gamma1 = BMGVariate(zeros(p), logf)
+gamma2 = BMGVariate(zeros(p), logf, k=Vector{Int}[[i] for i in 1:p])
+for i in 1:t
+  sample!(gamma1)
+  sample!(gamma2)
+  sim1[i, :, 1] = gamma1
+
+end
+
+myplots = discretediagplot(sim, step_size=500)
 MCPhylo.draw(myplots)

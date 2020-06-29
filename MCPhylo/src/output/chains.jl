@@ -15,7 +15,7 @@ end
 function Chains(value::Array{T, 3},
                 value2::Array{U,3};
                start::Integer=1, thin::Integer=1,
-               names::Vector{U}=AbstractString[], chains::Vector{V}=Int[], moves::Vector{V}=Int[0]) where {T<:Real, U<:AbstractString, V<:Integer}
+               names::Vector{W}=W[], chains::Vector{V}=Integer[], moves::Vector{V}=Integer[0]) where {T<:Real, U<:AbstractString, V<:Integer, W<:AbstractString}
   n, p, m = size(value)
 
   if isempty(names)
@@ -43,9 +43,9 @@ end
 
 function Chains(value::Vector{T};
                start::Integer=1, thin::Integer=1,
-               names::AbstractString="Param1", chains::Integer=1) where {T<:Real}
+               names::U="Param1", chains::Integer=1) where {T<:Real, U<:AbstractString}
   Chains(reshape(value, length(value), 1, 1), start=start, thin=thin,
-         names=AbstractString[names], chains=Int[chains])
+         names=U[names], chains=Int[chains])
 end
 
 
@@ -173,7 +173,7 @@ function cat3(c1::AbstractChains, args::AbstractChains...)
 
   value = cat(c1.value, map(c -> c.value, args)..., dims=3)
 
-  if isassigned(c1.trees,1)  
+  if isassigned(c1.trees,1)
       value2 = cat(c1.trees, map(c -> c.trees, args)..., dims=3)
   else
       value2 = c1.trees
