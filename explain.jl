@@ -86,7 +86,7 @@ function discretediag_sub(c::AbstractChains, frac::Real, method::Symbol,
   X = zeros(Int64, num_iters, num_chains)
   for j in 1:length(num_vars)
     X = convert(Array{Int64, 2}, c.value[:,j,:])
-    result = diag_all(X, method, nsim, start_iter, step_size)
+    result = MCPhylo.diag_all(X, method, nsim, start_iter, step_size)
     plot_vals_stat[:,j] = result[1, :] ./ result[2, :]
     plot_vals_pval[:,j] = result[3, :]
     vals[1:3, j] = result[:, end]
@@ -107,7 +107,7 @@ function discretediag_sub(c::AbstractChains, frac::Real, method::Symbol,
       Y = [x1[1:n_min] x2[(end - n_min + 1):end]]
 
       vals[(3 + 3 * (k - 1) + 1):(3 + 3 * (k - 1) + 3), j] =
-        diag_all(Y, method, nsim, n_min, step_size)[:, end]
+        MCPhylo.diag_all(Y, method, nsim, n_min, step_size)[:, end]
     end
   end
   return (collect(1:num_vars), vals, plot_vals_stat, plot_vals_pval)
@@ -198,15 +198,17 @@ t = 10000
 
 
 sim1 = Chains(t, p, names = map(i -> "gamma[$i]", 1:p))
+sim2 = Chains(t, p, names = map(i -> "gamma[$i]", 1:p))
 gamma1 = BMGVariate(zeros(p), logf)
 gamma2 = BMGVariate(zeros(p), logf, k=Vector{Int}[[i] for i in 1:p])
 for i in 1:t
   sample!(gamma1)
   sample!(gamma2)
   sim1[i, :, 1] = gamma1
-
+  sim2[i, :, 1] = gamma2
 end
 
+sim = cat(sim1, sim2, dims=3)
 myplots = discretediagplot(sim, step_size=500)
 MCPhylo.draw(myplots)
 using Distributed
