@@ -15,7 +15,7 @@ end
 function Chains(value::Array{T, 3},
                 value2::Array{U,3};
                start::Integer=1, thin::Integer=1,
-               names::Vector{W}=W[], chains::Vector{V}=Integer[], moves::Vector{V}=Integer[0]) where {T<:Real, U<:AbstractString, V<:Integer, W<:AbstractString}
+               names::Vector{W}=W[], chains::Vector{<:Integer}=Integer[], moves::Vector{<:Integer}=Integer[0]) where {T<:Real, U<:AbstractString, W<:AbstractString}
   n, p, m = size(value)
 
   if isempty(names)
@@ -234,8 +234,9 @@ function header(c::AbstractChains)
     "Iterations = $(first(c)):$(last(c))\n",
     "Thinning interval = $(step(c))\n",
     "Chains = $(join(map(string, c.chains), ","))\n",
-    "Samples per chain = $(length(c.range))\n",
-    "NNI moves = $(c.moves)\n"
+    "Samples per chain = $(length(c.range))\n"
+    #,
+    #"NNI moves = $(c.moves)\n"
   )
 end
 
