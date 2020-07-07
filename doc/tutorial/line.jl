@@ -1,5 +1,5 @@
 using Distributed, Random
-@everywhere using Mamba, LinearAlgebra
+@everywhere using MCPhylo, LinearAlgebra
 
 ## Model and User-Defined Sampler Specifications
 
@@ -130,7 +130,7 @@ autocor(sim1) |> show
 changerate(sim1) |> show
 
 ## Deviance Information Criterion
-dic(sim1) |> show
+#dic(sim1) |> show #TODO This is broken and needs fixing
 
 
 ## Subset Sampler Output
@@ -151,20 +151,20 @@ describe(sim)
 ## Plotting
 
 ## Default summary plot (trace and density plots)
-p = plot(sim1)
+#p = plot(sim1)
 
 ## Write plot to file
-draw(p, filename="summaryplot.svg")
+#draw(p, filename="summaryplot.svg")
 #draw(p, filename="summaryplot.pdf", fmt=:pdf)
 
 ## Autocorrelation and running mean plots
-p = plot(sim1, [:autocor, :mean], legend=true)
-draw(p, nrow=3, ncol=2, filename="autocormeanplot.svg")
+#p = plot(sim1, [:autocor, :mean], legend=true)
+#draw(p, nrow=3, ncol=2, filename="autocormeanplot.svg")
 #draw(p, nrow=3, ncol=2, filename="autocormeanplot.pdf", fmt=:pdf)
 
 ## Pairwise contour plots
-p = plot(sim1, :contour)
-draw(p, nrow=2, ncol=2, filename="contourplot.svg")
+#p = plot(sim1, :contour)
+#draw(p, nrow=2, ncol=2, filename="contourplot.svg")
 #draw(p, nrow=2, ncol=2, filename="contourplot.pdf", fmt=:pdf)
 
 

@@ -1,10 +1,10 @@
 using Distributed
-@everywhere using Random
+@everywhere using Random, Test
 
 include("utils.jl")
 
 const tutorialtests = [
-  "line"
+   "line"
 ]
 
 const samplertests = [
@@ -32,23 +32,44 @@ const extensiontests = [
   "newmultivardist"
 ]
 
+const parsertests = [
+  "newick"
+]
 println("Running tests:")
 
-for t in tutorialtests
+@testset "All tests" begin
+
+@testset "Tutorial" begin
   @everywhere Random.seed!(123)
-  @runtest "../doc/tutorial/" t
+  for t in tutorialtests
+    @runtest "../doc/tutorial/" t
+end
 end
 
+@testset "Samplertest" begin
+  @everywhere Random.seed!(123)
 for t in samplertests
-  @everywhere Random.seed!(123)
-  @runtest "../doc/samplers/" t
+    @runtest "../doc/samplers/" t
+  end
 end
 
-for t in mcmctests
-  @runtest "../doc/mcmc/" t
+@testset "mcmctests" begin
+  for t in mcmctests
+    @runtest "../doc/mcmc/" t
+  end
 end
 
+@testset "extensions" begin
 for t in extensiontests
   @everywhere Random.seed!(123)
-  @runtest "../doc/mcmc/" t
+    @runtest "../doc/mcmc/" t
+  end
 end
+@testset "parsers" begin
+for t in parsertests
+  @everywhere Random.seed!(123)
+    @runtest "../doc/parsers/" t
+  end
+  end
+end
+#all sets test set
