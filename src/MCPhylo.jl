@@ -16,6 +16,9 @@ using GPUArrays
 using CUDAnative
 using CUDAdrv
 
+using Plots
+using StatsPlots
+
 using Zygote
 using Calculus
 
@@ -57,8 +60,6 @@ import Distributions:
        ## Methods
        cdf, dim, gradlogpdf, insupport, isprobvec, logpdf, logpdf!, maximum,
        minimum, pdf, quantile, rand, sample!, support, length
-import Gadfly: draw, Geom, Guide, Layer, layer, PDF, PGF, Plot, plot, PNG, PS,
-       render, Scale, SVG, Theme
 using LightGraphs: DiGraph, add_edge!, outneighbors,
        topological_sort_by_dfs, vertices
 import StatsBase: autocor, autocov, countmap, counts, describe, predict,
