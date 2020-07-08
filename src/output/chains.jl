@@ -22,7 +22,7 @@ end
 function Chains(value::Array{T, 3},
                 value2::Array{U,3};
                start::Integer=1, thin::Integer=1,
-               names::Vector{W}=W[], chains::Vector{<:Integer}=Integer[], moves::Vector{<:Integer}=Integer[0]) where {T<:Real, U<:AbstractString, W<:AbstractString}
+               names::Vector{W}=AbstractString[], chains::Vector{V}=Int[], moves::Vector{V}=Int[0]) where {T<:Real, U<:AbstractString, V<:Integer, W <: AbstractString}
   n, p, m = size(value)
 
   if isempty(names)
@@ -52,7 +52,7 @@ end
 
 function Chains(value::Vector{T};
                start::Integer=1, thin::Integer=1,
-               names::U="Param1", chains::Integer=1) where {T<:Real, U<:AbstractString}
+               names::U="Param1", chains::Integer=1) where {T<:Real, U <: AbstractString}
   Chains(reshape(value, length(value), 1, 1), start=start, thin=thin,
          names=U[names], chains=Int[chains])
 end
