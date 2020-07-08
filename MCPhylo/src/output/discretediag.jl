@@ -387,17 +387,7 @@ function discretediagplot(c::AbstractChains; frac::Real=0.3,
   V, vals, plot_vals_stat, plot_vals_pval =
     discretediag_sub(c, frac, method, nsim, start_iter, step_size)
 
-  p1 = plot(y=vcat([plot_vals_stat[:,j] for j in 1:length(V)]...),
-            x=repeat(collect(c.range[start_iter:step_size:num_iters])/1000,
-                     outer=[length(V)]),
-            Geom.line,
-            Guide.xlabel("Iteration (thousands)", orientation=:horizontal),
-            Guide.ylabel("stat/df",orientation=:vertical),
-            Scale.color_discrete(), Guide.colorkey(title="Variable"),
-            color=repeat(c.names[V],
-                         inner=[length(start_iter:step_size:num_iters)]))
-
-  p1_new = Plots.plot(repeat(collect(c.range[start_iter:step_size:num_iters])/
+  p1 = Plots.plot(repeat(collect(c.range[start_iter:step_size:num_iters])/
                           1000, outer=[length(V)]),
                        vcat([plot_vals_stat[:,j] for j in 1:length(V)]...),
                        seriestype=:line,
@@ -406,24 +396,14 @@ function discretediagplot(c::AbstractChains; frac::Real=0.3,
                        xlabel="Iteration (thousands)", ylabel="stat/df",
                        legendtitle="Variable")
 
-  p2 = plot(y=vcat([plot_vals_pval[:,j] for j in 1:length(V)]...),
-            x=repeat(collect(c.range[start_iter:step_size:num_iters])/1000,
-                     outer=[length(V)]),
-            Geom.line,
-            Guide.xlabel("Iteration (thousands)", orientation=:horizontal),
-            Guide.ylabel("pval",orientation=:vertical),
-            Scale.color_discrete(), Guide.colorkey(title="Variable"),
-            color=repeat(c.names[V],
-                         inner=[length(start_iter:step_size:num_iters)]))
-
-  p2_new = Plots.plot(repeat(collect(c.range[start_iter:step_size:num_iters])/
-                          1000, outer=[length(V)]),
-                       vcat([plot_vals_pval[:,j] for j in 1:length(V)]...),
-                       seriestype=:line,
-                       group=repeat(c.names[V],
-                          inner=[length(start_iter:step_size:num_iters)]),
-                      xlabel="Iteration (thousands)", ylabel="pval",
-                      legendtitle="Variable")
+  p2 = Plots.plot(repeat(collect(c.range[start_iter:step_size:num_iters])/
+                        1000, outer=[length(V)]),
+                     vcat([plot_vals_pval[:,j] for j in 1:length(V)]...),
+                     seriestype=:line,
+                     group=repeat(c.names[V],
+                        inner=[length(start_iter:step_size:num_iters)]),
+                    xlabel="Iteration (thousands)", ylabel="pval",
+                    legendtitle="Variable")
 
 
   return [p1, p2]
