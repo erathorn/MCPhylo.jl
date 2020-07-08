@@ -6,12 +6,12 @@ tester:
 - Date: 2020-05-06
 =#
 
-include("./MCPhylo/src/MCPhylo.jl")
+include("./src/MCPhylo.jl")
 using .MCPhylo
 using Random
 Random.seed!(42)
 
-mt, df = make_tree_with_data("LangData/Dravidian.cc.phy.nex", binary=true); # load your own nexus file
+mt, df = make_tree_with_data("Example.nex", binary=true); # load your own nexus file
 
 po = post_order(mt);
 for node in po
