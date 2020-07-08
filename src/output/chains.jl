@@ -54,7 +54,7 @@ function Chains(value::Vector{T};
                start::Integer=1, thin::Integer=1,
                names::U="Param1", chains::Integer=1) where {T<:Real, U <: AbstractString}
   Chains(reshape(value, length(value), 1, 1), start=start, thin=thin,
-         names=AbstractString[names], chains=Int[chains])
+         names=U[names], chains=Int[chains])
 end
 
 
@@ -260,8 +260,9 @@ function header(c::AbstractChains)
     "Iterations = $(first(c)):$(last(c))\n",
     "Thinning interval = $(step(c))\n",
     "Chains = $(join(map(string, c.chains), ","))\n",
-    "Samples per chain = $(length(c.range))\n",
-    "NNI moves = $(c.moves)\n"
+    "Samples per chain = $(length(c.range))\n"
+    #,
+    #"NNI moves = $(c.moves)\n"
   )
 end
 

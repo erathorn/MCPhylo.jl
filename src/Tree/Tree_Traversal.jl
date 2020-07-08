@@ -64,6 +64,10 @@ function get_leaves(root::T) where T<:TreeVariate
     get_leaves(root.value)
 end # function post_order
 
+@inline function get_leaves(root::T)::Vector{T}  where T<:AbstractNode
+    [i for i in post_order(root) if i.nchild == 0]
+end # function get_leaves
+
 
 
 
