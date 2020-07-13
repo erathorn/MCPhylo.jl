@@ -1,10 +1,11 @@
 
-function to_file(model::ModelChains, outpath::AbstractString, thin::Int64)
+function to_file(model::ModelChains, outpath::AbstractString)
 
     for run in 1:size(model.value,3)
 
         df = DataFrame(model.value[:,:,run])
         rename!(df, Symbol.(model.names))
+        thin = model.range.step
         if isassigned(model.trees, 1)
 
             tdf = DataFrame(model.trees[:,:,run])
