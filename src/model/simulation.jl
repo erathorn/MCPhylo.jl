@@ -40,7 +40,12 @@ end
 function gradlogpdf!(m::Model, x::AbstractVector{T}, block::Integer=0,
                       transform::Bool=false; dtype::Symbol=:forward) where {T<:Real}
   f = x -> logpdf!(m, x, block, transform)
-  gradient(f, convert(Vector{T}, x), dtype)
+  if dtype == :Zygote
+    Zygote.gradient(f, x)
+  else
+    FiniteDiff.finite_difference_gradient(f, x)
+  end
+
 end
 
 

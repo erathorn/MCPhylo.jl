@@ -20,9 +20,8 @@ using Plots
 using StatsPlots
 
 using Zygote
-using Calculus
+using FiniteDiff
 
-import Calculus: gradient
 using Showoff: showoff
 using Markdown
 using DataFrames
