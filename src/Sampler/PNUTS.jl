@@ -42,7 +42,7 @@ const PNUTSVariate = SamplerVariate{PNUTSTune}
 
 #################### Sampler Constructor ####################
 
-function PNUTS(params::ElementOrVector{Symbol}; dtype::Symbol=:forward,args...)
+function PNUTS(params::ElementOrVector{Symbol}; args...)
   samplerfx = function(model::Model, block::Integer)
     block = SamplingBlock(model, block, true)
     f = (x, sz, ll, gr) -> mlogpdfgrad!(block, x, sz, ll, gr)
@@ -366,8 +366,6 @@ function nutsepsilon(x::T, logfgrad::Function, delta::Float64)::Float64  where T
    _, rprime, logfprime, _ ,_ = refraction(x0, r0, 1, grad0, epsilon, logfgrad, delta, n)
    prob = exp(logfprime - logf0 - 0.5 * (dot(rprime) - dot(r0)))
   end
-
-  println("eps ",epsilon)
 
   epsilon
 end

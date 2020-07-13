@@ -357,9 +357,6 @@ export
   SymUniform,
   CompoundDirichlet,
   PhyloDist,
-  BrownianPhylo,
-  MultivariateUniformTrunc,
-  CompoundDirichletWrap,
   exponentialBL
 
 export
