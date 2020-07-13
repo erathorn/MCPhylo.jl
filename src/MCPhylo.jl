@@ -432,9 +432,15 @@ export
   make_tree_with_data,
   make_tree_with_data_cu,
   to_file, drop_samples,
+  to_df,
+  to_covariance,
+  to_distance_matrix,
+  node_distance,
+  get_path,
   cut_samples,
   NNI!,
   RF, randomize!,
+  BHV_bounds,
   get_branchlength_vector,
   set_branchlength_vector!,
   post_order,
@@ -451,7 +457,9 @@ export
   tree_height,
   path_length
   get_sister,
-  get_leaves
+  get_leaves,
+  neighbor_joining,
+  upgma,
 
 
 export
