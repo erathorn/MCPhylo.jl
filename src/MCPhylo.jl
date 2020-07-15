@@ -307,6 +307,7 @@ include("Tree/Tree_Search.jl")
 include("Tree/Tree_Legacy.jl")
 include("Tree/Tree_Clustering.jl")
 include("Tree/Tree_Ladderizing.jl")
+include("Tree/Tree_Pruning.jl")
 
 
 include("Parser/Parser.jl")
