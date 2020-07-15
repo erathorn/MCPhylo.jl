@@ -1,3 +1,9 @@
+"""
+    ladderize_tree!(root::T, node_names::Vector{String})
+
+This function ladderizes a tree inplace, i.e. sorts the nodes on all levels by the count
+of their descendants
+"""
 function ladderize_tree!(root::T,ascending::Bool=true)::Nothing where T<:AbstractNode
     if root.nchild == 0
         return
@@ -18,6 +24,12 @@ function ladderize_tree!(root::T,ascending::Bool=true)::Nothing where T<:Abstrac
     end
 end
 
+"""
+    ladderize_tree(root::T, node_names::Vector{String})
+
+This function returns a ladderized copy of a tree, i.e. a copy with all the
+nodes on all levels sorted by the count of their descendants
+"""
 function ladderize_tree(root::T, ascending::Bool=true)::T where T<:AbstractNode
     copyroot = deepcopy(root)
     ladderize_tree!(copyroot, ascending)
