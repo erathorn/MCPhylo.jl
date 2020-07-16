@@ -4,4 +4,6 @@ doc/make.bat
 *params.log
 *.nwk
 *.jls
+*.nex
 *params*.log
+docs/build/
