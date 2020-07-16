@@ -7,7 +7,6 @@ function prune_tree!(root::T, node_names::Vector{String})::Nothing where T<:Abst
     if root.name in node_names
         # delete entire tree if root node needs to be deleted
         root = nothing
-    elseif root.nchild == 0
     else
         for child in root.children
             if child.name in node_names
