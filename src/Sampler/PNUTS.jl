@@ -366,7 +366,7 @@ function nutsepsilon(x::T, logfgrad::Function, delta::Float64)::Float64  where T
    _, rprime, logfprime, _ ,_ = refraction(x0, r0, 1, grad0, epsilon, logfgrad, delta, n)
    prob = exp(logfprime - logf0 - 0.5 * (dot(rprime) - dot(r0)))
   end
-
+  println(epsilon)
   epsilon
 end
 

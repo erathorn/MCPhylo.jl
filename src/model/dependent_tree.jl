@@ -35,6 +35,6 @@ function unlist(d::TreeLogical)
 end
 
 
-function unlist(s::AbstractStochastic, x::N, transform::Bool=false)::Vector{N}  where N <: AbstractNode
+function unlist(s::AbstractStochastic, x::N, transform::Bool=false)::Vector{N}  where N <: GeneralNode
     [s.value]
 end

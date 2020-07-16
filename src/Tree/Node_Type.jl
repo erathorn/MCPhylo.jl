@@ -13,63 +13,50 @@ stored in the node.
 
 abstract type AbstractNode end
 
-mutable struct Node_cu{T<:Real, A<:AbstractArray,B<:AbstractArray, I<:Integer} <: AbstractNode
-    name::String
-    data::A#{Float64, 2}
-    mother::Union{Node_cu, Missing}
-    children::Vector{Node_cu}
+mutable struct GeneralNode{S<: AbstractString, R<:Real, A<:AbstractArray{<:Real},
+                    C<:AbstractArray{<:Real}, I<:Integer, T<: AbstractString, B<:Bool} <: AbstractNode
+    name::S
+    data::A
+    mother::Union{GeneralNode{S,R,A,C,I,T,B}, Missing}
+    children::Vector{GeneralNode{S,R,A,C,I,T,B}}
+    scaler::C
     nchild::I
-    root::Bool
-    scaler::B
-    inc_length::T
-    binary::String
+    root::B
+    inc_length::R
+    binary::T
     num::I
-    height::Float64
-    IntExtMap::Union{Vector{Int64}, Nothing}
-    blv::Union{Vector{Float64}, Nothing}
- end
-
-
-mutable struct Node{T<:Real, A<:Real,B<:Real, I<:Integer} <: AbstractNode
-    name::String
-    data::Array{A,2}
-    mother::Union{Node{T,A,B,I}, Missing}
-    children::Vector{Node{T,A,B,I}}
-    scaler::Array{B,2}
-    nchild::I
-    root::Bool
-    inc_length::T
-    binary::String
-    num::I
-    height::T
-    IntExtMap::Union{Vector{I}, Nothing}
-    blv::Union{Vector{T}, Nothing}
-    initialized::Bool
+    height::R
+    IntExtMap::Vector{I}
+    blv::Vector{R}
+    initialized::B
 end # struct Node
+
+const Node = GeneralNode{String, Float64, Array{Float64, 2}, Array{Float64, 2}, Int64, String, Bool}
+const Node_cu = GeneralNode{String, Float64, CuArray{Float64}, CuArray{Float64}, Int64, String, Bool}
 
 
 function Node()::Node
-        Node{Float64,Float64,Float64,Int64}("no_name", ones(3,3), missing,Vector{Node{Float64,Float64,Float64,Int64}}(undef, 0) ,ones(1,3),0,true,1.0,"0",1,1.0,nothing,nothing,false)
+        Node("no_name", ones(3,3), missing,Node[] ,ones(1,3),0,true,1.0,"0",1,1.0,Int64[],Float64[],false)
 end
 
 
 function Node(name::String; data::Array{A,2}=ones(2,3))::Node where A<:Real
-        Node{Float64,A,Float64,Int64}(name, data ,missing, Vector{Node}(undef, 0), ones(3,2), 0, true, 1.0, "0", 1, 1.0, nothing, nothing, false)
+        Node(name, data ,missing, Node[], ones(3,2), 0, true, 1.0, "0", 1, 1.0, Int64[], Float64[], false)
 end
 
 
 #################### Base functionality ####################
 
-Base.:(==)(x::T, y::T) where T<:AbstractNode = x.num == y.num
-Base.size(x::T) where T<:AbstractNode = size(post_order(x))
-Base.length(x::T) where T<:AbstractNode = x.nchild
+Base.:(==)(x::T, y::T) where T<:GeneralNode = x.num == y.num
+Base.size(x::T) where T<:GeneralNode = size(post_order(x))
+Base.length(x::T) where T<:GeneralNode = x.nchild
 
-function Base.summary(io::IO, d::N) where N <: AbstractNode
+function Base.summary(io::IO, d::N) where N <: GeneralNode
     summary(io, d.name)
 end
 
 
-function Base.show(io::IO, d::N) where N <: AbstractNode
+function Base.show(io::IO, d::N) where N <: GeneralNode
     print(io, "Tree with root:\n")
     show(io, d.name)
     if d.initialized
@@ -89,7 +76,7 @@ function Base.show(io::IO, d::N) where N <: AbstractNode
     end
 end
 
-function showall(io::IO, d::N) where N <: AbstractNode
+function showall(io::IO, d::N) where N <: GeneralNode
   show(io, d)
   print(io, "\nNode:\n")
   show(io, "text/plain", d.name)

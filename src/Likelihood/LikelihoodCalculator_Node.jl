@@ -6,7 +6,7 @@ This function calculates the log-likelihood of an evolutiuonary model using the
 Felsensteins pruning algorithm.
 """
 function FelsensteinFunction(tree_postorder::Vector{N}, pi_::T, rates::Vector{Float64},
-                             data::Array{Float64,3}, n_c::Int64, blv::Vector{Float64}) where {T<:Real, N<:Node{<:Real,Float64,Float64,<:Integer}}
+                             data::Array{Float64,3}, n_c::Int64, blv::Vector{Float64}) where {T<:Real, N<:GeneralNode}
     r::Float64 = 1.0
     mu =  1.0 / (2.0 * pi_ * (1-pi_))
     mml = calc_trans.(blv, pi_, mu, r)
@@ -34,7 +34,7 @@ end # function
     sum(log.(sum(root .* Array([pi_, 1.0-pi_]), dims=1))+rns)
 end
 
-function node_loop(node::N, mml::Array{Array{Float64, 2},1})::Array{Float64,2} where {N<:Node{<:Real,Float64,Float64,<:Integer}, S<:Real}
+function node_loop(node::N, mml::Array{Array{Float64, 2},1})::Array{Float64,2} where {N<:GeneralNode, S<:Real}
     out = ones(size(node.data))
     @inbounds @views for child in node.children
             out = out .* (mml[child.num]*child.data)
@@ -46,7 +46,7 @@ end
     x.*y
 end
 
-@inline function bc(node::N, mml::Array{Array{Float64,2},1})::Array{Float64,2} where {N<:Node{<:Real,Float64,Float64,<:Integer}, S<:Real}
+@inline function bc(node::N, mml::Array{Array{Float64,2},1})::Array{Float64,2} where {N<:GeneralNode, S<:Real}
     mml[node.num]*node.data
 end
 

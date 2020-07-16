@@ -103,10 +103,10 @@ function Logical(d::Integer, f::Function,
   setmonitor!(l, monitor)
 end
 
-Logical(f::Function, d::T, args...)  where T<:AbstractNode = Logical(d, f, args...)
+Logical(f::Function, d::T, args...)  where T<:GeneralNode = Logical(d, f, args...)
 
 function Logical(d::T, f::Function,
-                 monitor::Union{Bool, Vector{Int}}=true) where T<:AbstractNode
+                 monitor::Union{Bool, Vector{Int}}=true) where T<:GeneralNode
   value = T()
   fx, src = modelfxsrc(depfxargs, f)
   l = TreeLogical(value, :nothing, Int[], fx, src, Symbol[])
@@ -206,7 +206,7 @@ function Stochastic(d::Integer, f::Function,
 
 end
 
-Stochastic(f::Function, d::T, args...)  where T<:Node = Stochastic(d, f, args...)
+Stochastic(f::Function, d::T, args...)  where T<:GeneralNode = Stochastic(d, f, args...)
 
 function Stochastic(d::Node, f::Function, nnodes::Int, monitor::Union{Bool, Vector{Int}}=true)
     value = Node()
@@ -231,7 +231,7 @@ function setinits!(s::ArrayStochastic, m::Model, x::DenseArray)
   s.value = convert(typeof(s.value), copy(x))
   s.distr = s.eval(m)
   if !isa(s.distr, UnivariateDistribution) && dims(s) != dims(s.distr)
-    
+
     throw(DimensionMismatch("incompatible distribution for stochastic node"))
   end
   setmonitor!(s, s.monitor)
@@ -241,14 +241,14 @@ function setinits!(s::AbstractStochastic, m::Model, x)
   throw(ArgumentError("incompatible initial value for node : $(s.symbol)"))
 end
 
-function setinits!(d::TreeStochastic, m::Model, x::T) where {T<:AbstractNode}
+function setinits!(d::TreeStochastic, m::Model, x::T) where {T<:GeneralNode}
     d.value = x
     d.distr = d.eval(m)
     insupport(d.distr, x) || throw(ArgumentError("The supplied tree does not match the topological tree constraints."))
     setmonitor!(d, d.monitor)
 end # function
 
-function setinits!(d::TreeStochastic, m::Model, x::Array{T})  where {T<:AbstractNode}
+function setinits!(d::TreeStochastic, m::Model, x::Array{T})  where {T<:GeneralNode}
     d.value = x
     d.distr = d.eval(m)
 
