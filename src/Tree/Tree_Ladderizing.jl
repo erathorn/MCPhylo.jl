@@ -4,19 +4,13 @@
 This function ladderizes a tree inplace, i.e. sorts the nodes on all levels by the count
 of their descendants
 """
-function ladderize_tree!(root::T,ascending::Bool=true)::Nothing where T<:AbstractNode
-    if root.nchild == 0
-        return
-    end
+function ladderize_tree!(root::T, ascending::Bool=true)::Nothing where T<:AbstractNode
+    root.nchild == 0 && return nothing
     ndescendants = Array{Float64,1}(undef, length(root.children))
     for (index, child) in enumerate(root.children)
-        ndescendants[index] = length(post_order(child))
+        ndescendants[index] = size(child)[1]
     end
-    if ascending == true
-        perm = sortperm(ndescendants)
-    else
-        perm = sortperm(ndescendants, rev=true)
-    end
+    perm = sortperm(ndescendants, rev=!ascending)
     root.children = root.children[perm]
 
     for child in root.children
