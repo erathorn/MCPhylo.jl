@@ -1,5 +1,5 @@
 """
-    tree_pruning!(root::T, node_names::Vector{String})
+    prune_tree!(root::T, node_names::Vector{String})
 
 This function removes specific nodes and their daughters from a tree
 """
@@ -21,7 +21,7 @@ function prune_tree!(root::T, node_names::Vector{String})::Nothing where T<:Abst
 end
 
 """
-    tree_pruning(root::T, node_names::Vector{String})::T where T<:AbstractNode
+    prune_tree(root::T, node_names::Vector{String})::T where T<:AbstractNode
 
 This function returns a copy of a tree with specific nodes including their
 descendants removed
