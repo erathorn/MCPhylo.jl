@@ -457,7 +457,11 @@ export
   tree_height,
   path_length
   get_sister,
-  get_leaves
+  get_leaves,
+  prune_tree!,
+  prune_tree,
+  ladderize_tree!,
+  ladderize_tree
 
 
 export
