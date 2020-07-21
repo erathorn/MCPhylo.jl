@@ -306,6 +306,8 @@ include("Tree/Tree_Traversal.jl")
 include("Tree/Tree_Search.jl")
 include("Tree/Tree_Legacy.jl")
 include("Tree/Tree_Clustering.jl")
+include("Tree/Tree_Ladderizing.jl")
+include("Tree/Tree_Pruning.jl")
 
 
 include("Parser/Parser.jl")
@@ -455,7 +457,11 @@ export
   tree_height,
   path_length
   get_sister,
-  get_leaves
+  get_leaves,
+  prune_tree!,
+  prune_tree,
+  ladderize_tree!,
+  ladderize_tree
 
 
 export
