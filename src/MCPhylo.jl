@@ -79,9 +79,10 @@ ElementOrVector{T} = Union{T, Vector{T}}
 
 abstract type ScalarVariate <: Real end
 abstract type ArrayVariate{N} <: DenseArray{Float64, N} end
-abstract type TreeVariate <: Any end
+abstract type TreeVariate <: AbstractNode end
 
 const AbstractVariate = Union{ScalarVariate, ArrayVariate, TreeVariate}
+const NumericalVariate = Union{ScalarVariate, ArrayVariate}
 const VectorVariate = ArrayVariate{1}
 const MatrixVariate = ArrayVariate{2}
 
@@ -114,8 +115,8 @@ mutable struct ArrayLogical{N} <: ArrayVariate{N}
   targets::Vector{Symbol}
 end
 
-mutable struct TreeLogical <: TreeVariate
-  value::Node
+mutable struct TreeLogical{T} <: TreeVariate where T<:GeneralNode
+  value::T
   symbol::Symbol
   monitor::Vector{Int}
   eval::Function
@@ -144,8 +145,8 @@ mutable struct ArrayStochastic{N} <: ArrayVariate{N}
 end
 
 
-mutable struct TreeStochastic <: TreeVariate
-    value::Node
+mutable struct TreeStochastic{T} <: TreeVariate where T<: GeneralNode
+    value::T
     symbol::Symbol
     monitor::Vector{Int}
     eval::Function
@@ -154,9 +155,11 @@ mutable struct TreeStochastic <: TreeVariate
     distr::DistributionStruct
 end
 
-const AbstractLogical = Union{ScalarLogical, ArrayLogical, TreeLogical}
-const AbstractStochastic = Union{ScalarStochastic, ArrayStochastic, TreeStochastic}
-const AbstractDependent = Union{AbstractLogical, AbstractStochastic}
+const AbstractLogical = Union{ScalarLogical, ArrayLogical}#, TreeLogical}
+const AbstractStochastic = Union{ScalarStochastic, ArrayStochastic}#, TreeStochastic}
+#const NumericalStochastic = Union{ScalarStochastic, ArrayStochastic}
+const AbstractTreeStochastic = Union{TreeLogical, TreeStochastic}
+const AbstractDependent = Union{AbstractLogical, AbstractStochastic, AbstractTreeStochastic}
 
 
 #################### Sampler Types ####################
@@ -172,7 +175,7 @@ end
 abstract type SamplerTune end
 
 struct SamplerVariate{T<:SamplerTune} <: VectorVariate
-  value::Union{Vector{Float64}, Vector{S}} where S<:AbstractNode
+  value::Union{Vector{Float64}, Vector{S}} where S<:GeneralNode
   tune::T
 
   function SamplerVariate{T}(x::AbstractVector, tune::T) where T<:SamplerTune
@@ -181,7 +184,7 @@ struct SamplerVariate{T<:SamplerTune} <: VectorVariate
   end
 
   function SamplerVariate{T}(x::AbstractVector, pargs...; kargs...) where T<:SamplerTune
-    if !isa(x[1], Node)
+    if !isa(x[1], GeneralNode)
       value = convert(Vector{Float64}, x)
     else
       mt = typeof(x[1])
@@ -200,7 +203,7 @@ struct ModelGraph
 end
 
 struct ModelState
-  value::Vector{Any}
+  value::Vector
   tune::Vector{Any}
 end
 

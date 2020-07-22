@@ -44,12 +44,6 @@ function NNI!(root::T, target::Int64)::Int64  where T<:GeneralNode
    NNI!(root, tn, lor)
 end #function
 
-function NNI!(root::T, target::Int64, lor::Bool)::Int64  where T<:GeneralNode
-   tn::T = find_num(root, target)
-   NNI!(root, tn, lor)
-end #function
-
-
 """
     NNI!(root::T)::Int64  where T<:GeneralNode
 
@@ -179,7 +173,7 @@ function reroot(root::T, new_root::String)::T where T<:GeneralNode
 
 
     set_binary!(root_node)
-    number_nodes!(root_node)
+
     return root_node
 end
 

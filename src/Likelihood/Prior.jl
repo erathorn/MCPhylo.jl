@@ -19,7 +19,7 @@ mutable struct CompoundDirichlet <: ContinuousUnivariateDistribution
             new(alpha, a, beta, c, constraints)
 end # struct
 
-function internal_logpdf(d::CompoundDirichlet, b_lens::Any, int_leave_map::Vector{Int64}; rd::Bool=false)
+function internal_logpdf(d::CompoundDirichlet, b_lens::Array{Float64}, int_leave_map::Vector{Int64}; rd::Bool=false)
     blen_int = 0.0
     blen_leave = 0.0
     blen_int_log = 0.0
@@ -52,7 +52,7 @@ function internal_logpdf(d::CompoundDirichlet, b_lens::Any, int_leave_map::Vecto
 
 end
 
-function gradlogpdf(d::CompoundDirichlet, x::Node)
+function gradlogpdf(d::CompoundDirichlet, x::T) where T <: GeneralNode
 
     int_ext = internal_external(x)
     blv = get_branchlength_vector(x)
@@ -66,17 +66,17 @@ function gradlogpdf(d::CompoundDirichlet, x::Node)
 end
 
 
-function _logpdf(d::CompoundDirichlet, x::Node)
+function _logpdf(d::CompoundDirichlet, x::T) where T <: GeneralNode
     internal_logpdf(d, get_branchlength_vector(x), internal_external(x); rd=true)
 end # function _logpdf
 
-function insupport(d::CompoundDirichlet, x::Node)
+function insupport(d::CompoundDirichlet, x::T) where T <: GeneralNode
     bl = get_branchlength_vector(x)
     all(isfinite.(bl)) && all(0.0 .< bl) && topological(x, d.constraints) && !any(isnan.(bl))
 end # function insupport
 
 
-function logpdf_sub(d::ContinuousUnivariateDistribution, x::Node, transform::Bool)
+function logpdf_sub(d::ContinuousUnivariateDistribution, x::T, transform::Bool) where T <: GeneralNode
     insupport(d, x) ? _logpdf(d, x) : -Inf
 end
 

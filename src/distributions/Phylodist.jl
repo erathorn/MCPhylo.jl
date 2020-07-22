@@ -24,8 +24,9 @@ Base.size(d::PhyloDist) = (d.nbase, d.nsites, d.nnodes)
 function logpdf(d::PhyloDist, x::AbstractArray)
 
     mt = post_order(d.my_tree)
-    get_branchlength_vector(d.my_tree, d.blv)
-    return FelsensteinFunction(mt, d.mypi, d.rates, x, d.nsites, d.blv)
+
+    blv = get_branchlength_vector(d.my_tree)
+    return FelsensteinFunction(mt, d.mypi, d.rates, x, d.nsites, blv)
 end
 
 

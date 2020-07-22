@@ -74,8 +74,8 @@ function logpdf(m::Model, x::AbstractArray{T}, block::Integer=0,
 end
 
 
-function logpdf!(m::Model, x::Node, block::Integer=0,
-                  transform::Bool=false)
+function logpdf!(m::Model, x::N, block::Integer=0,
+                  transform::Bool=false) where N<:GeneralNode
   params = keys(m, :block, block)
   targets = keys(m, :target, block)
   m[params] = relist(m, x, params, transform)
@@ -89,12 +89,12 @@ function logpdf!(m::Model, x::Node, block::Integer=0,
   lp
 end
 
-function gradlogpdf!(m::Model, x::AbstractArray{T}, block::Integer=0,transform::Bool=false)where {T<:AbstractNode}
+function gradlogpdf!(m::Model, x::AbstractArray{T}, block::Integer=0,transform::Bool=false) where T<:GeneralNode
   gradlogpdf!(m, x, block, transform)
 end
 
 
-function gradlogpdf!(m::Model, x::Node, block::Integer=0,transform::Bool=false)::Tuple{Float64, Vector{Float64}}
+function gradlogpdf!(m::Model, x::N, block::Integer=0,transform::Bool=false)::Tuple{Float64, Vector{Float64}} where N<:GeneralNode
   params = keys(m, :block, block)
   targets = keys(m, :target, block)
   m[params] = relist(m, x, params, transform)
@@ -104,7 +104,8 @@ function gradlogpdf!(m::Model, x::Node, block::Integer=0,transform::Bool=false):
   # use thread parallelism
   # prior
   prior_res = @spawn gradlogpdf(m[params[1]], x)
-  #prior_res =  gradlogpdf(m[params[1]], x)
+
+  #vp, gradp =  gradlogpdf(m[params[1]], x)
 
   # likelihood
   v, grad = gradlogpdf(m[targets[1]])
@@ -171,11 +172,19 @@ end
 
 function unlist(m::Model, monitoronly::Bool)
   f = function(key)
+
     node = m[key]
-    lvalue = unlist(node)
+    #println(key)
+    #println("node: ", typeof(node), " ", isa(node, AbstractTreeStochastic), " ", node.monitor)
+    lvalue = isa(node, AbstractTreeStochastic) ? unlist_tree(node) : unlist(node)
+
+    #lvalue = unlist(node)
+
     monitoronly ? lvalue[node.monitor] : lvalue
   end
-  vcat(map(f, keys(m, :dependent))..., m.likelihood)
+  r = vcat(map(f, keys(m, :dependent))..., m.likelihood)
+  #println(r)
+  r
 end
 
 function unlist(m::Model, nodekeys::Vector{Symbol}, transform::Bool=false)
@@ -189,9 +198,9 @@ function relist(m::Model, x::AbstractArray{T}, block::Integer=0,
 end
 
 function relist(m::Model, x::AbstractArray{T}, block::Integer=0,
-                transform::Bool=false) where {T<:AbstractNode}
+               transform::Bool=false) where {T<:GeneralNode}
 
-  relist(m, x, keys(m, :block, block), transform)
+ relist(m, x, keys(m, :block, block), transform)
 end
 
 
@@ -202,7 +211,9 @@ function relist(m::Model, x::AbstractArray{T},
   N = length(x)
   offset = 0
   for key in nodekeys
+
     value, n = relistlength(m[key], view(x, (offset + 1):N), transform)
+
     values[key] = value
     offset += n
   end
@@ -213,8 +224,7 @@ end
 
 
 
-function relist(m::Model, x::Node,
-                nodekeys::Vector{Symbol}, transform::Bool=false)
+function relist(m::Model, x::N, nodekeys::Vector{Symbol}, transform::Bool=false) where N<:GeneralNode
   values = Dict{Symbol,Any}()
   #N = length(x)
   offset = 0
@@ -244,7 +254,7 @@ function assign!(m::Model, key::Symbol, value::T) where T <: Real
   m[key].value = value
 end
 
-function assign!(m::Model, key::Symbol, value::T) where T <:AbstractNode
+function assign!(m::Model, key::Symbol, value::T) where T <:GeneralNode
   m[key].value = value
 end
 

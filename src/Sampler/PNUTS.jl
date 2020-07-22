@@ -20,7 +20,6 @@ mutable struct PNUTSTune <: SamplerTune
   moves::Int
 
 
-
   PNUTSTune() = new()
 
   function PNUTSTune(x::Vector{T}, epsilon::Float64, logfgrad::Union{Function, Missing};
@@ -42,7 +41,7 @@ const PNUTSVariate = SamplerVariate{PNUTSTune}
 
 #################### Sampler Constructor ####################
 
-function PNUTS(params::ElementOrVector{Symbol}; args...)
+function PNUTS(params::ElementOrVector{Symbol}; dtype::Symbol=:forward,args...)
   samplerfx = function(model::Model, block::Integer)
     block = SamplingBlock(model, block, true)
     f = (x, sz, ll, gr) -> mlogpdfgrad!(block, x, sz, ll, gr)
@@ -114,7 +113,6 @@ function nuts_sub!(v::PNUTSVariate, logfgrad::Function)::PNUTSVariate
   mt::Node = deepcopy(v[1])
   epsilon::Float64 = v.tune.epsilon
   delta::Float64 = v.tune.delta
-
   nl::Int64 = size(mt)[1]-1
   r = randn(nl)
   g = zeros(nl)
@@ -193,7 +191,6 @@ function refraction(v::T, r::Vector{Float64}, pm::Int64,
     blenvec = molifier.(tmpB, delta)
 
     set_branchlength_vector!(v1, blenvec)
-
 
 
     logf::Float64, grad = logfgrad(v1, sz, true, true)
@@ -310,6 +307,8 @@ function buildtree(x::T, r::Vector{Float64},
         xprime = xprime2
       end
       nprime += nprime2
+      #statement, xminus, rminus, gradminus, xplus, rplus, gradplus = nouturn(xminus, xplus, rminus, rplus, gradminus, gradplus, epsilon, logfgrad, delta, sz, j)
+      #statement, _, _, _, _, _, gradplus = nouturn(xminus, xplus, rminus, rplus, gradminus, gradplus, epsilon, logfgrad, delta, sz, j)
       sprime = sprime2 && nouturn(xminus, xplus, rminus, rplus, gradminus, gradplus, epsilon, logfgrad, delta, sz, j)
       alphaprime += alphaprime2
       nalphaprime += nalphaprime2
@@ -325,15 +324,21 @@ function nouturn(xminus::T, xplus::T,
                 rminus::Vector{Float64}, rplus::Vector{Float64}, gradminus::Vector{Float64}, gradplus::Vector{Float64},
                 epsilon::Float64, logfgrad::Function, delta::Float64, sz::Int64, j::Int64)::Bool  where T<:Node
 
-
+        if j > 2
+          return false
+        else
+          return true
+        end
+        throw("not here")
         curr_l, curr_h = BHV_bounds(xminus, xplus)
 
         # use thread parallelism to calculuate both directions at once
-        res_minus = Base.Threads.@spawn refraction(deepcopy(xminus), deepcopy(rminus), -1, gradminus, epsilon, logfgrad, delta, sz)
-        xplus_bar,_,_,_,_ = refraction(deepcopy(xplus), deepcopy(rplus),1, gradplus, epsilon, logfgrad, delta,sz)
+        #res_minus = Base.Threads.@spawn
+        xminus_bar,_,_,_,_ = refraction(deepcopy(xminus), deepcopy(rminus), -1, deepcopy(gradminus), epsilon, logfgrad, delta, sz)
+        xplus_bar,_,_,_,_ = refraction(deepcopy(xplus), deepcopy(rplus), 1, deepcopy(gradplus), epsilon, logfgrad, delta,sz)
 
         # fetch the results
-        xminus_bar,_,_,_,_ = fetch(res_minus)
+        #xminus_bar,_,_,_,_ = fetch(res_minus)
 
         curr_t_l, curr_t_h = BHV_bounds(xminus_bar, xplus_bar)
         return curr_h < curr_t_l
@@ -366,7 +371,9 @@ function nutsepsilon(x::T, logfgrad::Function, delta::Float64)::Float64  where T
    _, rprime, logfprime, _ ,_ = refraction(x0, r0, 1, grad0, epsilon, logfgrad, delta, n)
    prob = exp(logfprime - logf0 - 0.5 * (dot(rprime) - dot(r0)))
   end
-  println(epsilon)
+
+  println("eps ",epsilon)
+
   epsilon
 end
 

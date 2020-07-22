@@ -41,9 +41,9 @@ tree.
 Do not use this function if you are unsure wheter the node is in the tree at all.
 """
 function find_num(root::T, num::I)::T  where {T<:GeneralNode, I<:Integer}
-    rn = Vector{T}(undef, 1)
-    find_num(root, num, rn)
-    return rn[1]
+    po = post_order(root)
+
+    return find_binary(root, po[findfirst(node -> node.num == num, po)].binary)
 end
 
 

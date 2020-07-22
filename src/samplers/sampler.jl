@@ -28,7 +28,7 @@ function SamplerVariate(x::AbstractVector{U}, tune::T) where {T<:SamplerTune, U<
   SamplerVariate{T}(x, tune)
 end
 
-function SamplerVariate(x::AbstractVector{U}, tune::T) where {T<:SamplerTune, U<:AbstractNode}
+function SamplerVariate(x::AbstractVector{U}, tune::T) where {T<:SamplerTune, U<:GeneralNode}
   SamplerVariate{T}(x, tune)
 end
 
@@ -53,7 +53,7 @@ end
 
 function SamplerVariate(x::AbstractVector{U},
                         s::Sampler{T}, iter::Integer,
-                        pargs...; kargs...) where {T<:SamplerTune, U<:AbstractNode}
+                        pargs...; kargs...) where {T<:SamplerTune, U<:GeneralNode}
   if iter == 1
     v = SamplerVariate{T}(x, pargs...; kargs...)
     s.tune = v.tune
@@ -117,7 +117,7 @@ function gradlogpdf!(block::SamplingBlock, x::AbstractArray{T},
 end
 
 
-function gradlogpdf!(block::SamplingBlock, x::Node)
+function gradlogpdf!(block::SamplingBlock, x::N) where N<:GeneralNode
       gradlogpdf!(block.model, x, block.index, block.transform)
 end
 
@@ -125,18 +125,18 @@ function logpdf!(block::SamplingBlock, x::AbstractArray{T}) where {T<:Real}
   logpdf!(block.model, x, block.index, block.transform)
 end
 
-function logpdf!(block::SamplingBlock, x::AbstractArray{Node}) where {T<:AbstractNode}
+function logpdf!(block::SamplingBlock, x::AbstractArray{T}) where {T<:GeneralNode}
   logpdf!(block.model, x[1])
 end
 
-function logpdf!(block::SamplingBlock, x::Node) where {T<:AbstractNode}
+function logpdf!(block::SamplingBlock, x::T) where {T<:GeneralNode}
   logpdf!(block.model, x, block.index, block.transform)
 end
 
 
 function _gradlogpdf!(m::Model, x::AbstractArray, block::Integer, dtype::Symbol=:provided)
   targets = keys(m, :target, block)
-  
+
   node = m[targets[1]]
   update!(node, m)
   return gradlogpdf(node)
@@ -160,8 +160,7 @@ function relist(block::SamplingBlock, x::AbstractArray{T}) where {T<:Real}
   relist(block.model, x, block.index, block.transform)
 end
 
-function relist(block::SamplingBlock, x::AbstractArray{T}) where {T<:AbstractNode}
-
+function relist(block::SamplingBlock, x::AbstractArray{T}) where {T<:GeneralNode}
   relist(block.model, x, block.index, block.transform)
 end
 

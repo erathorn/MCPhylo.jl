@@ -20,7 +20,10 @@ end
 function setmonitor!(d::AbstractDependent, monitor::Vector{Int})
   values = monitor
   if !isempty(monitor)
-    n = length(unlist(d))
+    n = isa(d, AbstractTreeStochastic) ? length(unlist_tree(d)) : length(unlist(d))
+    #n = length(unlist(d))
+    #println(typeof(d), ", ", n, ", ", monitor)
+
     if n > 0
       if monitor[1] == 0
         values = collect(1:n)
@@ -32,15 +35,13 @@ function setmonitor!(d::AbstractDependent, monitor::Vector{Int})
   d.monitor = values
   d
 end
-
-
-
-function setmonitor!(d::AbstractDependent, size::Int, monitor::Bool)
+#
+function setmonitor!(d::AbstractTreeStochastic, size::Int, monitor::Bool)
   value = monitor ? Int[0] : Int[]
   setmonitor!(d, size, value)
 end
 
-function setmonitor!(d::AbstractDependent, size::Int, monitor::Vector{Int})
+function setmonitor!(d::AbstractTreeStochastic, size::Int, monitor::Vector{Int})
   values = monitor
   if !isempty(monitor)
     n = size#length(unlist(d))
@@ -208,7 +209,7 @@ end
 
 Stochastic(f::Function, d::T, args...)  where T<:GeneralNode = Stochastic(d, f, args...)
 
-function Stochastic(d::Node, f::Function, nnodes::Int, monitor::Union{Bool, Vector{Int}}=true)
+function Stochastic(d::N, f::Function, nnodes::Int, monitor::Union{Bool, Vector{Int}}=true) where N<:GeneralNode
     value = Node()
     fx, src = modelfxsrc(depfxargs, f)
     s = TreeStochastic(value, :nothing, Int[], fx, src, Symbol[],
@@ -248,12 +249,12 @@ function setinits!(d::TreeStochastic, m::Model, x::T) where {T<:GeneralNode}
     setmonitor!(d, d.monitor)
 end # function
 
-function setinits!(d::TreeStochastic, m::Model, x::Array{T})  where {T<:GeneralNode}
-    d.value = x
-    d.distr = d.eval(m)
-
-    setmonitor!(d, d.monitor)
-end # function
+# function setinits!(d::TreeStochastic, m::Model, x::Array{T})  where {T<:GeneralNode}
+#     d.value = x
+#     d.distr = d.eval(m)
+#     insupport(d.distr, x) || throw(ArgumentError("The supplied tree does not match the topological tree constraints."))
+#     setmonitor!(d, d.monitor)
+# end # function
 
 
 
@@ -266,6 +267,9 @@ end
 #################### Distribution Methods ####################
 
 function unlist(s::AbstractStochastic, transform::Bool=false)
+  #println("then here")
+  #println(typeof(s.value))
+
   unlist(s, s.value, transform)
 end
 
@@ -288,8 +292,18 @@ function relistlength(s::AbstractStochastic, x::AbstractArray,
   (transform ? invlink_sub(s.distr, value) : value, n)
 end
 
-function relistlength(s::TreeStochastic, x::Node,
-                      transform::Bool=false)
+
+function relistlength(s::AbstractTreeStochastic, x::AbstractArray,
+                      transform::Bool=false)# where N<:GeneralNode
+
+  relistlength(s, x[1], transform)
+  #value, n = relistlength_sub(s.distr, s, x)
+  #(transform ? invlink_sub(s.distr, value) : value, n)
+end
+
+
+function relistlength(s::AbstractTreeStochastic, x::N,
+                      transform::Bool=false) where N<:GeneralNode
   value, n = relistlength_sub(s.distr, s, x)
   (transform ? invlink_sub(s.distr, value) : value, n)
 end
@@ -299,9 +313,9 @@ function logpdf(s::AbstractStochastic, transform::Bool=false)
   logpdf(s, s.value, transform)
 end
 
-function mgradient(s::AbstractStochastic)
-  mgradient(s, s.value)
-end
+#function mgradient(s::AbstractStochastic)
+#  mgradient(s, s.value)
+#end
 
 function gradlogpdf(s::AbstractStochastic)
   gradlogpdf(s, s.value)
@@ -311,7 +325,7 @@ function gradlogpdf(s::AbstractLogical)
   gradlogpdf(s, s.value)
 end
 
-function gradlogpdf(s::AbstractStochastic, x::Node, transform::Bool=false)
+function gradlogpdf(s::AbstractTreeStochastic, x::N, transform::Bool=false) where N<:GeneralNode
   gradlogpdf(s.distr, x)
 end
 
@@ -333,7 +347,7 @@ end
 
 
 
-function logpdf(s::AbstractStochastic, x::Node, transform::Bool=false)
+function logpdf(s::AbstractStochastic, x::N, transform::Bool=false) where N<:GeneralNode
   logpdf_sub(s.distr, x, transform)
 end
 

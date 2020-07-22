@@ -14,7 +14,7 @@ This function adds a child to the mother node.
 The arity of the mother node is increased by `1` and the root
 status of the child is set to `False`.
 """
-function add_child!(mother_node::Node, child::Node)
+function add_child!(mother_node::N, child::N) where N<:GeneralNode
     push!(mother_node.children, child)
     child.mother = mother_node
     mother_node.nchild += 1
@@ -29,8 +29,7 @@ end # function add_child
 This function removes a child from the list of nodes which are daughters of this
 node. The removed node is returned.
 """
-function remove_child!(mother_node::Node, left::Bool)::Node
-    @assert (mother_node.nchild === 2)
+function remove_child!(mother_node::N, left::Bool)::N where N<:GeneralNode
     if left
         rv = popfirst!(mother_node.children)
         rv.mother = missing
@@ -48,7 +47,7 @@ end # function
 This function removes a child from the list of nodes which are daughters of this
 node. The removed node is returned.
 """
-function remove_child!(mother_node::Node, child::Node)::Node
+function remove_child!(mother_node::N, child::N)::N where N<:GeneralNode
     ind = findfirst(x->x==child, mother_node.children)
     deleteat!(mother_node.children, ind)
     child.mother = missing
@@ -253,11 +252,11 @@ This function does the internal tree length recursion
 """
 function tree_length(root::T, tl::Float64)::Float64 where T<:GeneralNode
 
-    if length(root.children) != 0
-        for child in root.children
-            tl = tree_length(child, tl)
-        end
-    end # if
+    #if length(root.children) != 0
+    for child in root.children
+        tl = tree_length(child, tl)
+    end
+    #end # if
     if root.root !== true
         tl += root.inc_length
     end
@@ -362,7 +361,7 @@ end # function
 
 
 """
-    get_mother(root::Node, node::Node)::Node
+    function get_mother(node::T)::T  where T<:GeneralNode
 
 This function gets the mother of `node`. It does so by looking for the respective
 binary representation of the mother node.
@@ -405,7 +404,7 @@ end # fuction number_nodes
 
 
 """
-    random_node(root::Node)::Node
+    function random_node(root::T)::T  where T<:GeneralNode
 
 This function returns a random node from the tree.
 """
@@ -424,9 +423,8 @@ end # function random_node
 Get the vector of branch lengths of the tree.
 """
 function get_branchlength_vector(root::N)::Vector{Float64}  where {N <:GeneralNode}
-    if length(root.blv) == 0
-        root.blv = Vector{Float64}(undef, length(post_order(root))-1)
-    end
+    length(root.blv) == 0 && (root.blv = Vector{Float64}(undef, length(post_order(root))-1))
+
     get_branchlength_vector(root, root.blv)
     return root.blv
 end # function get_branchlength_vector
@@ -492,11 +490,11 @@ function set_branchlength_vector!(t::TreeStochastic, blenvec::ArrayStochastic)
 end # function
 
 """
-    set_branchlength_vector!(root::Node, blenvec::Vector{Float64})::Node
+    set_branchlength_vector!(root::N, blenvec::Array{T}) where {N<:GeneralNode, T<:Real}
 
 This function sets the branch lengths of a tree to the values specified in blenvec.
 """
-function set_branchlength_vector!(root::N, blenvec::Array{T}) where {N<:AbstractNode, T<:Real}
+function set_branchlength_vector!(root::N, blenvec::Array{T}) where {N<:GeneralNode, T<:Real}
     any(0 .> blenvec) && throw("this should never happen")
     for child in root.children
         set_branchlength_vector!(child, blenvec)
