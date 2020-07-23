@@ -7,3 +7,4 @@ doc/make.bat
 *.nex
 *params*.log
 docs/build/
+untracked_files/

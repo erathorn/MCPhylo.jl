@@ -9,7 +9,7 @@ tester:
 include("./src/MCPhylo.jl")
 using .MCPhylo
 using Random
-Random.seed!(12)
+Random.seed!(42)
 
 mt, df = make_tree_with_data("untracked_files/test_drav.nex", binary=true); # load your own nexus file
 
@@ -66,7 +66,19 @@ setsamplers!(model, scheme);
 sim = mcmc(model, my_data, inits, 100, burnin=50,thin=2, chains=1, trees=true)
 
 # request more runs
-sim = mcmc(sim, 1000, trees=true)
+sim = mcmc(sim, 50, trees=true)
 
 # write the output to a path specified as the second argument
 to_file(sim, "example_run")
+
+po  = post_order(mt)
+f(y) = MCPhylo.FelsensteinFunction(po, 0.77, ones(3), df, 231, y)
+
+blv = get_branchlength_vector(mt)
+
+using Zygote
+r1, r2 = Zygote.pullback(f, blv)
+g2 = r2(1.0)[1]
+using FiniteDiff
+g1 = FiniteDiff.finite_difference_gradient(f, blv)
+isapprox(g1, g2)

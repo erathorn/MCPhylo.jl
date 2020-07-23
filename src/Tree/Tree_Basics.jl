@@ -423,7 +423,9 @@ end # function random_node
 Get the vector of branch lengths of the tree.
 """
 function get_branchlength_vector(root::N)::Vector{Float64}  where {N <:GeneralNode}
-    length(root.blv) == 0 && (root.blv = Vector{Float64}(undef, length(post_order(root))-1))
+    if length(root.blv) == 0
+        root.blv = zeros(length(post_order(root))-1)
+    end
 
     get_branchlength_vector(root, root.blv)
     return root.blv

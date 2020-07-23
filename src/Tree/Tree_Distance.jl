@@ -61,7 +61,7 @@ function BHV_bounds(tree1::T, tree2::T)::Tuple{Float64, Float64} where T <:Gener
     # res_low = res_upper_1+res_upper_2+res_upper_3
     # res_high = (sqrt(res_upper_2)+sqrt(res_upper_1))^2+res_upper_3
     # sqrt(res_low), sqrt(res_high)
-    throw("not here")
+    #throw("not here")
     res_upper_1 = Threads.Atomic{Float64}(0.0)
     res_upper_2 = Threads.Atomic{Float64}(0.0)
     res_upper_3 = Threads.Atomic{Float64}(0.0)

@@ -60,9 +60,10 @@ function gradlogpdf(d::CompoundDirichlet, x::T) where T <: GeneralNode
     f(y) =  internal_logpdf(d, y, int_ext)
 
 
-    r = Zygote.pullback(f, blv)
-
-    r[1],r[2](1.0)[1]
+    #r = Zygote.pullback(f, blv)
+    g1 = FiniteDiff.finite_difference_gradient(f, blv)
+    #r[1],r[2](1.0)[1]
+    f(blv), g1
 end
 
 
