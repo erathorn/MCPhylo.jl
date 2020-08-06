@@ -4,7 +4,7 @@
 This function ladderizes a tree inplace, i.e. sorts the nodes on all levels by the count
 of their descendants
 """
-function ladderize_tree!(root::T, ascending::Bool=true)::Nothing where T<:AbstractNode
+function ladderize_tree!(root::T, ascending::Bool=true) where T<:AbstractNode
     root.nchild == 0 && return nothing
     ndescendants = Array{Float64,1}(undef, length(root.children))
     for (index, child) in enumerate(root.children)
