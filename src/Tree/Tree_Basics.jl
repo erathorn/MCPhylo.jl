@@ -24,7 +24,7 @@ end # function add_child
 
 
 """
-    remove_child!(mother_node::Node, index::int)Node
+    remove_child!(mother_node::Node, left::Bool)Node
 
 This function removes a child from the list of nodes which are daughters of this
 node. The removed node is returned.
@@ -43,7 +43,7 @@ function remove_child!(mother_node::Node, left::Bool)::Node
 end # function
 
 """
-    remove_child!(mother_node::Node, index::int)Node
+    remove_child!(mother_node::Node, child::Node)Node
 
 This function removes a child from the list of nodes which are daughters of this
 node. The removed node is returned.
@@ -56,6 +56,42 @@ function remove_child!(mother_node::Node, child::Node)::Node
     mother_node.nchild -= 1
     return child
 end # function
+
+"""
+    remove_node!(node::Node)
+
+This functions removes a node from a tree and assigns all its children to its
+mother node.
+"""
+function remove_node!(node::Node)
+    if node.root == true
+        throw(ArgumentError("Cannot remove root node"))
+    end
+    for child in node.children
+        add_child!(node.mother, child)
+        remove_child!(node, child)
+    end
+    remove_child!(node.mother, node)
+end
+
+"""
+    insert_node!(mother::Node, children::Vector{T}) where T<:AbstractNode
+
+This function inserts a node into a tree after a mother node and gains a subset of the mother's children
+as its children
+"""
+function insert_node!(mother::Node, children::Vector{T}) where T<:AbstractNode
+    @assert length(children) >= 2
+    inserted_node = Node()
+    for child in children
+        @assert child in mother.children
+    end # for
+    for child in children
+        add_child!(inserted_node, child)
+        remove_child!(mother, child)
+    end # for
+    add_child!(mother, inserted_node)
+end
 
 
 function tree_from_leaves(leaf_nodes::Vector{String},node_size::Int, final_length::Int64)::Tuple{Vector{Node}, Int}
