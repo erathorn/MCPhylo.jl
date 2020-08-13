@@ -63,7 +63,8 @@ end # function
 This functions removes a node from a tree and assigns all its children to its
 mother node.
 """
-function remove_node!(node::Node)
+function remove_node!(root::Node, node::String)
+    node = find_by_name(root, node)
     if node.root == true
         throw(ArgumentError("Cannot remove root node"))
     end
