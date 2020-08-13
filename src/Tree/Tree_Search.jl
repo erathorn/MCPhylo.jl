@@ -105,3 +105,13 @@ function find_binary(root::T, bin::String, rn::Vector{T})::Bool  where T<:Abstra
     end # if
     return found
 end
+
+"""
+    find_root(node::Node)::Node
+"""
+function find_root(node::Node)::Node
+    while node.root == false
+        node = node.mother
+    end # while
+    return node
+end
