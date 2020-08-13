@@ -70,7 +70,6 @@ function remove_node!(root::Node, node::String)
     end
     for child in node.children
         add_child!(node.mother, child)
-        remove_child!(node, child)
     end
     remove_child!(node.mother, node)
 end
