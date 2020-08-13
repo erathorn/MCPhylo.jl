@@ -17,4 +17,4 @@ MCPhylo.number_nodes!(tree)
     @test find_root(node3) == tree
     @test find_root(node4) == tree
 
-end    
+end
