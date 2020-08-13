@@ -308,7 +308,7 @@ include("Tree/Tree_Legacy.jl")
 include("Tree/Tree_Clustering.jl")
 include("Tree/Tree_Ladderizing.jl")
 include("Tree/Tree_Pruning.jl")
-
+include("Tree/Tree_Consensus.jl")
 
 include("Parser/Parser.jl")
 include("Parser/ParseCSV.jl")
@@ -464,7 +464,8 @@ export
   prune_tree!,
   prune_tree,
   ladderize_tree!,
-  ladderize_tree
+  ladderize_tree,
+  are_compatible
 
 
 export
