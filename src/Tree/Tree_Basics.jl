@@ -24,7 +24,7 @@ end # function add_child
 
 
 """
-    remove_child!(mother_node::Node, left::Bool)Node
+    remove_child!(mother_node::Node, left::Bool)::Node
 
 This function removes a child from the list of nodes which are daughters of this
 node. The removed node is returned.
@@ -43,7 +43,7 @@ function remove_child!(mother_node::Node, left::Bool)::Node
 end # function
 
 """
-    remove_child!(mother_node::Node, child::Node)Node
+    remove_child!(mother_node::Node, child::Node)::Node
 
 This function removes a child from the list of nodes which are daughters of this
 node. The removed node is returned.

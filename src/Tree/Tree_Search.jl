@@ -108,6 +108,8 @@ end
 
 """
     find_root(node::Node)::Node
+
+Takes a node in a tree and finds the root of that tree
 """
 function find_root(node::Node)::Node
     while node.root == false
