@@ -40,3 +40,14 @@ using Test
     @test_throws ArgumentError remove_node!(node_f)
 
 end
+
+@testset "find_lca" begin
+
+    tree = MCPhylo.parsing_newick_string("(A,B,(C,(D,E)F)G)H;")
+
+    @test find_lca(tree, ["A","C"]) == tree
+    @test find_lca(tree, ["D", "E"]) == find_by_name(tree, "F")
+    @test find_lca(tree, ["D", "F"]) == find_by_name(tree, "G")
+    @test find_lca(tree, ["C", "D"]) == find_by_name(tree, "F")
+
+end
