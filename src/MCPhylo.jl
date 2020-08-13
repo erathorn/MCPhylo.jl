@@ -452,6 +452,7 @@ export
   find_lca,
   find_by_binary,
   find_by_name,
+  find_root,
   create_tree_from_leaves,
   create_tree_from_leaves_cu,
   newick,
