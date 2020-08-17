@@ -465,7 +465,8 @@ export
   prune_tree,
   ladderize_tree!,
   ladderize_tree,
-  are_compatible
+  are_compatible,
+  majority_consensus_tree
 
 
 export
