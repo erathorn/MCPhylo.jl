@@ -1,3 +1,7 @@
+function days_algorithm(cluster1::T, cluster2::T) where T<:AbstractNode
+
+end
+
 """
     are_compatible(cluster_names::Vector{String}, tree::T) where T<:AbstractNode
 
@@ -37,5 +41,13 @@ end
 Construct the majority rule consensus tree from a set of trees
 """
 function majority_consensus_tree(trees::Vector{T})::T where T<:AbstractNode
-
+    all_leaves = [get_leaves(root) for root in trees]
+    leaf_names = sort([leaf.name for leaf in all_leaves[1]])
+    for leaves in all_leaves[2:end]
+        if leaf_names != sort([leaf.name for leaf in leaves])
+            throw(ArgumentError("Input Trees need to have identical leaf names"))
+        end
+    end
+    # TODO: need Day's Algorithm next
+    return trees[1] # to make it not crash
 end
