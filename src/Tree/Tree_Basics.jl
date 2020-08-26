@@ -22,7 +22,6 @@ function add_child!(mother_node::Node, child::Node)
     mother_node.initialized=true
 end # function add_child
 
-
 """
     remove_child!(mother_node::Node, left::Bool)::Node
 
@@ -58,12 +57,12 @@ function remove_child!(mother_node::Node, child::Node)::Node
 end # function
 
 """
-    remove_node!(node::Node)
+    delete_node!(node::Node)
 
-This functions removes a node from a tree and assigns all its children to its
+This functions deletes node from a tree and assigns all its children to its
 mother node.
 """
-function remove_node!(node::Node)
+function delete_node!(node::T) where T<:AbstractNode
     if node.root == true
         throw(ArgumentError("Cannot remove root node"))
     end
@@ -76,10 +75,10 @@ end
 """
     insert_node!(mother::Node, children::Vector{T}) where T<:AbstractNode
 
-This function inserts a node into a tree after a mother node and gains a subset of the mother's children
-as its children
+This function inserts a node into a tree after a mother node and gains
+a subset of the mother's children as its children
 """
-function insert_node!(mother::Node, children::Vector{T}) where T<:AbstractNode
+function insert_node!(mother::T, children::Vector{T}) where T<:AbstractNode
     @assert length(children) >= 2
     inserted_node = Node()
     for child in children
@@ -91,7 +90,6 @@ function insert_node!(mother::Node, children::Vector{T}) where T<:AbstractNode
     end # for
     add_child!(mother, inserted_node)
 end
-
 
 function tree_from_leaves(leaf_nodes::Vector{String},node_size::Int, final_length::Int64)::Tuple{Vector{Node}, Int}
     my_node_list::Array{Node,1} = []
@@ -299,7 +297,6 @@ function tree_length(root::T, tl::Float64)::Float64 where T<:AbstractNode
 
     tl
 end # function tree_length
-
 
 
 """
