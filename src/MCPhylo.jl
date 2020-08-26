@@ -447,7 +447,7 @@ export
   pre_order,
   add_child!,
   remove_child!,
-  remove_node!,
+  delete_node!,
   insert_node!,
   find_lca,
   find_by_binary,
