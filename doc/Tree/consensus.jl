@@ -188,31 +188,6 @@ end
     end
 end
 
-@testset "merge_trees" begin
-end
-
-@testset "majority_consensus_tree" begin
-    tree1 = MCPhylo.parsing_newick_string("((A,(B,(C,(D,E)))),(F,(G,H)))")
-    MCPhylo.number_nodes!(tree1)
-    MCPhylo.set_binary!(tree1)
-    tree2 = MCPhylo.parsing_newick_string("((G,(C,(A,(F,E)))),(B,(D,H)))")
-    MCPhylo.number_nodes!(tree2)
-    MCPhylo.set_binary!(tree2)
-    tree3 = MCPhylo.parsing_newick_string("((B,(F,(C,(D,G)))),(H,(A,E)))")
-    MCPhylo.number_nodes!(tree3)
-    MCPhylo.set_binary!(tree3)
-    tree4 = MCPhylo.parsing_newick_string("((A,(B,(C,(D,T)))),(F,(G,H)))")
-    MCPhylo.number_nodes!(tree4)
-    MCPhylo.set_binary!(tree4)
-
-    trees = [tree1, tree2, tree3]
-    # TODO: needs to be updated, when majority_consensus_tree method is finished
-    @test MCPhylo.majority_consensus_tree(trees) == tree1
-
-    trees = [tree1, tree2, tree3, tree4]
-    @test_throws ArgumentError MCPhylo.majority_consensus_tree(trees)
-end
-
 @testset "majority_consensus_tree" begin
     tree1 = MCPhylo.parsing_newick_string("(((A,B),C),(D,E))")
     tree2 = MCPhylo.parsing_newick_string("((A,C),(B,D,E))")
