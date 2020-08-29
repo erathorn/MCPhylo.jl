@@ -208,10 +208,9 @@ function delete_marked_nodes!(root::T, marked_nodes::Dict{Int64, Bool})::T where
     end
     if root.nchild != 0
         for child in root.children
-            pre_order(child, marked_nodes)
+            delete_marked_nodes!(child, marked_nodes)
         end # for
     end # if
-    return root
 end
 
 
