@@ -6,17 +6,15 @@ using Test
     tree = MCPhylo.parsing_newick_string("(A,B,(C,D)E)F;")
     insert_tree = MCPhylo.parsing_newick_string("(A,B,((C,D)no_name)E)F;")
     insert_tree_newick = newick(insert_tree)
-
     MCPhylo.number_nodes!(tree)
 
     children = [find_by_name(tree, "C"), find_by_name(tree, "D")]
     mother = find_by_name(tree, "E")
-
     insert_node!(mother, children)
     MCPhylo.number_nodes!(tree)
-
     @test newick(tree) == insert_tree_newick
 
+    MCPhylo.number_nodes!(tree)
     new_node = Node("G")
     append!(children, new_node)
     @test_throws AssertionError insert_node!(mother, children)
