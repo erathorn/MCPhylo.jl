@@ -16,7 +16,8 @@ using Test
                              find_by_name(tree2, "G"), find_by_name(tree2, "H")
      expected_dict = Dict([(D.mother, false), (C.mother, false), (B.mother, false),
                            (A.mother, false), (G.mother, false), (F.mother, false),
-                           (G.mother.mother, true)])
+                           (G.mother.mother, true), (A, true), (B, true), (C, true),
+                           (D, true), (E, true), (F, true), (G, true), (H, true)])
     @test MCPhylo.find_common_clusters(ref_tree, tree2) == expected_dict
 
     tree3 = MCPhylo.parsing_newick_string("((A,(C,(D,(B,E)))),(G,(F,H)))")
@@ -28,7 +29,8 @@ using Test
                              find_by_name(tree3, "G"), find_by_name(tree3, "H")
      expected_dict = Dict([(D.mother, false), (C.mother, true), (B.mother, false),
                            (A.mother, true), (G.mother, true), (F.mother, false),
-                           (A.mother.mother, true)])
+                           (A.mother.mother, true), (A, true), (B, true), (C, true),
+                           (D, true), (E, true), (F, true), (G, true), (H, true)])
     @test MCPhylo.find_common_clusters(ref_tree, tree3) == expected_dict
 
     tree4 = MCPhylo.parsing_newick_string("((A,(B,(C,(D,E)))),(F,(G,H)))")
@@ -40,7 +42,8 @@ using Test
                              find_by_name(tree4, "G"), find_by_name(tree4, "H")
     expected_dict = Dict([(D.mother, true), (C.mother, true), (B.mother, true),
                           (A.mother, true), (G.mother, true), (F.mother, true),
-                          (A.mother.mother, true)])
+                          (A.mother.mother, true), (A, true), (B, true), (C, true),
+                          (D, true), (E, true), (F, true), (G, true), (H, true)])
     @test MCPhylo.find_common_clusters(ref_tree, tree4) == expected_dict
 
     tree5 = MCPhylo.parsing_newick_string("((G,(X,(A,(F,E)))),(B,(D,H)))")
