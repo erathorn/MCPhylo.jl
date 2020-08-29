@@ -3,7 +3,6 @@ using .MCPhylo
 using Test
 
 @testset "find_common_clusters" begin
-
     ref_tree = MCPhylo.parsing_newick_string("((A,(B,(C,(D,E)))),(F,(G,H)))")
     MCPhylo.number_nodes!(ref_tree)
     MCPhylo.set_binary!(ref_tree)
@@ -65,7 +64,6 @@ using Test
     @test_throws ArgumentError MCPhylo.find_common_clusters(ref_tree, tree6)
 end
 
-
 @testset "order_tree!" begin
     tree = MCPhylo.parsing_newick_string("(A,B,(C,(D,E)F)G)H;")
     MCPhylo.set_binary!(tree)
@@ -89,7 +87,6 @@ end
 end
 
 @testset "max/min_leaf_rank" begin
-
     tree = MCPhylo.parsing_newick_string("(A,B,(C,(D,E)F)G)H;")
     F, G, H, A = find_by_name(tree, "F"), find_by_name(tree, "G"),
                  find_by_name(tree, "H"), find_by_name(tree, "A")
@@ -111,7 +108,6 @@ end
 end
 
 @testset "x_left_right" begin
-
     tree = MCPhylo.parsing_newick_string("(A,B,(C,(D,E)F)G)H;")
     MCPhylo.set_binary!(tree)
     MCPhylo.number_nodes!(tree)
@@ -135,11 +131,9 @@ end
         @test MCPhylo.x_right(D) == D
         @test MCPhylo.x_right(E) == H
     end
-
 end
 
 @testset "are_compatible" begin
-
     tree = MCPhylo.parsing_newick_string("(A,B,(C,(D,E)F)G)H;")
     MCPhylo.number_nodes!(tree)
     MCPhylo.set_binary!(tree)
@@ -183,11 +177,9 @@ end
 end
 
 @testset "merge_trees" begin
-
-
 end
-@testset "majority_consensus_tree" begin
 
+@testset "majority_consensus_tree" begin
     tree1 = MCPhylo.parsing_newick_string("((A,(B,(C,(D,E)))),(F,(G,H)))")
     MCPhylo.number_nodes!(tree1)
     MCPhylo.set_binary!(tree1)

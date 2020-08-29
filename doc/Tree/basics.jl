@@ -3,7 +3,6 @@ using .MCPhylo
 using Test
 
 @testset "insert_node" begin
-
     tree = MCPhylo.parsing_newick_string("(A,B,(C,D)E)F;")
     insert_tree = MCPhylo.parsing_newick_string("(A,B,((C,D)no_name)E)F;")
     insert_tree_newick = newick(insert_tree)
@@ -21,28 +20,23 @@ using Test
     new_node = Node("G")
     append!(children, new_node)
     @test_throws AssertionError insert_node!(mother, children)
-
  end
 
-@testset "remove_node" begin
-
+@testset "delete_node!" begin
     tree = MCPhylo.parsing_newick_string("(A,B,(C,D)E)F;")
     remove_tree = MCPhylo.parsing_newick_string("(A,B,C,D)F;")
     remove_tree_newick = newick(remove_tree)
 
     MCPhylo.number_nodes!(tree)
 
-    remove_node!(tree, "E")
+    delete_node!(find_by_name(tree, "E"))
     @test newick(tree) == remove_tree_newick
 
-    @test_throws ArgumentError remove_node!(tree, "F")
-
+    @test_throws ArgumentError delete_node!(find_by_name(tree, "F"))
 end
 
 @testset "find_lca" begin
-
     tree = MCPhylo.parsing_newick_string("(A,B,(C,(D,E)F)G)H;")
-    MCPhylo.number_nodes!(tree)
     MCPhylo.set_binary!(tree)
 
     @testset "find_lca by name" begin
@@ -50,7 +44,6 @@ end
         @test find_lca(tree, ["D", "E"]) == find_by_name(tree, "F")
         @test find_lca(tree, ["D", "F"]) == find_by_name(tree, "F")
         @test find_lca(tree, ["C", "D"]) == find_by_name(tree, "G")
-
         @test find_lca(tree, ["A","B","C"]) == tree
         @test find_lca(tree, ["D", "E", "F", "G"]) == find_by_name(tree, "G")
         @test find_lca(tree, ["D", "E", "C"]) == find_by_name(tree, "G")
@@ -65,5 +58,4 @@ end
                  find_by_name(tree, "F"), find_by_name(tree, "G")]
         @test find_lca(tree, nodes) == find_by_name(tree, "G")
     end # find_lca by nodes
-
 end
