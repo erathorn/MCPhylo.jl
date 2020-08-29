@@ -1,6 +1,6 @@
 """
     find_common_clusters(ref_tree, tree:T)
-        ::Tuple{Vector{Vector{Node}}, Vector{Vector{Node}}} where T<:AbstractNode
+        ::Dict{Node, Bool} where T<:AbstractNode
 
 Use Day's algorithm to create a dictionary, that tells us for each node of the
 second input tree, if its corresponding cluster is a common cluster of the two trees
@@ -48,6 +48,8 @@ function find_common_clusters(ref_tree::T, tree::T)::Dict{Node, Bool} where T<:A
             else
                 is_common_cluster[node] = false
             end # if
+        else
+            is_common_cluster[node] = true
         end # if
     end # for
     return is_common_cluster
@@ -344,11 +346,11 @@ function majority_consensus_tree(trees::Vector{T})::T where T<:AbstractNode
     node_counts = convert(Vector{Int64}, ones(length(nodes)))
     count_dict = Dict(zip(nodes, node_counts))
     for tree in trees[2:end]
-        is_common_cluster  = find_common_clusters(tree, ref_tree)
+        is_common_cluster = find_common_clusters(tree, ref_tree)
         for node in nodes
-            if is_common_clusters[node] == true
+            if is_common_cluster[node] == true
                 count_dict[node] += 1
-            elseif node.nchild != 0
+            else
                 count_dict[node] -= 1
                 if count_dict[node] == 0
                     delete_node!(node)
@@ -365,9 +367,11 @@ function majority_consensus_tree(trees::Vector{T})::T where T<:AbstractNode
     nodes = keys(count_dict)
     for tree in trees
         is_common_cluster = find_common_clusters(tree, ref_tree)
-        if is_common_cluster[node] == true
-            count_dict[node] += 1
-        end # if
+        for node in nodes
+            if is_common_cluster[node] == true
+                count_dict[node] += 1
+            end # if
+        end # for
     end # for
     marked_nodes = Dict{Int64, Bool}
     half = length(trees) / 2
