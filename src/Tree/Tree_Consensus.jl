@@ -154,6 +154,7 @@ are not compatible with the second tree are removed.
 function one_way_compatible(ref_tree::T, tree::T)::T where T<:AbstractNode
     ref_tree_copy = deepcopy(ref_tree)
     ref_nodes = post_order(ref_tree_copy)
+    node_children = Dict{Node, Int64}()
     leaves_dict = Dict{String, Int64}()
     dict_count = 1
     node_binaries = Dict{String, Node}()
@@ -161,16 +162,15 @@ function one_way_compatible(ref_tree::T, tree::T)::T where T<:AbstractNode
         if ref_node.nchild == 0
             leaves_dict[ref_node.name] = dict_count
             dict_count += 1
-        end #if
-        if node.child != 0
-            leaves = get_leaves(node)
-            node_children[node] = length(leaves)
-        end # if
+        else
+            leaves = get_leaves(ref_node)
+            node_children[ref_node] = length(leaves)
+        end # if/else
     end #for
     nodes = post_order(tree)
     cluster_start_indeces = Dict{Node, Int64}()
     for node in nodes
-        if node.child != 0
+        if node.nchild != 0
             leaves = get_leaves(node)
             cluster_start_indeces[node] = leaves_dict[first(leaves).name]
         else
@@ -180,11 +180,12 @@ function one_way_compatible(ref_tree::T, tree::T)::T where T<:AbstractNode
     end # for
     leaves = order_tree!(tree, cluster_start_indeces)
     leaf_ranks = Dict(enumerate([leaf.name for leaf in leaves]))
+    leaf_ranks_reverse = Dict(value => key for (key, value) in leaf_ranks)
     marked_nodes = Dict{Int64, Bool}()
     for ref_node in ref_nodes
         if ref_node.nchild != 0
-            start = min_leaf_rank(leaf_ranks, ref_node)
-            stop = max_leaf_rank(leaf_ranks, ref_node)
+            start = min_leaf_rank(leaf_ranks_reverse, ref_node)
+            stop = max_leaf_rank(leaf_ranks_reverse, ref_node)
             start_node = leaf_ranks[start]
             stop_node = leaf_ranks[stop]
             lca_start_stop = node_binaries[lcp(start_node.binary, stop_node.binary)]
