@@ -2,9 +2,10 @@
     find_common_clusters(ref_tree, tree:T)
         ::Tuple{Vector{Vector{Node}}, Vector{Vector{Node}}} where T<:AbstractNode
 
-Use Day's algorithm to find all clusters of tree2 that also occur in tree1
+Use Day's algorithm to create a dictionary, that tells us for each node of the
+second input tree, if its corresponding cluster is a common cluster of the two trees
 """
-function find_common_clusters(ref_tree::T, tree::T)::Tuple{Vector{Node}, Vector{Node}} where T<:AbstractNode
+function find_common_clusters(ref_tree::T, tree::T)::Dict{Node, Bool} where T<:AbstractNode
     ref_leaf_names = [leaf.name for leaf in get_leaves(ref_tree)]
     leaf_names = [leaf.name for leaf in get_leaves(tree)]
     if length(ref_leaf_names) != length(leaf_names)
@@ -33,7 +34,7 @@ function find_common_clusters(ref_tree::T, tree::T)::Tuple{Vector{Node}, Vector{
             end # if
         end # if
     end # for
-    occuring_clusters, unique_clusters = Vector{Node}(), Vector{Node}()
+    is_common_cluster = Dict{Node, Bool}()
     nodes = post_order(tree)
     for node in nodes
         if node.nchild != 0
@@ -41,15 +42,15 @@ function find_common_clusters(ref_tree::T, tree::T)::Tuple{Vector{Node}, Vector{
             cluster_indeces = [leaves_dict[leaf.name] for leaf in leaves]
             if length(get_leaves(node)) != maximum(cluster_indeces) -
                                            minimum(cluster_indeces) + 1
-                push!(unique_clusters, node)
+                is_common_cluster[node] = false
             elseif haskey(cluster_dict, (minimum(cluster_indeces), maximum(cluster_indeces)))
-                push!(occuring_clusters, node)
+                is_common_cluster[node] = true
             else
-                push!(unique_clusters, node)
+                is_common_cluster[node] = false
             end # if
         end # if
     end # for
-    return occuring_clusters, unique_clusters
+    return is_common_cluster
 end
 
 
@@ -87,12 +88,13 @@ end
 
 
 """
-    merge_trees(ref_tree::T, tree::T)::T where T<:AbstractNode
+    merge_trees(ref_tree::T, tree::T)::Tuple{T, Vector{T}} where T<:AbstractNode
 
 Merge two compatible trees
 """
-function merge_trees(ref_tree::T, tree::T)::T where T<:AbstractNode
+function merge_trees(ref_tree::T, tree::T)::Tuple{T, Vector{T}} where T<:AbstractNode
     ref_nodes = post_order(ref_tree)
+    inserted_nodes = Vector{Node}()
     leaves_dict = Dict{String, Int64}()
     dict_count = 1
     for ref_node in ref_nodes
@@ -130,13 +132,16 @@ function merge_trees(ref_tree::T, tree::T)::T where T<:AbstractNode
         if d == start_node || e == stop_node
             index_d = findfirst(lca_start_stop.children, d)
             index_e = findfirst(lca_start_stop.children, e)
-            insert_node!(lca_start_stop, lca_start_stop.children[index_d, index_e])
+            inserted_node =
+                insert_node!(lca_start_stop, lca_start_stop.children[index_d, index_e])
+            push!(inserted_nodes, inserted_node)
             lca_start_stop.children[end].binary =
                 string(lca_start_stop.binary, length(lca_start_stop.binary) - 1)
         end
     end
-    return tree
+    return tree, inserted_nodes
 end
+
 
 """
     one_way_compatible(ref_tree::T, tree::T)::T where T<:AbstractNode
@@ -202,7 +207,7 @@ end
 
 Helper function to delete marked incompatible nodes from a tree
 """
-function delete_marked_nodes!(root::T, marked_nodes::Dict{Int64, Bool})::T where T<:AbstractNode
+function delete_marked_nodes!(root::T, marked_nodes::Dict{Int64, Bool}) where T<:AbstractNode
     if marked_nodes[root.num] == true
         delete_node!(root)
     end
@@ -318,6 +323,7 @@ function x_right(node::T)::T where T<:AbstractNode
     end # while
 end
 
+
 """
     majority_consensus_tree(trees::Vector{T})::T where T<:AbstractNode
 
@@ -338,9 +344,9 @@ function majority_consensus_tree(trees::Vector{T})::T where T<:AbstractNode
     node_counts = convert(Vector{Int64}, ones(length(nodes)))
     count_dict = Dict(zip(nodes, node_counts))
     for tree in trees[2:end]
-        common_clusters, unique_clusters  = find_common_clusters(tree, ref_tree)
+        is_common_cluster  = find_common_clusters(tree, ref_tree)
         for node in nodes
-            if node in common_clusters
+            if is_common_clusters[node] == true
                 count_dict[node] += 1
             elseif node.nchild != 0
                 count_dict[node] -= 1
@@ -349,6 +355,29 @@ function majority_consensus_tree(trees::Vector{T})::T where T<:AbstractNode
                 end # if
             end # else
         end # for
+        compatible_tree = one_way_compatible(tree, ref_tree)
+        ref_tree, inserted_nodes = merge_trees!(compatible_tree, ref_tree)
+        for node in inserted_nodes
+            count_dict[node] = 1
+        end # for
     end # for
-    return trees[1] # to make it not crash
+    replace!(kv -> kv[1] => 0, count_dict)
+    nodes = keys(count_dict)
+    for tree in trees
+        is_common_cluster = find_common_clusters(tree, ref_tree)
+        if is_common_cluster[node] == true
+            count_dict[node] += 1
+        end # if
+    end # for
+    marked_nodes = Dict{Int64, Bool}
+    half = length(trees) / 2
+    for node in nodes
+        if count_dict[node] <= half
+            marked_nodes[node] = true
+        else
+            marked_nodes[node] = false
+        end
+    delete_marked_nodes!(ref_tree, marked_nodes)
+    end
+    return ref_tree
 end
