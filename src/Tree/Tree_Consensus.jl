@@ -186,8 +186,8 @@ function one_way_compatible(ref_tree::T, tree::T)::T where T<:AbstractNode
         if ref_node.nchild != 0
             start = min_leaf_rank(leaf_ranks_reverse, ref_node)
             stop = max_leaf_rank(leaf_ranks_reverse, ref_node)
-            start_node = leaf_ranks[start]
-            stop_node = leaf_ranks[stop]
+            start_node = leaves[start]
+            stop_node = leaves[stop]
             lca_start_stop = node_binaries[lcp(start_node.binary, stop_node.binary)]
             length(x_left(start_node).binary) > length(lca_start_stop.binary) ?
                 d = start_node : d = lca_start_stop.children[1]
@@ -333,15 +333,6 @@ end
 Construct the majority rule consensus tree from a set of trees
 """
 function majority_consensus_tree(trees::Vector{T})::T where T<:AbstractNode
-    """
-    all_leaves = [get_leaves(root) for root in trees]
-    leaf_names = sort([leaf.name for leaf in all_leaves[1]])
-    for leaves in all_leaves[2:end]
-        if leaf_names != sort([leaf.name for leaf in leaves])
-            throw(ArgumentError("Input Trees need to have identical leaf names"))
-        end
-    end
-    """
     ref_tree = trees[1]
     nodes = level_order(ref_tree)
     node_counts = convert(Vector{Int64}, ones(length(nodes)))
@@ -358,6 +349,7 @@ function majority_consensus_tree(trees::Vector{T})::T where T<:AbstractNode
                 end # if
             end # else
         end # for
+        set_binary!(tree)
         compatible_tree = one_way_compatible(tree, ref_tree)
         ref_tree, inserted_nodes = merge_trees!(compatible_tree, ref_tree)
         for node in inserted_nodes
