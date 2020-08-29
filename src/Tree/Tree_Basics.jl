@@ -76,7 +76,7 @@ end
     insert_node!(mother::Node, children::Vector{T}) where T<:AbstractNode
 
 This function inserts a node into a tree after a mother node and gains
-a subset of the mother's children as its children
+a subset of the mother's children as its children. Returns the inserted node.
 """
 function insert_node!(mother::T, children::Vector{T}) where T<:AbstractNode
     @assert length(children) >= 2
@@ -89,6 +89,7 @@ function insert_node!(mother::T, children::Vector{T}) where T<:AbstractNode
         remove_child!(mother, child)
     end # for
     add_child!(mother, inserted_node)
+    return inserted_node
 end
 
 function tree_from_leaves(leaf_nodes::Vector{String},node_size::Int, final_length::Int64)::Tuple{Vector{Node}, Int}
