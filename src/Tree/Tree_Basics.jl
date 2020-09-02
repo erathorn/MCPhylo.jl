@@ -79,14 +79,14 @@ This function inserts a node into a tree after a mother node and gains
 a subset of the mother's children as its children. Returns the inserted node.
 """
 function insert_node!(mother::T, children::Vector{T}) where T<:AbstractNode
-    @assert length(children) >= 2
+    @assert length(children) >= 1
     inserted_node = Node()
     for child in children
         @assert child in mother.children
     end # for
     for child in children
-        add_child!(inserted_node, child)
         remove_child!(mother, child)
+        add_child!(inserted_node, child)
     end # for
     add_child!(mother, inserted_node)
     return inserted_node
