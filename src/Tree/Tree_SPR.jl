@@ -1,5 +1,3 @@
-include("../MCPhylo.jl")
-include("Parser/ParseNewick.jl")
 #include("./Node_Type.jl")
 ##iterator function:
 #input is input tree
@@ -34,12 +32,11 @@ include("Parser/ParseNewick.jl")
 # function transform(root::T, TtM::T, dest::T) where T<:AbstractNode
 #     motherofTtM = TtM.mother
 #
-
-function SPR(root::T)::T where T <: AbstractNode
 #TODO: BINARY TREES
 #TODO: HOW MANY ITERATIONS??
 #TODO: IF LENGTH IS SMALLER, THAT'S NEW ORIGINAL TREE
 
+function SPR(root::T)::T where T <: AbstractNode
     original_tree_length = tree_length(root)
     subtree_root, nodes_of_subtree = create_random_subtree(root)
     root_tree_with_no_subtree = prune_tree(root,nodes_of_subtree)
