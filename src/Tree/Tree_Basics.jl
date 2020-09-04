@@ -61,12 +61,12 @@ function remove_child!(mother_node::Node, child::Node)::Node
 end # function
 
 """
-    delete_node!(node::Node)
+    delete_node!(node::Node)::Nothing
 
 This functions deletes node from a tree and assigns all its children to its
 mother node.
 """
-function delete_node!(node::T) where T<:AbstractNode
+function delete_node!(node::T)::Nothing where T<:AbstractNode
     if node.root == true
         throw(ArgumentError("Cannot remove root node"))
     end
@@ -78,12 +78,12 @@ function delete_node!(node::T) where T<:AbstractNode
 end
 
 """
-    insert_node!(mother::Node, children::Vector{T}) where T<:AbstractNode
+    insert_node!(mother::Node, children::Vector{T})::T where T<:AbstractNode
 
 This function inserts a node into a tree after a mother node and gains
 a subset of the mother's children as its children. Returns the inserted node.
 """
-function insert_node!(mother::T, children::Vector{T}) where T<:AbstractNode
+function insert_node!(mother::T, children::Vector{T})::T where T<:AbstractNode
     @assert length(children) >= 1
     inserted_node = Node()
     for child in children
