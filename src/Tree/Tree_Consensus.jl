@@ -160,6 +160,7 @@ are not compatible with the second tree are removed.
 """
 function one_way_compatible(ref_tree::T, tree::T)::T where T<:AbstractNode
     ref_tree_copy = deepcopy(ref_tree)
+    copy_tree = deepcopy(tree)
     ref_nodes = post_order(ref_tree_copy)
     ref_leaves = Vector{Node}()
     node_children = Dict{Node, Int64}()
@@ -169,7 +170,7 @@ function one_way_compatible(ref_tree::T, tree::T)::T where T<:AbstractNode
         if ref_node.nchild == 0
             leaves_dict[ref_node.name] = dict_count
             dict_count += 1
-            push!(leaves, ref_node)
+            push!(ref_leaves, ref_node)
         else
             leaves_count = 0
             for ref_leaf in ref_leaves
@@ -180,7 +181,7 @@ function one_way_compatible(ref_tree::T, tree::T)::T where T<:AbstractNode
             node_children[ref_node] = leaves_count
         end # if/else
     end # for
-    nodes = post_order(tree)
+    nodes = post_order(copy_tree)
     leaves = Vector{Node}()
     cluster_start_indeces = Dict{Node, Int64}()
     node_binaries = Dict{String, Node}()
@@ -198,7 +199,7 @@ function one_way_compatible(ref_tree::T, tree::T)::T where T<:AbstractNode
         end # if / else
         node_binaries[node.binary] = node
     end # for
-    leaves = order_tree!(tree, cluster_start_indeces)
+    leaves = order_tree!(copy_tree, cluster_start_indeces)
     leaf_ranks = Dict(enumerate([leaf.name for leaf in leaves]))
     leaf_ranks_reverse = Dict(value => key for (key, value) in leaf_ranks)
     marked_nodes = Dict{Int64, Bool}()
@@ -221,7 +222,7 @@ function one_way_compatible(ref_tree::T, tree::T)::T where T<:AbstractNode
         end # if
     end # for
     for node in level_order(ref_tree_copy)
-        if marked_nodes[node.num] == true
+        if node.nchild != 0 && marked_nodes[node.num] == true
             delete_node!(node)
         end # if
     end # for
@@ -358,8 +359,13 @@ function majority_consensus_tree(trees::Vector{T})::T where T<:AbstractNode
             end # else
         end # for
         set_binary!(ref_tree)
+        number_nodes!(ref_tree)
         compatible_tree = one_way_compatible(tree, ref_tree)
+        println(newick(compatible_tree))
+        set_binary!(compatible_tree)
+        number_nodes!(compatible_tree)
         ref_tree, inserted_nodes = merge_trees!(compatible_tree, ref_tree)
+        println(newick(ref_tree))
         for node in inserted_nodes
             count_dict[node] = 1
         end # for
