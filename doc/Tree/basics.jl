@@ -22,14 +22,16 @@ using Test
 
 @testset "delete_node!" begin
     tree = MCPhylo.parsing_newick_string("(A,B,(C,D)E)F;")
+    MCPhylo.number_nodes!(tree)
     remove_tree = MCPhylo.parsing_newick_string("(A,B,C,D)F;")
     remove_tree_newick = newick(remove_tree)
-
-    MCPhylo.number_nodes!(tree)
+    remove_tree2 = MCPhylo.parsing_newick_string("(B,C,D)F;")
+    remove_tree2_newick = newick(remove_tree2)
 
     delete_node!(find_by_name(tree, "E"))
     @test newick(tree) == remove_tree_newick
-
+    delete_node!(find_by_name(tree, "A"))
+    @test newick(tree) == remove_tree2_newick
     @test_throws ArgumentError delete_node!(find_by_name(tree, "F"))
 end
 
