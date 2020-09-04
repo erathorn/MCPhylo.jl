@@ -72,9 +72,10 @@ function delete_node!(node::T)::Nothing where T<:AbstractNode
     end
     mother = node.mother
     for child in node.children
-        add_child!(mother, child, findfirst(x->x==node, mother.children))
+        add_child!(mother, child, findfirst(x -> x == node, mother.children))
     end
     remove_child!(mother, node)
+    return nothing
 end
 
 """
