@@ -1,4 +1,3 @@
-#include("./Node_Type.jl")
 ##iterator function:
 #input is input tree
 #list of nodes used(LoNU) = []
@@ -36,25 +35,50 @@
 #TODO: HOW MANY ITERATIONS??
 #TODO: IF LENGTH IS SMALLER, THAT'S NEW ORIGINAL TREE
 
-function SPR(root::T)::T where T <: AbstractNode
+function SPR(root::Node)::AbstractNode
+    println("BEGINNING TREE OF THIS LOOP: ")
+    println(newick(root))
     original_tree_length = tree_length(root)
     subtree_root, nodes_of_subtree = create_random_subtree(root)
-    root_tree_with_no_subtree = prune_tree(root,nodes_of_subtree)
+    names_of_subtree = [i.name for i in nodes_of_subtree]
+    println("THE NAMES TO REMOVE ARE ", names_of_subtree)
+    root_tree_with_no_subtree = prune_tree(root,names_of_subtree)
+    println("PRUNED TREE OF THIS ROOT: ")
+    println(newick(root_tree_with_no_subtree))
+    # println("THIS SHOULD NOT HAVE PART")
+    # println(newick(root_tree_with_no_subtree))
     spr_tree = merge_randomly(root_tree_with_no_subtree,subtree_root)
     spr_length = tree_length(spr_tree)
-    if spr_length < original_tree_length
-        println("CONGRATS")
-        println("Original was",original_tree_length)
-        println("Now it's",spr_length)
-        SPR(spr_tree)
-    else
-        println("Original was",original_tree_length)
-        println("Now it's",spr_length)
-        SPR(root)
-end # if else
+    println("SUBTREE OF THIS LOOP: ")
+    println(newick(subtree_root))
+    println("RESULT TREE OF THIS LOOP: ")
+    println(newick(spr_tree))
+    println("ORIGINAL LENGTH: ")
+    println(tree_length(root))
+    println("RESULT LENGTH: ")
+    println(spr_length)
+    return spr_tree
+    # if spr_length < original_tree_length
+    #     println("WENT TO THE SMALLER TREE")
+    #     println("ORIGINAL LENGTH ", original_tree_length)
+    #     println("ACHIEVED SMALLER LENGTH ", spr_length)
+    #     println()
+    #     println()
+    #     println()
+    #     println("Newick Representation of SMALLER TREE")
+    #     println(newick(spr_tree))
+    #     SPR(spr_tree)
+    # else
+    #     ("STARTED AGAIN, LENGTH NOT SMALLER")
+    #     println("before we had this length ", original_tree_length)
+    #     println("and we got this one ",spr_length)
+    #     println("Newick Representation of bigger tree which we got")
+    #     println(newick(spr_tree))
+    #     SPR(root)
+
 end
 
-function create_random_subtree(root::T)::T  where T<:AbstractNode
+function create_random_subtree(root::T)  where T<:AbstractNode
     subtree_root = random_node(root)
     #TODO: check how to compare
     while subtree_root == root
