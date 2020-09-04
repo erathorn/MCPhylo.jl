@@ -8,18 +8,22 @@ my_tree:
 #TODO: Automate export of automatically genereated funtions
 
 """
-    add_child!(mother_node::Node, child::Node)
+    add_child!(mother_node::Node, child::Node, child_position::Union{Int64, Missing}=missing)
 
 This function adds a child to the mother node.
 The arity of the mother node is increased by `1` and the root
 status of the child is set to `False`.
 """
-function add_child!(mother_node::Node, child::Node)
-    push!(mother_node.children, child)
+function add_child!(mother_node::Node, child::Node, child_position::Union{Int64, Missing}=missing)
+    if ismissing(child_position)
+        push!(mother_node.children, child)
+    else
+        insert!(mother_node.children, child_position, child)
+    end # if/else
     child.mother = mother_node
     mother_node.nchild += 1
     child.root = false
-    mother_node.initialized=true
+    mother_node.initialized = true
 end # function add_child
 
 """
@@ -66,10 +70,11 @@ function delete_node!(node::T) where T<:AbstractNode
     if node.root == true
         throw(ArgumentError("Cannot remove root node"))
     end
+    mother = node.mother
     for child in node.children
-        add_child!(node.mother, child)
+        add_child!(mother, child, findfirst(x->x==node, mother.children))
     end
-    remove_child!(node.mother, node)
+    remove_child!(mother, node)
 end
 
 """
