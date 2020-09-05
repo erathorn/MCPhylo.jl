@@ -90,11 +90,12 @@ function insert_node!(mother::T, children::Vector{T})::T where T<:AbstractNode
     for child in children
         @assert child in mother.children
     end # for
+    index = findfirst(x -> x in children, mother.children)
     for child in children
         remove_child!(mother, child)
         add_child!(inserted_node, child)
     end # for
-    add_child!(mother, inserted_node)
+    add_child!(mother, inserted_node, index)
     return inserted_node
 end
 
