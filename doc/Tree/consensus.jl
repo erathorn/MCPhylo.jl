@@ -4,12 +4,9 @@ using Test
 
 @testset "find_common_clusters" begin
     ref_tree = MCPhylo.parsing_newick_string("((A,(B,(C,(D,E)))),(F,(G,H)))")
-    MCPhylo.number_nodes!(ref_tree)
-    MCPhylo.set_binary!(ref_tree)
-
     tree2 = MCPhylo.parsing_newick_string("((G,(C,(A,(F,E)))),(B,(D,H)))")
-    MCPhylo.number_nodes!(tree2)
-    MCPhylo.set_binary!(tree2)
+    MCPhylo.number_nodes!.([ref_tree, tree2])
+    MCPhylo.set_binary!.([ref_tree, tree2])
     A, B, C, D, E, F, G, H = find_by_name(tree2, "A"), find_by_name(tree2, "B"),
                              find_by_name(tree2, "C"), find_by_name(tree2, "D"),
                              find_by_name(tree2, "E"), find_by_name(tree2, "F"),
@@ -57,45 +54,32 @@ using Test
     @test_throws ArgumentError MCPhylo.find_common_clusters(ref_tree, tree6)
 end
 
-@testset "delete_marked_nodes!" begin
-    tree = MCPhylo.parsing_newick_string("(A,B,(C,(D,E)F)G)H;")
-    MCPhylo.set_binary!(tree)
-    MCPhylo.number_nodes!(tree)
-    marked = Dict([(1, false), (2, false), (3, false), (4, false),
-                   (5, false),  (6, true), (7, true), (8, false)])
-    MCPhylo.delete_marked_nodes!(tree, marked)
-    @test newick(tree) == newick(MCPhylo.parsing_newick_string("(A,B,C,D,E)H;"))
-
-    tree = MCPhylo.parsing_newick_string("(A,B,(C,(D,E)F)G)H;")
-    MCPhylo.set_binary!(tree)
-    MCPhylo.number_nodes!(tree)
-    marked = Dict([(1, false), (2, false), (3, false), (4, false),
-                   (5, false),  (6, false), (7, true), (8, false)])
-    MCPhylo.delete_marked_nodes!(tree, marked)
-    @test newick(tree) == newick(MCPhylo.parsing_newick_string("(A,B,C,(D,E)F)H;"))
+@testset "one_way_compatible" begin
+    tree = MCPhylo.parsing_newick_string("((A,C,E),(B,D))")
+    tree2 = MCPhylo.parsing_newick_string("((A,C),(B,D,E))")
+    expected_tree = MCPhylo.parsing_newick_string("(A,C,E,(B,D))")
+    MCPhylo.number_nodes!.([tree, tree2, expected_tree])
+    MCPhylo.set_binary!.([tree, tree2, expected_tree])
+    @test newick(MCPhylo.one_way_compatible(tree, tree2)) == newick(expected_tree)
 end
 
 @testset "order_tree!" begin
     tree = MCPhylo.parsing_newick_string("(A,B,(C,(D,E)F)G)H;")
-    MCPhylo.set_binary!(tree)
     MCPhylo.number_nodes!(tree)
-
+    MCPhylo.set_binary!(tree)
     A, B, C, D, E, F, G, H = find_by_name(tree, "A"), find_by_name(tree, "B"),
                              find_by_name(tree, "C"), find_by_name(tree, "D"),
                              find_by_name(tree, "E"), find_by_name(tree, "F"),
                              find_by_name(tree, "G"), find_by_name(tree, "H")
-
     cluster_start_indeces = Dict([(A, 3), (B, 7), (C, 2), (D, 8),
                                   (E, 5), (F, 1), (G, 4), (H, 6)])
-
     ordered_tree = MCPhylo.parsing_newick_string("(A,((E,D)F,C)G,B)H;")
     MCPhylo.number_nodes!(ordered_tree)
     MCPhylo.set_binary!(ordered_tree)
-
     @test MCPhylo.order_tree!(tree, cluster_start_indeces) == [A, E, D, C, B]
     MCPhylo.number_nodes!(tree)
     MCPhylo.set_binary!(tree)
-    @test tree == ordered_tree
+    @test newick(tree) == newick(ordered_tree)
 end
 
 @testset "max/min_leaf_rank" begin
@@ -142,49 +126,6 @@ end
         @test MCPhylo.x_right(C) == C
         @test MCPhylo.x_right(D) == D
         @test MCPhylo.x_right(E) == H
-    end
-end
-
-@testset "are_compatible" begin
-    tree = MCPhylo.parsing_newick_string("(A,B,(C,(D,E)F)G)H;")
-    MCPhylo.number_nodes!(tree)
-    MCPhylo.set_binary!(tree)
-
-    @testset "are_compatible with nodes" begin
-        cluster = [find_by_name(tree, "A")]
-        @test MCPhylo.are_compatible(cluster, tree)
-        cluster = [find_by_name(tree, "A"), find_by_name(tree, "B")]
-        @test MCPhylo.are_compatible(cluster, tree)
-        cluster = [find_by_name(tree, "A"), find_by_name(tree, "C")]
-        @test !MCPhylo.are_compatible(cluster, tree)
-        cluster = [find_by_name(tree, "D"), find_by_name(tree, "E")]
-        @test MCPhylo.are_compatible(cluster, tree)
-        cluster = [find_by_name(tree, "C"), find_by_name(tree, "F")]
-        @test MCPhylo.are_compatible(cluster, tree)
-        cluster = [find_by_name(tree, "A"), find_by_name(tree, "B"),
-                   find_by_name(tree, "C"), find_by_name(tree, "D"),
-                   find_by_name(tree, "E")]
-        @test MCPhylo.are_compatible(cluster, tree)
-        cluster = [find_by_name(tree, "C"), find_by_name(tree, "D"),
-                   find_by_name(tree, "E")]
-        @test MCPhylo.are_compatible(cluster, tree)
-    end
-
-    @testset "are_compatible with node names" begin
-        cluster = ["C"]
-        @test MCPhylo.are_compatible(cluster,tree)
-        cluster = ["A", "B"]
-        @test MCPhylo.are_compatible(cluster,tree)
-        cluster = ["A", "C"]
-        @test !MCPhylo.are_compatible(cluster,tree)
-        cluster = ["D", "E"]
-        @test MCPhylo.are_compatible(cluster,tree)
-        cluster = ["C", "F"]
-        @test MCPhylo.are_compatible(cluster, tree)
-        cluster = ["A", "B", "C", "D", "E"]
-        @test MCPhylo.are_compatible(cluster,tree)
-        cluster = ["C", "D", "E"]
-        @test MCPhylo.are_compatible(cluster,tree)
     end
 end
 
