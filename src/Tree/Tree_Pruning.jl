@@ -13,7 +13,7 @@ end
 
 
 """
-    prune_tree(root::T, node_names::Vector{String})::T where T<:AbstractNode
+    prune_tree(root::T, node_names::Vector{T})::T where T<:AbstractNode
 
 This function returns a copy of a tree with specific nodes including their
 descendants removed
@@ -27,7 +27,7 @@ end
 
 
 """
-    prune_tree!(root::T, node_names::Vector{String})::T where T<:AbstractNode
+    prune_tree!(root::T, node_names::Vector{String})::Nothing where T<:AbstractNode
 
 In-place version of prune_tree
 """
@@ -53,7 +53,7 @@ end
 
 
 """
-    prune_tree!(root::T, node_names::Vector{String})
+    prune_tree!(root::T, node_names::Vector{T})::Nothing where T<:AbstractNode
 
 In-place version of prune_tree
 """
