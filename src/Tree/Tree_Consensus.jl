@@ -73,7 +73,6 @@ are not compatible with the second tree are removed.
 """
 function one_way_compatible(ref_tree::T, tree::T)::T where T<:AbstractNode
     ref_tree_copy = deepcopy(ref_tree)
-    copy_tree = deepcopy(tree)
     ref_nodes = post_order(ref_tree_copy)
     node_leafs = Dict{Node, Int64}()
     leaves_dict = Dict{String, Int64}()
@@ -90,7 +89,7 @@ function one_way_compatible(ref_tree::T, tree::T)::T where T<:AbstractNode
             node_leafs[ref_node] = leaves_count
         end # if/else
     end # for
-    nodes = post_order(copy_tree)
+    nodes = post_order(tree)
     leaves = Vector{Node}()
     cluster_start_indeces = Dict{Node, Int64}()
     node_binaries = Dict{String, Node}()
@@ -102,7 +101,7 @@ function one_way_compatible(ref_tree::T, tree::T)::T where T<:AbstractNode
         end # if / else
         node_binaries[node.binary] = node
     end # for
-    leaves = order_tree!(copy_tree, cluster_start_indeces) # might need to not use the copy here
+    leaves = order_tree!(tree, cluster_start_indeces) # might need to not use the copy here
     leaf_ranks = Dict(enumerate([leaf.name for leaf in leaves]))
     leaf_ranks_reverse = Dict(value => key for (key, value) in leaf_ranks)
     marked_nodes = Dict{Int64, Bool}()
@@ -189,13 +188,12 @@ function merge_trees!(ref_tree::T, tree::T)::Tuple{T, Vector{T}} where T<:Abstra
                 inserted_node =
                     insert_node!(lca_start_stop, lca_start_stop.children[index_d:index_e])
                 push!(inserted_nodes, inserted_node)
-                # update binary representations
+                # TODO precompute xleft/right and update after insertion
                 for i in index_d:length(lca_start_stop.children)
                     lca_start_stop.children[i].binary = string(lca_start_stop.binary, i)
                 end
-                for i in 1:length(inserted_node.children)
-                    inserted_node.children[i].binary = string(inserted_node.binary, i)
-                end
+                set_binary!(tree)
+                number_nodes!(tree)
             end # if
         end # if
     end # for
@@ -314,8 +312,20 @@ end
 Construct the majority rule consensus tree from a set of trees
 """
 function majority_consensus_tree(trees::Vector{T})::T where T<:AbstractNode
-    ref_tree = trees[1]
+    ref_tree = deepcopy(trees[1])
     nodes = level_order(ref_tree)
+
+    # TODO
+    leaf_ranks = Dict{String, Int64}()
+    count = 0
+    for node in nodes
+        if node.nchild == 0
+            leaf_ranks[node.name] = count
+            count += 1
+        end
+    end
+    # TODO
+
     node_counts = convert(Vector{Int64}, ones(length(nodes)))
     count_dict = Dict(zip(nodes, node_counts))
     for tree in trees[2:end]
@@ -366,9 +376,3 @@ function majority_consensus_tree(trees::Vector{T})::T where T<:AbstractNode
     end # for
     return ref_tree
 end
-
-
-
-
-
-# TODO Check if we're using the original tree or the ordered_tree
