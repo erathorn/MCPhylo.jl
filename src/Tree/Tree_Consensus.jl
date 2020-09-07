@@ -14,51 +14,44 @@ function find_common_clusters(ref_tree::T, tree::T)::Dict{Node, Bool} where T<:A
         throw(ArgumentError("The leaf label sets of the trees are not identical"))
     end
     nodes = post_order(ref_tree)
-    leaves = Vector{Node}()
     leaves_dict = Dict{String, Int64}()
+    clusters = Dict{Node, Vector{String}}()
     cluster_dict = Dict{Tuple{Int64, Int64}, Int64}()
     dict_count = 1
     for node in nodes
         if node.nchild == 0
-            push!(leaves, node)
             leaves_dict[node.name] = dict_count
             dict_count += 1
         else
-            for leaf in leaves
-                cluster = Vector{Node}()
-                if node.binary == leaf.binary[1:length(node.binary)]
-                    push!(cluster, leaf)
-                else
-                    break
-                end # if/else
-            end # for
+            cluster = Vector{String}()
+            for child in node.children
+                child.nchild == 0 ? push!(cluster, child.name) : append!(cluster, clusters[child])
+            end
+            clusters[node] = cluster
             if node.root == true || node == node.mother.children[1]
-                last_index = leaves_dict[last(leaves).name]
-                first_index = leaves_dict[first(leaves).name]
+                last_index = leaves_dict[last(cluster)]
+                first_index = leaves_dict[first(cluster)]
                 cluster_dict[(first_index, last_index)] = last_index
             else
-                last_index = leaves_dict[last(leaves).name]
-                first_index = leaves_dict[first(leaves).name]
+                last_index = leaves_dict[last(cluster)]
+                first_index = leaves_dict[first(cluster)]
                 cluster_dict[(first_index, last_index)] = first_index
             end # if
         end # if
     end # for
     is_common_cluster = Dict{Node, Bool}()
+    clusters = Dict{Node, Vector{String}}()
     nodes = post_order(tree)
     for node in nodes
         if node.nchild == 0
             is_common_cluster[node] = true
-            push!(leaves, node)
         else
-            cluster = Vector{Node}()
-            for leaf in leaves
-                if node.binary == leaf.binary[1:length(node.binary)]
-                    push!(cluster, leaf)
-                else
-                    break
-                end # if/else
-            end # for
-            cluster_indeces = [leaves_dict[leaf.name] for leaf in leaves]
+            cluster = Vector{String}()
+            for child in node.children
+                child.nchild == 0 ? push!(cluster, child.name) : append!(cluster, clusters[child])
+            end
+            clusters[node] = cluster
+            cluster_indeces = [leaves_dict[leaf] for leaf in cluster]
             if length(cluster) != maximum(cluster_indeces) - minimum(cluster_indeces) + 1
                 is_common_cluster[node] = false
             elseif haskey(cluster_dict, (minimum(cluster_indeces), maximum(cluster_indeces)))
@@ -82,21 +75,19 @@ function one_way_compatible(ref_tree::T, tree::T)::T where T<:AbstractNode
     ref_tree_copy = deepcopy(ref_tree)
     copy_tree = deepcopy(tree)
     ref_nodes = post_order(ref_tree_copy)
-    ref_leaves = Vector{Node}()
-    node_children = Dict{Node, Int64}()
+    node_leafs = Dict{Node, Int64}()
     leaves_dict = Dict{String, Int64}()
     dict_count = 1
     for ref_node in ref_nodes
         if ref_node.nchild == 0
             leaves_dict[ref_node.name] = dict_count
             dict_count += 1
-            push!(ref_leaves, ref_node)
         else
             leaves_count = 0
             for child in ref_node.children
-                child.nchild == 0 ? leaves_count += 1 : leaves_count += node_children[child]
+                child.nchild == 0 ? leaves_count += 1 : leaves_count += node_leafs[child]
             end # for
-            node_children[ref_node] = leaves_count
+            node_leafs[ref_node] = leaves_count
         end # if/else
     end # for
     nodes = post_order(copy_tree)
@@ -105,15 +96,9 @@ function one_way_compatible(ref_tree::T, tree::T)::T where T<:AbstractNode
     node_binaries = Dict{String, Node}()
     for node in nodes
         if node.nchild != 0
-            for leaf in leaves
-                if node.binary == leaf.binary[1:length(node.binary)]
-                    cluster_start_indeces[node] = leaves_dict[leaf.name]
-                    break
-                end # if
-            end # for
+            cluster_start_indeces[node] = cluster_start_indeces[node.children[1]]
         else
             cluster_start_indeces[node] = leaves_dict[node.name]
-            push!(leaves, node)
         end # if / else
         node_binaries[node.binary] = node
     end # for
@@ -132,7 +117,7 @@ function one_way_compatible(ref_tree::T, tree::T)::T where T<:AbstractNode
                 d = start_node : d = lca_start_stop.children[1]
             length(x_right(stop_node).binary) > length(lca_start_stop.binary) ?
                 e = stop_node : e = lca_start_stop.children[end]
-            if d.mother == lca_start_stop && e.mother == lca_start_stop && node_children[ref_node] == stop - start + 1
+            if d.mother == lca_start_stop && e.mother == lca_start_stop && node_leafs[ref_node] == stop - start + 1
                 marked_nodes[ref_node.num] = false
             else
                 marked_nodes[ref_node.num] = true
@@ -165,12 +150,12 @@ function merge_trees!(ref_tree::T, tree::T)::Tuple{T, Vector{T}} where T<:Abstra
         end # if
     end # for
     nodes = post_order(tree)
-    leaves = Vector{Node}()
+    ref_leaves = Vector{Node}()
     cluster_start_indeces = Dict{Node, Int64}()
     node_binaries = Dict{String, Node}()
     for node in nodes
         if node.nchild != 0
-            for leaf in leaves
+            for leaf in ref_leaves
                 if node.binary == leaf.binary[1:length(node.binary)]
                     cluster_start_indeces[node] = leaves_dict[leaf.name]
                     break
@@ -178,7 +163,7 @@ function merge_trees!(ref_tree::T, tree::T)::Tuple{T, Vector{T}} where T<:Abstra
             end # for
         else
             cluster_start_indeces[node] = leaves_dict[node.name]
-            push!(leaves, node)
+            push!(ref_leaves, node)
         end # if / else
         node_binaries[node.binary] = node
     end # for
@@ -192,10 +177,12 @@ function merge_trees!(ref_tree::T, tree::T)::Tuple{T, Vector{T}} where T<:Abstra
             start_node = leaves[start]
             stop_node = leaves[stop]
             lca_start_stop = node_binaries[lcp(start_node.binary, stop_node.binary)]
-            length(x_left(start_node).binary) > length(lca_start_stop.binary) ?
-                d = start_node : d = lca_start_stop.children[1]
-            length(x_right(stop_node).binary) > length(lca_start_stop.binary) ?
-                e = stop_node : e = lca_start_stop.children[end]
+            xleft = x_left(start_node)
+            xright = x_right(stop_node)
+            length(xleft.binary) > length(lca_start_stop.binary) ?
+                d = xleft : d = lca_start_stop.children[1]
+            length(xright.binary) > length(lca_start_stop.binary) ?
+                e = xright : e = lca_start_stop.children[end]
             if !(d == lca_start_stop.children[1] && e == lca_start_stop.children[end])
                 index_d = findfirst(x -> x == d, lca_start_stop.children)
                 index_e = findfirst(x -> x == e, lca_start_stop.children)
@@ -203,10 +190,10 @@ function merge_trees!(ref_tree::T, tree::T)::Tuple{T, Vector{T}} where T<:Abstra
                     insert_node!(lca_start_stop, lca_start_stop.children[index_d:index_e])
                 push!(inserted_nodes, inserted_node)
                 # update binary representations
-                for i in [index_d:length(lca_start_stop.children)]
+                for i in index_d:length(lca_start_stop.children)
                     lca_start_stop.children[i].binary = string(lca_start_stop.binary, i)
                 end
-                for i in [1:length(inserted_node.children)]
+                for i in 1:length(inserted_node.children)
                     inserted_node.children[i].binary = string(inserted_node.binary, i)
                 end
             end # if
@@ -332,7 +319,6 @@ function majority_consensus_tree(trees::Vector{T})::T where T<:AbstractNode
     node_counts = convert(Vector{Int64}, ones(length(nodes)))
     count_dict = Dict(zip(nodes, node_counts))
     for tree in trees[2:end]
-        nodes = level_order(ref_tree)
         is_common_cluster = find_common_clusters(tree, ref_tree)
         for node in nodes
             if is_common_cluster[node] == true
@@ -352,6 +338,9 @@ function majority_consensus_tree(trees::Vector{T})::T where T<:AbstractNode
         number_nodes!(compatible_tree)
         ref_tree, inserted_nodes = merge_trees!(compatible_tree, ref_tree)
         println(newick(ref_tree))
+        set_binary!(ref_tree)
+        number_nodes!(ref_tree)
+        nodes = level_order(ref_tree)
         for node in inserted_nodes
             count_dict[node] = 1
         end # for
