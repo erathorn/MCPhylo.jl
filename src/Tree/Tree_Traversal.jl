@@ -75,10 +75,6 @@ end # function post_order
 #     get_leaves(root.value)
 # end # function post_order
 
-@inline function get_leaves(root::T)::Vector{T}  where T<:GeneralNode
-    [i for i in post_order(root) if i.nchild == 0]
-end # function get_leaves
-
 
 
 
