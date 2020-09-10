@@ -6,13 +6,6 @@ Use Day's algorithm to create a dictionary, that tells us for each node of the
 second input tree, if its corresponding cluster is a common cluster of the two trees
 """
 function find_common_clusters(ref_tree::T, tree::T)::Dict{Node, Bool} where T<:AbstractNode
-    ref_leaf_names = [leaf.name for leaf in get_leaves(ref_tree)]
-    leaf_names = [leaf.name for leaf in get_leaves(tree)]
-    if length(ref_leaf_names) != length(leaf_names)
-        throw(ArgumentError("The leaf label sets of the trees are not identical"))
-    elseif length(ref_leaf_names) != length(Set(append!(ref_leaf_names, leaf_names)))
-        throw(ArgumentError("The leaf label sets of the trees are not identical"))
-    end
     nodes = post_order(ref_tree)
     leaves_dict = Dict{String, Int64}()
     clusters = Dict{Node, Vector{String}}()
@@ -44,6 +37,11 @@ function find_common_clusters(ref_tree::T, tree::T)::Dict{Node, Bool} where T<:A
     nodes = post_order(tree)
     for node in nodes
         if node.nchild == 0
+            try
+                leaves_dict[node.name]
+            catch KeyError
+                throw(ArgumentError("The leafs sets of the trees need to be identical"))
+            end # try
             is_common_cluster[node] = true
         else
             cluster = Vector{String}()
@@ -310,25 +308,25 @@ Construct the majority rule consensus tree from a set of trees
 function majority_consensus_tree(trees::Vector{T})::T where T<:AbstractNode
     first_tree = deepcopy(trees[1])
     nodes = post_order(first_tree)
-    # save leaf ranks to order the resulting tree later
     leaf_ranks = Dict{String, Int64}()
     count = 0
+    # save leaf ranks to order the resulting tree later
     for node in nodes
         if node.nchild == 0
             leaf_ranks[node.name] = count
             count += 1
         end
     end
-
     node_counts = convert(Vector{Int64}, ones(length(nodes)))
     count_dict = Dict(zip(nodes, node_counts))
     for tree in trees[2:end]
         nodes = level_order(first_tree)
-        # delete clusters in the first tree that are not in the second
         is_common_cluster = find_common_clusters(tree, first_tree)
         for node in nodes
+            # increment count of clusters of the first tree that are in the other tree
             if is_common_cluster[node] == true
                 count_dict[node] += 1
+            # delete clusters which are not
             else
                 count_dict[node] -= 1
                 if count_dict[node] == 0
@@ -336,7 +334,6 @@ function majority_consensus_tree(trees::Vector{T})::T where T<:AbstractNode
                 end # if
             end # else
         end # for
-
         set_binary!(first_tree)
         number_nodes!(first_tree)
         compatible_tree = one_way_compatible(tree, first_tree)
@@ -345,6 +342,7 @@ function majority_consensus_tree(trees::Vector{T})::T where T<:AbstractNode
         first_tree, inserted_nodes = merge_trees!(compatible_tree, first_tree)
         set_binary!(first_tree)
         number_nodes!(first_tree)
+        # intialize counts for the new nodes
         for node in inserted_nodes
             count_dict[node] = 1
         end # for
@@ -362,8 +360,8 @@ function majority_consensus_tree(trees::Vector{T})::T where T<:AbstractNode
             end # if
         end # for
     end # for
-    # delete non-majority clusters
     half = length(trees) / 2
+    # delete non-majority clusters
     for node in nodes
         if count_dict[node] <= half
             delete_node!(node)
