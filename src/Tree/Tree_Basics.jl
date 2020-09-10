@@ -86,7 +86,7 @@ a subset of the mother's children as its children. Returns the inserted node.
 """
 function insert_node!(mother::T, children::Vector{T})::T where T<:AbstractNode
     @assert length(children) >= 1
-    inserted_node = Node()
+    inserted_node = Node("nameless")
     for child in children
         @assert child in mother.children
     end # for
