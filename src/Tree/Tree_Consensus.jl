@@ -34,9 +34,11 @@ function find_common_clusters(ref_tree::T, tree::T)::Dict{Node, Bool} where T<:A
     end # for
     is_common_cluster = Dict{Node, Bool}()
     clusters = Dict{Node, Vector{String}}()
+    leaf_count = 0
     nodes = post_order(tree)
     for node in nodes
         if node.nchild == 0
+            leaf_count += 1
             try
                 leaves_dict[node.name]
             catch KeyError
@@ -59,6 +61,9 @@ function find_common_clusters(ref_tree::T, tree::T)::Dict{Node, Bool} where T<:A
             end # if/else
         end # if/else
     end # for
+    if leaf_count != length(keys(leaves_dict))
+        throw(ArgumentError("The leafs sets of the trees need to be identical"))
+    end # if
     return is_common_cluster
 end
 
