@@ -138,4 +138,8 @@ end
     MCPhylo.set_binary!.(trees)
     result = newick(MCPhylo.parsing_newick_string("((A,B,C),D,E)"))
     @test newick(MCPhylo.majority_consensus_tree(trees)) == result
+
+    tree4 = MCPhylo.parsing_newick_string("(((B,C),A),D,F)")
+    push!(trees, tree4)
+    @test_throws ArgumentError MCPhylo.majority_consensus_tree(trees)
 end
