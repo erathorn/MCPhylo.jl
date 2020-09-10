@@ -188,10 +188,6 @@ function merge_trees!(ref_tree::T, tree::T)::Tuple{T, Vector{T}} where T<:Abstra
                 inserted_node =
                     insert_node!(lca_start_stop, lca_start_stop.children[index_d:index_e])
                 push!(inserted_nodes, inserted_node)
-                # TODO precompute xleft/right and update after insertion
-                for i in index_d:length(lca_start_stop.children)
-                    lca_start_stop.children[i].binary = string(lca_start_stop.binary, i)
-                end
                 set_binary!(tree)
                 number_nodes!(tree)
             end # if
@@ -269,7 +265,7 @@ end
 """
     x_left(node::T)::Tuple{T,T} where T<:AbstractNode
 
-Helper function to find ancestor of node that has said leaf as leftmost descendant
+Helper function to find ancestor of a leaf that has said leaf as leftmost descendant
 """
 function x_left(node::T)::T where T<:AbstractNode
     while true
@@ -289,7 +285,7 @@ end
 """
     x_right(node::T)::Tuple{T,T} where T<:AbstractNode
 
-Helper function to find ancestor of node that has said leaf as rightmost descendant
+Helper function to find ancestor of a leaf that has said leaf as rightmost descendant
 """
 function x_right(node::T)::T where T<:AbstractNode
     while true
