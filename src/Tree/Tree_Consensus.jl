@@ -101,7 +101,7 @@ function one_way_compatible(ref_tree::T, tree::T)::T where T<:AbstractNode
         end # if / else
         node_binaries[node.binary] = node
     end # for
-    leaves = order_tree!(tree, cluster_start_indeces) # might need to not use the copy here
+    leaves = order_tree!(tree, cluster_start_indeces)
     leaf_ranks = Dict(enumerate([leaf.name for leaf in leaves]))
     leaf_ranks_reverse = Dict(value => key for (key, value) in leaf_ranks)
     marked_nodes = Dict{Int64, Bool}()
@@ -214,7 +214,7 @@ function order_tree!(root::T, cluster_start_indeces::Dict{T, Int64}, leaves=Vect
             push!(leaves, child)
         else
             order_tree!(child, cluster_start_indeces, leaves)
-        end
+        end # if/else
     end # for
     return leaves
 end
@@ -236,9 +236,9 @@ function min_leaf_rank(leaf_ranks::Dict{String, Int64}, node::T)::Int64 where T 
                 push!(possible_minima, leaf_ranks[child.name])
             else
                 push!(possible_minima, min_leaf_rank(leaf_ranks, child))
-            end # if
+            end # if/else
         end # for
-    end # if
+    end # if/else
     minimum(possible_minima)
 end
 
@@ -259,9 +259,9 @@ function max_leaf_rank(leaf_ranks::Dict{String, Int64}, node::T)::Int64 where T<
                 push!(possible_maxima, leaf_ranks[child.name])
             else
                 push!(possible_maxima, max_leaf_rank(leaf_ranks, child))
-            end # if
+            end # if/else
         end # for
-    end # if
+    end # if/else
     maximum(possible_maxima)
 end
 
@@ -281,7 +281,7 @@ function x_left(node::T)::T where T<:AbstractNode
                 return node
             end # if
         node = mother
-        end # if
+        end # if/else
     end # while
 end
 
@@ -301,7 +301,7 @@ function x_right(node::T)::T where T<:AbstractNode
                 return node
             end # if
         node = mother
-        end # if
+        end # if/else
     end # while
 end
 
@@ -312,10 +312,9 @@ end
 Construct the majority rule consensus tree from a set of trees
 """
 function majority_consensus_tree(trees::Vector{T})::T where T<:AbstractNode
-    ref_tree = deepcopy(trees[1])
-    nodes = level_order(ref_tree)
-
-    # TODO
+    first_tree = deepcopy(trees[1])
+    nodes = post_order(first_tree)
+    # save leaf ranks to order the resulting tree later
     leaf_ranks = Dict{String, Int64}()
     count = 0
     for node in nodes
@@ -324,12 +323,13 @@ function majority_consensus_tree(trees::Vector{T})::T where T<:AbstractNode
             count += 1
         end
     end
-    # TODO
 
     node_counts = convert(Vector{Int64}, ones(length(nodes)))
     count_dict = Dict(zip(nodes, node_counts))
     for tree in trees[2:end]
-        is_common_cluster = find_common_clusters(tree, ref_tree)
+        nodes = level_order(first_tree)
+        # delete clusters in the first tree that are not in the second
+        is_common_cluster = find_common_clusters(tree, first_tree)
         for node in nodes
             if is_common_cluster[node] == true
                 count_dict[node] += 1
@@ -340,37 +340,49 @@ function majority_consensus_tree(trees::Vector{T})::T where T<:AbstractNode
                 end # if
             end # else
         end # for
-        set_binary!(ref_tree)
-        number_nodes!(ref_tree)
-        compatible_tree = one_way_compatible(tree, ref_tree)
+
+        set_binary!(first_tree)
+        number_nodes!(first_tree)
+        compatible_tree = one_way_compatible(tree, first_tree)
         set_binary!(compatible_tree)
         number_nodes!(compatible_tree)
-        ref_tree, inserted_nodes = merge_trees!(compatible_tree, ref_tree)
-        set_binary!(ref_tree)
-        number_nodes!(ref_tree)
-        nodes = level_order(ref_tree)
+        first_tree, inserted_nodes = merge_trees!(compatible_tree, first_tree)
+        set_binary!(first_tree)
+        number_nodes!(first_tree)
         for node in inserted_nodes
             count_dict[node] = 1
         end # for
     end # for
-    set_binary!(ref_tree)
-    number_nodes!(ref_tree)
-    nodes = level_order(ref_tree)
+    set_binary!(first_tree)
+    number_nodes!(first_tree)
+    nodes = level_order(first_tree)
     node_counts = convert(Vector{Int64}, zeros(length(nodes)))
     count_dict = Dict(zip(nodes, node_counts))
     for tree in trees
-        is_common_cluster = find_common_clusters(tree, ref_tree)
+        is_common_cluster = find_common_clusters(tree, first_tree)
         for node in nodes
             if is_common_cluster[node] == true
                 count_dict[node] += 1
             end # if
         end # for
     end # for
+    # delete non-majority clusters
     half = length(trees) / 2
     for node in nodes
         if count_dict[node] <= half
             delete_node!(node)
         end # if
     end # for
-    return ref_tree
+    # order the resulting tree
+    nodes = post_order(first_tree)
+    cluster_start_indeces = Dict{Node, Int64}()
+    for node in nodes
+        if node.nchild != 0
+            cluster_start_indeces[node] = cluster_start_indeces[node.children[1]]
+        else
+            cluster_start_indeces[node] = leaf_ranks[node.name]
+        end # if / else
+    end # for
+    order_tree!(first_tree, cluster_start_indeces)
+    return first_tree
 end
