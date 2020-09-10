@@ -19,7 +19,7 @@ function ladderize_tree!(root::T, ascending::Bool=true) where T<:AbstractNode
 end
 
 """
-    ladderize_tree(root::T, ascending::Bool=true)::Nothing where T<:AbstractNode)
+    ladderize_tree(root::T, ascending::Bool=true)::T where T<:AbstractNode)
 
 This function returns a ladderized copy of a tree, i.e. a copy with all the
 nodes on all levels sorted by the count of their descendants
