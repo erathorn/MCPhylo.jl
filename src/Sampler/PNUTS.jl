@@ -189,6 +189,7 @@ function refraction(v::T, r::Vector{Float64}, pm::Int64,
     end
 
     blenvec = molifier.(tmpB, delta)
+
     set_branchlength_vector!(v1, blenvec)
 
 
@@ -354,7 +355,7 @@ function nutsepsilon(x::Node, logfgrad::Function, delta::Float64)
   x0 = deepcopy(x)
   n = size(x)[1] - 1
 
-  _, r0, logf0, grad0,_ = refraction(x0, randn(n), 1, zeros(n), 0.0, logfgrad, delta, n)
+  _, r0, logf0, grad0,_ = refraction(x0, rand(n), 1, zeros(n), 0.0, logfgrad, delta, n)
 
   x0 = deepcopy(x)
   epsilon = 1.0

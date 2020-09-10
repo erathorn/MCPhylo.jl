@@ -64,8 +64,8 @@ function Base.show(io::IO, d::N) where N <: GeneralNode
         show(io, "text/plain", tree_length(d))
         print(io, "\nHeight:\n")
         show(io, "text/plain", tree_height(d))
-        print(io, "\nNumber of leave nodes:\n")
-        show(io, "text/plain",length(get_leaves(d)))
+        #print(io, "\nNumber of leave nodes:\n")
+        #show(io, "text/plain",length(get_leaves(d)))
     else
         print(io, "\nLength:\n")
         show(io, "text/plain", 0)

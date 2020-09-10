@@ -28,7 +28,7 @@ function to_file(df::DataFrame, tdf::DataFrame, outpath::AbstractString, run::Ab
 
     insertcols!(df,1, it=1:nrow(df))
     df[!, 1] .*= thin
-    CSV.write(string(outpath, "params_"*run*".log"), df, writeheader=true, delim="\t")
+    CSV.write(string(outpath, "params_"*run*".log"), df, header=true, delim="\t")
     io = open(string(outpath, "mytrees_"*run*".nwk"), "w")
     for x = 1:length(tdf[:,1])
         write(io, tdf[x,:][1])

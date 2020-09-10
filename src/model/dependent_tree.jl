@@ -29,7 +29,7 @@ end
 
 
 function unlist(d::T) where T <: TreeVariate
-    
+
     unlist(d.value)
 end
 

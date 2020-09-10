@@ -9,13 +9,20 @@ tester:
 include("./src/MCPhylo.jl")
 using .MCPhylo
 using Random
+using Serialization
 Random.seed!(42)
 
-mt, df = make_tree_with_data("untracked_files/test_drav.nex", binary=true); # load your own nexus file
+mnwk="((Oriya_0:0.002,Italian_0:0.002)14:0.002,((Marathi_0:0.002,Rumanian_List_0:0.002)10:0.002,Welsh_N_0:0.002)13:0.002,(Pashto_0:0.002,(Swedish_0:0.002,(Slovenian_0:0.002,Sardinian_N_0:0.002)11:0.002)12:0.002)15:0.002)16:0.0;"
 
+mt = MCPhylo.parsing_newick_string(mnwk)
+MCPhylo.number_nodes!(mt)
+MCPhylo.set_binary!(mt)
+df = deserialize("untracked_files/devdf.jls")
+#mt2, df2 = make_tree_with_data("untracked_files/development.nex", binary=false); # load your own nexus file
+#MCPhylo.RF(mt, mt2)
 po = post_order(mt);
 for node in po
-    node.data = df[:,:,node.num]
+    node.data = log.(df[:,:,node.num])
     node.scaler = zeros(1,size(node.data, 2))
 end
 
@@ -43,7 +50,7 @@ model =  Model(
 # intial model values
 inits = [ Dict{Symbol, Union{Any, Real}}(
     :mtree => mt,
-    :mypi=> [0.77, 0.23],#rand(Dirichlet(2, 1)),
+    :mypi=> [0.78, 0.22],#rand(Dirichlet(2, 1)),
     :df => my_data[:df],
     :nnodes => my_data[:nnodes],
     :nbase => my_data[:nbase],
@@ -63,7 +70,7 @@ setsamplers!(model, scheme);
 
 # do the mcmc simmulation. if trees=true the trees are stored and can later be
 # flushed ot a file output.
-sim = mcmc(model, my_data, inits, 100, burnin=50,thin=2, chains=1, trees=true)
+sim = mcmc(model, my_data, inits, 10, burnin=2,thin=2, chains=1, trees=true)
 
 # request more runs
 sim = mcmc(sim, 50, trees=true)
@@ -72,9 +79,13 @@ sim = mcmc(sim, 50, trees=true)
 to_file(sim, "example_run")
 
 po  = post_order(mt)
-f(y) = MCPhylo.FelsensteinFunction(po, 0.77, ones(3), df, 231, y)
+
 
 blv = get_branchlength_vector(mt)
+blv .= 0.002
+
+f(y) = MCPhylo.FelsensteinFunction(po, 0.77, ones(3), df, 3132, y)
+f(blv)
 
 using Zygote
 r1, r2 = Zygote.pullback(f, blv)

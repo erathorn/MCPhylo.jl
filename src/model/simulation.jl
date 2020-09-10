@@ -99,23 +99,31 @@ function gradlogpdf!(m::Model, x::N, block::Integer=0,transform::Bool=false)::Tu
   targets = keys(m, :target, block)
   m[params] = relist(m, x, params, transform)
 
-
-
+  
   # use thread parallelism
   # prior
-  prior_res = @spawn gradlogpdf(m[params[1]], x)
+  #prior_res = @spawn gradlogpdf(m[params[1]], x)
 
-  #vp, gradp =  gradlogpdf(m[params[1]], x)
-
+  vp, gradp =  gradlogpdf(m[params[1]], x)
+  #println(m[params[1]])
+  #println(m[targets[1]])
   # likelihood
-  v, grad = gradlogpdf(m[targets[1]])
+  for key in targets
+    node = m[key]
+    update!(node, m)
+    v, grad = gradlogpdf(node)
+    vp += v
+    gradp .+= grad
+  end
 
   # get results from threads
-  vp, gradp = fetch(prior_res)
+  #vp, gradp = fetch(prior_res)
+  #println("gradp ", gradp)
+  #println("grad ", grad)
+  #println("vp ", vp)
+  #println("v ", v)
 
-
-
-  v+vp, grad.+gradp
+  vp, gradp
 end
 
 function logpdf!(m::Model, x::AbstractArray{T}, block::Integer=0,

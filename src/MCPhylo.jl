@@ -21,7 +21,7 @@ using StatsPlots
 
 using Zygote
 using FiniteDiff
-
+using Flux
 using Showoff: showoff
 using Markdown
 using DataFrames
