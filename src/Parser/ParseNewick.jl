@@ -52,7 +52,7 @@ function parse_name_length(newick::String)
     if occursin(':',newick)
         name, len = split(strip(newick),':')
         if name == ""
-            name = "nameless"
+            name = "no_name"
         end # if
         if len == ""
             len = 1.0
@@ -64,7 +64,7 @@ function parse_name_length(newick::String)
     end # main if
 
     if length(newick)<1
-        return "nameless",1.0
+        return "no_name",1.0
     else
         return string(newick),1.0
     end #if-else
