@@ -2,19 +2,24 @@ include("../../src/MCPhylo.jl")
 using .MCPhylo
 using Test
 
-@testset "insert_node" begin
-    tree = MCPhylo.parsing_newick_string("(A,B,(C,D)E)F;")
-    insert_tree = MCPhylo.parsing_newick_string("(A,B,((C,D)no_name)E)F;")
+@testset "insert_node!" begin
+    tree = MCPhylo.parsing_newick_string("(A,B,(C,D,E)F)G;")
+    insert_tree = MCPhylo.parsing_newick_string("(A,B,((C,D,E)no_name)F)G;")
     insert_tree_newick = newick(insert_tree)
+    insert_tree2 = MCPhylo.parsing_newick_string("(A,B,(((C,D)no_name,E)no_name)F)G;")
+    insert_tree_newick2 = newick(insert_tree2)
     MCPhylo.number_nodes!(tree)
 
-    children = [find_by_name(tree, "C"), find_by_name(tree, "D")]
-    mother = find_by_name(tree, "E")
-    insert_node!(mother, children)
-    MCPhylo.number_nodes!(tree)
+    children = [find_by_name(tree, "C"), find_by_name(tree, "D"),
+                find_by_name(tree, "E")]
+    mother = find_by_name(tree, "F")
+    inserted_node = insert_node!(mother, children)
     @test newick(tree) == insert_tree_newick
 
-    MCPhylo.number_nodes!(tree)
+    pop!(children)
+    insert_node!(inserted_node, children)
+    @test newick(tree) == insert_tree_newick2
+
     new_node = Node("G")
     append!(children, new_node)
     @test_throws AssertionError insert_node!(mother, children)
