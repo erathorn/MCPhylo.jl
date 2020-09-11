@@ -10,7 +10,6 @@ function SPR(original_root::Node,binary::Bool)::AbstractNode
     spr_tree = perform_spr_binary(root)
 else
     spr_tree = perform_spr(root)
-
 end #ifelse
 return spr_tree
 end
