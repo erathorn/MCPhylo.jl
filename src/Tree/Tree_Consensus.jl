@@ -152,23 +152,25 @@ function merge_trees!(ref_tree::T, tree::T)::Tuple{T, Vector{T}} where T<:Abstra
         end # if
     end # for
     nodes = post_order(tree)
-    ref_leaves = Vector{Node}()
+    leaves = Vector{Node}()
     cluster_start_indeces = Dict{Node, Int64}()
     node_binaries = Dict{String, Node}()
     for node in nodes
         if node.nchild != 0
-            for leaf in ref_leaves
-                if node.binary == leaf.binary[1:length(node.binary)]
+            for leaf in leaves
+                if (length(node.binary) <= length(leaf.binary) &&
+                   node.binary == leaf.binary[1:length(node.binary)])
                     cluster_start_indeces[node] = leaves_dict[leaf.name]
                     break
                 end # if
             end # for
         else
             cluster_start_indeces[node] = leaves_dict[node.name]
-            push!(ref_leaves, node)
+            push!(leaves, node)
         end # if / else
         node_binaries[node.binary] = node
     end # for
+    node_binaries_reverse = Dict(value.name => key for (key, value) in node_binaries)
     leaves = order_tree!(tree, cluster_start_indeces)
     leaf_ranks = Dict(enumerate([leaf.name for leaf in leaves]))
     leaf_ranks_reverse = Dict(value => key for (key, value) in leaf_ranks)
@@ -178,7 +180,7 @@ function merge_trees!(ref_tree::T, tree::T)::Tuple{T, Vector{T}} where T<:Abstra
             stop = max_leaf_rank(leaf_ranks_reverse, ref_node)
             start_node = leaves[start]
             stop_node = leaves[stop]
-            lca_start_stop = node_binaries[lcp(start_node.binary, stop_node.binary)]
+            lca_start_stop = node_binaries[lcp(node_binaries_reverse[start_node.name], node_binaries_reverse[stop_node.name])]
             xleft = x_left(start_node)
             xright = x_right(stop_node)
             length(xleft.binary) > length(lca_start_stop.binary) ?
