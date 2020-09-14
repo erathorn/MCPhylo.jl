@@ -2,21 +2,21 @@ using MCPhylo
 using Test
 
 
-node_a = Node()
-node_b = Node()
-@test MCPhylo.nodes_equal(node_a,node_b)
-node_a.name = "a"
-node_b.name = "b"
-node_c = Node()
-node_c.name = "c"
-@test MCPhylo.nodes_equal(node_a,node_b) == false
-node_a.name = "b"
-node_a.inc_length = 0.5
-@test MCPhylo.nodes_equal(node_a,node_b) == false
-node_b.inc_length = 0.5
-@test MCPhylo.nodes_equal(node_a,node_b)
-add_child!(node_c,node_b)
-@test MCPhylo.nodes_equal(node_a,node_b) == false
+# node_a = Node()
+# node_b = Node()
+# @test MCPhylo.nodes_equal(node_a,node_b)
+# node_a.name = "a"
+# node_b.name = "b"
+# node_c = Node()
+# node_c.name = "c"
+# @test MCPhylo.nodes_equal(node_a,node_b) == false
+# node_a.name = "b"
+# node_a.inc_length = 0.5
+# @test MCPhylo.nodes_equal(node_a,node_b) == false
+# node_b.inc_length = 0.5
+# @test MCPhylo.nodes_equal(node_a,node_b)
+# add_child!(node_c,node_b)
+# @test MCPhylo.nodes_equal(node_a,node_b) == false
 
 
 

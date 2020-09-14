@@ -84,9 +84,9 @@ function merge_randomly(root::T,subtree_root::T)::T  where T<:AbstractNode
     return root
 end #function
 
-function nodes_equal(a::Node,b::Node)::Bool
-    if a.name == b.name && a.inc_length == b.inc_length && a.nchild==b.nchild && a.root == b.root
-        return true
-    end #if
-    false
-end #function
+# function nodes_equal(a::Node,b::Node)::Bool
+#     if a.name == b.name && a.inc_length == b.inc_length && a.nchild==b.nchild && a.root == b.root
+#         return true
+#     end #if
+#     false
+# end #function
