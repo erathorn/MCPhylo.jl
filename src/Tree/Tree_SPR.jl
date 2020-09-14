@@ -44,7 +44,7 @@ selects random, non-root node from tree for use in SPR pruning
 """
 function create_random_subtree(root::T)  where T<:AbstractNode
     subtree_root = random_node(root)
-    while nodes_equal(subtree_root,root)
+    while subtree_root==true
         subtree_root = random_node(root)
     end #while
     nodes_of_subtree = post_order(subtree_root) #could be used in conjunction with Tree_Pruning.jl
@@ -59,7 +59,7 @@ reattaches subtree to random, non-root node
 """
 function merge_randomly(root::T,subtree_root::T)::T  where T<:AbstractNode
     random_mother = random_node(root)
-    while nodes_equal(random_mother,root)
+    while random_mother.root == true
         random_mother = random_node(root)
     end #while
     if random_mother.nchild > 1 #creates "placeholder node" in binary tree if necessary to preserve binarity
