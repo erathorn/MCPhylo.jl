@@ -113,19 +113,19 @@ end
                              find_by_name(tree, "G"), find_by_name(tree, "H")
 
     @testset "x_left" begin
-        @test MCPhylo.x_left(A) == H
-        @test MCPhylo.x_left(B) == B
-        @test MCPhylo.x_left(C) == G
-        @test MCPhylo.x_left(D) == F
-        @test MCPhylo.x_left(E) == E
+        @test MCPhylo.x_left(A) == (H, [A,H])
+        @test MCPhylo.x_left(B) == (B, [B])
+        @test MCPhylo.x_left(C) == (G, [C,G])
+        @test MCPhylo.x_left(D) == (F, [D,F])
+        @test MCPhylo.x_left(E) == (E, [E])
     end
 
     @testset "x_right" begin
-        @test MCPhylo.x_right(A) == A
-        @test MCPhylo.x_right(B) == B
-        @test MCPhylo.x_right(C) == C
-        @test MCPhylo.x_right(D) == D
-        @test MCPhylo.x_right(E) == H
+        @test MCPhylo.x_right(A) == (A, [A])
+        @test MCPhylo.x_right(B) == (B, [B])
+        @test MCPhylo.x_right(C) == (C, [C])
+        @test MCPhylo.x_right(D) == (D, [D])
+        @test MCPhylo.x_right(E) == (H, [E,F,G,H])
     end
 end
 
