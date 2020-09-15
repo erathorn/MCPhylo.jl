@@ -105,8 +105,18 @@ function one_way_compatible(ref_tree::T, tree::T)::T where T<:AbstractNode
         node_binaries[node.binary] = node
     end # for
     leaves = order_tree!(tree, cluster_start_indeces)
+    MCPhylo.set_binary!(tree)
+    MCPhylo.number_nodes!(tree)
     leaf_ranks = Dict(enumerate([leaf.name for leaf in leaves]))
     leaf_ranks_reverse = Dict(value => key for (key, value) in leaf_ranks)
+    xleft_dict = Dict{Node, Tuple{Node, Dict{Int64,Node}}}()
+    xright_dict = Dict{Node, Tuple{Node, Dict{Int64, Node}}}()
+    for leaf in leaves
+        x, path = x_left(leaf)
+        xleft_dict[leaf] = (x, Dict(length(node.binary) => node for node in path))
+        x, path = x_right(leaf)
+        xright_dict[leaf] = (x, Dict(length(node.binary) => node for node in path))
+    end
     marked_nodes = Dict{Int64, Bool}()
     for ref_node in ref_nodes
         if ref_node.nchild != 0
@@ -114,12 +124,28 @@ function one_way_compatible(ref_tree::T, tree::T)::T where T<:AbstractNode
             stop = max_leaf_rank(leaf_ranks_reverse, ref_node)
             start_node = leaves[start]
             stop_node = leaves[stop]
-            lca_start_stop = node_binaries[lcp(start_node.binary, stop_node.binary)]
-            length(x_left(start_node).binary) > length(lca_start_stop.binary) ?
-                d = start_node : d = lca_start_stop.children[1]
-            length(x_right(stop_node).binary) > length(lca_start_stop.binary) ?
-                e = stop_node : e = lca_start_stop.children[end]
-            if d.mother == lca_start_stop && e.mother == lca_start_stop && node_leafs[ref_node] == stop - start + 1
+            xleft = xleft_dict[start_node][1]
+            xright = xright_dict[stop_node][1]
+            depth_left = length(xleft.binary)
+            depth_right = length(xright.binary)
+            depth = depth_left >= depth_right
+            depth ? p2 = xright_dict[stop_node][2][depth_left] : p2 = xleft_dict[start_node][2][depth_right]
+            depth ? p1 = xleft : p1 = xright
+            if p2 == p1
+                r = p1
+                if depth
+                    d = xleft_dict[start_node][2][depth_left + 1]
+                    e = xright_dict[stop_node][2][depth_left + 1]
+                else
+                    d = xleft_dict[start_node][2][depth_right + 1]
+                    e = xright_dict[stop_node][2][depth_right + 1]
+                end # if/else
+            else
+                depth ? r = p1.mother : r = p2.mother
+                depth ? d = p1 : d = p2
+                depth ? e = p2 : e = p1
+            end # if/else
+            if d.mother == r && e.mother == r && node_leafs[ref_node] == stop - start + 1
                 marked_nodes[ref_node.num] = false
             else
                 marked_nodes[ref_node.num] = true
@@ -172,32 +198,73 @@ function merge_trees!(ref_tree::T, tree::T)::Tuple{T, Vector{T}} where T<:Abstra
     end # for
     node_binaries_reverse = Dict(value.name => key for (key, value) in node_binaries)
     leaves = order_tree!(tree, cluster_start_indeces)
+    set_binary!(tree)
+    number_nodes!(tree)
     leaf_ranks = Dict(enumerate([leaf.name for leaf in leaves]))
     leaf_ranks_reverse = Dict(value => key for (key, value) in leaf_ranks)
+    xleft_dict = Dict{Node, Tuple{Node, Dict{Int64,Node}}}()
+    xright_dict = Dict{Node, Tuple{Node, Dict{Int64, Node}}}()
+    for leaf in leaves
+        x, path = x_left(leaf)
+        xleft_dict[leaf] = (x, Dict(length(node.binary) => node for node in path))
+        x, path = x_right(leaf)
+        xright_dict[leaf] = (x, Dict(length(node.binary) => node for node in path))
+    end
+    count = -1
     for ref_node in ref_nodes
         if ref_node.nchild != 0
             start = min_leaf_rank(leaf_ranks_reverse, ref_node)
             stop = max_leaf_rank(leaf_ranks_reverse, ref_node)
             start_node = leaves[start]
             stop_node = leaves[stop]
-            lca_start_stop = node_binaries[lcp(node_binaries_reverse[start_node.name], node_binaries_reverse[stop_node.name])]
-            xleft = x_left(start_node)
-            xright = x_right(stop_node)
-            length(xleft.binary) > length(lca_start_stop.binary) ?
-                d = xleft : d = lca_start_stop.children[1]
-            length(xright.binary) > length(lca_start_stop.binary) ?
-                e = xright : e = lca_start_stop.children[end]
-            if !(d == lca_start_stop.children[1] && e == lca_start_stop.children[end])
-                index_d = findfirst(x -> x == d, lca_start_stop.children)
-                index_e = findfirst(x -> x == e, lca_start_stop.children)
+            xleft = xleft_dict[start_node][1]
+            xright = xright_dict[stop_node][1]
+            depth_left = length(xleft.binary)
+            depth_right = length(xright.binary)
+            depth = depth_left >= depth_right
+            depth ? p2 = xright_dict[stop_node][2][depth_left] : p2 = xleft_dict[start_node][2][depth_right]
+            depth ? p1 = xleft : p1 = xright
+            if p2 == p1
+                r = p1
+                if depth
+                    d = xleft_dict[start_node][2][depth_left + 1]
+                    e = xright_dict[stop_node][2][depth_left + 1]
+                else
+                    d = xleft_dict[start_node][2][depth_right + 1]
+                    e = xright_dict[stop_node][2][depth_right + 1]
+                end # if/else
+            else
+                depth ? r = p1.mother : r = p2.mother
+                depth ? d = p1 : d = p2
+                depth ? e = p2 : e = p1
+            end # if/else
+            left = d == r.children[1]
+            right = e == r.children[end]
+            if !(left && right)
+                index_d = findfirst(x -> x == d, r.children)
+                index_e = findfirst(x -> x == e, r.children)
                 inserted_node =
-                    insert_node!(lca_start_stop, lca_start_stop.children[index_d:index_e])
+                    insert_node!(r, r.children[index_d:index_e])
                 push!(inserted_nodes, inserted_node)
-                set_binary!(tree)
-                number_nodes!(tree)
+                inserted_node.binary = string(r.binary, "z")
+                inserted_node.num = count
+                count -= 1
+                inserted_depth = length(inserted_node.binary)
+                if !left
+                    xleft_dict[start_node][2][inserted_depth] = inserted_node
+                    xright_dict[stop_node][2][inserted_depth] = inserted_node
+                    xleft_dict[start_node] = (inserted_node, xleft_dict[start_node][2])
+                end
+                if !right
+                    xright_dict[stop_node][2][inserted_depth] = inserted_node
+                    xleft_dict[start_node][2][inserted_depth] = inserted_node
+                    xright_dict[stop_node] = (inserted_node, xright_dict[stop_node][2])
+                end
             end # if
         end # if
     end # for
+    set_binary!(tree)
+    number_nodes!(tree)
     return tree, inserted_nodes
 end # function merge_trees!
 
@@ -272,16 +339,18 @@ end
 
 Helper function to find ancestor of a leaf that has said leaf as leftmost descendant
 """
-function x_left(node::T)::T where T<:AbstractNode
+function x_left(node::T)::Tuple{T, Vector{T}} where T<:AbstractNode
+    path = [node]
     while true
         if node.root
-            return node
+            return node, path
         else
             mother = node.mother
             if mother.children[1] != node
-                return node
+                return node, path
             end # if
         node = mother
+        push!(path, node)
         end # if/else
     end # while
 end
@@ -292,16 +361,18 @@ end
 
 Helper function to find ancestor of a leaf that has said leaf as rightmost descendant
 """
-function x_right(node::T)::T where T<:AbstractNode
+function x_right(node::T)::Tuple{T, Vector{T}} where T<:AbstractNode
+    path = [node]
     while true
         if node.root
-            return node
+            return node, path
         else
             mother = node.mother
             if mother.children[end] != node
-                return node
+                return node, path
             end # if
         node = mother
+        push!(path, node)
         end # if/else
     end # while
 end
