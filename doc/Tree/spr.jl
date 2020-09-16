@@ -8,6 +8,9 @@ tree = MCPhylo.parsing_newick_string("((raccoon:19.19959,bear:6.80041):0.84600,(
 MCPhylo.number_nodes!(tree)
 
 
+error_tree = MCPhylo.parsing_newick_string("(raccoon:19.19959):0.84600;")
+@test_throws ErrorException MCPhylo.SPR(error_tree, true)
+
 spr_binary = MCPhylo.SPR(binary_tree, true)
 @test round(MCPhylo.tree_length(binary_tree);digits=3) == round(MCPhylo.tree_length(spr_binary);digits=3)
 @test length(MCPhylo.post_order(spr_binary)) == length(MCPhylo.post_order(binary_tree)) ||  length(MCPhylo.post_order(spr_binary)) == length(MCPhylo.post_order(binary_tree)) + 1

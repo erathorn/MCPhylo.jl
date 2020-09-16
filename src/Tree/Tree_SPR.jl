@@ -6,6 +6,9 @@ Returns reference to root of altered tree
 """
 function SPR(original_root::Node,binary::Bool)::AbstractNode
     root = deepcopy(original_root)
+    if length(post_order(root)) <= 2
+        error("The tree is too small for SPR")
+    end #if
     if binary
         spr_tree = perform_spr_binary(root)
 else
