@@ -7,7 +7,7 @@ Returns reference to root of altered tree
 function SPR(original_root::Node,binary::Bool)::AbstractNode
     root = deepcopy(original_root)
     if binary
-    spr_tree = perform_spr_binary(root)
+        spr_tree = perform_spr_binary(root)
 else
     spr_tree = perform_spr(root)
 end #ifelse
@@ -33,7 +33,7 @@ performs SPR on binary tree
 function perform_spr_binary(root::Node)::AbstractNode
     subtree_root, nodes_of_subtree = create_random_subtree(root)#returns reference to subtree to be pruned and reattached
     remove_child!(subtree_root.mother,subtree_root)
-    spr_tree = merge_randomly(root,subtree_root)#returns reference to root of tree after reattachment
+    spr_tree = merge_randomly_binary(root,subtree_root)#returns reference to root of tree after reattachment
     return spr_tree
 end
 
@@ -44,7 +44,7 @@ selects random, non-root node from tree for use in SPR pruning
 """
 function create_random_subtree(root::T)  where T<:AbstractNode
     subtree_root = random_node(root)
-    while subtree_root==true
+    while subtree_root.root==true
         subtree_root = random_node(root)
     end #while
     nodes_of_subtree = post_order(subtree_root) #could be used in conjunction with Tree_Pruning.jl
@@ -52,12 +52,12 @@ function create_random_subtree(root::T)  where T<:AbstractNode
 end #function
 
 """
-    merge_randomly(root::T,subtree_root::T)::T where T<:AbstractNode
+    merge_randomly_binary(root::T,subtree_root::T)::T where T<:AbstractNode
 
-reattaches subtree to random, non-root node
+reattaches subtree to random, non-root node (binary tree)
 
 """
-function merge_randomly(root::T,subtree_root::T)::T  where T<:AbstractNode
+function merge_randomly_binary(root::T,subtree_root::T)::T  where T<:AbstractNode
     random_mother = random_node(root)
     while random_mother.root == true
         random_mother = random_node(root)
@@ -84,9 +84,19 @@ function merge_randomly(root::T,subtree_root::T)::T  where T<:AbstractNode
     return root
 end #function
 
-# function nodes_equal(a::Node,b::Node)::Bool
-#     if a.name == b.name && a.inc_length == b.inc_length && a.nchild==b.nchild && a.root == b.root
-#         return true
-#     end #if
-#     false
-# end #function
+
+"""
+    merge_randomly(root::T,subtree_root::T)::T where T<:AbstractNode
+
+reattaches subtree to random, non-root node (tree)
+
+"""
+
+function merge_randomly(root::T,subtree_root::T)::T  where T<:AbstractNode
+    random_mother = random_node(root)
+    while random_mother.root == true
+        random_mother = random_node(root)
+    end #while
+        add_child!(random_mother,subtree_root) #no need for placeholder node if given node has 1 or fewer children
+    return root
+end #function
