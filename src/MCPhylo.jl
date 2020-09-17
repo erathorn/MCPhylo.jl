@@ -11,22 +11,27 @@ using Serialization
 using Distributed
 using Printf: @sprintf
 using LinearAlgebra
-using CuArrays
-using GPUArrays
-using CUDAnative
-using CUDAdrv
-
 using Plots
 using StatsPlots
-
 using Zygote
 using FiniteDiff
-using Flux
 using Showoff: showoff
 using Markdown
 using DataFrames
 using Random
 using CSV
+using ChainRules
+
+
+using CUDA
+if has_cuda()
+  using CuArrays
+  using GPUArrays
+else
+  @warn "CUDA is installed, but no CUDA device detected.
+         Computation is performed without CUDA functionality."
+end
+
 
 import Base: Matrix, names, summary, iterate
 import Base.Threads.@spawn
