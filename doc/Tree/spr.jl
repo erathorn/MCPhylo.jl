@@ -12,10 +12,12 @@ error_tree = MCPhylo.parsing_newick_string("(raccoon:19.19959):0.84600;")
 @test_throws ErrorException MCPhylo.SPR(error_tree, true)
 
 spr_binary = MCPhylo.SPR(binary_tree, true)
+@test length(Set([n.num for n in post_order(spr_binary)])) == length(Set([n.num for n in post_order(binary)]))
 @test round(MCPhylo.tree_length(binary_tree);digits=3) == round(MCPhylo.tree_length(spr_binary);digits=3)
 @test length(MCPhylo.post_order(spr_binary)) == length(MCPhylo.post_order(binary_tree)) ||  length(MCPhylo.post_order(spr_binary)) == length(MCPhylo.post_order(binary_tree)) + 1
 
 
 spr = MCPhylo.SPR(tree,false)
+@test length(Set([n.num for n in post_order(spr)])) == length(Set([n.num for n in post_order(tree)]))
 @test round(MCPhylo.tree_length(tree);digits=3) == round(MCPhylo.tree_length(spr);digits=3)
 @test length(MCPhylo.post_order(tree)) == length(MCPhylo.post_order(spr)) || length(MCPhylo.post_order(tree)) + 1 == length(MCPhylo.post_order(spr))
