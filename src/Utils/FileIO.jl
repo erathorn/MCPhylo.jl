@@ -18,7 +18,7 @@ function to_file(model::ModelChains, outpath::AbstractString)
 end
 
 function to_file(df::DataFrame, outpath::AbstractString, run::AbstractString, thin::Int64)
-    insertcols!(df,1, it=1:nrow(df))
+    insertcols!(df,1, :it=>1:nrow(df))
     df[!, 1] .*= thin
     CSV.write(string(outpath, "params_"*run*".log"), df, writeheader=true, delim="\t")
 
@@ -26,7 +26,7 @@ end
 
 function to_file(df::DataFrame, tdf::DataFrame, outpath::AbstractString, run::AbstractString, thin::Int64)
 
-    insertcols!(df,1, it=1:nrow(df))
+    insertcols!(df,1, :it=>1:nrow(df))
     df[!, 1] .*= thin
     CSV.write(string(outpath, "params_"*run*".log"), df, header=true, delim="\t")
     io = open(string(outpath, "mytrees_"*run*".nwk"), "w")
