@@ -329,9 +329,7 @@ end
 function nouturn(xminus::T, xplus::T,
                 rminus::Vector{Float64}, rplus::Vector{Float64}, gradminus::Vector{Float64},gradplus::Vector{Float64},
                 epsilon::Float64, logfgrad::Function, delta::Float64, sz::Int64, j::Int64)  where T<:Node
-        if j > 4
-          return false
-        end
+
         curr_l, curr_h = BHV_bounds(xminus, xplus)
 
         # use thread parallelism to calculuate both directions at once
@@ -355,7 +353,7 @@ function nutsepsilon(x::Node, logfgrad::Function, delta::Float64)
   x0 = deepcopy(x)
   n = size(x)[1] - 1
 
-  _, r0, logf0, grad0,_ = refraction(x0, rand(n), 1, zeros(n), 0.0, logfgrad, delta, n)
+  _, r0, logf0, grad0,_ = refraction(x0, randn(n), 1, zeros(n), 0.0, logfgrad, delta, n)
 
   x0 = deepcopy(x)
   epsilon = 1.0
@@ -373,6 +371,5 @@ function nutsepsilon(x::Node, logfgrad::Function, delta::Float64)
 
   end
 
-  println("eps ",epsilon)
   epsilon
 end

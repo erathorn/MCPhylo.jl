@@ -35,18 +35,8 @@ function gradlogpdf(d::PhyloDist, x::AbstractArray)
     blv = get_branchlength_vector(d.my_tree)
     mt = post_order(d.my_tree)
 
-
     f(y) = FelsensteinFunction(mt, d.mypi, d.rates, x, d.nsites, y)
     r = Zygote.pullback(f, blv)
-    #g1 = FiniteDiff.finite_difference_gradient(f, blv)
 
-    #g2 = r[2](1.0)[1]
-    #if !isapprox(g1, g2)
-    #    println(g1)
-    #    println(g2)
-    #    throw("not")
-    #end
     r[1], r[2](1.0)[1]
-
-    #f(blv), g1
 end

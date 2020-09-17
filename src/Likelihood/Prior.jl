@@ -53,17 +53,11 @@ function internal_logpdf(d::CompoundDirichlet, b_lens::Array{Float64}, int_leave
 end
 
 function gradlogpdf(d::CompoundDirichlet, x::T) where T <: GeneralNode
-
     int_ext = internal_external(x)
     blv = get_branchlength_vector(x)
-
     f(y) =  internal_logpdf(d, y, int_ext)
-
-
-    #r = Zygote.pullback(f, blv)
-    g1 = FiniteDiff.finite_difference_gradient(f, blv)
-    #r[1],r[2](1.0)[1]
-    f(blv), g1
+    r = Zygote.pullback(f, blv)
+    return r[1],r[2](1.0)[1]
 end
 
 
