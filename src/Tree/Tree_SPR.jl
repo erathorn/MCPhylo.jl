@@ -9,12 +9,9 @@ function SPR(original_root::Node,binary::Bool)::AbstractNode
     if length(post_order(root)) <= 2
         error("The tree is too small for SPR")
     end #if
-    if binary
-        spr_tree = perform_spr_binary(root)
-else
-    spr_tree = perform_spr(root)
-end #ifelse
-return spr_tree
+
+    spr_tree = binary ? perform_spr_binary(root) : perform_spr(root)
+    return spr_tree
 end
 """
     perform_spr(root::Node)::AbstractNode
@@ -47,7 +44,7 @@ selects random, non-root node from tree for use in SPR pruning
 """
 function create_random_subtree(root::T)  where T<:AbstractNode
     subtree_root = random_node(root)
-    while subtree_root.root==true
+    while subtree_root.root
         subtree_root = random_node(root)
     end #while
     nodes_of_subtree = post_order(subtree_root) #could be used in conjunction with Tree_Pruning.jl
@@ -62,7 +59,7 @@ reattaches subtree to random, non-root node (binary tree)
 """
 function merge_randomly_binary(root::T,subtree_root::T)::T  where T<:AbstractNode
     random_mother = random_node(root)
-    while random_mother.root == true
+    while random_mother.root
         random_mother = random_node(root)
     end #while
     if random_mother.nchild > 1 #creates "placeholder node" in binary tree if necessary to preserve binarity
@@ -97,7 +94,7 @@ reattaches subtree to random, non-root node (tree)
 
 function merge_randomly(root::T,subtree_root::T)::T  where T<:AbstractNode
     random_mother = random_node(root)
-    while random_mother.root == true
+    while random_mother.root
         random_mother = random_node(root)
     end #while
         add_child!(random_mother,subtree_root) #no need for placeholder node if given node has 1 or fewer children
