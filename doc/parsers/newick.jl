@@ -10,6 +10,8 @@ for x in testlist
 end
 @test MCPhylo.is_valid_newick_string("();") == true
 
+@test MCPhylo.is_valid_newick_string("(A, B)C;") == true
+@test MCPhylo.is_valid_newick_string("(A, B )C;") == true
 @test MCPhylo.is_valid_newick_string("(A,B));") == false
 @test MCPhylo.is_valid_newick_string("invalid") == false
 
