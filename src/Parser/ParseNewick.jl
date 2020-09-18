@@ -77,6 +77,7 @@ In this function main parsing process happens, it uses recursive method to parse
 """
 
 function parsing_newick_string(newick::String)
+    newick = replace(newick," "=> "")
 
     if  newick[end] == ';' #no need for semicolon
         newick = chop(newick)
