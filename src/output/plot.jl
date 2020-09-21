@@ -198,7 +198,7 @@ function meanplot(c::AbstractChains; legend::Bool=false, na...)
   val = cummean(c.value)
   for i in 1:nvars
 
-     # new plot creation block, based on Plots with a GR backend
+    # new plot creation block, based on Plots with a GR backend
     plots[i] = Plots.plot(repeat(collect(c.range), outer=[nchains]),
                           vec(val[:, i, :]), seriestype=:line,
                           group=repeat(c.chains, inner=[length(c.range)]),
