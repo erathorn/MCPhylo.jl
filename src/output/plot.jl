@@ -15,10 +15,7 @@ function draw(p::Array{T}; fmt::Symbol=:svg, filename::AbstractString="",
   pp = nrow * ncol               ## plots per page
   ps = length(p)                 ## number of plots
   np = ceil(Int, ps / pp)        ## number of pages
-
   mat = Array{Plots.Plot}(undef, pp)
-  # set theme for plots
-  theme(:solarized)
 
   for page in 1:np
     if ask && page > 1 && !addextension
@@ -55,7 +52,6 @@ function draw(p::Array{T}; fmt::Symbol=:svg, filename::AbstractString="",
       savefig(fname)
     end
   end
-
 end
 
 function plot(c::AbstractChains, ptype::Vector{Symbol}=[:trace, :density];
