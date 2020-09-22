@@ -79,11 +79,11 @@ function one_way_compatible(ref_tree::T, tree::T)::T where T<:AbstractNode
     ref_nodes = post_order(ref_tree_copy)
     node_leafs = Dict{Node, Int64}()
     leaves_dict = Dict{String, Int64}()
-    dict_count = 1
+    count = 1
     for ref_node in ref_nodes
         if ref_node.nchild == 0
-            leaves_dict[ref_node.name] = dict_count
-            dict_count += 1
+            leaves_dict[ref_node.name] = count
+            count += 1
         else
             leaves_count = 0
             for child in ref_node.children
@@ -95,14 +95,12 @@ function one_way_compatible(ref_tree::T, tree::T)::T where T<:AbstractNode
     nodes = post_order(tree)
     leaves = Vector{Node}()
     cluster_start_indeces = Dict{Node, Int64}()
-    node_binaries = Dict{String, Node}()
     for node in nodes
         if node.nchild != 0
             cluster_start_indeces[node] = cluster_start_indeces[node.children[1]]
         else
             cluster_start_indeces[node] = leaves_dict[node.name]
         end # if / else
-        node_binaries[node.binary] = node
     end # for
     leaves = order_tree!(tree, cluster_start_indeces)
     MCPhylo.set_binary!(tree)
@@ -140,10 +138,12 @@ function one_way_compatible(ref_tree::T, tree::T)::T where T<:AbstractNode
                     d = xleft_dict[start_node][2][depth_right + 1]
                     e = xright_dict[stop_node][2][depth_right + 1]
                 end # if/else
-            else
-                depth ? r = p1.mother : r = p2.mother
+            elseif p1.mother == p2.mother
+                r = p1.mother
                 depth ? d = p1 : d = p2
                 depth ? e = p2 : e = p1
+            else
+                print("lmao")
             end # if/else
             if d.mother == r && e.mother == r && node_leafs[ref_node] == stop - start + 1
                 marked_nodes[ref_node.num] = false
@@ -170,17 +170,16 @@ function merge_trees!(ref_tree::T, tree::T)::Tuple{T, Vector{T}} where T<:Abstra
     ref_nodes = post_order(ref_tree)
     inserted_nodes = Vector{Node}()
     leaves_dict = Dict{String, Int64}()
-    dict_count = 1
+    count = 1
     for ref_node in ref_nodes
         if ref_node.nchild == 0
-            leaves_dict[ref_node.name] = dict_count
-            dict_count += 1
+            leaves_dict[ref_node.name] = count
+            count += 1
         end # if
     end # for
     nodes = post_order(tree)
     leaves = Vector{Node}()
     cluster_start_indeces = Dict{Node, Int64}()
-    node_binaries = Dict{String, Node}()
     for node in nodes
         if node.nchild != 0
             for leaf in leaves
@@ -194,9 +193,7 @@ function merge_trees!(ref_tree::T, tree::T)::Tuple{T, Vector{T}} where T<:Abstra
             cluster_start_indeces[node] = leaves_dict[node.name]
             push!(leaves, node)
         end # if / else
-        node_binaries[node.binary] = node
     end # for
-    node_binaries_reverse = Dict(value.name => key for (key, value) in node_binaries)
     leaves = order_tree!(tree, cluster_start_indeces)
     set_binary!(tree)
     number_nodes!(tree)
