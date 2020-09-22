@@ -124,28 +124,37 @@ function one_way_compatible(ref_tree::T, tree::T)::T where T<:AbstractNode
             stop_node = leaves[stop]
             xleft = xleft_dict[start_node][1]
             xright = xright_dict[stop_node][1]
+            left_path = xleft_dict[start_node][2]
+            right_path = xright_dict[stop_node][2]
+            if intersect(values(left_path), values(right_path)) == []
+                marked_nodes[ref_node.num] = true
+                continue
+            end
+            !xleft.root && delete!(left_path, length(xleft.mother.binary))
+            !xright.root && delete!(right_path, length(xright.mother.binary))
             depth_left = length(xleft.binary)
             depth_right = length(xright.binary)
             depth = depth_left >= depth_right
-            depth ? p2 = xright_dict[stop_node][2][depth_left] : p2 = xleft_dict[start_node][2][depth_right]
+            depth ? p2 = right_path[depth_left] : p2 = left_path[depth_right]
             depth ? p1 = xleft : p1 = xright
             if p2 == p1
                 r = p1
                 if depth
-                    d = xleft_dict[start_node][2][depth_left + 1]
-                    e = xright_dict[stop_node][2][depth_left + 1]
+                    d = left_path[depth_left + 1]
+                    e = right_path[depth_left + 1]
                 else
-                    d = xleft_dict[start_node][2][depth_right + 1]
-                    e = xright_dict[stop_node][2][depth_right + 1]
+                    d = left_path[depth_right + 1]
+                    e = right_path[depth_right + 1]
                 end # if/else
             elseif p1.mother == p2.mother
                 r = p1.mother
                 depth ? d = p1 : d = p2
                 depth ? e = p2 : e = p1
             else
-                print("lmao")
+                marked_nodes[ref_node.num] = true
+                continue
             end # if/else
-            if d.mother == r && e.mother == r && node_leafs[ref_node] == stop - start + 1
+            if length(d.mother.binary) <= length(r.binary) && length(e.mother.binary) <= length(r.binary)
                 marked_nodes[ref_node.num] = false
             else
                 marked_nodes[ref_node.num] = true
@@ -216,24 +225,33 @@ function merge_trees!(ref_tree::T, tree::T)::Tuple{T, Vector{T}} where T<:Abstra
             stop_node = leaves[stop]
             xleft = xleft_dict[start_node][1]
             xright = xright_dict[stop_node][1]
+            left_path = xleft_dict[start_node][2]
+            right_path = xright_dict[stop_node][2]
+            if intersect(values(left_path), values(right_path)) == []
+                continue
+            end
+            !xleft.root && delete!(left_path, length(xleft.mother.binary))
+            !xright.root && delete!(right_path, length(xright.mother.binary))
             depth_left = length(xleft.binary)
             depth_right = length(xright.binary)
             depth = depth_left >= depth_right
-            depth ? p2 = xright_dict[stop_node][2][depth_left] : p2 = xleft_dict[start_node][2][depth_right]
+            depth ? p2 = right_path[depth_left] : p2 = left_path[depth_right]
             depth ? p1 = xleft : p1 = xright
             if p2 == p1
                 r = p1
                 if depth
-                    d = xleft_dict[start_node][2][depth_left + 1]
-                    e = xright_dict[stop_node][2][depth_left + 1]
+                    d = left_path[depth_left + 1]
+                    e = right_path[depth_left + 1]
                 else
-                    d = xleft_dict[start_node][2][depth_right + 1]
-                    e = xright_dict[stop_node][2][depth_right + 1]
+                    d = left_path[depth_right + 1]
+                    e = right_path[depth_right + 1]
                 end # if/else
-            else
-                depth ? r = p1.mother : r = p2.mother
+            elseif p1.mother == p2.mother
+                r = p1.mother
                 depth ? d = p1 : d = p2
                 depth ? e = p2 : e = p1
+            else
+                continue
             end # if/else
             left = d == r.children[1]
             right = e == r.children[end]
@@ -248,14 +266,14 @@ function merge_trees!(ref_tree::T, tree::T)::Tuple{T, Vector{T}} where T<:Abstra
                 count -= 1
                 inserted_depth = length(inserted_node.binary)
                 if !left
-                    xleft_dict[start_node][2][inserted_depth] = inserted_node
-                    xright_dict[stop_node][2][inserted_depth] = inserted_node
-                    xleft_dict[start_node] = (inserted_node, xleft_dict[start_node][2])
+                    left_path[inserted_depth] = inserted_node
+                    right_path[inserted_depth] = inserted_node
+                    xleft_dict[start_node] = (inserted_node, left_path)
                 end
                 if !right
-                    xright_dict[stop_node][2][inserted_depth] = inserted_node
-                    xleft_dict[start_node][2][inserted_depth] = inserted_node
-                    xright_dict[stop_node] = (inserted_node, xright_dict[stop_node][2])
+                    right_path[inserted_depth] = inserted_node
+                    left_path[inserted_depth] = inserted_node
+                    xright_dict[stop_node] = (inserted_node, right_path)
                 end
             end # if
         end # if
@@ -344,6 +362,7 @@ function x_left(node::T)::Tuple{T, Vector{T}} where T<:AbstractNode
         else
             mother = node.mother
             if mother.children[1] != node
+                push!(path, node.mother)
                 return node, path
             end # if
         node = mother
@@ -366,6 +385,7 @@ function x_right(node::T)::Tuple{T, Vector{T}} where T<:AbstractNode
         else
             mother = node.mother
             if mother.children[end] != node
+                push!(path, node.mother)
                 return node, path
             end # if
         node = mother
@@ -453,5 +473,7 @@ function majority_consensus_tree(trees::Vector{T})::T where T<:AbstractNode
         end # if / else
     end # for
     order_tree!(first_tree, cluster_start_indeces)
+    set_binary!(first_tree)
+    number_nodes!(first_tree)
     return first_tree
 end
