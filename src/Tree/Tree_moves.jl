@@ -215,8 +215,11 @@ performs SPR on non-binary tree
 """
 function perform_spr(root::Node)::AbstractNode
     subtree_root, nodes_of_subtree = create_random_subtree(root) #returns reference to subtree to be pruned and reattached
+    println(newick(subtree_root))
+
     remove_child!(subtree_root.mother,subtree_root)
     spr_tree = merge_randomly(root,subtree_root) #returns reference to root of tree after reattachment
+    number_nodes!(spr_tree)
     return spr_tree
 end
 """
@@ -227,9 +230,23 @@ performs SPR on binary tree
 """
 function perform_spr_binary(root::Node)::AbstractNode
     subtree_root, nodes_of_subtree = create_random_subtree(root)#returns reference to subtree to be pruned and reattached
-    remove_child!(subtree_root.mother,subtree_root)
-    spr_tree = merge_randomly_binary(root,subtree_root)#returns reference to root of tree after reattachment
+    subtree_mom = subtree_root.mother
+println(newick(subtree_root))
+    if subtree_mom.nchild > 0
+        remove_child!(subtree_root.mother,subtree_root)
+        other_child = subtree_mom.children[1]
+        momlength = subtree_mom.inc_length
+        otherlength = other_child.inc_length
+        other_child.inc_length = otherlength + momlength
+        grandmother = subtree_mom.mother
+        remove_child!(grandmother,subtree_mom)
+        add_child!(grandmother, other_child)
+    else
+        remove_child!(subtree_root.mother,subtree_root)
+    end #ifelse
 
+    spr_tree = merge_randomly_binary(root,subtree_root)#returns reference to root of tree after reattachment
+    number_nodes!(spr_tree)
     return spr_tree
 end
 
@@ -240,7 +257,7 @@ selects random, non-root node from tree for use in SPR pruning
 """
 function create_random_subtree(root::T)  where T<:AbstractNode
     subtree_root = random_node(root)
-    while subtree_root.root
+    while subtree_root.root || subtree_root.mother.root
         subtree_root = random_node(root)
     end #while
     nodes_of_subtree = post_order(subtree_root) #could be used in conjunction with Tree_Pruning.jl
@@ -255,7 +272,7 @@ reattaches subtree to random, non-root node (binary tree)
 """
 function merge_randomly_binary(root::T,subtree_root::T)::T  where T<:AbstractNode
     random_mother = random_node(root)
-    while random_mother.root
+    while random_mother.root || random_mother.nchild == 0
         random_mother = random_node(root)
     end #while
     if random_mother.nchild > 1 #creates "placeholder node" in binary tree if necessary to preserve binarity

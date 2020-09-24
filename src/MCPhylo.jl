@@ -474,5 +474,37 @@ export
 
 include("deprecated.jl")
 
-
+# binary_tree = MCPhylo.parsing_newick_string("((raccoon:19.19959,bear:6.80041):0.84600,((sea_lion:11.99700,seal:12.00300):7.52973,((monkey:100.85930,cat:47.14069):20.59201,weasel:18.87953):2.09460):3.87382);")
+# MCPhylo.number_nodes!(binary_tree)
+# tree = MCPhylo.parsing_newick_string("((raccoon:19.19959,bear:6.80041):0.84600,((sea_lion:11.99700,seal:12.00300):7.52973,((monkey:100.85930,cat:47.14069):20.59201,weasel:18.87953):2.09460):3.87382,dog:25.46154);")
+# MCPhylo.number_nodes!(tree)
+# for x in range(1,50)
+#   post_spr = MCPhylo.SPR(binary_tree,true)
+#   if length(post_order(post_spr)) != length(post_order(binary_tree))
+#     println("IT FAILED WITH THIS TREE")
+#     println(newick(post_spr))
+#     end
+#   end
+#   println("NONBINARY TIME")
+#   for x in range(1,50)
+#     post_spr = MCPhylo.SPR(tree,false)
+#     if length(post_order(post_spr)) != length(post_order(tree)) || length(Set([n.num for n in post_order(spr_binary)])) != length(Set([n.num for n in post_order(binary_tree)]))
+#       println("IT FAILED WITH THIS TREE")
+#       println(newick(post_spr))
+#       end
+#     end
+# println("HERE'S SUBTREE")
+# post_spr = MCPhylo.SPR(binary_tree,true)
+# println("HERE'S POST SPR")
+# println(newick(post_spr))
+# println("HERE'S NORMAL TREE")
+# println(newick(binary_tree))
+# println("POST SPR LENGTH")
+# println(tree_length(post_spr))
+# println("NORMAL LENGTH")
+# println(tree_length(binary_tree))
+# println("AMOUNT OF NODES POST SPR")
+# println(length(post_order(post_spr)))
+# println("AMOUNT OF NODES NORMALLY")
+# println(length(post_order(binary_tree)))
 end # module
