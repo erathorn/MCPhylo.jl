@@ -3,7 +3,7 @@
         ::Dict{Node, Bool} where T<:AbstractNode
 
 Use Day's algorithm to create a dictionary, that tells us for each node of the
-second input tree, if its corresponding cluster is a common cluster of the two trees
+second input tree, if its corresponding cluster is a common cluster of the trees
 """
 function find_common_clusters(ref_tree::T, tree::T)::Dict{Node, Bool} where T<:AbstractNode
     nodes = post_order(ref_tree)
@@ -65,7 +65,7 @@ function find_common_clusters(ref_tree::T, tree::T)::Dict{Node, Bool} where T<:A
         throw(ArgumentError("The leafs sets of the trees need to be identical"))
     end # if
     return is_common_cluster
-end
+end # function find_common_clusters
 
 
 """
@@ -167,13 +167,14 @@ function one_way_compatible(ref_tree::T, tree::T)::T where T<:AbstractNode
         end # if
     end # for
     return ref_tree_copy
-end
+end # function one_way_compatible
 
 
 """
     merge_trees!(ref_tree::T, tree::T)::Tuple{T, Vector{T}} where T<:AbstractNode
 
-Merge two compatible trees
+Merge two compatible trees, i.e. inserts all cluster of the first tree, which
+aren't already in the second tree, into the secon tree
 """
 function merge_trees!(ref_tree::T, tree::T)::Tuple{T, Vector{T}} where T<:AbstractNode
     ref_nodes = post_order(ref_tree)
@@ -261,7 +262,9 @@ function merge_trees!(ref_tree::T, tree::T)::Tuple{T, Vector{T}} where T<:Abstra
                 inserted_node =
                     insert_node!(r, r.children[index_d:index_e])
                 push!(inserted_nodes, inserted_node)
+                # ensures correct depth
                 inserted_node.binary = string(r.binary, "z")
+                # give unique number to avoid false positive "==" statements
                 inserted_node.num = count
                 count -= 1
                 inserted_depth = length(inserted_node.binary)
@@ -285,10 +288,11 @@ end # function merge_trees!
 
 
 """
-    order_tree!(root::T, cluster_start_indeces::Dict{T, Int64}, leaves=Vector{String}())
-        ::Vector{String} where T<:AbstractNode
+    order_tree!(root::T, cluster_start_indeces::Dict{T, Int64}, leaves=Vector{T}())
+        ::Vector{T} where T<:AbstractNode
 
-Helper function to order a tree based on cluster indeces
+Helper function to order a tree based on cluster indeces and return the leaves
+of the ordered tree
 """
 function order_tree!(root::T, cluster_start_indeces::Dict{T, Int64}, leaves=Vector{T}())::Vector{T} where T<:AbstractNode
     sort!(root.children, by = child -> cluster_start_indeces[child])
@@ -300,7 +304,7 @@ function order_tree!(root::T, cluster_start_indeces::Dict{T, Int64}, leaves=Vect
         end # if/else
     end # for
     return leaves
-end
+end # function order_tree!
 
 
 """
@@ -309,7 +313,7 @@ end
 
 Recursive helper function to find the lowest ranked leaf descendant of a node
 """
-function min_leaf_rank(leaf_ranks::Dict{String, Int64}, node::T)::Int64 where T <: AbstractNode
+function min_leaf_rank(leaf_ranks::Dict{String, Int64}, node::T)::Int64 where T<:AbstractNode
     if node.nchild == 0
         return leaf_ranks[node.name]
     else
@@ -323,7 +327,7 @@ function min_leaf_rank(leaf_ranks::Dict{String, Int64}, node::T)::Int64 where T 
         end # for
     end # if/else
     minimum(possible_minima)
-end
+end # function min_leaf_rank
 
 
 """
@@ -346,13 +350,14 @@ function max_leaf_rank(leaf_ranks::Dict{String, Int64}, node::T)::Int64 where T<
         end # for
     end # if/else
     maximum(possible_maxima)
-end
+end # function max_leaf_rank
 
 
 """
-    x_left(node::T)::Tuple{T,T} where T<:AbstractNode
+    x_left(node::T)::Tuple{T,Vector{T}} where T<:AbstractNode
 
-Helper function to find ancestor of a leaf that has said leaf as leftmost descendant
+Helper function to find ancestor of a leaf that has said leaf as leftmost
+descendant. Also returns the path from the leaf to the mother of that node.
 """
 function x_left(node::T)::Tuple{T, Vector{T}} where T<:AbstractNode
     path = [node]
@@ -369,13 +374,14 @@ function x_left(node::T)::Tuple{T, Vector{T}} where T<:AbstractNode
         push!(path, node)
         end # if/else
     end # while
-end
+end # function x_left
 
 
 """
-    x_right(node::T)::Tuple{T,T} where T<:AbstractNode
+    x_right(node::T)::Tuple{T,Vector{T}} where T<:AbstractNode
 
-Helper function to find ancestor of a leaf that has said leaf as rightmost descendant
+Helper function to find ancestor of a leaf that has said leaf as rightmost
+descendant. Also returns the path from the leaf to the mother of that node.
 """
 function x_right(node::T)::Tuple{T, Vector{T}} where T<:AbstractNode
     path = [node]
@@ -392,20 +398,21 @@ function x_right(node::T)::Tuple{T, Vector{T}} where T<:AbstractNode
         push!(path, node)
         end # if/else
     end # while
-end
+end # function x_right
 
 
 """
-    majority_consensus_tree(trees::Vector{T})::T where T<:AbstractNode
+    majority_consensus_tree(trees::Vector{T}, percentage::Float64=0.5)::T where T<:AbstractNode
 
-Construct the majority rule consensus tree from a set of trees
+Construct the majority rule consensus tree from a set of trees. By default
+includes cluster that occur in over 50% of the trees.
 """
-function majority_consensus_tree(trees::Vector{T})::T where T<:AbstractNode
+function majority_consensus_tree(trees::Vector{T}, percentage::Float64=0.5)::T where T<:AbstractNode
     first_tree = deepcopy(trees[1])
     nodes = post_order(first_tree)
     leaf_ranks = Dict{String, Int64}()
     count = 0
-    # save leaf ranks to order the resulting tree later
+    # save leaf ranks to order the resulting tree in the end
     for node in nodes
         if node.nchild == 0
             leaf_ranks[node.name] = count
@@ -455,7 +462,7 @@ function majority_consensus_tree(trees::Vector{T})::T where T<:AbstractNode
             end # if
         end # for
     end # for
-    half = length(trees) / 2
+    half = length(trees) * percentage
     # delete non-majority clusters
     for node in nodes
         if count_dict[node] <= half
