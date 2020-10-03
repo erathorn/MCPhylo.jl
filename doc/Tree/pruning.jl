@@ -1,4 +1,3 @@
-include("../../src/MCPhylo.jl")
 using .MCPhylo
 using Test
 

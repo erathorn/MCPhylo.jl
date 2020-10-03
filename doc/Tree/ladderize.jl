@@ -1,4 +1,3 @@
-include("../../src/MCPhylo.jl")
 using .MCPhylo
 using Test
 
@@ -6,11 +5,10 @@ start_tree = MCPhylo.parsing_newick_string("((A,(B,(C,(D,E)))),(F,(G,H)))")
 descending_tree = MCPhylo.parsing_newick_string("(((((D,E),C),B),A),((G,H),F))")
 ascending_tree = MCPhylo.parsing_newick_string("((F,(G,H)),(A,(B,(C,(D,E)))))")
 
-@testset "Tree Ladderizing"
 
-    start_newick = newick(start_tree)
-    desc_newick = newick(descending_tree)
-    asc_newick = newick(ascending_tree)
+    start_newick = MCPhylo.newick(start_tree)
+    desc_newick = MCPhylo.newick(descending_tree)
+    asc_newick = MCPhylo.newick(ascending_tree)
 
     ladderized_asc_tree = MCPhylo.ladderize_tree(start_tree)
     @test newick(ladderized_asc_tree) == asc_newick
@@ -25,4 +23,3 @@ ascending_tree = MCPhylo.parsing_newick_string("((F,(G,H)),(A,(B,(C,(D,E)))))")
 
     MCPhylo.ladderize_tree!(start_tree, false)
     @test newick(start_tree) == desc_newick
-end # Ladderizing
