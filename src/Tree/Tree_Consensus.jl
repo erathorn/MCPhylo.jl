@@ -295,7 +295,7 @@ Helper function to order a tree based on cluster indeces and return the leaves
 of the ordered tree
 """
 function order_tree!(root::T, cluster_start_indeces::Dict{T, Int64}, leaves=Vector{T}())::Vector{T} where T<:AbstractNode
-    sort!(root.children, by = child -> cluster_start_indeces[child])
+    sort!(root.children, by = child -> cluster_start_indeces[child], alg=InsertionSort)
     for child in root.children
         if child.nchild == 0
             push!(leaves, child)
