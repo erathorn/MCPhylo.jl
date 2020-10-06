@@ -36,9 +36,8 @@ const parsertests = [
   "newick"
 ]
 println("Running tests:")
-
+#
 @testset "All tests" begin
-
 @testset "Tutorial" begin
   @everywhere Random.seed!(123)
   for t in tutorialtests
