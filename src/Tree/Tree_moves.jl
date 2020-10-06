@@ -60,33 +60,26 @@ end #function
 
 
 """
-    slide!(root::Node)
+    slide!(root::T) where T<:GeneralNode
 
 This functin performs a slide move on an intermediate node. The node is moved
 upwards or downwards on the path specified by its mother and one of its
 daughters.
 """
-function slide!(root::Node)
-    throw("I need repair")
-    target::Node = Node(1.0, [0.0], Node[], 0, true, 0.0, "0")
-    while true
-        target = random_node(root)
-        # check if target is not a leave and that its grand daughters are also
-        # no leaves
-        if target.nchild != 0
-            if target.child[1].nchild !=0
-                if target.child[2].nchild !=0
-                    break
-                end
-            end # if
-        end # if
-    end # end while
+function slide!(root::T) where T<:GeneralNode
+
+    available = [node.num for node in post_order(root)]
+    n = rand(available)
+    target::T = find_num(root, n)
+    while target.nchild == 0 || any([ch.nchild == 0 for ch in target.children])
+        n = rand(available)
+        target = find_num(root, n)
+    end
 
     # proportion of slide move is randomly selected
-    proportion::Float64 = rand(Uniform(0,1))
-
+    proportion::Float64 = rand()
     # pick a random child
-    child::Node = target.child[rand([1,2])]
+    child::Node = rand(target.children)
 
     # calculate and set new values
     move!(target, child, proportion)
@@ -94,26 +87,25 @@ function slide!(root::Node)
 end # function slide!
 
 """
-    swing!(root::Node)
+    swing!(root::T) where T<:GeneralNode
 
 This function performs a swing node. A random non-leave node is selected and
 moved along the path specified by its two children.
 """
-function swing!(root::Node)
-    throw("I need repair")
-    target::Node = Node(1.0, [0.0], Node[], 0, true, 0.0, "0")
-    while true
-        target = random_node(root)
-        # check if target is not a leave
-        if target.nchild != 0
-            break
-        end # if
-    end # end while
+function swing!(root::T) where T<:GeneralNode
 
-    proportion::Float64 = rand(Uniform(0,1))
+    available = [node.num for node in post_order(root)]
+    n = rand(available)
+    target::T = find_num(root, n)
+    while target.nchild != 2
+        n = rand(available)
+        target = find_num(root, n)
+    end
 
-    child1 = target.child[1]
-    child2 = target.child[2]
+    proportion::Float64 = rand()
+
+    child1 = target.children[1]
+    child2 = target.children[2]
 
     # calculate and set new values
     move!(child1, child2, proportion)
@@ -138,6 +130,22 @@ function randomize!(root::T, num::Int64=100)::Nothing where T <:GeneralNode
 
 end
 
+"""
+    change_edge_length!(root::T) where T <:GeneralNode
+
+Pick a random node and increase or decrease its length randomly.
+"""
+function change_edge_length!(root::T) where T <:GeneralNode
+    available = [node.num for node in post_order(root)]
+    n = rand(available)
+    target::T = find_num(root, n)
+    while target.root
+        n = rand(available)
+        target = find_num(root, n)
+    end
+    factor = abs(randn())
+    target.inc_length *= factor
+end
 
 
 """
@@ -146,7 +154,7 @@ end
 Change the incomming length of node1 and node2 while keeping there combined length
 constant.
 """
-function slide!(node1::T, node2::T, proportion::Float64) where T <:GeneralNode
+function move!(node1::T, node2::T, proportion::Float64) where T <:GeneralNode
     total::Float64 = node1.inc_length + node2.inc_length
     fp::Float64 = total*proportion
     sp::Float64 = total-fp
