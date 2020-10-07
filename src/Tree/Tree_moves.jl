@@ -215,7 +215,6 @@ performs SPR on non-binary tree
 """
 function perform_spr(root::Node)::AbstractNode
     subtree_root, nodes_of_subtree = create_random_subtree(root) #returns reference to subtree to be pruned and reattached
-    println(newick(subtree_root))
 
     remove_child!(subtree_root.mother,subtree_root)
     spr_tree = merge_randomly(root,subtree_root) #returns reference to root of tree after reattachment
@@ -231,7 +230,6 @@ performs SPR on binary tree
 function perform_spr_binary(root::Node)::AbstractNode
     subtree_root, nodes_of_subtree = create_random_subtree(root)#returns reference to subtree to be pruned and reattached
     subtree_mom = subtree_root.mother
-println(newick(subtree_root))
     if subtree_mom.nchild > 0
         remove_child!(subtree_root.mother,subtree_root)
         other_child = subtree_mom.children[1]
@@ -313,3 +311,98 @@ function merge_randomly(root::T,subtree_root::T)::T  where T<:AbstractNode
         add_child!(random_mother,subtree_root) #no need for placeholder node if given node has 1 or fewer children
     return root
 end #function
+
+
+#TODO: TBR
+#1 step: checks >4
+#binary way:
+##1. find the middle (walk to the middle https://cs.stackexchange.com/questions/42617/worst-case-bisection-of-binary-tree)
+##2. remove the tree rooted on this node
+##3. reuse merge_randomly_binary
+#non_binary way:
+##1. ALSO FINDING BISECTION POINT AS ABOVE
+##2. raking the tree rooted
+##3. merge_randomly
+
+"""
+    TBR(original_root::Node, binary::Bool)::AbstractNode
+
+#
+Returns reference to root of altered tree
+"""
+function TBR(original_root::Node,binary::Bool)::AbstractNode
+    root = deepcopy(original_root)
+    if length(post_order(root)) < 4
+        error("The tree is too small for TBR")
+    end #if
+
+    tbr_tree = binary ? perform_tbr_binary(root) : perform_tbr(root)
+    set_binary!(tbr_tree)
+    return tbr_tree
+end
+
+
+function finding_bisection_point(root::Node)
+    node_total = length(post_order(root))
+    twothirds = node_total*.66
+    onethird = node_total*.33
+    if length(post_order(root)) < 4
+        #TODO: ask Wahle
+        print("too small")
+    else
+        for x in post_order(root)
+            if length(post_order(x)) < (twothirds) && length(post_order(x)) > onethird
+                goodnode = x
+                return goodnode
+            end #if
+        end #for
+    end #if
+    error("something went wrong; make sure tree is formatted correctly")
+    return root
+end #function
+
+
+
+
+"""
+    perform_tbr(root::Node)::AbstractNode
+performs TBR on non-binary tree
+
+"""
+function perform_tbr(root::Node)::AbstractNode
+    subtree_root = finding_bisection_point(root) #returns reference to subtree to be pruned and reattached
+    println("SUBTREE HERE")
+    println(newick(subtree_root))
+    remove_child!(subtree_root.mother,subtree_root)
+    tbr_tree = merge_randomly(root,subtree_root) #returns reference to root of tree after reattachment
+    number_nodes!(tbr_tree)
+    return tbr_tree
+end
+"""
+    perform_tbr_binary(root::Node)::AbstractNode
+
+performs TBR on binary tree
+
+"""
+function perform_tbr_binary(root::Node)::AbstractNode
+    subtree_root = finding_bisection_point(root)#returns reference to subtree to be pruned and reattached
+    println("HERE IS SUBTREE ROOT")
+    println(newick(subtree_root))
+    subtree_mom = subtree_root.mother
+    if subtree_mom.nchild > 0
+        remove_child!(subtree_root.mother,subtree_root)
+        other_child = subtree_mom.children[1]
+        momlength = subtree_mom.inc_length
+        otherlength = other_child.inc_length
+        other_child.inc_length = otherlength + momlength
+        grandmother = subtree_mom.mother
+        remove_child!(grandmother,subtree_mom)
+        add_child!(grandmother, other_child)
+    else
+        remove_child!(subtree_root.mother,subtree_root)
+    end #ifelse
+
+    tbr_tree = merge_randomly_binary(root,subtree_root)#returns reference to root of tree after reattachment
+    number_nodes!(tbr_tree)
+    return tbr_tree
+end

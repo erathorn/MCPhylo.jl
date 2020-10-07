@@ -22,3 +22,16 @@ spr = MCPhylo.SPR(tree,false)
 @test length(Set([n.num for n in post_order(spr)])) == length(Set([n.num for n in post_order(tree)]))
 @test round(MCPhylo.tree_length(tree);digits=3) == round(MCPhylo.tree_length(spr);digits=3)
 @test length(MCPhylo.post_order(tree)) == length(MCPhylo.post_order(spr)) || length(MCPhylo.post_order(tree)) + 1 == length(MCPhylo.post_order(spr))
+
+
+tbr_binary = MCPhylo.TBR(binary_tree,true)
+
+@test length(Set([n.num for n in post_order(tbr_binary)])) == length(Set([n.num for n in post_order(binary_tree)]))
+@test round(MCPhylo.tree_length(binary_tree);digits=3) == round(MCPhylo.tree_length(tbr_binary);digits=3)
+@test length(MCPhylo.post_order(tbr_binary)) == length(MCPhylo.post_order(binary_tree)) ||  length(MCPhylo.post_order(tbr_binary)) == length(MCPhylo.post_order(binary_tree)) + 1
+
+
+tbr = MCPhylo.TBR(tree,false)
+@test length(Set([n.num for n in post_order(tbr)])) == length(Set([n.num for n in post_order(tree)]))
+@test round(MCPhylo.tree_length(tree);digits=3) == round(MCPhylo.tree_length(tbr);digits=3)
+@test length(MCPhylo.post_order(tree)) == length(MCPhylo.post_order(tbr)) || length(MCPhylo.post_order(tree)) + 1 == length(MCPhylo.post_order(tbr))
