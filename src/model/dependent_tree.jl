@@ -22,23 +22,15 @@ end
 
 
 function unlist(root::N) where N<:GeneralNode
-
     x = node_height_vec(root)
     vcat(x, tree_length(root))
 end
 
 
 function unlist(d::T) where T <: TreeVariate
-
     unlist(d.value)
 end
 
-#
-# function unlist(d::TreeLogical)
-#     unlist(d.value)
-# end
-#
-#
 function unlist_tree(s::AbstractTreeStochastic)
     unlist(s.value)
 end

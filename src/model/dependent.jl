@@ -21,9 +21,6 @@ function setmonitor!(d::AbstractDependent, monitor::Vector{Int})
   values = monitor
   if !isempty(monitor)
     n = isa(d, AbstractTreeStochastic) ? length(unlist_tree(d)) : length(unlist(d))
-    #n = length(unlist(d))
-    #println(typeof(d), ", ", n, ", ", monitor)
-
     if n > 0
       if monitor[1] == 0
         values = collect(1:n)
@@ -249,13 +246,6 @@ function setinits!(d::TreeStochastic, m::Model, x::T) where {T<:GeneralNode}
     setmonitor!(d, d.monitor)
 end # function
 
-# function setinits!(d::TreeStochastic, m::Model, x::Array{T})  where {T<:GeneralNode}
-#     d.value = x
-#     d.distr = d.eval(m)
-#     insupport(d.distr, x) || throw(ArgumentError("The supplied tree does not match the topological tree constraints."))
-#     setmonitor!(d, d.monitor)
-# end # function
-
 
 
 function update!(s::AbstractStochastic, m::Model)
@@ -267,9 +257,6 @@ end
 #################### Distribution Methods ####################
 
 function unlist(s::AbstractStochastic, transform::Bool=false)
-  #println("then here")
-  #println(typeof(s.value))
-
   unlist(s, s.value, transform)
 end
 
@@ -297,8 +284,6 @@ function relistlength(s::AbstractTreeStochastic, x::AbstractArray,
                       transform::Bool=false)# where N<:GeneralNode
 
   relistlength(s, x[1], transform)
-  #value, n = relistlength_sub(s.distr, s, x)
-  #(transform ? invlink_sub(s.distr, value) : value, n)
 end
 
 
@@ -313,9 +298,6 @@ function logpdf(s::AbstractStochastic, transform::Bool=false)
   logpdf(s, s.value, transform)
 end
 
-#function mgradient(s::AbstractStochastic)
-#  mgradient(s, s.value)
-#end
 
 function gradlogpdf(s::AbstractStochastic)
   gradlogpdf(s, s.value)
@@ -351,8 +333,5 @@ function logpdf(s::AbstractStochastic, x::N, transform::Bool=false) where N<:Gen
   logpdf_sub(s.distr, x, transform)
 end
 
-#function mgradient(s::AbstractStochastic, x)
-#  gradient(s.distr, x)
-#end
 
 rand(s::AbstractStochastic) = rand_sub(s.distr, s.value)

@@ -114,8 +114,6 @@ function nuts_sub!(v::PNUTSVariate, epsilon::Float64, logfgrad::Function)
   r = randn(nl)
   g = zeros(nl)
 
-
-
   x, r , logf, grad, nni = refraction(mt, r, 1, g, epsilon, logfgrad, delta, nl)
 
   lu = log(rand())
@@ -162,9 +160,6 @@ function nuts_sub!(v::PNUTSVariate, epsilon::Float64, logfgrad::Function)
   v
 end
 
-@inline function scale_fac(x::T, delta::T) where T<:Float64
-  x < delta ? x/delta : 1.0
-end
 
 function refraction(v::T, r::Vector{Float64}, pm::Int64,
                     grad::Vector{Float64}, epsilon::Float64, logfgrad::Function,
@@ -202,16 +197,6 @@ function refraction(v::T, r::Vector{Float64}, pm::Int64,
 
     return v1, r, logf, grad, nni
 end
-
-
-"""
-    molifier(x::Float64, delta::Float64)::Float64
-documentation
-"""
-@inline function molifier(x::Float64, delta::Float64)::Float64
-    x >= delta ? x : (x^2+delta^2)/(2.0*delta)
-end # function
-
 
 
 function ref_NNI(v::T, tmpB::Vector{Float64}, r::Vector{Float64}, epsilon::Float64, blv::Vector{Float64},
@@ -373,3 +358,11 @@ function nutsepsilon(x::Node, logfgrad::Function, delta::Float64)
 
   epsilon
 end
+
+@inline function scale_fac(x::T, delta::T) where T<:Float64
+  x < delta ? x/delta : 1.0
+end
+
+@inline function molifier(x::Float64, delta::Float64)::Float64
+    x >= delta ? x : (x^2+delta^2)/(2.0*delta)
+end # function

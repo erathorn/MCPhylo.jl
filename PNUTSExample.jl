@@ -3,18 +3,18 @@
 tester:
 - Julia version: 1.3.1
 - Author: erathorn
-- Date: 2020-05-06
+- Date: 2020-10-07
 =#
 
 include("./src/MCPhylo.jl")
 using .MCPhylo
 using Random
-using Serialization
+
 Random.seed!(42)
 
 
 
-mt, df = make_tree_with_data("untracked_files/development.nex", binary=false); # load your own nexus file
+mt, df = make_tree_with_data("Example.nex", binary=true); # load your own nexus file
 
 po = post_order(mt);
 for node in po

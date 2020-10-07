@@ -454,23 +454,6 @@ function get_branchlength_vector(root::N, out_vec::Vector{T})::Nothing where {N<
     end
     nothing
 end
-#
-#
-# """
-#     get_branchlength_vector(root::N, out_vec::Vector{T}) where {N<:AbstractNode, T<:Real}
-#
-# Do post order traversal to retrieve a vector of branch lengths.
-# """
-# function get_branchlength_vector(root::Node, out_vec::Vector{Float64})::Nothing
-#     for child in root.children
-#         get_branchlength_vector(child, out_vec)
-#     end
-#     if !root.root
-#         out_vec[root.num] = root.inc_length
-#     end
-#     nothing
-# end
-
 
 
 """

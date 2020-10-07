@@ -180,18 +180,11 @@ end
 
 function unlist(m::Model, monitoronly::Bool)
   f = function(key)
-
     node = m[key]
-    #println(key)
-    #println("node: ", typeof(node), " ", isa(node, AbstractTreeStochastic), " ", node.monitor)
     lvalue = isa(node, AbstractTreeStochastic) ? unlist_tree(node) : unlist(node)
-
-    #lvalue = unlist(node)
-
     monitoronly ? lvalue[node.monitor] : lvalue
   end
   r = vcat(map(f, keys(m, :dependent))..., m.likelihood)
-  #println(r)
   r
 end
 
@@ -234,7 +227,6 @@ end
 
 function relist(m::Model, x::N, nodekeys::Vector{Symbol}, transform::Bool=false) where N<:GeneralNode
   values = Dict{Symbol,Any}()
-  #N = length(x)
   offset = 0
   for key in nodekeys
     value, n = relistlength(m[key], x, transform)

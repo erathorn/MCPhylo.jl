@@ -36,7 +36,7 @@ Pkg.add("https://github.com/erathorn/JuliaTree")
 ```
 
 
-The setup of a model is as in the original Mamba package. 
+The setup of a model is as in the original Mamba package.
 
 Nexus and CSV files with binarized cognate data are supported.
 
@@ -54,7 +54,7 @@ You can flush the model parameters and the sampled trees to a file, using the `t
 
 `NUTS` can take the argument `dtype=:Zygote` to use Zygote for the calculation of the gradient. The default is finite differencing.
 
+`Slice` can also sample trees. It does a slice sampling operation on the branch lengths of the tree.
 ## Tree Functionalities
 
 For the available tree functionalities see: [Tree Functionalities](TreeStuff.md)
-

@@ -36,7 +36,7 @@ This function performs a post order traversal through the tree. It is assumed th
 root of the tree. Thus, if `root` is not the root, the subtree defined by the root `root` is
 used for the post order traversal.
 """
-function get_leaves(root::T, traversal::Vector{T})::Vector{Ptr{T}} where T<:GeneralNode
+function get_leaves(root::T, traversal::Vector{T})::Vector{T} where T<:GeneralNode
    if root.nchild != 0
         for child in root.children
             get_leaves(child, traversal)
