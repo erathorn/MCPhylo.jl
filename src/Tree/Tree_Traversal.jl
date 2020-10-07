@@ -29,17 +29,6 @@ function post_order(root::T)::Vector{T} where T<:GeneralNode
     return t
 end # function post_order
 
-#
-# """
-#     post_order(root::T)::Vector{T} where T<:TreeVariate
-#
-# This function does post order traversal. Only the root node needs to be supplied.
-# """
-# function post_order(root::T) where T<:TreeVariate
-# #    t = post_order_pt(root)
-#     post_order(root.value)
-# end # function post_order
-
 """
     post_order(root::T, traversal::Vector{T})::Vector{T} where T<:GeneralNode
 
