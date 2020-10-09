@@ -191,218 +191,77 @@ function recursive_invert(old_mother::T, old_daughter::T)::T where T
         return od
 end
 
-
 """
     SPR(original_root::Node, binary::Bool)::AbstractNode
-
-Performs SPR on tree; takes reference to root of tree, boolean value necessary to determine if tree should be treated as binary or not
-Returns reference to root of altered tree
+Performs SPR on tree; takes a copy of root of the tree;
+Returns a copy of root of altered tree
 """
-function SPR(original_root::Node,binary::Bool)::AbstractNode
+
+
+function SPR(original_root::Node)
     root = deepcopy(original_root)
+    SPR!(root)
+    return root
+
+
+"""
+        SPR(root::Node)::AbstractNode
+    Performs SPR on tree in place; takes reference to root of tree, boolean value necessary to determine if tree should be treated as binary or not
+    Returns reference to root of altered tree
+"""
+
+function SPR!(root::Node)
     if length(post_order(root)) <= 2
         error("The tree is too small for SPR")
     end #if
-
-    spr_tree = binary ? perform_spr_binary(root) : perform_spr(root)
-    set_binary!(spr_tree)
+    binary = check_binary(root)
+    spr_tree = binary ? perform_spr(root) : throw("Not yet implemented for not binary trees")
     return spr_tree
-end
-"""
-    perform_spr(root::Node)::AbstractNode
-performs SPR on non-binary tree
+end #function
 
-"""
-function perform_spr(root::Node)::AbstractNode
-    subtree_root, nodes_of_subtree = create_random_subtree(root) #returns reference to subtree to be pruned and reattached
 
-    remove_child!(subtree_root.mother,subtree_root)
-    spr_tree = merge_randomly(root,subtree_root) #returns reference to root of tree after reattachment
-    number_nodes!(spr_tree)
-    return spr_tree
+function risky_SPR(original_root::Node)
+    root = deepcopy(original_root)
+    risky_SPR!(root)
+    return root
+end #function
+
+
+
+function risky_SPR!(root::Node)
+    return perform_spr(spr_tree)
 end
+
 """
     perform_spr_binary(root::Node)::AbstractNode
-
 performs SPR on binary tree
-
 """
-function perform_spr_binary(root::Node)::AbstractNode
-    subtree_root, nodes_of_subtree = create_random_subtree(root)#returns reference to subtree to be pruned and reattached
-    subtree_mom = subtree_root.mother
-    if subtree_mom.nchild > 0
-        remove_child!(subtree_root.mother,subtree_root)
-        other_child = subtree_mom.children[1]
-        momlength = subtree_mom.inc_length
-        otherlength = other_child.inc_length
-        other_child.inc_length = otherlength + momlength
-        grandmother = subtree_mom.mother
-        remove_child!(grandmother,subtree_mom)
-        add_child!(grandmother, other_child)
-    else
-        remove_child!(subtree_root.mother,subtree_root)
-    end #ifelse
-
-    spr_tree = merge_randomly_binary(root,subtree_root)#returns reference to root of tree after reattachment
-    number_nodes!(spr_tree)
-    return spr_tree
-end
-
-"""
-    create_random_subtree(root::T) where T<:AbstractNode
-
-selects random, non-root node from tree for use in SPR pruning
-"""
-function create_random_subtree(root::T)  where T<:AbstractNode
-    subtree_root = random_node(root)
-    while subtree_root.root || subtree_root.mother.root
-        subtree_root = random_node(root)
-    end #while
-    nodes_of_subtree = post_order(subtree_root) #could be used in conjunction with Tree_Pruning.jl
-    return subtree_root, nodes_of_subtree
-end #function
-
-"""
-    merge_randomly_binary(root::T,subtree_root::T)::T where T<:AbstractNode
-
-reattaches subtree to random, non-root node (binary tree)
-
-"""
-function merge_randomly_binary(root::T,subtree_root::T)::T  where T<:AbstractNode
-    random_mother = random_node(root)
-    while random_mother.root || random_mother.nchild == 0
-        random_mother = random_node(root)
-    end #while
-    if random_mother.nchild > 1 #creates "placeholder node" in binary tree if necessary to preserve binarity
-        other_child = random_mother.children[2]
-        binary_placeholder_node = Node()
-        binary_placeholder_node.name = "nameless" #standardizes name of node; constructor defaults to "no_name"
-
-        incoming_length = random_mother.inc_length
-        proportion = rand(Uniform(0,1)) #should be a number between 0 and 1
-        half_inc_length = incoming_length*proportion
-        other_half = incoming_length - half_inc_length #distributes length of node between placeholder node and child to preserve length
-        add_child!(binary_placeholder_node,other_child)
-        add_child!(binary_placeholder_node,subtree_root)
-        random_mother.inc_length = half_inc_length
-        binary_placeholder_node.inc_length = other_half
-
-        add_child!(random_mother,binary_placeholder_node)
-        remove_child!(random_mother,other_child)
-    else
-        add_child!(random_mother,subtree_root) #no need for placeholder node if given node has 1 or fewer children
-    end #ifelse
+function perform_spr(root::Node)
+    # find node to move
+    available = [n.num for n in post_order(root)]
+    n = rand(available)
+    tn::Node = MCPhylo.find_num(root, n) #his is the root of the subtree which will be moved
+    while tn.root || tn.mother.root
+        n = rand(available)
+        tn = MCPhylo.find_num(root, n) #his is the root of the subtree which will be moved
+    end # while
+    tn_mother = tn.mother
+    tn_sister = MCPhylo.get_sister(tn)
+    tn_gm = tn_mother.mother
+    remove_child!(tn_gm, tn_mother)
+    remove_child!(tn_mother, tn_sister)
+    add_child!(tn_gm, tn_sister)
+    # find target
+    available = [n.num for n in post_order(root)]
+    n = rand(available)
+    target::Node = MCPhylo.find_num(root, n) #this is the target of the movement
+    while target.root
+        n = rand(available)
+        target = MCPhylo.find_num(root, n)
+    end # while
+    target_mother = target.mother
+    remove_child!(target_mother, target)
+    add_child!(target_mother, tn_mother)
+    add_child!(tn_mother, target)
     return root
-end #function
-
-
-"""
-    merge_randomly(root::T,subtree_root::T)::T where T<:AbstractNode
-
-reattaches subtree to random, non-root node (tree)
-
-"""
-
-function merge_randomly(root::T,subtree_root::T)::T  where T<:AbstractNode
-    random_mother = random_node(root)
-    while random_mother.root
-        random_mother = random_node(root)
-    end #while
-        add_child!(random_mother,subtree_root) #no need for placeholder node if given node has 1 or fewer children
-    return root
-end #function
-
-
-#TODO: TBR
-#1 step: checks >4
-#binary way:
-##1. find the middle (walk to the middle https://cs.stackexchange.com/questions/42617/worst-case-bisection-of-binary-tree)
-##2. remove the tree rooted on this node
-##3. reuse merge_randomly_binary
-#non_binary way:
-##1. ALSO FINDING BISECTION POINT AS ABOVE
-##2. raking the tree rooted
-##3. merge_randomly
-
-"""
-    TBR(original_root::Node, binary::Bool)::AbstractNode
-
-#
-Returns reference to root of altered tree
-"""
-function TBR(original_root::Node,binary::Bool)::AbstractNode
-    root = deepcopy(original_root)
-    if length(post_order(root)) < 4
-        error("The tree is too small for TBR")
-    end #if
-
-    tbr_tree = binary ? perform_tbr_binary(root) : perform_tbr(root)
-    set_binary!(tbr_tree)
-    return tbr_tree
-end
-
-
-function finding_bisection_point(root::Node)
-    node_total = length(post_order(root))
-    twothirds = node_total*.66
-    onethird = node_total*.33
-    if length(post_order(root)) < 4
-        #TODO: ask Wahle
-        print("too small")
-    else
-        for x in post_order(root)
-            if length(post_order(x)) < (twothirds) && length(post_order(x)) > onethird
-                goodnode = x
-                return goodnode
-            end #if
-        end #for
-    end #if
-    error("something went wrong; make sure tree is formatted correctly")
-    return root
-end #function
-
-
-
-
-"""
-    perform_tbr(root::Node)::AbstractNode
-performs TBR on non-binary tree
-
-"""
-function perform_tbr(root::Node)::AbstractNode
-    subtree_root = finding_bisection_point(root) #returns reference to subtree to be pruned and reattached
-    println("SUBTREE HERE")
-    println(newick(subtree_root))
-    remove_child!(subtree_root.mother,subtree_root)
-    tbr_tree = merge_randomly(root,subtree_root) #returns reference to root of tree after reattachment
-    number_nodes!(tbr_tree)
-    return tbr_tree
-end
-"""
-    perform_tbr_binary(root::Node)::AbstractNode
-
-performs TBR on binary tree
-
-"""
-function perform_tbr_binary(root::Node)::AbstractNode
-    subtree_root = finding_bisection_point(root)#returns reference to subtree to be pruned and reattached
-    println("HERE IS SUBTREE ROOT")
-    println(newick(subtree_root))
-    subtree_mom = subtree_root.mother
-    if subtree_mom.nchild > 0
-        remove_child!(subtree_root.mother,subtree_root)
-        other_child = subtree_mom.children[1]
-        momlength = subtree_mom.inc_length
-        otherlength = other_child.inc_length
-        other_child.inc_length = otherlength + momlength
-        grandmother = subtree_mom.mother
-        remove_child!(grandmother,subtree_mom)
-        add_child!(grandmother, other_child)
-    else
-        remove_child!(subtree_root.mother,subtree_root)
-    end #ifelse
-
-    tbr_tree = merge_randomly_binary(root,subtree_root)#returns reference to root of tree after reattachment
-    number_nodes!(tbr_tree)
-    return tbr_tree
 end

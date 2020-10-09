@@ -594,3 +594,18 @@ function find_lca(tree::T, node1::T, node2::T)::T  where T<:AbstractNode
     nb = lcp(node1.binary, node2.binary)
     find_binary(tree, nb)
 end
+
+"""
+# TODO
+    - check binary tree, root can have 3 children
+        - non binary throw error
+    - Check binary function: - Tree_Basics.jl -> return Boolean
+        - root node: 2 or 3 children, else error
+        - normal node: 0 or 2 children, else error
+        - node.nchild
+        - for child in node.children
+"""
+
+function check_binary(root::Node())::Bool
+
+end
