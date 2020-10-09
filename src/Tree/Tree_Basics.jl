@@ -596,16 +596,22 @@ function find_lca(tree::T, node1::T, node2::T)::T  where T<:AbstractNode
 end
 
 """
-# TODO
-    - check binary tree, root can have 3 children
-        - non binary throw error
-    - Check binary function: - Tree_Basics.jl -> return Boolean
-        - root node: 2 or 3 children, else error
-        - normal node: 0 or 2 children, else error
-        - node.nchild
-        - for child in node.children
+    check_binary(root::Node)::Bool
+    checks to see if given tree is binary; returns true if properly formatted, throws error otherwise
 """
 
-function check_binary(root::Node())::Bool
-
-end
+function check_binary(root::Node)::Bool
+    if root.root
+        if root.nchild != 2 && root.nchild != 3
+            error("Not binary")
+        end #if
+    else
+        if root.nchild != 0 && root.nchild != 2
+            error("Not binary")
+        end #if
+    end #else
+    for child in root.children
+        check_binary(child)
+    end #for
+    return true
+end #function

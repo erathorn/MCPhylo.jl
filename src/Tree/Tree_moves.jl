@@ -192,7 +192,7 @@ function recursive_invert(old_mother::T, old_daughter::T)::T where T
 end
 
 """
-    SPR(original_root::Node, binary::Bool)::AbstractNode
+    SPR(original_root::Node)::AbstractNode
 Performs SPR on tree; takes a copy of root of the tree;
 Returns a copy of root of altered tree
 """
@@ -202,10 +202,10 @@ function SPR(original_root::Node)
     root = deepcopy(original_root)
     SPR!(root)
     return root
-
+end #func
 
 """
-        SPR(root::Node)::AbstractNode
+        SPR!(root::Node)::AbstractNode
     Performs SPR on tree in place; takes reference to root of tree, boolean value necessary to determine if tree should be treated as binary or not
     Returns reference to root of altered tree
 """
@@ -219,18 +219,25 @@ function SPR!(root::Node)
     return spr_tree
 end #function
 
-
+"""
+        risky_SPR(root::Node)::AbstractNode
+    Performs SPR on tree in place; takes reference to root of tree, boolean value necessary to determine if tree should be treated as binary or not
+    Returns copy of root of altered tree. Does not check for correct formatting of tree.
+"""
 function risky_SPR(original_root::Node)
     root = deepcopy(original_root)
-    risky_SPR!(root)
-    return root
+    return risky_SPR!(root)
 end #function
 
 
-
+"""
+        risky_SPR!(root::Node)::AbstractNode
+    Performs SPR on tree in place; takes reference to root of tree, boolean value necessary to determine if tree should be treated as binary or not
+    Returns reference to root of altered tree. Does not check for correct formatting of tree.
+"""
 function risky_SPR!(root::Node)
-    return perform_spr(spr_tree)
-end
+    return perform_spr(root)
+end #func
 
 """
     perform_spr_binary(root::Node)::AbstractNode
@@ -264,4 +271,4 @@ function perform_spr(root::Node)
     add_child!(target_mother, tn_mother)
     add_child!(tn_mother, target)
     return root
-end
+end #func
