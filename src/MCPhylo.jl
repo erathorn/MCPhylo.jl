@@ -309,7 +309,6 @@ include("Tree/Tree_Clustering.jl")
 include("Tree/Tree_Ladderizing.jl")
 include("Tree/Tree_Pruning.jl")
 
-
 include("Parser/Parser.jl")
 include("Parser/ParseCSV.jl")
 include("Parser/ParseNexus.jl")
@@ -474,6 +473,5 @@ export
 #################### Deprecated ####################
 
 include("deprecated.jl")
-
 
 end # module

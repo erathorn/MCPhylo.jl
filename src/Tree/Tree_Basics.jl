@@ -594,3 +594,24 @@ function find_lca(tree::T, node1::T, node2::T)::T  where T<:AbstractNode
     nb = lcp(node1.binary, node2.binary)
     find_binary(tree, nb)
 end
+
+"""
+    check_binary(root::Node)::Bool
+    checks to see if given tree is binary; returns true if properly formatted and false otherwise
+"""
+function check_binary(root::Node)::Bool
+    if root.root
+        if root.nchild != 2 && root.nchild != 3
+            return false
+        end #if
+    else
+        if root.nchild != 0 && root.nchild != 2
+            return false
+        end #if
+    end #else
+    res::Bool = true
+    for child in root.children
+        res &= check_binary(child)
+    end #for
+    return res
+end #function
