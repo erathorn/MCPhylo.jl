@@ -8,10 +8,12 @@ MCPhylo.number_nodes!(binary_tree)
 error_tree = MCPhylo.parsing_newick_string("(raccoon:19.19959):0.84600;")
 error_tree_not_binary = MCPhylo.parsing_newick_string("((raccoon:19.19959,bear:6.80041):0.84600,((sea_lion:11.99700,seal:12.00300,lizard:5.03):7.52973,((monkey:100.85930,cat:47.14069):20.59201,weasel:18.87953):2.09460):3.87382);")
 tree_binary_two = MCPhylo.parsing_newick_string("((raccoon:19.19959,bear:6.80041)50:0.84600,((sea_lion:11.99700,seal:12.00300)100:7.52973,((monkey:100.85930,cat:47.14069)80:20.59201,weasel:18.87953)75:2.09460)50:3.87382,dog:25.46154);")
+
+@test false == MCPhylo.check_binary(error_tree)
+@test false == MCPhylo.check_binary(error_tree_not_binary)
 @test_throws ErrorException MCPhylo.SPR(error_tree)
-@test_throws ErrorException MCPhylo.check_binary(error_tree)
-@test_throws ErrorException MCPhylo.check_binary(error_tree_not_binary)
-@test MCPhylo.check_binary(tree_binary_two)
+
+@test true == MCPhylo.check_binary(tree_binary_two)
 
 spr_binary = MCPhylo.SPR(binary_tree)
 

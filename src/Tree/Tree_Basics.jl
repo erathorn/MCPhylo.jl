@@ -597,21 +597,21 @@ end
 
 """
     check_binary(root::Node)::Bool
-    checks to see if given tree is binary; returns true if properly formatted, throws error otherwise
+    checks to see if given tree is binary; returns true if properly formatted and false otherwise
 """
-
 function check_binary(root::Node)::Bool
     if root.root
         if root.nchild != 2 && root.nchild != 3
-            error("Not binary")
+            return false
         end #if
     else
         if root.nchild != 0 && root.nchild != 2
-            error("Not binary")
+            return false
         end #if
     end #else
+    res::Bool = true
     for child in root.children
-        check_binary(child)
+        res &= check_binary(child)
     end #for
-    return true
+    return res
 end #function

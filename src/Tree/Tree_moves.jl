@@ -240,7 +240,7 @@ function risky_SPR!(root::Node)
 end #func
 
 """
-    perform_spr_binary(root::Node)::AbstractNode
+    perform_spr(root::Node)
 performs SPR on binary tree
 """
 function perform_spr(root::Node)
