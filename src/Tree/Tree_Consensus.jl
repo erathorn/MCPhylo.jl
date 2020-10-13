@@ -1,4 +1,24 @@
 """
+ ToDo
+    - Node statistics into Statistics Field
+        - node.stats -> Dict(String, Foat64)
+        - frequency in statsdict
+    - Mean_inc length berechnen
+        1. m_inc_length = Beim 2. Parse mean([n.inc_length for n in cluster if n is present])
+        2. Node in ConsensusTree.inc_length = m_inc_length
+        3. standard deviation into stats dict
+        4. median into stats dict
+
+    Parse_Newick(file) -> Array[Trees]
+    for (ind, tree) in enumerate(Array[Trees])
+        newick(tree) == line(file, ind)
+    end
+
+"""
+
+
+
+"""
     find_common_clusters(ref_tree, tree:T)
         ::Dict{Node, Bool} where T<:AbstractNode
 
@@ -104,7 +124,8 @@ function one_way_compatible(ref_tree::T, tree::T)::T where T<:AbstractNode
     end # for
     leaves = order_tree!(tree, cluster_start_indeces)
     MCPhylo.set_binary!(tree)
-    MCPhylo.number_nodes!(tree)
+    # Nie im Leben number_nodes!
+    #MCPhylo.number_nodes!(tree)
     leaf_ranks = Dict(enumerate([leaf.name for leaf in leaves]))
     leaf_ranks_reverse = Dict(value => key for (key, value) in leaf_ranks)
     xleft_dict = Dict{Node, Tuple{Node, Dict{Int64,Node}}}()
@@ -262,6 +283,7 @@ function merge_trees!(ref_tree::T, tree::T)::Tuple{T, Vector{T}} where T<:Abstra
                 inserted_node =
                     insert_node!(r, r.children[index_d:index_e])
                 push!(inserted_nodes, inserted_node)
+                length(r.binary)+1
                 # ensures correct depth
                 inserted_node.binary = string(r.binary, "z")
                 # give unique number to avoid false positive "==" statements
@@ -432,6 +454,7 @@ function majority_consensus_tree(trees::Vector{T}, percentage::Float64=0.5)::T w
             else
                 count_dict[node] -= 1
                 if count_dict[node] == 0
+                    # delete_node!(first_tree, node)
                     delete_node!(node)
                 end # if
             end # else
@@ -442,18 +465,15 @@ function majority_consensus_tree(trees::Vector{T}, percentage::Float64=0.5)::T w
         set_binary!(compatible_tree)
         number_nodes!(compatible_tree)
         first_tree, inserted_nodes = merge_trees!(compatible_tree, first_tree)
-        set_binary!(first_tree)
-        number_nodes!(first_tree)
+
         # intialize counts for the new nodes
         for node in inserted_nodes
             count_dict[node] = 1
         end # for
     end # for
-    set_binary!(first_tree)
-    number_nodes!(first_tree)
+
     nodes = level_order(first_tree)
-    node_counts = convert(Vector{Int64}, zeros(length(nodes)))
-    count_dict = Dict(zip(nodes, node_counts))
+    count_dict = Dict(zip([n.num for n in nodes], zeros(Int64, length(nodes))))
     for tree in trees
         is_common_cluster = find_common_clusters(tree, first_tree)
         for node in nodes

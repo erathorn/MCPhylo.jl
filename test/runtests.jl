@@ -37,7 +37,7 @@ const treetests = [
   "consensus",
   "ladderize",
   "pruning",
-  "search"
+  #"search"
 ]
 
 const parsertests = [

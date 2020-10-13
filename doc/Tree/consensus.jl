@@ -1,4 +1,4 @@
-include("../../src/MCPhylo.jl")
+#include("../../src/MCPhylo.jl")
 using .MCPhylo
 using Test
 

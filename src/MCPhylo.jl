@@ -20,7 +20,7 @@ using Plots
 using StatsPlots
 
 using Zygote
-using Calculus
+#using Calculus
 
 import Calculus: gradient
 using Showoff: showoff
