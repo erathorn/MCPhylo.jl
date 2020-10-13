@@ -20,39 +20,43 @@
 
 """
     find_common_clusters(ref_tree, tree:T)
-        ::Dict{Node, Bool} where T<:AbstractNode
+        ::Dict{Node, Tuple{Bool, Union{Float64, Missing}}}
 
 Use Day's algorithm to create a dictionary, that tells us for each node of the
 second input tree, if its corresponding cluster is a common cluster of the trees
 """
-function find_common_clusters(ref_tree::T, tree::T)::Dict{Node, Bool} where T<:AbstractNode
-    nodes = post_order(ref_tree)
-    leaves_dict = Dict{String, Int64}()
+function find_common_clusters(ref_tree::T, tree::T)::Dict{Node, Tuple{Bool, Union{Float64, Missing}}} where T<:AbstractNode
+    ref_nodes = post_order(ref_tree)
+    leaves_dict = Dict{String, Tuple{Int64, Float64}}()
     clusters = Dict{Node, Vector{String}}()
     cluster_dict = Dict{Tuple{Int64, Int64}, Int64}()
     dict_count = 1
-    for node in nodes
-        if node.nchild == 0
-            leaves_dict[node.name] = dict_count
+    for ref_node in ref_nodes
+        if ref_node.nchild == 0
+            leaves_dict[ref_node.name] = (dict_count, ref_node.inc_length)
             dict_count += 1
         else
             cluster = Vector{String}()
-            for child in node.children
+            for child in ref_node.children
                 child.nchild == 0 ? push!(cluster, child.name) : append!(cluster, clusters[child])
-            end
-            clusters[node] = cluster
-            if node.root == true || node == node.mother.children[1]
-                last_index = leaves_dict[last(cluster)]
-                first_index = leaves_dict[first(cluster)]
+            end # for
+            clusters[ref_node] = cluster
+            if ref_node.root == true || ref_node == ref_node.mother.children[1]
+                last_index = leaves_dict[last(cluster)][1]
+                first_index = leaves_dict[first(cluster)][1]
                 cluster_dict[(first_index, last_index)] = last_index
             else
-                last_index = leaves_dict[last(cluster)]
-                first_index = leaves_dict[first(cluster)]
+                last_index = leaves_dict[last(cluster)][1]
+                first_index = leaves_dict[first(cluster)][1]
                 cluster_dict[(first_index, last_index)] = first_index
-            end # if
-        end # if
+            end # if/else
+        end # if/else
     end # for
-    is_common_cluster = Dict{Node, Bool}()
+    for value in values(clusters)
+        sort!(value)
+    end # for
+    clusters_reverse = Dict(value => key.inc_length for (key, value) in clusters)
+    is_common_cluster = Dict{Node, Tuple{Bool, Union{Float64, Missing}}}()
     clusters = Dict{Node, Vector{String}}()
     leaf_count = 0
     nodes = post_order(tree)
@@ -64,20 +68,20 @@ function find_common_clusters(ref_tree::T, tree::T)::Dict{Node, Bool} where T<:A
             catch KeyError
                 throw(ArgumentError("The leafs sets of the trees need to be identical"))
             end # try
-            is_common_cluster[node] = true
+            is_common_cluster[node] = (true, leaves_dict[node.name][2])
         else
             cluster = Vector{String}()
             for child in node.children
                 child.nchild == 0 ? push!(cluster, child.name) : append!(cluster, clusters[child])
-            end
+            end # for
             clusters[node] = cluster
-            cluster_indeces = [leaves_dict[leaf] for leaf in cluster]
+            cluster_indeces = [leaves_dict[leaf][1] for leaf in cluster]
             if length(cluster) != maximum(cluster_indeces) - minimum(cluster_indeces) + 1
-                is_common_cluster[node] = false
+                is_common_cluster[node] = (false, missing)
             elseif haskey(cluster_dict, (minimum(cluster_indeces), maximum(cluster_indeces)))
-                is_common_cluster[node] = true
+                is_common_cluster[node] = (true, clusters_reverse[sort!(cluster)])
             else
-                is_common_cluster[node] = false
+                is_common_cluster[node] = (false, missing)
             end # if/else
         end # if/else
     end # for
@@ -123,9 +127,7 @@ function one_way_compatible(ref_tree::T, tree::T)::T where T<:AbstractNode
         end # if / else
     end # for
     leaves = order_tree!(tree, cluster_start_indeces)
-    MCPhylo.set_binary!(tree)
-    # Nie im Leben number_nodes!
-    #MCPhylo.number_nodes!(tree)
+    set_binary!(tree)
     leaf_ranks = Dict(enumerate([leaf.name for leaf in leaves]))
     leaf_ranks_reverse = Dict(value => key for (key, value) in leaf_ranks)
     xleft_dict = Dict{Node, Tuple{Node, Dict{Int64,Node}}}()
@@ -227,7 +229,6 @@ function merge_trees!(ref_tree::T, tree::T)::Tuple{T, Vector{T}} where T<:Abstra
     end # for
     leaves = order_tree!(tree, cluster_start_indeces)
     set_binary!(tree)
-    number_nodes!(tree)
     leaf_ranks = Dict(enumerate([leaf.name for leaf in leaves]))
     leaf_ranks_reverse = Dict(value => key for (key, value) in leaf_ranks)
     xleft_dict = Dict{Node, Tuple{Node, Dict{Int64,Node}}}()
@@ -283,7 +284,7 @@ function merge_trees!(ref_tree::T, tree::T)::Tuple{T, Vector{T}} where T<:Abstra
                 inserted_node =
                     insert_node!(r, r.children[index_d:index_e])
                 push!(inserted_nodes, inserted_node)
-                length(r.binary)+1
+
                 # ensures correct depth
                 inserted_node.binary = string(r.binary, "z")
                 # give unique number to avoid false positive "==" statements
@@ -439,8 +440,8 @@ function majority_consensus_tree(trees::Vector{T}, percentage::Float64=0.5)::T w
         if node.nchild == 0
             leaf_ranks[node.name] = count
             count += 1
-        end
-    end
+        end # if
+    end # for
     node_counts = convert(Vector{Int64}, ones(length(nodes)))
     count_dict = Dict(zip(nodes, node_counts))
     for tree in trees[2:end]
@@ -448,7 +449,7 @@ function majority_consensus_tree(trees::Vector{T}, percentage::Float64=0.5)::T w
         is_common_cluster = find_common_clusters(tree, first_tree)
         for node in nodes
             # increment count of clusters of the first tree that are in the other tree
-            if is_common_cluster[node] == true
+            if is_common_cluster[node][1] == true
                 count_dict[node] += 1
             # delete clusters which are not
             else
@@ -465,31 +466,42 @@ function majority_consensus_tree(trees::Vector{T}, percentage::Float64=0.5)::T w
         set_binary!(compatible_tree)
         number_nodes!(compatible_tree)
         first_tree, inserted_nodes = merge_trees!(compatible_tree, first_tree)
-
         # intialize counts for the new nodes
         for node in inserted_nodes
             count_dict[node] = 1
         end # for
     end # for
-
+    # find clusters of the final tree in the other tree, store inc_length and count
     nodes = level_order(first_tree)
     count_dict = Dict(zip([n.num for n in nodes], zeros(Int64, length(nodes))))
+    inc_length_dict = Dict{Int64, Vector{Float64}}()
     for tree in trees
         is_common_cluster = find_common_clusters(tree, first_tree)
         for node in nodes
-            if is_common_cluster[node] == true
-                count_dict[node] += 1
+            if is_common_cluster[node][1] == true
+                count_dict[node.num] += 1
+                try
+                    push!(inc_length_dict[node.num], is_common_cluster[node][2])
+                catch KeyError
+                    inc_length_dict[node.num] = [is_common_cluster[node][2]]
+                end # try/catch
             end # if
         end # for
     end # for
     half = length(trees) * percentage
     # delete non-majority clusters
     for node in nodes
-        if count_dict[node] <= half
+        if count_dict[node.num] <= half
             delete_node!(node)
+        else
+            node.inc_length = mean(inc_length_dict[node.num])
+            node.stats["sd"] = std(inc_length_dict[node.num])
+            node.stats["median"] = median(inc_length_dict[node.num])
+            node.stats["frequency"] = count_dict[node.num] / length(trees)
         end # if
     end # for
     # order the resulting tree
+    # """
     nodes = post_order(first_tree)
     cluster_start_indeces = Dict{Node, Int64}()
     for node in nodes
@@ -497,9 +509,10 @@ function majority_consensus_tree(trees::Vector{T}, percentage::Float64=0.5)::T w
             cluster_start_indeces[node] = cluster_start_indeces[node.children[1]]
         else
             cluster_start_indeces[node] = leaf_ranks[node.name]
-        end # if / else
+        end # if/else
     end # for
     order_tree!(first_tree, cluster_start_indeces)
+    # """
     set_binary!(first_tree)
     number_nodes!(first_tree)
     return first_tree
