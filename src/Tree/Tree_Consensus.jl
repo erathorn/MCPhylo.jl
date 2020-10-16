@@ -20,12 +20,12 @@
 
 """
     find_common_clusters(ref_tree, tree:T)
-        ::Dict{Node, Tuple{Bool, Union{Float64, Missing}}}
+        ::Dict{Int64, Tuple{Bool, Union{Float64, Missing}}}
 
 Use Day's algorithm to create a dictionary, that tells us for each node of the
 second input tree, if its corresponding cluster is a common cluster of the trees
 """
-function find_common_clusters(ref_tree::T, tree::T)::Dict{Node, Tuple{Bool, Union{Float64, Missing}}} where T<:AbstractNode
+function find_common_clusters(ref_tree::T, tree::T)::Dict{Int64, Tuple{Bool, Union{Float64, Missing}}} where T<:AbstractNode
     ref_nodes = post_order(ref_tree)
     leaves_dict = Dict{String, Tuple{Int64, Float64}}()
     clusters = Dict{Node, Vector{String}}()
@@ -56,8 +56,8 @@ function find_common_clusters(ref_tree::T, tree::T)::Dict{Node, Tuple{Bool, Unio
         sort!(value)
     end # for
     clusters_reverse = Dict(value => key.inc_length for (key, value) in clusters)
-    is_common_cluster = Dict{Node, Tuple{Bool, Union{Float64, Missing}}}()
-    clusters = Dict{Node, Vector{String}}()
+    is_common_cluster = Dict{Int64, Tuple{Bool, Union{Float64, Missing}}}()
+    clusters = Dict{Int64, Vector{String}}()
     leaf_count = 0
     nodes = post_order(tree)
     for node in nodes
@@ -68,20 +68,20 @@ function find_common_clusters(ref_tree::T, tree::T)::Dict{Node, Tuple{Bool, Unio
             catch KeyError
                 throw(ArgumentError("The leafs sets of the trees need to be identical"))
             end # try
-            is_common_cluster[node] = (true, leaves_dict[node.name][2])
+            is_common_cluster[node.num] = (true, leaves_dict[node.name][2])
         else
             cluster = Vector{String}()
             for child in node.children
-                child.nchild == 0 ? push!(cluster, child.name) : append!(cluster, clusters[child])
+                child.nchild == 0 ? push!(cluster, child.name) : append!(cluster, clusters[child.num])
             end # for
-            clusters[node] = cluster
+            clusters[node.num] = cluster
             cluster_indeces = [leaves_dict[leaf][1] for leaf in cluster]
             if length(cluster) != maximum(cluster_indeces) - minimum(cluster_indeces) + 1
-                is_common_cluster[node] = (false, missing)
+                is_common_cluster[node.num] = (false, missing)
             elseif haskey(cluster_dict, (minimum(cluster_indeces), maximum(cluster_indeces)))
-                is_common_cluster[node] = (true, clusters_reverse[sort!(cluster)])
+                is_common_cluster[node.num] = (true, clusters_reverse[sort!(cluster)])
             else
-                is_common_cluster[node] = (false, missing)
+                is_common_cluster[node.num] = (false, missing)
             end # if/else
         end # if/else
     end # for
@@ -434,6 +434,7 @@ function majority_consensus_tree(trees::Vector{T}, percentage::Float64=0.5)::T w
     first_tree = deepcopy(trees[1])
     nodes = post_order(first_tree)
     leaf_ranks = Dict{String, Int64}()
+    MCPhylo.ladderize_tree!(first_tree)
     count = 0
     # save leaf ranks to order the resulting tree in the end
     for node in nodes
@@ -449,7 +450,7 @@ function majority_consensus_tree(trees::Vector{T}, percentage::Float64=0.5)::T w
         is_common_cluster = find_common_clusters(tree, first_tree)
         for node in nodes
             # increment count of clusters of the first tree that are in the other tree
-            if is_common_cluster[node][1] == true
+            if is_common_cluster[node.num][1] == true
                 count_dict[node] += 1
             # delete clusters which are not
             else
@@ -478,12 +479,12 @@ function majority_consensus_tree(trees::Vector{T}, percentage::Float64=0.5)::T w
     for tree in trees
         is_common_cluster = find_common_clusters(tree, first_tree)
         for node in nodes
-            if is_common_cluster[node][1] == true
+            if is_common_cluster[node.num][1]
                 count_dict[node.num] += 1
                 try
-                    push!(inc_length_dict[node.num], is_common_cluster[node][2])
+                    push!(inc_length_dict[node.num], is_common_cluster[node.num][2])
                 catch KeyError
-                    inc_length_dict[node.num] = [is_common_cluster[node][2]]
+                    inc_length_dict[node.num] = [is_common_cluster[node.num][2]]
                 end # try/catch
             end # if
         end # for
