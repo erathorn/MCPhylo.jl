@@ -77,6 +77,7 @@ In this function main parsing process happens, it uses recursive method to parse
 """
 
 function parsing_newick_string(newick::String)
+    newick = replace(newick," "=> "")
 
     if  newick[end] == ';' #no need for semicolon
         newick = chop(newick)
@@ -144,7 +145,9 @@ end #function
 This is the main function, which parses a file, containing Newick strings.
 """
 
-function ParseNewick(filename::String)
+
+function ParseNewick(filename::String)::Array{AbstractNode, 1}
+
     list_of_trees = load_newick(filename)
     list_of_newicks = Node[]
     for content in list_of_trees

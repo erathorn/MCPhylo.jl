@@ -190,3 +190,85 @@ function recursive_invert(old_mother::T, old_daughter::T)::T where T
         add_child!(od, od1)
         return od
 end
+
+"""
+    SPR(original_root::Node)::AbstractNode
+Performs SPR on tree; takes a copy of root of the tree;
+Returns a copy of root of altered tree
+"""
+
+
+function SPR(original_root::Node)
+    root = deepcopy(original_root)
+    SPR!(root)
+    return root
+end #func
+
+"""
+        SPR!(root::Node)::AbstractNode
+    Performs SPR on tree in place; takes reference to root of tree, boolean value necessary to determine if tree should be treated as binary or not
+    Returns reference to root of altered tree
+"""
+
+function SPR!(root::Node)
+    if length(post_order(root)) <= 2
+        error("The tree is too small for SPR")
+    end #if
+    binary = check_binary(root)
+    spr_tree = binary ? perform_spr(root) : throw("Not yet implemented for not binary trees")
+    return spr_tree
+end #function
+
+"""
+        risky_SPR(root::Node)::AbstractNode
+    Performs SPR on tree in place; takes reference to root of tree, boolean value necessary to determine if tree should be treated as binary or not
+    Returns copy of root of altered tree. Does not check for correct formatting of tree.
+"""
+function risky_SPR(original_root::Node)
+    root = deepcopy(original_root)
+    return risky_SPR!(root)
+end #function
+
+
+"""
+        risky_SPR!(root::Node)::AbstractNode
+    Performs SPR on tree in place; takes reference to root of tree, boolean value necessary to determine if tree should be treated as binary or not
+    Returns reference to root of altered tree. Does not check for correct formatting of tree.
+"""
+function risky_SPR!(root::Node)
+    return perform_spr(root)
+end #func
+
+"""
+    perform_spr(root::Node)
+performs SPR on binary tree
+"""
+function perform_spr(root::Node)
+    # find node to move
+    available = [n.num for n in post_order(root)]
+    n = rand(available)
+    tn::Node = MCPhylo.find_num(root, n) #his is the root of the subtree which will be moved
+    while tn.root || tn.mother.root
+        n = rand(available)
+        tn = MCPhylo.find_num(root, n) #his is the root of the subtree which will be moved
+    end # while
+    tn_mother = tn.mother
+    tn_sister = MCPhylo.get_sister(tn)
+    tn_gm = tn_mother.mother
+    remove_child!(tn_gm, tn_mother)
+    remove_child!(tn_mother, tn_sister)
+    add_child!(tn_gm, tn_sister)
+    # find target
+    available = [n.num for n in post_order(root)]
+    n = rand(available)
+    target::Node = MCPhylo.find_num(root, n) #this is the target of the movement
+    while target.root
+        n = rand(available)
+        target = MCPhylo.find_num(root, n)
+    end # while
+    target_mother = target.mother
+    remove_child!(target_mother, target)
+    add_child!(target_mother, tn_mother)
+    add_child!(tn_mother, target)
+    return root
+end #func
