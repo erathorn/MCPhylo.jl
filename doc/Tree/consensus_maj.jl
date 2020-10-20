@@ -23,17 +23,3 @@ end
     result = newick(MCPhylo.parsing_newick_string("((A,B,C),D,E)"))
     @test newick(MCPhylo.majority_consensus_tree(trees)) == result
 end
-
-trees = MCPhylo.ParseNewick("./doc/Tree/Drav_mytrees_1.nwk")
-lines = readlines("./doc/Tree/Drav_mytrees_1.nwk")
-for (ind, tree) in enumerate(trees)
-    if !(newick(tree) == lines[ind])
-        println("$ind false")
-    end
-end
-MCPhylo.set_binary!.(trees)
-MCPhylo.number_nodes!.(trees)
-maj_tree = MCPhylo.majority_consensus_tree(trees)
-newick_tree = newick(maj_tree)
-print("\n")
-print(newick_tree)
