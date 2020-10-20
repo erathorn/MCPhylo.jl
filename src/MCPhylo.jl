@@ -308,6 +308,8 @@ include("Tree/Tree_Legacy.jl")
 include("Tree/Tree_Clustering.jl")
 include("Tree/Tree_Ladderizing.jl")
 include("Tree/Tree_Pruning.jl")
+include("Tree/Tree_Consensus.jl")
+
 
 include("Parser/Parser.jl")
 include("Parser/ParseCSV.jl")
@@ -446,9 +448,12 @@ export
   pre_order,
   add_child!,
   remove_child!,
+  delete_node!,
+  insert_node!,
   find_lca,
   find_by_binary,
   find_by_name,
+  find_root,
   create_tree_from_leaves,
   create_tree_from_leaves_cu,
   newick,
@@ -460,7 +465,8 @@ export
   prune_tree!,
   prune_tree,
   ladderize_tree!,
-  ladderize_tree
+  ladderize_tree,
+  majority_consensus_tree
 
 
 export

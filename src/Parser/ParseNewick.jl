@@ -52,7 +52,7 @@ function parse_name_length(newick::String)
     if occursin(':',newick)
         name, len = split(strip(newick),':')
         if name == ""
-            name = "nameless"
+            name = "no_name"
         end # if
         if len == ""
             len = 1.0
@@ -64,7 +64,7 @@ function parse_name_length(newick::String)
     end # main if
 
     if length(newick)<1
-        return "nameless",1.0
+        return "no_name",1.0
     else
         return string(newick),1.0
     end #if-else
@@ -145,9 +145,11 @@ end #function
 This is the main function, which parses a file, containing Newick strings.
 """
 
-function ParseNewick(filename::String)::Array{AbstractNode, 1} #where N <: AbstractNode
+
+function ParseNewick(filename::String)::Array{AbstractNode, 1}
+
     list_of_trees = load_newick(filename)
-    list_of_newicks = []
+    list_of_newicks = Node[]
     for content in list_of_trees
         if content == ""
             continue

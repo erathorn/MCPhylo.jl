@@ -33,7 +33,7 @@ name, len = MCPhylo.parse_name_length("A")
 @test name == "A"
 @test len == 1.0
 name, len = MCPhylo.parse_name_length("")
-@test name == "nameless"
+@test name == "no_name"
 @test len == 1.0
 name, len = MCPhylo.parse_name_length("A:0.5;")
 @test name == "A"
