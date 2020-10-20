@@ -28,7 +28,7 @@ if has_cuda()
   using CuArrays
   using GPUArrays
 else
-  @warn "CUDA is installed, but no CUDA device detected.
+  @warn "The Julia CUDA library is installed, but no CUDA device detected.
          Computation is performed without CUDA functionality."
 end
 

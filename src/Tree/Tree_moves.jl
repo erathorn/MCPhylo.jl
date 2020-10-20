@@ -255,13 +255,13 @@ function perform_spr(root::Node)
     # find node to move
     available = [n.num for n in post_order(root)]
     n = rand(available)
-    tn::Node = MCPhylo.find_num(root, n) #his is the root of the subtree which will be moved
+    tn::Node = find_num(root, n) #this is the root of the subtree which will be moved
     while tn.root || tn.mother.root
         n = rand(available)
-        tn = MCPhylo.find_num(root, n) #his is the root of the subtree which will be moved
+        tn = find_num(root, n) #this is the root of the subtree which will be moved
     end # while
     tn_mother = tn.mother
-    tn_sister = MCPhylo.get_sister(tn)
+    tn_sister = get_sister(tn)
     tn_gm = tn_mother.mother
     remove_child!(tn_gm, tn_mother)
     remove_child!(tn_mother, tn_sister)
@@ -269,10 +269,10 @@ function perform_spr(root::Node)
     # find target
     available = [n.num for n in post_order(root)]
     n = rand(available)
-    target::Node = MCPhylo.find_num(root, n) #this is the target of the movement
+    target::Node = find_num(root, n) #this is the target of the movement
     while target.root
         n = rand(available)
-        target = MCPhylo.find_num(root, n)
+        target = find_num(root, n)
     end # while
     target_mother = target.mother
     remove_child!(target_mother, target)

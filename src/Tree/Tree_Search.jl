@@ -42,8 +42,13 @@ Do not use this function if you are unsure wheter the node is in the tree at all
 """
 function find_num(root::T, num::I)::T  where {T<:GeneralNode, I<:Integer}
     po = post_order(root)
-
-    return find_binary(root, po[findfirst(node -> node.num == num, po)].binary)
+    store = Node[]
+    found = find_num(root, num, store)
+    if length(store) == 0
+        throw(ArgumentError("Node not found"))
+    else
+        return store[1]
+    end
 end
 
 
@@ -55,7 +60,7 @@ Do a post order traversal to find the node corresponding to the `num`.
 function find_num(root::T, num::I, rn::Vector{T})::Bool  where {T<:GeneralNode, I<:Integer}
     # if the current node is the correct one store it in rn
     if root.num === num
-        rn[1] = root
+        push!(rn, root)
         found = true
     else
         found = false
@@ -80,7 +85,7 @@ Do not use this function if you are unsure wheter the node is in the tree at all
 """
 function find_binary(root::T, bin::String)::T where T<:GeneralNode
     rv = root
-    for i in split(bin,",")[2:end]
+    for i in split(bin[1:end-1],",")[2:end]
         rv = rv.children[parse(Int64, i)+1]
     end
     rv

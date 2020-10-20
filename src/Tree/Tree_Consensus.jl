@@ -434,7 +434,7 @@ function majority_consensus_tree(trees::Vector{T}, percentage::Float64=0.5)::T w
     first_tree = deepcopy(trees[1])
     nodes = post_order(first_tree)
     leaf_ranks = Dict{String, Int64}()
-    MCPhylo.ladderize_tree!(first_tree)
+    ladderize_tree!(first_tree)
     count = 0
     # save leaf ranks to order the resulting tree in the end
     for node in nodes

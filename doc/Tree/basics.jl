@@ -1,4 +1,4 @@
-using .MCPhylo
+using MCPhylo
 using Test
 
 @testset "insert_node!" begin

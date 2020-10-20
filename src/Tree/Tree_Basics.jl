@@ -622,6 +622,12 @@ end
 
 function find_lca(tree::T, node1::T, node2::T)::T  where T<:GeneralNode
     nb = lcp(node1.binary, node2.binary)
+    if nb == node1.binary
+        return node1
+    end
+    if nb == node2.binary
+        return node2
+    end
     find_binary(tree, nb)
 end
 
