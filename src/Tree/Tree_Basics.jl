@@ -8,23 +8,26 @@ my_tree:
 #TODO: Automate export of automatically genereated funtions
 
 """
-    add_child!(mother_node::Node, child::Node)
+    add_child!(mother_node::Node, child::Node, child_position::Union{Int64, Missing}=missing)
 
 This function adds a child to the mother node.
 The arity of the mother node is increased by `1` and the root
 status of the child is set to `False`.
 """
-function add_child!(mother_node::N, child::N) where N<:GeneralNode
-    push!(mother_node.children, child)
+function add_child!(mother_node::Node, child::Node, child_position::Union{Int64, Missing}=missing)
+    if ismissing(child_position)
+        push!(mother_node.children, child)
+    else
+        insert!(mother_node.children, child_position, child)
+    end # if/else
     child.mother = mother_node
     mother_node.nchild += 1
     child.root = false
-    mother_node.initialized=true
+    mother_node.initialized = true
 end # function add_child
 
-
 """
-    remove_child!(mother_node::Node, index::int)Node
+    remove_child!(mother_node::Node, left::Bool)::Node
 
 This function removes a child from the list of nodes which are daughters of this
 node. The removed node is returned.
@@ -42,7 +45,7 @@ function remove_child!(mother_node::N, left::Bool)::N where N<:GeneralNode
 end # function
 
 """
-    remove_child!(mother_node::Node, index::int)Node
+    remove_child!(mother_node::Node, child::Node)::Node
 
 This function removes a child from the list of nodes which are daughters of this
 node. The removed node is returned.
@@ -56,6 +59,44 @@ function remove_child!(mother_node::N, child::N)::N where N<:GeneralNode
     return child
 end # function
 
+"""
+    delete_node!(node::Node)::Nothing
+
+This functions deletes node from a tree and assigns all its children to its
+mother node.
+"""
+function delete_node!(node::T)::Nothing where T<:AbstractNode
+    if node.root == true
+        throw(ArgumentError("Cannot remove root node"))
+    end
+    mother = node.mother
+    for child in node.children
+        add_child!(mother, child, findfirst(x -> x == node, mother.children))
+    end
+    remove_child!(mother, node)
+    return nothing
+end
+
+"""
+    insert_node!(mother::Node, children::Vector{T})::T where T<:AbstractNode
+
+This function inserts a node into a tree after a mother node and gains
+a subset of the mother's children as its children. Returns the inserted node.
+"""
+function insert_node!(mother::T, children::Vector{T})::T where T<:AbstractNode
+    @assert length(children) >= 1
+    inserted_node = Node()
+    for child in children
+        @assert child in mother.children
+    end # for
+    index = findfirst(x -> x in children, mother.children)
+    for child in children
+        remove_child!(mother, child)
+        add_child!(inserted_node, child)
+    end # for
+    add_child!(mother, inserted_node, index)
+    return inserted_node
+end
 
 function tree_from_leaves(leaf_nodes::Vector{String},node_size::Int, final_length::Int64)::Tuple{Vector{Node}, Int}
     my_node_list::Array{Node,1} = []
@@ -263,7 +304,6 @@ function tree_length(root::T, tl::Float64)::Float64 where T<:GeneralNode
 
     tl
 end # function tree_length
-
 
 
 """
@@ -584,3 +624,24 @@ function find_lca(tree::T, node1::T, node2::T)::T  where T<:GeneralNode
     nb = lcp(node1.binary, node2.binary)
     find_binary(tree, nb)
 end
+
+"""
+    check_binary(root::Node)::Bool
+    checks to see if given tree is binary; returns true if properly formatted and false otherwise
+"""
+function check_binary(root::Node)::Bool
+    if root.root
+        if root.nchild != 2 && root.nchild != 3
+            return false
+        end #if
+    else
+        if root.nchild != 0 && root.nchild != 2
+            return false
+        end #if
+    end #else
+    res::Bool = true
+    for child in root.children
+        res &= check_binary(child)
+    end #for
+    return res
+end #function

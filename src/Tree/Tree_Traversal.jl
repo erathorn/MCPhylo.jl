@@ -59,11 +59,6 @@ function get_leaves(root::T)::Vector{T} where T<:GeneralNode
     get_leaves(root, t)
     return t
 end # function post_order
-#
-# function get_leaves(root::T) where T<:TreeVariate
-#     get_leaves(root.value)
-# end # function post_order
-
 
 
 

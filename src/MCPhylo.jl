@@ -313,6 +313,9 @@ include("Tree/Tree_Traversal.jl")
 include("Tree/Tree_Search.jl")
 include("Tree/Tree_Legacy.jl")
 include("Tree/Tree_Clustering.jl")
+include("Tree/Tree_Ladderizing.jl")
+include("Tree/Tree_Pruning.jl")
+include("Tree/Tree_Consensus.jl")
 
 
 include("Parser/Parser.jl")
@@ -458,9 +461,12 @@ export
   pre_order,
   add_child!,
   remove_child!,
+  delete_node!,
+  insert_node!,
   find_lca,
   find_by_binary,
   find_by_name,
+  find_root,
   create_tree_from_leaves,
   create_tree_from_leaves_cu,
   newick,
@@ -471,6 +477,11 @@ export
   get_leaves,
   neighbor_joining,
   upgma,
+  prune_tree!,
+  prune_tree,
+  ladderize_tree!,
+  ladderize_tree,
+  majority_consensus_tree
 
 
 export
@@ -483,6 +494,5 @@ export
 #################### Deprecated ####################
 
 include("deprecated.jl")
-
 
 end # module

@@ -1,6 +1,5 @@
 using Distributed
 @everywhere using Random, Test
-
 include("utils.jl")
 
 const tutorialtests = [
@@ -32,13 +31,24 @@ const extensiontests = [
   "newmultivardist"
 ]
 
+const treetests = [
+  "basics",
+  "consensus",
+  "ladderize",
+  "pruning",
+  #"search"
+]
+
 const parsertests = [
   "newick"
 ]
+
+const treetests = [
+  "spr"
+]
 println("Running tests:")
-
+#
 @testset "All tests" begin
-
 @testset "Tutorial" begin
   @everywhere Random.seed!(123)
   for t in tutorialtests
@@ -65,11 +75,27 @@ for t in extensiontests
     @runtest "../doc/mcmc/" t
   end
 end
+
+@testset "treetests" begin
+for t in treetests
+  @everywhere Random.seed!(123)
+    @runtest "../doc/Tree/" t
+  end
+end
+
 @testset "parsers" begin
 for t in parsertests
   @everywhere Random.seed!(123)
     @runtest "../doc/parsers/" t
   end
   end
+
+  @testset "treetests" begin
+  for t in treetests
+    @everywhere Random.seed!(123)
+      @runtest "../doc/Tree/" t
+    end
+  end
+
 end
 #all sets test set

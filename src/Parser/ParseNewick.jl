@@ -52,7 +52,7 @@ function parse_name_length(newick::String)
     if occursin(':',newick)
         name, len = split(strip(newick),':')
         if name == ""
-            name = "nameless"
+            name = "no_name"
         end # if
         if len == ""
             len = 1.0
@@ -64,7 +64,7 @@ function parse_name_length(newick::String)
     end # main if
 
     if length(newick)<1
-        return "nameless",1.0
+        return "no_name",1.0
     else
         return string(newick),1.0
     end #if-else
@@ -77,6 +77,7 @@ In this function main parsing process happens, it uses recursive method to parse
 """
 
 function parsing_newick_string(newick::String)
+    newick = replace(newick," "=> "")
 
     if  newick[end] == ';' #no need for semicolon
         newick = chop(newick)
@@ -143,10 +144,10 @@ end #function
 
 This is the main function, which parses a file, containing Newick strings.
 """
+function ParseNewick(filename::String)::Array{AbstractNode, 1}
 
-function ParseNewick(filename::String)::Array{GeneralNode}
     list_of_trees = load_newick(filename)
-    list_of_newicks = GeneralNode[]
+    list_of_newicks = Node[]
     for content in list_of_trees
         if content == ""
             continue
