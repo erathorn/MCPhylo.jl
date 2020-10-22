@@ -99,45 +99,35 @@ Takes two trees and returns a copy of the first one, where all the clusters that
 are not compatible with the second tree are removed.
 """
 function one_way_compatible(ref_tree::T, tree::T)::T where T<:AbstractNode
+    # First Phase -> move to own function since it is equivalent to first phase of merge_trees
+    set_binary!(tree)
     ref_tree_copy = deepcopy(ref_tree)
     ref_nodes = post_order(ref_tree_copy)
-    node_leafs = Dict{Node, Int64}()
     leaves_dict = Dict{String, Int64}()
     count = 1
     for ref_node in ref_nodes
         if ref_node.nchild == 0
             leaves_dict[ref_node.name] = count
             count += 1
-        else
-            leaves_count = 0
-            for child in ref_node.children
-                child.nchild == 0 ? leaves_count += 1 : leaves_count += node_leafs[child]
-            end # for
-            node_leafs[ref_node] = leaves_count
         end # if/else
     end # for
     nodes = post_order(tree)
-    leaves = Vector{Node}()
+
     cluster_start_indeces = Dict{Node, Int64}()
     for node in nodes
         if node.nchild != 0
-            cluster_start_indeces[node] = cluster_start_indeces[node.children[1]]
+            cluster_start_indeces[node] = minimum(cluster_start_indeces[n] for n in node.children)
+            #cluster_start_indeces[node.children[1]]
         else
             cluster_start_indeces[node] = leaves_dict[node.name]
         end # if / else
     end # for
-    leaves = order_tree!(tree, cluster_start_indeces)
-    set_binary!(tree)
-    leaf_ranks = Dict(enumerate([leaf.name for leaf in leaves]))
-    leaf_ranks_reverse = Dict(value => key for (key, value) in leaf_ranks)
-    xleft_dict = Dict{Node, Tuple{Node, Dict{Int64,Node}}}()
-    xright_dict = Dict{Node, Tuple{Node, Dict{Int64, Node}}}()
-    for leaf in leaves
-        x, path = x_left(leaf)
-        xleft_dict[leaf] = (x, Dict(length(node.binary) => node for node in path))
-        x, path = x_right(leaf)
-        xright_dict[leaf] = (x, Dict(length(node.binary) => node for node in path))
-    end
+    leaves::Vector{Node} = order_tree!(tree, cluster_start_indeces)
+
+    xleft_dict, xright_dict = depth_dicts(leaves)
+
+    leaf_ranks_reverse = Dict(node.name => ind for (ind, node) in enumerate(leaves))
+
     marked_nodes = Dict{Int64, Bool}()
     for ref_node in ref_nodes
         if ref_node.nchild != 0
@@ -145,18 +135,17 @@ function one_way_compatible(ref_tree::T, tree::T)::T where T<:AbstractNode
             stop = max_leaf_rank(leaf_ranks_reverse, ref_node)
             start_node = leaves[start]
             stop_node = leaves[stop]
-            xleft = xleft_dict[start_node][1]
-            xright = xright_dict[stop_node][1]
-            left_path = xleft_dict[start_node][2]
-            right_path = xright_dict[stop_node][2]
+            xleft, left_path = xleft_dict[start_node]
+            xright, right_path = xright_dict[stop_node]
+
             if intersect(values(left_path), values(right_path)) == []
                 marked_nodes[ref_node.num] = true
                 continue
             end
-            !xleft.root && delete!(left_path, length(xleft.mother.binary))
-            !xright.root && delete!(right_path, length(xright.mother.binary))
-            depth_left = length(xleft.binary)
-            depth_right = length(xright.binary)
+            !xleft.root && delete!(left_path, length(split(xleft.mother.binary,",")))
+            !xright.root && delete!(right_path, length(split(xright.mother.binary,",")))
+            depth_left = length(split(xleft.binary,","))
+            depth_right = length(split(xright.binary, ","))
             depth = depth_left >= depth_right
             depth ? p2 = right_path[depth_left] : p2 = left_path[depth_right]
             depth ? p1 = xleft : p1 = xright
@@ -231,14 +220,9 @@ function merge_trees!(ref_tree::T, tree::T)::Tuple{T, Vector{T}} where T<:Abstra
     set_binary!(tree)
     leaf_ranks = Dict(enumerate([leaf.name for leaf in leaves]))
     leaf_ranks_reverse = Dict(value => key for (key, value) in leaf_ranks)
-    xleft_dict = Dict{Node, Tuple{Node, Dict{Int64,Node}}}()
-    xright_dict = Dict{Node, Tuple{Node, Dict{Int64, Node}}}()
-    for leaf in leaves
-        x, path = x_left(leaf)
-        xleft_dict[leaf] = (x, Dict(length(node.binary) => node for node in path))
-        x, path = x_right(leaf)
-        xright_dict[leaf] = (x, Dict(length(node.binary) => node for node in path))
-    end
+
+    xleft_dict, xright_dict = depth_dicts(leaves)
+
     count = -1
     for ref_node in ref_nodes
         if ref_node.nchild != 0
@@ -253,10 +237,10 @@ function merge_trees!(ref_tree::T, tree::T)::Tuple{T, Vector{T}} where T<:Abstra
             if intersect(values(left_path), values(right_path)) == []
                 continue
             end
-            !xleft.root && delete!(left_path, length(xleft.mother.binary))
-            !xright.root && delete!(right_path, length(xright.mother.binary))
-            depth_left = length(xleft.binary)
-            depth_right = length(xright.binary)
+            !xleft.root && delete!(left_path, length(split(xleft.mother.binary, ",")))
+            !xright.root && delete!(right_path, length(split(xright.mother.binary,",")))
+            depth_left = length(split(xleft.binary, ","))
+            depth_right = length(split(xright.binary, ","))
             depth = depth_left >= depth_right
             depth ? p2 = right_path[depth_left] : p2 = left_path[depth_right]
             depth ? p1 = xleft : p1 = xright
@@ -423,6 +407,17 @@ function x_right(node::T)::Tuple{T, Vector{T}} where T<:AbstractNode
     end # while
 end # function x_right
 
+function depth_dicts(leaves::Vector{Node})
+    xleft_dict = Dict{Node, Tuple{Node, Dict{Int64,Node}}}()
+    xright_dict = Dict{Node, Tuple{Node, Dict{Int64, Node}}}()
+    for leaf in leaves
+        x, path = x_left(leaf)
+        xleft_dict[leaf] = (x, Dict(length(split(node.binary, ",")) => node for node in path))
+        x, path = x_right(leaf)
+        xright_dict[leaf] = (x, Dict(length(split(node.binary, ",")) => node for node in path))
+    end
+    return xleft_dict, xright_dict
+end
 
 """
     majority_consensus_tree(trees::Vector{T}, percentage::Float64=0.5)::T where T<:AbstractNode

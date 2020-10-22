@@ -25,7 +25,7 @@ using ChainRules
 
 using CUDA
 if has_cuda()
-  using CuArrays
+  #using CuArrays
   using GPUArrays
 else
   @warn "The Julia CUDA library is installed, but no CUDA device detected.
@@ -459,6 +459,7 @@ export
   set_branchlength_vector!,
   post_order,
   pre_order,
+  level_order,
   add_child!,
   remove_child!,
   delete_node!,
