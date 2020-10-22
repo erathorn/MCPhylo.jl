@@ -4,8 +4,8 @@ This is a list of important features which should be added to the Package
 
 Tree Functionionality:
   ☐ Nexus support for outputting trees
-  ☐ Parser for newick trees
-  ☐ CSV support
+  ✔ Parser for newick trees @done(2020-07-16 10:30) @project(Tree Functionionality)
+  ✔ CSV support @done(2020-07-16 10:30) @project(Tree Functionionality)
   ☐ proper unlist function for trees
 
 Summary Statistics:

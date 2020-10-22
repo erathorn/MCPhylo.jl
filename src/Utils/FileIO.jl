@@ -1,10 +1,11 @@
 
-function to_file(model::ModelChains, outpath::AbstractString, thin::Int64)
+function to_file(model::ModelChains, outpath::AbstractString)
 
     for run in 1:size(model.value,3)
 
         df = DataFrame(model.value[:,:,run])
         rename!(df, Symbol.(model.names))
+        thin = model.range.step
         if isassigned(model.trees, 1)
 
             tdf = DataFrame(model.trees[:,:,run])
@@ -17,7 +18,7 @@ function to_file(model::ModelChains, outpath::AbstractString, thin::Int64)
 end
 
 function to_file(df::DataFrame, outpath::AbstractString, run::AbstractString, thin::Int64)
-    insertcols!(df,1, it=1:nrow(df))
+    insertcols!(df,1, :it=>1:nrow(df))
     df[!, 1] .*= thin
     CSV.write(string(outpath, "params_"*run*".log"), df, writeheader=true, delim="\t")
 
@@ -25,9 +26,9 @@ end
 
 function to_file(df::DataFrame, tdf::DataFrame, outpath::AbstractString, run::AbstractString, thin::Int64)
 
-    insertcols!(df,1, it=1:nrow(df))
+    insertcols!(df,1, :it=>1:nrow(df))
     df[!, 1] .*= thin
-    CSV.write(string(outpath, "params_"*run*".log"), df, writeheader=true, delim="\t")
+    CSV.write(string(outpath, "params_"*run*".log"), df, header=true, delim="\t")
     io = open(string(outpath, "mytrees_"*run*".nwk"), "w")
     for x = 1:length(tdf[:,1])
         write(io, tdf[x,:][1])

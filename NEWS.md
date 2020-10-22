@@ -2,6 +2,14 @@
 
 ## Version Updates
 
+## 0.0.1
+* PNUTS and Tree Interface
+* Move from Gadfly to StatsPlots
+* Move from Calculus to FiniteDiff & Zygote
+
+
+## Mamba Version History
+
 ### 0.12.1
 * Distributions compatibility fixes for Categorical, MvNormal, and MvNormalCanon constructors.
 * Julia 1.1 compatibility fixes for warn and indexin.

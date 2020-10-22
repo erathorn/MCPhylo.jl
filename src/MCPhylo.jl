@@ -11,23 +11,26 @@ using Serialization
 using Distributed
 using Printf: @sprintf
 using LinearAlgebra
-using CuArrays
-using GPUArrays
-using CUDAnative
-using CUDAdrv
-
 using Plots
 using StatsPlots
-
 using Zygote
-using Calculus
-
-import Calculus: gradient
+using FiniteDiff
 using Showoff: showoff
 using Markdown
 using DataFrames
 using Random
 using CSV
+using ChainRules
+
+
+using CUDA
+if has_cuda()
+  using GPUArrays
+else
+  @warn "The Julia CUDA library is installed, but no CUDA device detected.
+         Computation is performed without CUDA functionality."
+end
+
 
 import Base: Matrix, names, summary, iterate
 import Base.Threads.@spawn
@@ -69,8 +72,6 @@ include("distributions/pdmats2.jl")
 using .PDMats2
 include("Tree/Node_Type.jl") # We need this to get the Node type in
 
-#CuArrays.allowscalar(false)
-
 #################### Types ####################
 
 ElementOrVector{T} = Union{T, Vector{T}}
@@ -80,9 +81,10 @@ ElementOrVector{T} = Union{T, Vector{T}}
 
 abstract type ScalarVariate <: Real end
 abstract type ArrayVariate{N} <: DenseArray{Float64, N} end
-abstract type TreeVariate <: Any end
+abstract type TreeVariate <: AbstractNode end
 
 const AbstractVariate = Union{ScalarVariate, ArrayVariate, TreeVariate}
+const NumericalVariate = Union{ScalarVariate, ArrayVariate}
 const VectorVariate = ArrayVariate{1}
 const MatrixVariate = ArrayVariate{2}
 
@@ -115,8 +117,8 @@ mutable struct ArrayLogical{N} <: ArrayVariate{N}
   targets::Vector{Symbol}
 end
 
-mutable struct TreeLogical <: TreeVariate
-  value::Node
+mutable struct TreeLogical{T} <: TreeVariate where T<:GeneralNode
+  value::T
   symbol::Symbol
   monitor::Vector{Int}
   eval::Function
@@ -145,8 +147,8 @@ mutable struct ArrayStochastic{N} <: ArrayVariate{N}
 end
 
 
-mutable struct TreeStochastic <: TreeVariate
-    value::Node
+mutable struct TreeStochastic{T} <: TreeVariate where T<: GeneralNode
+    value::T
     symbol::Symbol
     monitor::Vector{Int}
     eval::Function
@@ -155,9 +157,10 @@ mutable struct TreeStochastic <: TreeVariate
     distr::DistributionStruct
 end
 
-const AbstractLogical = Union{ScalarLogical, ArrayLogical, TreeLogical}
-const AbstractStochastic = Union{ScalarStochastic, ArrayStochastic, TreeStochastic}
-const AbstractDependent = Union{AbstractLogical, AbstractStochastic}
+const AbstractLogical = Union{ScalarLogical, ArrayLogical}
+const AbstractStochastic = Union{ScalarStochastic, ArrayStochastic}
+const AbstractTreeStochastic = Union{TreeLogical, TreeStochastic}
+const AbstractDependent = Union{AbstractLogical, AbstractStochastic, AbstractTreeStochastic}
 
 
 #################### Sampler Types ####################
@@ -173,7 +176,7 @@ end
 abstract type SamplerTune end
 
 struct SamplerVariate{T<:SamplerTune} <: VectorVariate
-  value::Union{Vector{Float64}, Vector{S}} where S<:AbstractNode
+  value::Union{Vector{Float64}, Vector{S}} where S<:GeneralNode
   tune::T
 
   function SamplerVariate{T}(x::AbstractVector, tune::T) where T<:SamplerTune
@@ -182,7 +185,7 @@ struct SamplerVariate{T<:SamplerTune} <: VectorVariate
   end
 
   function SamplerVariate{T}(x::AbstractVector, pargs...; kargs...) where T<:SamplerTune
-    if !isa(x[1], Node)
+    if !isa(x[1], GeneralNode)
       value = convert(Vector{Float64}, x)
     else
       mt = typeof(x[1])
@@ -201,7 +204,7 @@ struct ModelGraph
 end
 
 struct ModelState
-  value::Vector{Any}
+  value::Vector
   tune::Vector{Any}
 end
 
@@ -315,10 +318,7 @@ include("Parser/Parser.jl")
 include("Parser/ParseCSV.jl")
 include("Parser/ParseNexus.jl")
 include("Parser/ParseNewick.jl")
-
-
 include("Sampler/PNUTS.jl")
-#include("Sampler/ProbPathHMC.jl")
 
 include("Substitution/SubstitutionMat.jl")
 
@@ -340,6 +340,9 @@ export
   ArrayVariate,
   TreeLogical,
   TreeVariate,
+  TreeStochastic,
+  GeneralNode,
+  AbstractNode,
   Node,
   Chains,
   Logical,
@@ -361,9 +364,6 @@ export
   SymUniform,
   CompoundDirichlet,
   PhyloDist,
-  BrownianPhylo,
-  MultivariateUniformTrunc,
-  CompoundDirichletWrap,
   exponentialBL
 
 export
@@ -430,22 +430,29 @@ export
   RWM, RWMVariate,
   Slice, SliceMultivariate, SliceUnivariate,
   SliceSimplex, SliceSimplexVariate,
-  PNUTS, PNUTSVariate,
-  ProbPathHMC,
-  BranchSlice,
-  RWMC, RWMCVariate
+  PNUTS, PNUTSVariate
 
 export
   make_tree_with_data,
   make_tree_with_data_cu,
   to_file, drop_samples,
+  to_df,
+  to_covariance,
+  to_distance_matrix,
+  node_distance,
+  get_path,
   cut_samples,
-  NNI!,
+  NNI!, NNI,
+  SPR!, SPR,
+  slide!, slide,
+  swing!, swing,
   RF, randomize!,
+  BHV_bounds,
   get_branchlength_vector,
   set_branchlength_vector!,
   post_order,
   pre_order,
+  level_order,
   add_child!,
   remove_child!,
   delete_node!,
@@ -459,13 +466,13 @@ export
   newick,
   tree_length,
   tree_height,
-  path_length
+  path_length,
   get_sister,
   get_leaves,
-  prune_tree!,
-  prune_tree,
-  ladderize_tree!,
-  ladderize_tree,
+  neighbor_joining,
+  upgma,
+  prune_tree!, prune_tree,
+  ladderize_tree!, ladderize_tree,
   majority_consensus_tree
 
 

@@ -18,6 +18,7 @@ function ladderize_tree!(root::T, ascending::Bool=true) where T<:AbstractNode
     end
 end
 
+
 """
     ladderize_tree(root::T, ascending::Bool=true)::T where T<:AbstractNode)
 

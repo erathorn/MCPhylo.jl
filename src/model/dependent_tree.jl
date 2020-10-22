@@ -21,20 +21,20 @@ function names(d::TreeLogical, nodekey::Symbol)
 end
 
 
-function unlist(root::Node)
+function unlist(root::N) where N<:GeneralNode
     x = node_height_vec(root)
     vcat(x, tree_length(root))
 end
 
-function unlist(d::TreeStochastic)
+
+function unlist(d::T) where T <: TreeVariate
     unlist(d.value)
 end
 
-function unlist(d::TreeLogical)
-    unlist(d.value)
+function unlist_tree(s::AbstractTreeStochastic)
+    unlist(s.value)
 end
 
-
-function unlist(s::AbstractStochastic, x::N, transform::Bool=false)::Vector{N}  where N <: AbstractNode
+function unlist(s::AbstractTreeStochastic, x::N, transform::Bool=false)  where N <: GeneralNode
     [s.value]
 end

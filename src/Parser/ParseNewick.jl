@@ -144,8 +144,6 @@ end #function
 
 This is the main function, which parses a file, containing Newick strings.
 """
-
-
 function ParseNewick(filename::String)::Array{AbstractNode, 1}
 
     list_of_trees = load_newick(filename)

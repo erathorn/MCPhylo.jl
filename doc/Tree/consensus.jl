@@ -1,5 +1,4 @@
-#include("../../src/MCPhylo.jl")
-using .MCPhylo
+using MCPhylo
 using Test
 
 @testset "find_common_clusters" begin
@@ -11,11 +10,11 @@ using Test
                              MCPhylo.find_by_name(tree2, "C"), MCPhylo.find_by_name(tree2, "D"),
                              MCPhylo.find_by_name(tree2, "E"), MCPhylo.find_by_name(tree2, "F"),
                              MCPhylo.find_by_name(tree2, "G"), MCPhylo.find_by_name(tree2, "H")
-     expected_dict = Dict([(D.mother, false), (C.mother, false), (B.mother, false),
-                           (A.mother, false), (G.mother, false), (F.mother, false),
-                           (G.mother.mother, true), (A, true), (B, true), (C, true),
-                           (D, true), (E, true), (F, true), (G, true), (H, true)])
-    @test MCPhylo.find_common_clusters(ref_tree, tree2) == expected_dict
+     expected_dict = Dict{Int64,Tuple{Bool,Union{Missing, Float64}}}([(D.mother.num, (false, missing)), (C.mother.num, (false, missing)), (B.mother.num, (false, missing)),
+                           (A.mother.num, (false, missing)), (G.mother.num, (false, missing)), (F.mother.num, (false, missing)),
+                           (G.mother.mother.num, (true, 1.0)), (A.num, (true, 1.0)), (B.num, (true, 1.0)), (C.num, (true, 1.0)),
+                           (D.num, (true, 1.0)), (E.num, (true, 1.0)), (F.num, (true, 1.0)), (G.num, (true, 1.0)), (H.num, (true, 1.0))])
+    @test isequal(MCPhylo.find_common_clusters(ref_tree, tree2) ,expected_dict)
 
     tree3 = MCPhylo.parsing_newick_string("((A,(C,(D,(B,E)))),(G,(F,H)))")
     MCPhylo.number_nodes!(tree3)
@@ -24,11 +23,11 @@ using Test
                              MCPhylo.find_by_name(tree3, "C"), MCPhylo.find_by_name(tree3, "D"),
                              MCPhylo.find_by_name(tree3, "E"), MCPhylo.find_by_name(tree3, "F"),
                              MCPhylo.find_by_name(tree3, "G"), MCPhylo.find_by_name(tree3, "H")
-     expected_dict = Dict([(D.mother, false), (C.mother, true), (B.mother, false),
-                           (A.mother, true), (G.mother, true), (F.mother, false),
-                           (A.mother.mother, true), (A, true), (B, true), (C, true),
-                           (D, true), (E, true), (F, true), (G, true), (H, true)])
-    @test MCPhylo.find_common_clusters(ref_tree, tree3) == expected_dict
+     expected_dict = Dict([(D.mother.num, (false, missing)), (C.mother.num, (true, 1.0)), (B.mother.num, (false, missing)),
+                           (A.mother.num, (true, 1.0)), (G.mother.num, (true, 1.0)), (F.mother.num, (false, missing)),
+                           (A.mother.mother.num, (true, 1.0)), (A.num, (true, 1.0)), (B.num, (true, 1.0)), (C.num, (true, 1.0)),
+                           (D.num, (true, 1.0)), (E.num, (true, 1.0)), (F.num, (true, 1.0)), (G.num, (true, 1.0)), (H.num, (true, 1.0))])
+    @test isequal(MCPhylo.find_common_clusters(ref_tree, tree3), expected_dict)
 
     tree4 = MCPhylo.parsing_newick_string("((A,(B,(C,(D,E)))),(F,(G,H)))")
     MCPhylo.number_nodes!(tree4)
@@ -37,11 +36,11 @@ using Test
                              MCPhylo.find_by_name(tree4, "C"), MCPhylo.find_by_name(tree4, "D"),
                              MCPhylo.find_by_name(tree4, "E"), MCPhylo.find_by_name(tree4, "F"),
                              MCPhylo.find_by_name(tree4, "G"), MCPhylo.find_by_name(tree4, "H")
-    expected_dict = Dict([(D.mother, true), (C.mother, true), (B.mother, true),
-                          (A.mother, true), (G.mother, true), (F.mother, true),
-                          (A.mother.mother, true), (A, true), (B, true), (C, true),
-                          (D, true), (E, true), (F, true), (G, true), (H, true)])
-    @test MCPhylo.find_common_clusters(ref_tree, tree4) == expected_dict
+    expected_dict = Dict([(D.mother.num, (true, 1.0)), (C.mother.num, (true, 1.0)), (B.mother.num, (true, 1.0)),
+                          (A.mother.num, (true, 1.0)), (G.mother.num, (true, 1.0)), (F.mother.num, (true, 1.0)),
+                          (A.mother.mother.num, (true, 1.0)), (A.num, (true, 1.0)), (B.num, (true, 1.0)), (C.num, (true, 1.0)),
+                          (D.num, (true, 1.0)), (E.num, (true, 1.0)), (F.num, (true, 1.0)), (G.num, (true, 1.0)), (H.num, (true, 1.0))])
+    @test isequal(MCPhylo.find_common_clusters(ref_tree, tree4), expected_dict)
 
     tree5 = MCPhylo.parsing_newick_string("((G,(X,(A,(F,E)))),(B,(D,H)))")
     MCPhylo.number_nodes!(tree5)

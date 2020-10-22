@@ -5,7 +5,7 @@ function setinits!(m::Model, inits::Dict{Symbol})
   m.iter = 0
   for key in keys(m, :dependent)
     node = m[key]
-    if isa(node, AbstractStochastic)
+    if isa(node, AbstractStochastic) || isa(node, AbstractTreeStochastic)
       haskey(inits, key) || throw(ArgumentError("missing initial value for node : $key"))
       setinits!(node, m, inits[key])
     else

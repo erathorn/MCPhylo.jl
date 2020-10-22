@@ -1,5 +1,4 @@
-include("../../src/MCPhylo.jl")
-using .MCPhylo
+using MCPhylo
 using Test
 
 @testset "majority_consensus_tree" begin

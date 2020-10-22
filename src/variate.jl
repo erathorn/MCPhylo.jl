@@ -3,7 +3,7 @@
 #################### Conversions ####################
 
 Base.convert(::Type{Bool}, v::ScalarVariate) = convert(Bool, v.value)
-Base.convert(::Type{T}, v::TreeVariate) where T<:AbstractNode = v.value
+#Base.convert(::Type{T}, v::TreeVariate) where T<:GeneralNode = v.value
 Base.convert(::Type{T}, v::ScalarVariate) where T<:Integer = convert(T, v.value)
 Base.convert(::Type{T}, v::ScalarVariate) where T<:AbstractFloat =
   convert(T, v.value)
@@ -36,7 +36,7 @@ Base.stride(v::ArrayVariate, k::Int) = stride(v.value, k)
 #################### Indexing ####################
 
 Base.getindex(v::ScalarVariate, ind::Int) = v.value[ind]
-Base.getindex(v::TreeVariate, ind::Int) = v.value[ind]
+#Base.getindex(v::TreeVariate, ind::Int) = v.value[ind]
 
 Base.getindex(v::ScalarVariate, inds::Union{StepRange{Int, Int}, Vector{Int}}) =
   Float64[v[i] for i in inds]

@@ -1,4 +1,4 @@
-using .MCPhylo
+using MCPhylo
 using Test
 
 start_tree = MCPhylo.parsing_newick_string("((A,(B,(C,(D,E)))),(F,(G,H)))")

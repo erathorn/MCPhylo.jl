@@ -5,7 +5,7 @@
 
 Return a vector of branch lengths.
 """
-function get_branchlength_vector(post_order::Vector{T})::Vector{Float64}  where T<:AbstractNode
+function get_branchlength_vector(post_order::Vector{T})::Vector{Float64}  where T<:GeneralNode
     #println("You called a legacy function.")
     @warn "You called a legacy function"
     out = zeros(length(post_order)-1)

@@ -36,6 +36,7 @@ const treetests = [
   "consensus",
   "ladderize",
   "pruning",
+  "spr"
   #"search"
 ]
 
@@ -43,9 +44,7 @@ const parsertests = [
   "newick"
 ]
 
-const treetests = [
-  "spr"
-]
+
 println("Running tests:")
 #
 @testset "All tests" begin
@@ -88,14 +87,7 @@ for t in parsertests
   @everywhere Random.seed!(123)
     @runtest "../doc/parsers/" t
   end
-  end
-
-  @testset "treetests" begin
-  for t in treetests
-    @everywhere Random.seed!(123)
-      @runtest "../doc/Tree/" t
-    end
-  end
+end
 
 end
 #all sets test set

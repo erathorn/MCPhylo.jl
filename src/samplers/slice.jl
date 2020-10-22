@@ -58,7 +58,7 @@ end
 sample!(v::Union{SliceUnivariate, SliceMultivariate}) = sample!(v, v.tune.logf)
 
 function sample!(v::Union{SliceUnivariate, SliceMultivariate}, logf::Function)
-    typeof(v.value[1]) <:AbstractNode ? sample_node!(v, logf) : sample_number!(v, logf)
+    typeof(v.value[1]) <:GeneralNode ? sample_node!(v, logf) : sample_number!(v, logf)
 end
 
 

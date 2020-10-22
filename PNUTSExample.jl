@@ -3,13 +3,16 @@
 tester:
 - Julia version: 1.3.1
 - Author: erathorn
-- Date: 2020-05-06
+- Date: 2020-10-07
 =#
 
 include("./src/MCPhylo.jl")
 using .MCPhylo
 using Random
+
 Random.seed!(42)
+
+
 
 mt, df = make_tree_with_data("Example.nex", binary=true); # load your own nexus file
 
@@ -34,7 +37,7 @@ model =  Model(
     df = Stochastic(3, (mtree, pi, rates, nnodes, nbase, nsites) -> PhyloDist(mtree, pi, rates, nbase, nsites, nnodes), false, false),
     pi = Logical( (mypi) -> mypi[1], false),
     mypi = Stochastic(1, () -> Dirichlet(2,1)),
-    mtree = Stochastic(MCPhylo.Node(), () -> CompoundDirichlet(1.0,1.0,0.100,1.0), my_data[:nnodes]+1, true),
+    mtree = Stochastic(Node(), () -> CompoundDirichlet(1.0,1.0,0.100,1.0), my_data[:nnodes]+1, true),
     rates = Logical(1,(mymap, av) -> [av[convert(UInt8,i)] for i in mymap],false),
     mymap = Stochastic(1,() -> Categorical([0.25, 0.25, 0.25, 0.25]), false),
     av = Stochastic(1,() -> Dirichlet([1.0, 1.0, 1.0, 1.0]), false)
@@ -61,10 +64,10 @@ setsamplers!(model, scheme);
 
 # do the mcmc simmulation. if trees=true the trees are stored and can later be
 # flushed ot a file output.
-sim = mcmc(model, my_data, inits, 1000, burnin=500,thin=5, chains=1, trees=true)
+sim = mcmc(model, my_data, inits, 500, burnin=100,thin=5, chains=1, trees=true)
 
 # request more runs
-sim = mcmc(sim, 500, trees=true)
+sim = mcmc(sim, 5000, trees=true)
 
 # write the output to a path specified as the second argument
-to_file(sim, "example_run", 5)
+to_file(sim, "example_run")

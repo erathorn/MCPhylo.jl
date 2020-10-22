@@ -2,7 +2,7 @@
 #TODO: RSPR
 
 """
-    NNI(root::T, target::T, lor::Bool)::Int64   where T<:AbstractNode
+    NNI(root::T, target::T, lor::Bool)::Int64   where T<:GeneralNode
 
 This function does a nearest neighbour interchange (NNI) move on the tree specified
 by `root`. The parameter `target` specifies the node which performs the interchange
@@ -10,7 +10,7 @@ move using the left or right child of the target node. If the left child should
 be used `lor=true`.
 The function returns 1 if the move was successfull and 0 else.
 """
-function NNI!(root::T, target::T, lor::Bool)::Int64  where T<:AbstractNode
+function NNI!(root::T, target::T, lor::Bool)::Int64  where T<:GeneralNode
     # NNI move would be illegal
     if target.nchild == 0 || target.root
         return 0
@@ -32,61 +32,65 @@ function NNI!(root::T, target::T, lor::Bool)::Int64  where T<:AbstractNode
 end # function
 
 """
-    NNI!(root::T, target::Int64)::Int64  where T<:AbstractNode
+    NNI!(root::T, target::Int64)::Int64  where T<:GeneralNode
 
 This function does a nearest neighbour interchange (NNI) move on the tree specified
 by `root`. The target is identified by the number of the target node.
 The function returns 1 if the move was successfull and 0 else.
 """
-function NNI!(root::T, target::Int64)::Int64  where T<:AbstractNode
+function NNI!(root::T, target::Int64)::Int64  where T<:GeneralNode
    tn::T = find_num(root, target)
    lor::Bool = 0.5 > rand()
    NNI!(root, tn, lor)
 end #function
 
 """
-    NNI!(root::T)::Int64  where T<:AbstractNode
+    NNI!(root::T)::Int64  where T<:GeneralNode
 
 This function does a nearest neighbour interchange (NNI) move on the tree specified
 by `root`. The target is identified by the number of the target node.
 The function returns 1 if the move was successfull and 0 else.
 """
-function NNI!(root::T)::Int64  where T<:AbstractNode
+function NNI!(root::T)::Int64  where T<:GeneralNode
     n = rand(1:size(root)[1])
     tn::T = find_num(root, n)
     lor::Bool = 0.5 > rand()
     NNI!(root, tn, lor)
 end #function
 
+"""
+    NNI(root::T)::T  where T<:GeneralNode
+
+This function does a nearest neighbour interchange (NNI) move on the tree specified
+by `root` and returns a mutated copy while leaving the original tree intact.
+"""
+function NNI(root::T)::T where T<:GeneralNode
+    new_root = deepcopy(root)
+    NNI!(new_root)
+    return new_root
+end
 
 """
-    slide!(root::Node)
+    slide!(root::T) where T<:GeneralNode
 
 This functin performs a slide move on an intermediate node. The node is moved
 upwards or downwards on the path specified by its mother and one of its
 daughters.
 """
-function slide!(root::Node)
-    throw("I need repair")
-    target::Node = Node(1.0, [0.0], Node[], 0, true, 0.0, "0")
-    while true
-        target = random_node(root)
-        # check if target is not a leave and that its grand daughters are also
-        # no leaves
-        if target.nchild != 0
-            if target.child[1].nchild !=0
-                if target.child[2].nchild !=0
-                    break
-                end
-            end # if
-        end # if
-    end # end while
+function slide!(root::T) where T<:GeneralNode
+
+    available = [node.num for node in post_order(root)]
+    n = rand(available)
+    target::T = find_num(root, n)
+    while target.nchild == 0 || any([ch.nchild == 0 for ch in target.children])
+        n = rand(available)
+        target = find_num(root, n)
+    end
 
     # proportion of slide move is randomly selected
-    proportion::Float64 = rand(Uniform(0,1))
-
+    proportion::Float64 = rand()
     # pick a random child
-    child::Node = target.child[rand([1,2])]
+    child::Node = rand(target.children)
 
     # calculate and set new values
     move!(target, child, proportion)
@@ -94,30 +98,55 @@ function slide!(root::Node)
 end # function slide!
 
 """
-    swing!(root::Node)
+    slide(root::T)::T where T<:GeneralNode
+
+This functin performs a slide move on an intermediate node. The node is moved
+upwards or downwards on the path specified by its mother and one of its
+daughters. The new tree is returned.
+"""
+function slide(root::T)::T where T<:GeneralNode
+    new_root = deepcopy(root)
+    slide!(new_root)
+    return new_root
+end
+
+
+"""
+    swing!(root::T) where T<:GeneralNode
 
 This function performs a swing node. A random non-leave node is selected and
 moved along the path specified by its two children.
 """
-function swing!(root::Node)
-    throw("I need repair")
-    target::Node = Node(1.0, [0.0], Node[], 0, true, 0.0, "0")
-    while true
-        target = random_node(root)
-        # check if target is not a leave
-        if target.nchild != 0
-            break
-        end # if
-    end # end while
+function swing!(root::T) where T<:GeneralNode
 
-    proportion::Float64 = rand(Uniform(0,1))
+    available = [node.num for node in post_order(root)]
+    n = rand(available)
+    target::T = find_num(root, n)
+    while target.nchild != 2
+        n = rand(available)
+        target = find_num(root, n)
+    end
 
-    child1 = target.child[1]
-    child2 = target.child[2]
+    proportion::Float64 = rand()
+
+    child1 = target.children[1]
+    child2 = target.children[2]
 
     # calculate and set new values
     move!(child1, child2, proportion)
 end # function swing!
+
+"""
+    swing(root::T)::T where T<:GeneralNode
+
+This function performs a swing node. A random non-leave node is selected and
+moved along the path specified by its two children. The new tree is returned.
+"""
+function swing(root::T)::T where T<:GeneralNode
+    new_root = deepcopy(root)
+    swing!(new_root)
+    return new_root
+end
 
 
 """
@@ -127,7 +156,7 @@ This function randomizes the tree topology by performing a number of nearest
 neighbour interchange (NNI) moves. The number of NNI moves is specified in
 the parameter num.
 """
-function randomize!(root::T, num::Int64=100)::Nothing where T <:AbstractNode
+function randomize!(root::T, num::Int64=100)::Nothing where T <:GeneralNode
     n_nodes = size(root)[1]
     i = 0
     while i < num
@@ -138,6 +167,22 @@ function randomize!(root::T, num::Int64=100)::Nothing where T <:AbstractNode
 
 end
 
+"""
+    change_edge_length!(root::T) where T <:GeneralNode
+
+Pick a random node and increase or decrease its length randomly.
+"""
+function change_edge_length!(root::T) where T <:GeneralNode
+    available = [node.num for node in post_order(root)]
+    n = rand(available)
+    target::T = find_num(root, n)
+    while target.root
+        n = rand(available)
+        target = find_num(root, n)
+    end
+    factor = abs(randn())
+    target.inc_length *= factor
+end
 
 
 """
@@ -146,7 +191,7 @@ end
 Change the incomming length of node1 and node2 while keeping there combined length
 constant.
 """
-function slide!(node1::T, node2::T, proportion::Float64) where T <:AbstractNode
+function move!(node1::T, node2::T, proportion::Float64) where T <:GeneralNode
     total::Float64 = node1.inc_length + node2.inc_length
     fp::Float64 = total*proportion
     sp::Float64 = total-fp
@@ -159,7 +204,7 @@ end # function slide!
 
 
 
-function reroot(root::T, new_root::String)::T where T<:Node
+function reroot(root::T, new_root::String)::T where T<:GeneralNode
 
     new_tree = deepcopy(root)
     root_node = find_by_name(new_tree, new_root)
@@ -173,7 +218,7 @@ function reroot(root::T, new_root::String)::T where T<:Node
 
 
     set_binary!(root_node)
-    number_nodes!(root_node)
+
     return root_node
 end
 
@@ -247,13 +292,13 @@ function perform_spr(root::Node)
     # find node to move
     available = [n.num for n in post_order(root)]
     n = rand(available)
-    tn::Node = MCPhylo.find_num(root, n) #his is the root of the subtree which will be moved
+    tn::Node = find_num(root, n) #this is the root of the subtree which will be moved
     while tn.root || tn.mother.root
         n = rand(available)
-        tn = MCPhylo.find_num(root, n) #his is the root of the subtree which will be moved
+        tn = find_num(root, n) #this is the root of the subtree which will be moved
     end # while
     tn_mother = tn.mother
-    tn_sister = MCPhylo.get_sister(tn)
+    tn_sister = get_sister(tn)
     tn_gm = tn_mother.mother
     remove_child!(tn_gm, tn_mother)
     remove_child!(tn_mother, tn_sister)
@@ -261,10 +306,10 @@ function perform_spr(root::Node)
     # find target
     available = [n.num for n in post_order(root)]
     n = rand(available)
-    target::Node = MCPhylo.find_num(root, n) #this is the target of the movement
+    target::Node = find_num(root, n) #this is the target of the movement
     while target.root
         n = rand(available)
-        target = MCPhylo.find_num(root, n)
+        target = find_num(root, n)
     end # while
     target_mother = target.mother
     remove_child!(target_mother, target)
