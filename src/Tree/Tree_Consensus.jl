@@ -427,6 +427,11 @@ includes cluster that occur in over 50% of the trees.
 """
 function majority_consensus_tree(trees::Vector{T}, percentage::Float64=0.5)::T where T<:AbstractNode
     first_tree = deepcopy(trees[1])
+    leaveset = Set([n.name for n in get_leaves(first_tree)])
+    for tree in trees[2:end]
+        leaveset2 = Set([n.name for n in get_leaves(tree)])
+        leaveset == leaveset2 && throw(ArgumentError("The trees do not have the same set of leaves"))
+    end
     nodes = post_order(first_tree)
     leaf_ranks = Dict{String, Int64}()
     ladderize_tree!(first_tree)

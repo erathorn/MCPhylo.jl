@@ -25,7 +25,6 @@ using ChainRules
 
 using CUDA
 if has_cuda()
-  #using CuArrays
   using GPUArrays
 else
   @warn "The Julia CUDA library is installed, but no CUDA device detected.
@@ -72,8 +71,6 @@ import StatsBase: autocor, autocov, countmap, counts, describe, predict,
 include("distributions/pdmats2.jl")
 using .PDMats2
 include("Tree/Node_Type.jl") # We need this to get the Node type in
-
-#CuArrays.allowscalar(false)
 
 #################### Types ####################
 
@@ -160,9 +157,8 @@ mutable struct TreeStochastic{T} <: TreeVariate where T<: GeneralNode
     distr::DistributionStruct
 end
 
-const AbstractLogical = Union{ScalarLogical, ArrayLogical}#, TreeLogical}
-const AbstractStochastic = Union{ScalarStochastic, ArrayStochastic}#, TreeStochastic}
-#const NumericalStochastic = Union{ScalarStochastic, ArrayStochastic}
+const AbstractLogical = Union{ScalarLogical, ArrayLogical}
+const AbstractStochastic = Union{ScalarStochastic, ArrayStochastic}
 const AbstractTreeStochastic = Union{TreeLogical, TreeStochastic}
 const AbstractDependent = Union{AbstractLogical, AbstractStochastic, AbstractTreeStochastic}
 
@@ -322,10 +318,7 @@ include("Parser/Parser.jl")
 include("Parser/ParseCSV.jl")
 include("Parser/ParseNexus.jl")
 include("Parser/ParseNewick.jl")
-
-
 include("Sampler/PNUTS.jl")
-#include("Sampler/ProbPathHMC.jl")
 
 include("Substitution/SubstitutionMat.jl")
 
@@ -437,10 +430,7 @@ export
   RWM, RWMVariate,
   Slice, SliceMultivariate, SliceUnivariate,
   SliceSimplex, SliceSimplexVariate,
-  PNUTS, PNUTSVariate,
-  ProbPathHMC,
-  BranchSlice,
-  RWMC, RWMCVariate
+  PNUTS, PNUTSVariate
 
 export
   make_tree_with_data,
@@ -452,7 +442,10 @@ export
   node_distance,
   get_path,
   cut_samples,
-  NNI!,
+  NNI!, NNI,
+  SPR!, SPR,
+  slide!, slide,
+  swing!, swing,
   RF, randomize!,
   BHV_bounds,
   get_branchlength_vector,
@@ -473,15 +466,13 @@ export
   newick,
   tree_length,
   tree_height,
-  path_length
+  path_length,
   get_sister,
   get_leaves,
   neighbor_joining,
   upgma,
-  prune_tree!,
-  prune_tree,
-  ladderize_tree!,
-  ladderize_tree,
+  prune_tree!, prune_tree,
+  ladderize_tree!, ladderize_tree,
   majority_consensus_tree
 
 

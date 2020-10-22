@@ -58,6 +58,17 @@ function NNI!(root::T)::Int64  where T<:GeneralNode
     NNI!(root, tn, lor)
 end #function
 
+"""
+    NNI(root::T)::T  where T<:GeneralNode
+
+This function does a nearest neighbour interchange (NNI) move on the tree specified
+by `root` and returns a mutated copy while leaving the original tree intact.
+"""
+function NNI(root::T)::T where T<:GeneralNode
+    new_root = deepcopy(root)
+    NNI!(new_root)
+    return new_root
+end
 
 """
     slide!(root::T) where T<:GeneralNode
@@ -87,6 +98,20 @@ function slide!(root::T) where T<:GeneralNode
 end # function slide!
 
 """
+    slide(root::T)::T where T<:GeneralNode
+
+This functin performs a slide move on an intermediate node. The node is moved
+upwards or downwards on the path specified by its mother and one of its
+daughters. The new tree is returned.
+"""
+function slide(root::T)::T where T<:GeneralNode
+    new_root = deepcopy(root)
+    slide!(new_root)
+    return new_root
+end
+
+
+"""
     swing!(root::T) where T<:GeneralNode
 
 This function performs a swing node. A random non-leave node is selected and
@@ -110,6 +135,18 @@ function swing!(root::T) where T<:GeneralNode
     # calculate and set new values
     move!(child1, child2, proportion)
 end # function swing!
+
+"""
+    swing(root::T)::T where T<:GeneralNode
+
+This function performs a swing node. A random non-leave node is selected and
+moved along the path specified by its two children. The new tree is returned.
+"""
+function swing(root::T)::T where T<:GeneralNode
+    new_root = deepcopy(root)
+    swing!(new_root)
+    return new_root
+end
 
 
 """
