@@ -121,6 +121,11 @@ function setinits!(l::AbstractLogical, m::Model, ::Any=nothing)
   setmonitor!(l, l.monitor)
 end
 
+function setinits!(d::TreeLogical, m::Model, x::T) where {T<:Node}
+    d.value = d.eval(m)
+    setmonitor!(d, d.monitor)
+end # function
+
 function update!(l::AbstractLogical, m::Model)
   l.value = l.eval(m)
   l

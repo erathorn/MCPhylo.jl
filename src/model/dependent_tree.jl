@@ -4,6 +4,11 @@ function update!(d::TreeStochastic, m::Model)
     d
 end
 
+function update!(d::TreeLogical, m::Model)
+    d.value = d.eval(m)
+    d
+end
+
 function names(d::TreeStochastic, nodekey::Symbol)
     n_names = [n.num for n in post_order(d.value) if n.root !== true]
     sort!(n_names)

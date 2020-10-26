@@ -466,7 +466,6 @@ function get_branchlength_vector(root::N)::Vector{Float64}  where {N <:GeneralNo
     if length(root.blv) == 0
         root.blv = zeros(length(post_order(root))-1)
     end
-
     get_branchlength_vector(root, root.blv)
     return root.blv
 end # function get_branchlength_vector
@@ -513,6 +512,11 @@ Get the vector of branch lengths of the tree.
 function set_branchlength_vector!(t::TreeStochastic, blenvec::ArrayStochastic)
     set_branchlength_vector!(t.value, blenvec.value)
 end # function
+
+function set_branchlength_vector!(t::N, blenvec::ArrayStochastic) where N<:Node
+    set_branchlength_vector!(t, blenvec.value)
+end # function
+
 
 """
     set_branchlength_vector!(root::N, blenvec::Array{T}) where {N<:GeneralNode, T<:Real}
