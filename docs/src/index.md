@@ -1,4 +1,4 @@
 # MCPhylo.jl Documentation
 
-
-Test
+```@contents
+```
