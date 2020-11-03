@@ -7,7 +7,7 @@ makedocs(root="./",
     build   = "build",
     clean   = true,
     doctest = true,
-    modules = [MCPhylo],
+    modules = Module[MCPhylo],
     sitename="MCPhylo",
-    format = Documenter.HTML(prettyurls = false)
+    format = Documenter.HTML(prettyurls = false),
    )
