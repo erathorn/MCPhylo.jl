@@ -4,9 +4,9 @@
 
 function Chains(iters::Integer, params::Integer;
                start::Integer=1, thin::Integer=1, chains::Integer=1,
-               names::Vector{T}=AbstractString[]) where {T<:AbstractString}
+               names::Vector{T}=AbstractString[], ntrees::Integer=1) where {T<:AbstractString}
   value = Array{Float64}(undef, length(start:thin:iters), params, chains)
-  value2 = Array{AbstractString}(undef, length(start:thin:iters), 1, chains)
+  value2 = Array{AbstractString}(undef, length(start:thin:iters), ntrees, chains)
   fill!(value, NaN)
 
   Chains(value, value2, start=start, thin=thin, names=names)

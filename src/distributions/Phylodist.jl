@@ -16,6 +16,11 @@ end
 function PhyloDist(my_tree::T, mypi::S, rates::A, nbase::Int64, nsites::Int64, nnodes::Int64) where {T<:TreeVariate, S<:ScalarVariate, A<:ArrayVariate}
     PhyloDist(my_tree.value, mypi.value, rates.value, nbase, nsites, nnodes)
 end
+
+function PhyloDist(my_tree::T, mypi::S, rates::A, nbase::Int64, nsites::Int64, nnodes::Int64) where {T<:TreeVariate, S<:Real, A<:ArrayVariate}
+    PhyloDist(my_tree.value, mypi, rates.value, nbase, nsites, nnodes)
+end
+
 minimum(d::PhyloDist) = -Inf
 maximum(d::PhyloDist) = Inf
 
