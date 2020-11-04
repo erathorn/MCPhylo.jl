@@ -31,13 +31,13 @@ my_data = Dict{Symbol, Any}(
 
 # model setup
 model =  Model(
-    df_ie = Stochastic(3, (mtree_ie, mypi, rates, nnodes, nbase, nsites) ->
-                            PhyloDist(mtree_ie, mypi[1], rates, my_data[:nbase][2], my_data[:nsites][2], my_data[:nnodes][2]), false, false),
-    df_st = Stochastic(3, (mtree_st, mypi, rates, nnodes, nbase, nsites) ->
-                            PhyloDist(mtree_st, mypi[1], rates, my_data[:nbase][1], my_data[:nsites][1], my_data[:nnodes][1]), false, false),
+    df_ie = Stochastic(3, (mtree_ie, mypi,  rates, nnodes, nbase, nsites) ->
+                            PhyloDist(mtree_ie, mypi[1], ones(my_data[:nsites][2]), my_data[:nbase][2], my_data[:nsites][2], my_data[:nnodes][2]), false, false),
+    #df_st = Stochastic(3, (mtree_st, mypi, rates,  nnodes, nbase, nsites) ->
+    #                        PhyloDist(mtree_st, mypi[1], ones(my_data[:nsites][1]), my_data[:nbase][1], my_data[:nsites][1], my_data[:nnodes][1]), false, false),
     mypi = Stochastic(1, () -> Dirichlet(2,1)),
     mtree_ie = Stochastic(Node(), () -> CompoundDirichlet(1.0,1.0,0.100,1.0), my_data[:nnodes][2]+1, true),
-    mtree_st = Stochastic(Node(), () -> CompoundDirichlet(1.0,1.0,0.100,1.0), my_data[:nnodes][1]+1, true),
+    #mtree_st = Stochastic(Node(), () -> CompoundDirichlet(1.0,1.0,0.100,1.0), my_data[:nnodes][1]+1, true),
     rates = Logical(1,(mymap, av) -> [av[convert(UInt8,i)] for i in mymap],false),
     mymap = Stochastic(1,() -> Categorical([0.25, 0.25, 0.25, 0.25]), false),
     av = Stochastic(1,() -> Dirichlet([1.0, 1.0, 1.0, 1.0]), false)
@@ -58,8 +58,8 @@ inits = [ Dict{Symbol, Union{Any, Real}}(
     ),
     ]
 
-scheme = [PNUTS(:mtree_ie),
-          PNUTS(:mtree_st),
+scheme = [RWM(:mtree_ie, :all),
+          #PNUTS(:mtree_s t),
           SliceSimplex(:mypi)
           ]
 
@@ -67,4 +67,4 @@ setsamplers!(model, scheme);
 
 # do the mcmc simmulation. if trees=true the trees are stored and can later be
 # flushed ot a file output.
-sim = mcmc(model, my_data, inits, 50, burnin=10,thin=5, chains=1, trees=true)
+sim = mcmc(model, my_data, inits, 10, burnin=2,thin=1, chains=1, trees=true)
