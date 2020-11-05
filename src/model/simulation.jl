@@ -141,6 +141,21 @@ function logpdf!(m::Model, x::AbstractArray{T}, block::Integer=0,
   lp
 end
 
+function pseudologpdf!(m::Model, x::AbstractArray{T}, y::AbstractArray, block::Integer=0,
+                  transform::Bool=false) where {T<:Real}
+  params = keys(m, :block, block)
+  targets = keys(m, :target, block)
+  m[params] = relist(m, x, params, transform)
+  lp = logpdf(m, setdiff(params, targets), transform)
+  for key in targets
+    isfinite(lp) || break
+    node = m[key]
+    update!(node, m)
+    lp += key in params ? pseudologpdf(node, transform) : pseudologpdf(node)
+  end
+  lp
+end
+
 
 function sample!(m::Model, block::Integer=0)
   m.iter += 1

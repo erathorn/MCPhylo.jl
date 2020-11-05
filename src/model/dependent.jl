@@ -299,6 +299,15 @@ function logpdf(s::AbstractStochastic, transform::Bool=false)
 end
 
 
+function pseudologpdf(s::AbstractStochastic, x::Real, transform::Bool=false)
+  logpdf(s, x, transform)
+end
+
+function pseudologpdf(s::AbstractStochastic, x::AbstractArray, transform::Bool=false)
+  logpdf(s, x, transform)
+end
+
+
 function gradlogpdf(s::AbstractStochastic)
   gradlogpdf(s, s.value)
 end

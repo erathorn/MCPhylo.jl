@@ -22,7 +22,6 @@ maximum(d::PhyloDist) = Inf
 Base.size(d::PhyloDist) = (d.nbase, d.nsites, d.nnodes)
 
 function logpdf(d::PhyloDist, x::AbstractArray)
-
     mt = post_order(d.my_tree)
 
     blv = get_branchlength_vector(d.my_tree)

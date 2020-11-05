@@ -41,7 +41,7 @@ const PNUTSVariate = SamplerVariate{PNUTSTune}
 
 #################### Sampler Constructor ####################
 
-function PNUTS(params::ElementOrVector{Symbol}; dtype::Symbol=:forward,args...)
+function PNUTS(params::ElementOrVector{Symbol}; args...)
   samplerfx = function(model::Model, block::Integer)
     block = SamplingBlock(model, block, true)
     f = (x, sz, ll, gr) -> mlogpdfgrad!(block, x, sz, ll, gr)
@@ -71,7 +71,6 @@ end
 sample!(v::PNUTSVariate; args...) = sample!(v, v.tune.logfgrad; args...)
 
 function sample!(v::PNUTSVariate, logfgrad::Function; adapt::Bool=false)
-
   tune = v.tune
   setadapt!(v, adapt)
   if tune.adapt

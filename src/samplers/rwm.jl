@@ -60,7 +60,7 @@ Construct the RWM sampler for Trees. If you set moves to :all it will use all
 eligible moves to change the tree. These are currently:
 NNI, Slide, Swing, :EdgeLength
 """
-function RWM(params::ElementOrVector{Symbol}, moves::ElementOrVector{Symbol}; args...) where {T<:Real}
+function RWM(params::ElementOrVector{Symbol}, moves::ElementOrVector{Symbol}; args...)
   #eligible = [:NNI, :SPR, :Slide, :Swing, :EdgeLength] # use after SPR branch is merged
   eligible = [:NNI, :Slide, :Swing, :EdgeLength]
   to_use = Symbol[]

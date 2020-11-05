@@ -1,75 +1,46 @@
-#################### Double Metropolis-Hastings Sampler ####################
+#################### Double Metropolis-Hastings Inner Sampler ####################
 
 #################### Types and Constructors ####################
 
-mutable struct DMHTune <: SamplerTune
-  outer<:SamplerVariate
-  inner<:SamplerVariate
+mutable struct DMHInnerTune <: SamplerTune
+  #cond_prob::Function
+  m::Int64
 
-  DMHTune() = new()
-  function DMHTune(outer::S, inner::T) where {S<:SamplerVariate, T<:SamplerVariate}
-    typeof(outer) == DMHVariate && throw(ArgumentError($outer " cannot be of type " $typeof(outer)))
-    typeof(inner) == DMHVariate && throw(ArgumentError($inner " cannot be of type " $typeof(inner)))
-    new(outer, inner)
+  DMHTInnerune() = new()
+
+  #function DMHInnerTune(cond_prob::Function, m::Int64)
+  #  new(cond_prob, m)
+  #end
+	function DMHInnerTune(m::Int64)
+    new(m)
   end
+
 end
 
-const DMHVariate = SamplerVariate{DMHTune}
+const DMHVInnerariate = SamplerVariate{DMHInnerTune}
 
 
 #################### Sampler Constructor ####################
 
-function DMH(params::ElementOrVector{Symbol}, outer::Symbol,
-             inner::Symbol)
+function DMHInner(params::ElementOrVector{Symbol}, m::Int64)
+
   samplerfx = function(model::Model, block::Integer)
     block = SamplingBlock(model, block, true)
-		targets = keys(model, :target, block)
+    f = (x, l, k)  -> logcond(block, x, l, k)
+    v = SamplerVariate(block, f, NullFunction())
 
-    f = x -> logpdf!(block, x)
-		fp = (x, y) -> pseudologpdf!(block, x, y)
-    v = SamplerVariate(block, f, NullFunction(); args...)
-
-    DMH_sample!(v::DMHVariate, f)
+    sample!(v::DMHInnerVariate, f)
 
     relist(block, v)
   end
-  Sampler(params, samplerfx, DMHTune())
+  Sampler(params, samplerfx, DMHInnerTune())
 end
 
-function DMH_sample!(v::DMHVariate, lf::Function, pslf::Function)
-  # 1. propose theta prime
-  # 2. Generate the auxillary variable using theta prime
+function sample!(v::DMHInnerVariate, logcond::Function)
 
-  # this way of generating theta_prime from the current values of theta
-  # takes care of the transition probability from theta_prime to theta and vice versa
-  # the values equal and will cancel out.
-  θ_prime = v + v.tune.scale .* rand(v.tune.proposal(0.0, 1.0), length(v))
-
-	lf_xt = lf(v.value)
-	lf_xtp = lf(θ_prime)
-
-	### get the original data into the sampler
-	y = inner_sampler(v)
-
-	lf_yt = pslf(v.value, y)
-	lf_ytp = pslf(θ_prime, y)
-
-	r = exp((lf_yt + lf_xtp) - (lf_xt + lf_ytp))
-
-	if rand() < r
-		v[:] = x
-	end
-	v
 end
 
-function m_inner_sampler(v::DMHVariate)
-
-	samples = similar()
-end
-
-
-
-function inner_sampler(x, v, h, u, spatial_graph, ling_graph, m)
+function sample_x(x, v, h, u, spatial_graph, ling_graph, m)
 	nlang, n = size(spatial_graph)
 	feature_vals = sort!(unique(x))
 	samples = Array{Int64,1}()

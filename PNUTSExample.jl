@@ -34,8 +34,9 @@ my_data = Dict{Symbol, Any}(
 
 # model setup
 model =  Model(
-    df = Stochastic(3, (mtree, pi, rates, nnodes, nbase, nsites) -> PhyloDist(mtree, pi, rates, nbase, nsites, nnodes), false, false),
-    pi = Logical( (mypi) -> mypi[1], false),
+    df = Stochastic(3, (mtree, mpi, rates, nnodes, nbase, nsites) ->
+                PhyloDist(mtree, mpi, rates, nbase, nsites, nnodes), false, false),
+    mpi = Logical( (mypi) -> mypi[1], false),
     mypi = Stochastic(1, () -> Dirichlet(2,1)),
     mtree = Stochastic(Node(), () -> CompoundDirichlet(1.0,1.0,0.100,1.0), my_data[:nnodes]+1, true),
     rates = Logical(1,(mymap, av) -> [av[convert(UInt8,i)] for i in mymap],false),
@@ -64,7 +65,8 @@ setsamplers!(model, scheme);
 
 # do the mcmc simmulation. if trees=true the trees are stored and can later be
 # flushed ot a file output.
-sim = mcmc(model, my_data, inits, 500, burnin=100,thin=5, chains=1, trees=true)
+sim = mcmc(model, my_data, inits, 500,
+    burnin=100,thin=5, chains=1, trees=true)
 
 # request more runs
 sim = mcmc(sim, 5000, trees=true)
