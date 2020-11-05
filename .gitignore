@@ -6,5 +6,4 @@ doc/make.bat
 *.jls
 *.nex
 *params*.log
-docs/build/
 untracked_files/
