@@ -40,7 +40,7 @@ function FelsensteinFunction(tree_postorder::Vector{N}, pi_::T, rates::Float64,
 
     @views for node in tree_postorder
         if node.nchild > 0
-            node.data = node_loop(node, mutationArr)
+            node.data = node_loop(node, mutationArray)
             if !node.root
                 scaler = maximum(node.data, dims=1)
                 rns = rns + log.(scaler)
