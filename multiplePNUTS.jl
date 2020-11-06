@@ -39,28 +39,28 @@ my_data = Dict{Symbol, Any}(
 model =  Model(
     df_ie = Stochastic(3, (mtree_ie, mypi_ie,  rates) ->
                             PhyloDist(mtree_ie, mypi_ie[1], rates[1:4], my_data[:nbase][2], my_data[:nsites][2], my_data[:nnodes][2]), false, false),
-    #df_st = Stochastic(3, (mtree_st, mypi_st, rates) ->
-    #                        PhyloDist(mtree_st, mypi_st[1], rates[5:8], my_data[:nbase][1], my_data[:nsites][1], my_data[:nnodes][1]), false, false),
-    #df_aa = Stochastic(3, (mtree_aa, mypi_aa, rates) ->
-    #                        PhyloDist(mtree_aa, mypi_aa[1], rates[9:12], my_data[:nbase][3], my_data[:nsites][3], my_data[:nnodes][3]), false, false),
-    #df_an = Stochastic(3, (mtree_an, mypi_an, rates) ->
-    #                        PhyloDist(mtree_an, mypi_an[1], rates[13:16], my_data[:nbase][4], my_data[:nsites][4], my_data[:nnodes][4]), false, false),
-    #df_pn = Stochastic(3, (mtree_pn, mypi_pn, rates) ->
-    #                        PhyloDist(mtree_pn, mypi_pn[1], rates[17:20], my_data[:nbase][5], my_data[:nsites][5], my_data[:nnodes][5]), false, false),
+    df_st = Stochastic(3, (mtree_st, mypi_st, rates) ->
+                            PhyloDist(mtree_st, mypi_st[1], rates[5:8], my_data[:nbase][1], my_data[:nsites][1], my_data[:nnodes][1]), false, false),
+    df_aa = Stochastic(3, (mtree_aa, mypi_aa, rates) ->
+                            PhyloDist(mtree_aa, mypi_aa[1], rates[9:12], my_data[:nbase][3], my_data[:nsites][3], my_data[:nnodes][3]), false, false),
+    df_an = Stochastic(3, (mtree_an, mypi_an, rates) ->
+                            PhyloDist(mtree_an, mypi_an[1], rates[13:16], my_data[:nbase][4], my_data[:nsites][4], my_data[:nnodes][4]), false, false),
+    df_pn = Stochastic(3, (mtree_pn, mypi_pn, rates) ->
+                            PhyloDist(mtree_pn, mypi_pn[1], rates[17:20], my_data[:nbase][5], my_data[:nsites][5], my_data[:nnodes][5]), false, false),
     mypi_ie = Stochastic(1, (co) -> Dirichlet(co)),
-    #mypi_st = Stochastic(1, (co) -> Dirichlet(co)),
-    #mypi_aa = Stochastic(1, (co) -> Dirichlet(co)),
-    #mypi_an = Stochastic(1, (co) -> Dirichlet(co)),
-    #mypi_pn = Stochastic(1, (co) -> Dirichlet(co)),
+    mypi_st = Stochastic(1, (co) -> Dirichlet(co)),
+    mypi_aa = Stochastic(1, (co) -> Dirichlet(co)),
+    mypi_an = Stochastic(1, (co) -> Dirichlet(co)),
+    mypi_pn = Stochastic(1, (co) -> Dirichlet(co)),
     co = Stochastic(1, () -> Gamma()),
     mtree_ie = Stochastic(Node(), () -> CompoundDirichlet(1.0,1.0,0.100,1.0), true),
-    #mtree_st = Stochastic(Node(), () -> CompoundDirichlet(1.0,1.0,0.100,1.0), true),
-    #mtree_aa = Stochastic(Node(), () -> CompoundDirichlet(1.0,1.0,0.100,1.0), true),
-    #mtree_an = Stochastic(Node(), () -> CompoundDirichlet(1.0,1.0,0.100,1.0), true),
-    #mtree_pn = Stochastic(Node(), () -> CompoundDirichlet(1.0,1.0,0.100,1.0), true),
+    mtree_st = Stochastic(Node(), () -> CompoundDirichlet(1.0,1.0,0.100,1.0), true),
+    mtree_aa = Stochastic(Node(), () -> CompoundDirichlet(1.0,1.0,0.100,1.0), true),
+    mtree_an = Stochastic(Node(), () -> CompoundDirichlet(1.0,1.0,0.100,1.0), true),
+    mtree_pn = Stochastic(Node(), () -> CompoundDirichlet(1.0,1.0,0.100,1.0), true),
     rates = Logical(1, (αs, βs) -> vcat(discrete_gamma_rates.(αs, βs, 4)...),false),
-    αs = Stochastic( () -> Gamma(), true),
-    βs = Stochastic( () -> Gamma(), true)
+    αs = Stochastic(1, () -> Gamma(), true),
+    βs = Stochastic(1, () -> Gamma(), true)
      )
 
 # intial model values
@@ -80,25 +80,25 @@ inits = [ Dict{Symbol, Union{Any, Real}}(
     :df_aa => my_data[:df][3],
     :df_an => my_data[:df][4],
     :df_pn => my_data[:df][5],
-    :αs => rand(),
-    :βs => rand(),
+    :αs => rand(20),
+    :βs => rand(20),
     :co => rand(2),
     ),
     ]
 
-scheme = [RWM(:mtree_ie, :all),
-          #PNUTS(:mtree_st),
-          #PNUTS(:mtree_an),
-          #PNUTS(:mtree_aa),
-          #PNUTS(:mtree_pn),
-          #SliceSimplex(:mypi_ie),
-          #SliceSimplex(:mypi_an),
-          #SliceSimplex(:mypi_st),
-          #SliceSimplex(:mypi_aa),
-          #SliceSimplex(:mypi_pn),
-          #Slice(:co, 1.0, Univariate),
-          #Slice(:αs, 1.0, Univariate),
-          #Slice(:βs, 1.0, Univariate),
+scheme = [PNUTS(:mtree_ie),
+          PNUTS(:mtree_st),
+          PNUTS(:mtree_an),
+          PNUTS(:mtree_aa),
+          PNUTS(:mtree_pn),
+          SliceSimplex(:mypi_ie),
+          SliceSimplex(:mypi_an),
+          SliceSimplex(:mypi_st),
+          SliceSimplex(:mypi_aa),
+          SliceSimplex(:mypi_pn),
+          Slice(:co, 1.0, Univariate),
+          Slice(:αs, 1.0, Univariate),
+          Slice(:βs, 1.0, Univariate),
           ]
 
 setsamplers!(model, scheme);
@@ -106,5 +106,3 @@ setsamplers!(model, scheme);
 # do the mcmc simmulation. if trees=true the trees are stored and can later be
 # flushed ot a file output.
 sim = mcmc(model, my_data, inits, 10, burnin=5,thin=1, chains=1, trees=true)
-
-to_file(sim, "s")
