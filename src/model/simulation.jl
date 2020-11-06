@@ -242,7 +242,6 @@ end
 function relist!(m::Model, x::AbstractArray{T}, block::Integer=0,
                  transform::Bool=false) where {T<:Any}
   nodekeys = keys(m, :block, block)
-
   values = relist(m, x, nodekeys, transform)
   for key in nodekeys
     assign!(m, key, values[key])
@@ -259,8 +258,13 @@ function assign!(m::Model, key::Symbol, value::T) where T <:GeneralNode
 end
 
 function assign!(m::Model, key::Symbol, value::T) where T <: Array
-  @assert size(m[key].value) == size(value)
-  d = similar(m[key].value)
+  if isa(m[key], TreeVariate)
+    @assert (2,) == size(value)
+    d = Array{Float64, 1}(undef, 2)
+  else
+    @assert size(m[key].value) == size(value)
+    d = similar(m[key].value)
+  end
   for (ind, elem) in enumerate(value)
     d[ind] = elem
   end

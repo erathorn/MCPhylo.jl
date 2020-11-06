@@ -7,9 +7,8 @@ function to_file(model::ModelChains, outpath::AbstractString)
         rename!(df, Symbol.(model.names))
         thin = model.range.step
         if isassigned(model.trees, 1)
-
             tdf = DataFrame(model.trees[:,:,run])
-            to_file(df, tdf, outpath, string(run), thin)
+            to_file(df, tdf, outpath, string(run), thin, model.tree_names)
         else
             to_file(df, outpath, string(run), thin)
         end
@@ -24,17 +23,20 @@ function to_file(df::DataFrame, outpath::AbstractString, run::AbstractString, th
 
 end
 
-function to_file(df::DataFrame, tdf::DataFrame, outpath::AbstractString, run::AbstractString, thin::Int64)
+function to_file(df::DataFrame, tdf::DataFrame, outpath::AbstractString,
+                run::AbstractString, thin::Int64, tree_names::Array{A}) where A <: AbstractString
 
     insertcols!(df,1, :it=>1:nrow(df))
     df[!, 1] .*= thin
     CSV.write(string(outpath, "params_"*run*".log"), df, header=true, delim="\t")
-    io = open(string(outpath, "mytrees_"*run*".nwk"), "w")
-    for x = 1:length(tdf[:,1])
-        write(io, tdf[x,:][1])
-        write(io, "\n")
+    for (ind, n_name) in enumerate(tree_names)
+        io = open(string(outpath, "trees_"*n_name*"_"*run*".nwk"), "w")
+        for x = 1:length(tdf[:,ind])
+            write(io, tdf[x,ind])
+            write(io, "\n")
+        end
+        close(io)
     end
-    close(io)
 end
 
 

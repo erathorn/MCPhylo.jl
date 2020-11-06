@@ -24,25 +24,11 @@ function mcmc(m::Model, inputs::Dict{Symbol},
     throw(ArgumentError("burnin is greater than or equal to iters"))
   length(inits) >= chains ||
     throw(ArgumentError("fewer initial values than chains"))
-  # if trees == true
-  #   nt = 0
-  #   for n in values(m.nodes)
-  #     if isa(n, TreeStochastic)
-  #       nt += 1
-  #     end
-  #   end
-  #   if nt == 0
-  #     throw(ArgumentError("no tree obejct to write"))
-  #   elseif nt > 1
-  #     throw(ArgumentError("to many tree obejcts to write"))
-  #   end
-  # end
 
   mm = deepcopy(m)
   setinputs!(mm, inputs)
   setinits!(mm, inits[1:chains])
   mm.burnin = burnin
-
   mcmc_master!(mm, 1:iters, burnin, thin, 1:chains, verbose, trees)
 end
 
@@ -79,9 +65,10 @@ function mcmc_worker!(args::Vector)
   treeind = 1
   simind = 1
   m.iter = first(window) - 1
-  relist!(m, state.value)
-  settune!(m, state.tune)
 
+  relist!(m, state.value)
+
+  settune!(m, state.tune)
   pnames = vcat(names(m, true), llname)
   treenodes = Symbol[]
   for i in m.nodes
@@ -91,7 +78,7 @@ function mcmc_worker!(args::Vector)
   end
 
   sim = Chains(last(window), length(pnames), start=burnin + thin, thin=thin,
-               names=pnames, ntrees=length(treenodes))
+               names=pnames, ntrees=length(treenodes), tree_names=treenodes)
 
   reset!(meter)
   for i in window

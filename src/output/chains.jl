@@ -4,12 +4,12 @@
 
 function Chains(iters::Integer, params::Integer;
                start::Integer=1, thin::Integer=1, chains::Integer=1,
-               names::Vector{T}=AbstractString[], ntrees::Integer=1) where {T<:AbstractString}
+               names::Vector{T}=AbstractString[], ntrees::Integer=1, tree_names::Vector{Symbol}=Symbol[]) where {T<:AbstractString}
   value = Array{Float64}(undef, length(start:thin:iters), params, chains)
   value2 = Array{AbstractString}(undef, length(start:thin:iters), ntrees, chains)
   fill!(value, NaN)
 
-  Chains(value, value2, start=start, thin=thin, names=names)
+  Chains(value, value2, start=start, thin=thin, names=names, tree_names=string.(tree_names))
 end
 
 function Chains(value::Array{T, 3},
@@ -22,7 +22,8 @@ end
 function Chains(value::Array{T, 3},
                 value2::Array{U,3};
                start::Integer=1, thin::Integer=1,
-               names::Vector{W}=AbstractString[], chains::Vector{V}=Int[], moves::Vector{V}=Int[0]) where {T<:Real, U<:AbstractString, V<:Integer, W <: AbstractString}
+               names::Vector{W}=AbstractString[], chains::Vector{V}=Int[],
+               moves::Vector{V}=Int[0], tree_names::Vector{X}=AbstractString[]) where {T<:Real, U<:AbstractString, V<:Integer, W <: AbstractString, X <: AbstractString}
   n, p, m = size(value)
 
   if isempty(names)
@@ -38,7 +39,7 @@ function Chains(value::Array{T, 3},
   end
 
   v = convert(Array{Float64, 3}, value)
-  Chains(v, range(start, step=thin, length=n), AbstractString[names...], Int[chains...], value2, moves)
+  Chains(v, range(start, step=thin, length=n), AbstractString[names...], Int[chains...], value2, moves, tree_names)
 end
 
 function Chains(value::Matrix{T};
@@ -138,8 +139,11 @@ function cat1(c1::AbstractChains, args::AbstractChains...)
   end
 
   names = c1.names
+  tree_names = c.tree_names
   all(c -> c.names == names, args) ||
     throw(ArgumentError("chain names differ"))
+  all(c -> c.tree_names == tree_names, args) ||
+    throw(ArgumentError("chain tree names differ"))
 
   chains = c1.chains
   all(c -> c.chains == chains, args) ||
@@ -155,7 +159,7 @@ function cat1(c1::AbstractChains, args::AbstractChains...)
   moves = +(c1.moves, map(c -> c.moves, args)...)
 
   Chains(value, trees, start=first(range), thin=step(range), names=names,
-         chains=chains, moves=moves)
+         chains=chains, moves=moves, tree_names=tree_names)
 end
 
 function cat2(c1::AbstractChains, args::AbstractChains...)
@@ -193,8 +197,10 @@ function cat3(c1::AbstractChains, args::AbstractChains...)
     throw(ArgumentError("chain ranges differ"))
 
   names = c1.names
-
   all(c -> c.names == names, args) ||
+    throw(ArgumentError("chain names differ"))
+  tree_names = c1.tree_names
+  all(c -> c.tree_names == tree_names, args) ||
     throw(ArgumentError("chain names differ"))
 
   value = cat(c1.value, map(c -> c.value, args)..., dims=3)
@@ -206,7 +212,7 @@ function cat3(c1::AbstractChains, args::AbstractChains...)
   end
 
   moves = +(c1.moves, map(c -> c.moves, args)...)
-  Chains(value, value2, start=first(range), thin=step(range), names=names, moves=moves)
+  Chains(value, value2, start=first(range), thin=step(range), names=names, moves=moves, tree_names=tree_names)
 end
 
 Base.hcat(c1::AbstractChains, args::AbstractChains...) = cat(c1, args..., dims=2)

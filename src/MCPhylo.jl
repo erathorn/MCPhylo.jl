@@ -232,6 +232,7 @@ struct Chains <: AbstractChains
   chains::Vector{Int}
   trees::Array{S, 3} where S <: AbstractString
   moves::Array{Int, 1}
+  tree_names::Vector{S} where S<:AbstractString
 end
 
 struct ModelChains <: AbstractChains
@@ -242,6 +243,7 @@ struct ModelChains <: AbstractChains
   model::Model
   trees::Array{S, 3} where S <: AbstractString
   moves::Array{Int, 1}
+  tree_names::Vector{S} where S<:AbstractString
 end
 
 
