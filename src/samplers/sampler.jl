@@ -126,7 +126,7 @@ function logpdf!(block::SamplingBlock, x::AbstractArray{T}) where {T<:Real}
 end
 
 function pseudologpdf!(block::SamplingBlock, x::AbstractArray{T}, y::AbstractArray) where {T<:Real}
-  pseudologpdf!(block.model, x, y,block.index , block.transform)
+  pseudologpdf!(block.model, x, y, block.index , block.transform)
 end
 
 

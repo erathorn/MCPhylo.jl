@@ -5,12 +5,15 @@
 mutable struct DMHTune <: SamplerTune
   outer<:SamplerVariate
   inner<:SamplerVariate
+  seed_data<:AbstractArray
+  m<:Int64
 
   DMHTune() = new()
-  function DMHTune(outer::S, inner::T) where {S<:SamplerVariate, T<:SamplerVariate}
+  function DMHTune(outer::S, inner::T, seed_data::A, m::Int64) where {S<:SamplerVariate, T<:SamplerVariate}
     typeof(outer) == DMHVariate && throw(ArgumentError($outer " cannot be of type " $typeof(outer)))
     typeof(inner) == DMHVariate && throw(ArgumentError($inner " cannot be of type " $typeof(inner)))
-    new(outer, inner)
+	@assert m >= length(seed_data)
+    new(outer, inner, seed_data, m)
   end
 end
 
@@ -23,91 +26,92 @@ function DMH(params::ElementOrVector{Symbol}, outer::Symbol,
              inner::Symbol)
   samplerfx = function(model::Model, block::Integer)
     block = SamplingBlock(model, block, true)
-		targets = keys(model, :target, block)
-
+	targets = keys(model, :target, block)
     f = x -> logpdf!(block, x)
-		fp = (x, y) -> pseudologpdf!(block, x, y)
+	fp = (x, y) -> pseudologpdf!(block, x, y)
+	cl = x -> conditional_likelihood(block, x)
     v = SamplerVariate(block, f, NullFunction(); args...)
 
-    DMH_sample!(v::DMHVariate, f)
+    DMH_sample!(v::DMHVariate, f, fp, cl)
 
     relist(block, v)
   end
   Sampler(params, samplerfx, DMHTune())
 end
 
-function DMH_sample!(v::DMHVariate, lf::Function, pslf::Function)
-  # 1. propose theta prime
-  # 2. Generate the auxillary variable using theta prime
+function DMH_sample!(v::DMHVariate, lf::Function, pslf::Function, cl::Function)
+	# 1. propose theta prime
+	# 2. Generate the auxillary variable using theta prime
 
-  # this way of generating theta_prime from the current values of theta
-  # takes care of the transition probability from theta_prime to theta and vice versa
-  # the values equal and will cancel out.
-  θ_prime = v + v.tune.scale .* rand(v.tune.proposal(0.0, 1.0), length(v))
+	# this way of generating theta_prime from the current values of theta
+	# takes care of the transition probability from theta_prime to theta and vice versa
+	# the values equal and will cancel out.
+	θ_prime = v + v.tune.scale .* rand(v.tune.proposal(0.0, 1.0), length(v))
 
+	# calculate logpdf values
 	lf_xt = lf(v.value)
 	lf_xtp = lf(θ_prime)
 
-	### get the original data into the sampler
-	y = inner_sampler(v)
+	# store old value for possible future reference
+	θ = v.value
 
-	lf_yt = pslf(v.value, y)
-	lf_ytp = pslf(θ_prime, y)
+	# prematurely assign, to allow computations to go through properly
+	v[:] = θ_prime
 
+	# Sample new pseudo observations based on the θ_prime
+	y = inner_sampler(v, cl)
+
+	# calculate logpdfs based on pseudo observations
+	lf_ytp = pslf(v.value, y)
+	lf_yt = pslf(θ, y)
+
+	# calculate acceptance probability
 	r = exp((lf_yt + lf_xtp) - (lf_xt + lf_ytp))
 
-	if rand() < r
-		v[:] = x
+	# RWM acceptance logic is a bit reversed here. Above the new value is
+	# prematurely assigned to allow computations in the inner sampler to go through.
+	# If the sample is accepted nothing needs to be done anymore, otherwise the
+	# old value will be reassigend.
+	if rand() > r
+		# sample is rejected, so use the old value.
+		v[:] = θ
 	end
 	v
 end
 
-function m_inner_sampler(v::DMHVariate)
+function inner_sampler(v::DMHTune, cond_prob::Function)
+	#X::Array{Int64,1}, v_params, h_params,
+	#u_params, spatial_sums::Array{Float64,2}, ling_sums::Array{Float64,2}, m::Int64)
+	m = v.m
+	X = v.seed_data
 
-	samples = similar()
-end
-
-
-
-function inner_sampler(x, v, h, u, spatial_graph, ling_graph, m)
-	nlang, n = size(spatial_graph)
-	feature_vals = sort!(unique(x))
-	samples = Array{Int64,1}()
-	idx_list = Vector(1:length(x))
-	while m != 0 # is this the best way to limit the number of iterations?
-		for i in x
-			i = rand(idx_list) # primitive randomisation - problem: returns a vector
-			if ismissing(x[i]) # no missing values yet, and this part needs improvement;
+	feature_vals = sort!(unique(X))
+	N = length(X)
+	samples = deepcopy(X)
+	idx_list = Vector(1:N)
+	counter = 0
+	while true
+		random_index_order = shuffle(1:N)
+		for i in random_index_order
+			if ismissing(X[i]) # no missing values yet, and this part needs improvement;
 				# To do: add the neighbour and global majority methods
-				missing_probs = Array{Float64,1}()
-				missing_probs_norm = Array{Float64,1}()
-				for k in feature_vals
-					p_unnorm = cond_prob(x, k, i, spatial_graph, ling_graph, dummy_v, dummy_h, dummy_u)
-					push!(missing_probs, p_unnorm)
-				end
-				for p in missing_probs
-					p_norm = p/sum(missing_probs)
-					push!(missing_probs_norm, p_norm)
-				end
-				new_x = sample(feature_vals, StatsBase.weights(missing_probs_norm))
-				push!(samples, new_x) # with random iteration, how do I make sure samples[i] corresponds to the right x[i]?
-			else
-				probs = Array{Float64,1}()
-				probs_norm = Array{Float64,1}() # inefficient?
-				for k in feature_vals
-					p_unnorm = cond_prob(x, k, i, spatial_graph, ling_graph, dummy_v, dummy_h, dummy_u)
-					push!(probs, p_unnorm)
-				end
-				for p in probs
-					p_norm = p/sum(probs)
-					push!(probs_norm, p_norm)
-				end
-				new_x = sample(feature_vals, StatsBase.weights(probs_norm))
-				push!(samples, new_x)
-				filter!(x->x != i, idx_list)
+				throw("We should not end up here")
+				missing_probs = cond_prob.(Ref(samples), i, feature_vals, Ref(spatial_sums),
+					Ref(ling_sums), Ref(v_params), Ref(h_params), Ref(u_params))
+				missing_probs ./= sum(missing_probs)
+				new_x = sample(feature_vals, StatsBase.weights(missing_probs))
+				samples[i] = new_x
 			end
-			m -= 1
+				probs = cond_prob.(Ref(samples), i, feature_vals, Ref(spatial_sums), Ref(ling_sums),
+					Ref(v_params), Ref(h_params), Ref(u_params))
+				probs ./= sum(probs)
+				new_x = sample(feature_vals, StatsBase.weights(probs))
+				samples[i] = new_x
+			end
+			counter += 1
+			if counter > m
+				return samples
+			end
 		end
-		return samples
 	end
 end
