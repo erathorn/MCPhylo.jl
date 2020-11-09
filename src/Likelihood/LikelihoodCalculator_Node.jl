@@ -7,43 +7,20 @@ Felsensteins pruning algorithm.
 
 The function is written such that it is differentiable by Zygote 0.5.3.
 """
-function FelsensteinFunction(tree_postorder::Vector{N}, pi_::T, rates::Vector{Float64},
-                             data::Array{Float64,3}, n_c::Int64, blv::Array{Float64,1}) where {T<:Real, N<:GeneralNode, M}
+function FelsensteinFunction(tree_postorder::Vector{N}, pi_::Array{Float64}, rates::Float64,
+                             data::Array{Float64,3}, n_c::Int64, blv::Array{Float64,1})::Float64 where {N<:GeneralNode}
 
-    mu =  1.0 / (2.0 * pi_ * (1-pi_))
-    mutationArr = calc_trans.(blv, pi_, mu, Ref(rates))
-    root_node = last(tree_postorder)
-    rns = zeros(Float64, 1, n_c)
-
-    @views for node in tree_postorder
-        if node.nchild > 0
-            node.data = node_loop(node, mutationArr)
-            if !node.root
-                scaler = maximum(node.data, dims=1)
-                rns = rns + log.(scaler)
-                node.data = node.data ./ scaler
-            end #if
-
-        end #if
-    end # for
-
-    return likelihood_root(root_node.data, pi_, rns)
-end # function
-
-function FelsensteinFunction(tree_postorder::Vector{N}, pi_::T, rates::Float64,
-                             data::Array{Float64,3}, n_c::Int64, blv::Array{Float64,1}) where {T<:Real, N<:GeneralNode, M}
-
-    mu =  1.0 / (2.0 * pi_ * (1-pi_))
-    mutationArray = calc_trans.(blv, pi_, mu, rates)
-    root_node = last(tree_postorder)
-    rns = zeros(Float64, 1, n_c)
+    mu::Float64 =  1.0 / (2.0 * prod(pi_))
+    mutationArray = calc_trans.(blv, Ref(pi_), mu, rates)
+    root_node::N = last(tree_postorder)
+    rns::Array{Float64} = zeros(Float64, 1, n_c)
 
     @views for node in tree_postorder
         if node.nchild > 0
             node.data = node_loop(node, mutationArray)
             if !node.root
-                scaler = maximum(node.data, dims=1)
-                rns = rns + log.(scaler)
+                scaler::Array{Float64} = maximum(node.data, dims=1)
+                rns = rns .+ log.(scaler)
                 node.data = node.data ./ scaler
             end #if
 
@@ -53,8 +30,8 @@ function FelsensteinFunction(tree_postorder::Vector{N}, pi_::T, rates::Float64,
     return likelihood_root(root_node.data, pi_, rns)
 end # function
 
-@inline function likelihood_root(root::Array{A,2}, pi_::S, rns::Array{A,2})::A where {S<:Real, A<:Real}
-    sum(log.(sum(root .* Array([pi_, 1.0-pi_]), dims=1))+rns)
+@inline function likelihood_root(root::Array{Float64,2}, pi_::Array{Float64}, rns::Array{Float64,2})::Float64
+    sum(log.(sum(root .* pi_, dims=1))+rns)
 end
 
 function node_loop(node::N, mutationArray::Array{Array{Float64, 2},1})::Array{Float64,2} where {N<:GeneralNode, S<:Real}
@@ -62,16 +39,6 @@ function node_loop(node::N, mutationArray::Array{Array{Float64, 2},1})::Array{Fl
     out = ones(size(node.data))
     @inbounds @views for child in node.children
             out = out .* (mutationArray[child.num]*child.data)
-    end
-    out
-end
-
-function node_loop(node::N, mutationArray::Array{Array{Float64, 3},1})::Array{Float64,2} where {N<:GeneralNode}
-    n = size(node.data, 2)
-    out = ones(size(node.data))
-    @inbounds @views for child in node.children
-        tmp_arr = mutationArray[child.num]
-        out = out .* hcat(map(i -> tmp_arr[i, :, :] * child.data[:,i], 1:n)...)
     end
     out
 end
@@ -86,6 +53,16 @@ function calc_trans(time::Float64, pi_::S, mu::Float64, r::Float64)::Array{Float
     mm::Array{Float64}=[v1 v3;
                         v2 v4]
     return mm
+end
+
+
+
+function calc_trans(time::Float64, pi_::Array{Float64}, mu::Float64, r::Float64)::Array{Float64,2}
+    res::Array{Float64} = repeat(reshape(pi_, (1,2)), 2)
+    di = Diagonal(ones(2))
+    v = exp(-r*time*mu)
+    res = res .*(1.0-v)
+    res .+ (di .* v)
 end
 
 function calc_trans(time::Float64, pi_::S, mu::Float64, r::Array{T,1})::Array{Float64,3} where {S<:Real, T<:Real}
