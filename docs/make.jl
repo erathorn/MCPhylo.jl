@@ -10,4 +10,10 @@ makedocs(root="./",
     modules = Module[MCPhylo],
     sitename="MCPhylo",
     format = Documenter.HTML(prettyurls = false),
+    pages = [
+        "Adhams part" => "index.md",
+        "Table of Content" => "toc.md",
+        "Tree Functionality" => "test1.md",
+        "Likelihood" => "test2.md",
+        "Parser" => "parser.md"]
    )

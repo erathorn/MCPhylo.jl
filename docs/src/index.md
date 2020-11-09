@@ -1,5 +1,3 @@
-```@contents
-```
 
 # Adding MCPhylo
 ```@repl
