@@ -158,6 +158,8 @@ function one_way_compatible(ref_tree::T, tree::T)::T where T<:AbstractNode
             delete_node!(node)
         end # if
     end # for
+    set_binary!(ref_tree_copy)
+    number_nodes!(ref_tree_copy)
     return ref_tree_copy
 end # function one_way_compatible
 
@@ -248,7 +250,6 @@ function merge_trees!(ref_tree::T, tree::T)::Vector{T} where T<:AbstractNode
                 inserted_node =
                     insert_node!(r, r.children[index_d:index_e])
                 push!(inserted_nodes, inserted_node)
-
                 # ensures correct depth
                 inserted_node.binary = string(r.binary, "z")
                 # give unique number to avoid false positive "==" statements
@@ -414,7 +415,6 @@ function majority_consensus_tree(trees::Vector{T}, percentage::Float64=0.5)::T w
     end
     nodes = post_order(first_tree)
     leaf_ranks = Dict{String, Int64}()
-    ladderize_tree!(first_tree)
     count = 0
     # save leaf ranks to order the resulting tree in the end
     for node in nodes
@@ -423,6 +423,7 @@ function majority_consensus_tree(trees::Vector{T}, percentage::Float64=0.5)::T w
             count += 1
         end # if
     end # for
+    ladderize_tree!(first_tree)
     node_counts = convert(Vector{Int64}, ones(length(nodes)))
     count_dict = Dict(zip(nodes, node_counts))
     for tree in trees[2:end]
@@ -444,8 +445,6 @@ function majority_consensus_tree(trees::Vector{T}, percentage::Float64=0.5)::T w
         set_binary!(first_tree)
         number_nodes!(first_tree)
         compatible_tree = one_way_compatible(tree, first_tree)
-        set_binary!(compatible_tree)
-        number_nodes!(compatible_tree)
         inserted_nodes = merge_trees!(compatible_tree, first_tree)
         # intialize counts for the new nodes
         for node in inserted_nodes
@@ -495,7 +494,6 @@ function majority_consensus_tree(trees::Vector{T}, percentage::Float64=0.5)::T w
     order_tree!(first_tree, cluster_start_indeces)
     # """
     set_binary!(first_tree)
-    number_nodes!(first_tree)
     return first_tree
 end
 
@@ -507,23 +505,33 @@ Construct the loose consensus tree from a set of trees. I.e. the clusters appear
 tree and are compatible with all trees.
 """
 function loose_consensus_tree(trees::Vector{T}, percentage::Float64=0.5)::T where T<:AbstractNode
-    r_tree = deepcopy(trees[1])
-    leaveset = Set([n.name for n in get_leaves(first_tree)])
+    tree_copies = deepcopy(trees)
+    r_tree = tree_copies[1]
+    leaveset = Set([n.name for n in get_leaves(r_tree)])
     for tree in trees[2:end]
         leaveset2 = Set([n.name for n in get_leaves(tree)])
         leaveset != leaveset2 && throw(ArgumentError("The trees do not have the same set of leaves"))
     end
-    for i in 2:length(trees)
-        compatible_tree = one_way_compatible(r_tree, trees[i])
-        set_binary!(compatible_tree)
-        number_nodes!(compatible_tree)
-        r_tree = merge_trees!(compatible_tree, trees[i])[1]
-    end
-    loose_tree = r_tree
-    for tree in trees
-        loose_tree = one_way_compatible(T, tree)
-    end
+
     nodes = post_order(trees[1])
+    leaf_ranks = Dict{String, Int64}()
+    count = 0
+    # save leaf ranks to order the resulting tree in the end
+    for node in nodes
+        if node.nchild == 0
+            leaf_ranks[node.name] = count
+            count += 1
+        end # if
+    end # for
+    for i in 2:length(trees)
+        compatible_tree = one_way_compatible(tree_copies[i-1], trees[i])
+        merge_trees!(compatible_tree, tree_copies[i])
+    end
+    loose_tree = tree_copies[end]
+    for tree in trees
+        loose_tree = one_way_compatible(loose_tree, tree)
+    end
+    nodes = post_order(loose_tree)
     cluster_start_indeces = Dict{Node, Int64}()
     for node in nodes
         if node.nchild != 0
@@ -534,6 +542,5 @@ function loose_consensus_tree(trees::Vector{T}, percentage::Float64=0.5)::T wher
     end # for
     order_tree!(loose_tree, cluster_start_indeces)
     set_binary!(loose_tree)
-    number_nodes!(loose_tree)
     return loose_tree
 end
