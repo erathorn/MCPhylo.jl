@@ -473,7 +473,8 @@ export
   upgma,
   prune_tree!, prune_tree,
   ladderize_tree!, ladderize_tree,
-  majority_consensus_tree
+  majority_consensus_tree,
+  loose_consensus_tree
 
 
 export
