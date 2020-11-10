@@ -1,24 +1,4 @@
 """
- ToDo
-    - Node statistics into Statistics Field
-        - node.stats -> Dict(String, Foat64)
-        - frequency in statsdict
-    - Mean_inc length berechnen
-        1. m_inc_length = Beim 2. Parse mean([n.inc_length for n in cluster if n is present])
-        2. Node in ConsensusTree.inc_length = m_inc_length
-        3. standard deviation into stats dict
-        4. median into stats dict
-
-    Parse_Newick(file) -> Array[Trees]
-    for (ind, tree) in enumerate(Array[Trees])
-        newick(tree) == line(file, ind)
-    end
-
-"""
-
-
-
-"""
     find_common_clusters(ref_tree, tree:T)
         ::Dict{Int64, Tuple{Bool, Union{Float64, Missing}}}
 
@@ -517,4 +497,29 @@ function majority_consensus_tree(trees::Vector{T}, percentage::Float64=0.5)::T w
     set_binary!(first_tree)
     number_nodes!(first_tree)
     return first_tree
+end
+
+
+"""
+    loose_consensus_tree(trees::Vector{T}, percentage::Float64=0.5)::T where T<:AbstractNode
+
+Construct the loose consensus tree from a set of trees. I.e. the clusters appear in at least one
+tree and are compatible with all trees.
+"""
+function loose_consensus_tree(trees::Vector{T}, percentage::Float64=0.5)::T where T<:AbstractNode
+    first_tree = deepcopy(trees[1])
+    leaveset = Set([n.name for n in get_leaves(first_tree)])
+    for tree in trees[2:end]
+        leaveset2 = Set([n.name for n in get_leaves(tree)])
+        leaveset == leaveset2 && throw(ArgumentError("The trees do not have the same set of leaves"))
+    end
+    for i in 2:length(trees)
+        compatible_tree = one_way_compatible(trees[i-1], trees[i])
+        merged_tree = merge_trees!(compatible_tree, trees[i])
+    end
+    loose_tree = merged_tree
+    for tree in trees
+        loose_tree = one_way_compatible(T, tree)
+    end
+    return loose_tree
 end
