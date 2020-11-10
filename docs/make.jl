@@ -11,9 +11,15 @@ makedocs(root="./",
     sitename="MCPhylo",
     format = Documenter.HTML(prettyurls = false),
     pages = [
-        "Adhams part" => "index.md",
         "Table of Content" => "toc.md",
-        "Tree Functionality" => "test1.md",
-        "Likelihood" => "test2.md",
-        "Parser" => "parser.md"]
+        "Tree Functionality" => "Tree.md",
+        "Likelihood" => "Likelihood.md",
+        "Parser" => "Parser.md",
+        "Distributions" => "distributions.md",
+        "Model" => "model.md",
+        "Output" => "output.md",
+        "Sampler" => "Sampler.md",
+        "Samplers" => "samplers.md",
+        "Substitution" => "Substitution.md",
+        "Utils" => "Utils.md"]
    )
