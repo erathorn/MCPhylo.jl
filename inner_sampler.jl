@@ -12,6 +12,16 @@ include("linguistic_features.jl")
 include("neighbour_graphs.jl")
 
 wo_nmat = create_nmat(wo_dmat, 500)
+nusy_nmat = create_nmat(wo_dmat, 500)
+
+
+overall_nmat = zeros(1,1296,1296)
+overall_nmat[1, :, : ] .= wo_nmat
+#overall_nmat[2, :, : ] .= nusy_nmat
+wo_nmat .== overall_nmat[1, :, :]
+
+
+
 wo_nmat = Int64.(wo_nmat)
 wo_lmat = create_linguistic_nmat(wo_data)
 
@@ -130,6 +140,30 @@ function get_neighbour_sums(X::Array{Int64,1}, g::MetaGraph)
 	end
 	return sums
 end
+
+function get_neighbour_sum_ov(X::Array{Int64,2},g::MetaGraph)
+	third_dim = maximum(X)
+	N,M = size(X)
+	ov_array::Array{Float64,3} = Array{Float64,3}(undef,N,M, third_dim)
+	ov_array .= -10
+	for i in 1:N
+		n_sums = get_neighbour_sums(X[i,:], g)
+		max_val = maximum(X[i,:])
+		ov_array[i, :, 1:max_val] .= n_sums
+	end
+	ov_array
+end
+
+
+"""
+size(wo_co_sum) => 1296, 7
+size(nusy_co_sum) => 1296, 4
+ov_con_sum -> 3d array with #feauters x #languages x #(max(feature_vals))+1
+[1, 3,:end] => 7
+[2, 3, :end] => 4
+
+"""
+
 
 # To do
 function weighted_neighbour_sums(x::Array{Int64,1}, ling_graph::MetaGraph,
