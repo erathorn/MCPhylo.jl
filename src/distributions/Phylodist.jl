@@ -33,15 +33,14 @@ function logpdf(d::PhyloDist, x::AbstractArray)
     mt = post_order(d.my_tree)
 
     blv = get_branchlength_vector(d.my_tree)
-    #res = Threads.Atomic{Float64}(0.0)
-    res = 0.0
-    #Base.Threads.@threads
-    for r in d.rates
-        #Threads.atomic_add!(
-        res+= FelsensteinFunction(mt, d.mypi, r, x, d.nsites, blv)
-        #)
+    res = Threads.Atomic{Float64}(0.0)
+    
+    Base.Threads.@threads for r in d.rates
+        Threads.atomic_add!(
+        res, FelsensteinFunction(mt, d.mypi, r, x, d.nsites, blv)
+        )
     end
-    res#[]
+    res[]
 end
 
 
@@ -56,17 +55,14 @@ function gradlogpdf(d::PhyloDist, x::AbstractArray)
     z(y::Array{Float64}, k::Float64)::Float64 = FelsensteinFunction(mt, d.mypi, k, x, d.nsites, y)
 
     # use ∇(F+G) = ∇F + ∇G to speed up the process
-    #Base.Threads.@threads
-    #for mrx in d.rates
-
-        r1::Tuple = Zygote.pullback(a->z(a, d.rates[1]), blv)
+    Base.Threads.@threads for mrx in d.rates
+        r1::Tuple = Zygote.pullback(a->z(a, mrx), blv)
         Threads.atomic_add!(res, r1[1])
         gv = r1[2](1.0)[1]
-        #@inbounds @simd
-        for i in 1:N
+        @inbounds @simd for i in 1:N
             Threads.atomic_add!(mg[i], gv[i])
         end
-    #end
+    end
 
     res[], getproperty.(mg, :value)
 end

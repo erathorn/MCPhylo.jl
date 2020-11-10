@@ -21,6 +21,7 @@ using DataFrames
 using Random
 using CSV
 using ChainRules
+using ChainRulesCore
 
 
 using CUDA
