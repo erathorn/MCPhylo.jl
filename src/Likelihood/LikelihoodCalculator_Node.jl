@@ -18,6 +18,7 @@ function FelsensteinFunction(tree_postorder::Vector{N}, pi_::Array{Float64}, rat
 
     @views for node in tree_postorder
         if node.nchild > 0
+            #res = mapreduce(y->mutationArray[y.num, :, :]*y.data, (x,z)->x .* z, node.children)#
             res = node_loop(node, mutationArray)
             if !node.root
                 scaler::Array{Float64} = maximum(res, dims=1)
@@ -37,12 +38,12 @@ end
 
 function node_loop(node::N, mutationArray::Array{Float64, 3})::Array{Float64,2} where {N<:GeneralNode, S<:Real}
     # creating a new array is necessary because Zygote can not differentiate otherwise
-    #out = ones(size(node.data))
-    #@inbounds @views for child in node.children
-    #        out = out .* (mutationArray[child.num]*child.data)
-    #end
-    #out
-    mapreduce(y->mutationArray[y.num, :, :]*y.data, (x,z)->x .* z, node.children)
+    out = ones(size(node.data))
+    @inbounds @views for child in node.children
+            out = out .* (mutationArray[child.num,:,:]*child.data)
+    end
+    out
+    #mapreduce(y->mutationArray[y.num, :, :]*y.data, (x,z)->x .* z, node.children)
 end
 
 function calc_trans(time::Float64, pi_::S, mu::Float64, r::Float64)::Array{Float64,2} where {S<:Real}
@@ -64,8 +65,4 @@ function calc_trans(time::Float64, pi_::Array{Float64}, mu::Float64, r::Float64)
     v = exp(-r*time*mu)
     res = res .*(1.0-v)
     res .+ (di .* v)
-end
-
-function calc_trans(time::Float64, pi_::S, mu::Float64, r::Array{T,1})::Array{Float64,3} where {S<:Real, T<:Real}
-    permutedims(reshape(hcat(map(i-> MCPhylo.calc_trans(time, pi_, mu, i), r)...), 2,2,length(r)), [3,1,2])
 end

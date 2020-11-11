@@ -46,7 +46,7 @@ model =  Model(
     #df_aa = Stochastic(3, (mtree_aa, mypi_aa, rates) ->
     #                        PhyloDist(mtree_aa, mypi_aa[1], rates[9:12], my_data[:nbase][3], my_data[:nsites][3], my_data[:nnodes][3]), false, false),
     df_an = Stochastic(3, (mtree_an, mypi_an, rates) ->
-                            PhyloDist(mtree_an, mypi_an, rates[13:16], my_data[:nbase][4], my_data[:nsites][4], my_data[:nnodes][4]), false, false),
+                            PhyloDist(mtree_an, mypi_an, rates[5:8], my_data[:nbase][4], my_data[:nsites][4], my_data[:nnodes][4]), false, false),
     #df_pn = Stochastic(3, (mtree_pn, mypi_pn, rates) ->
     #                        PhyloDist(mtree_pn, mypi_pn[1], rates[17:20], my_data[:nbase][5], my_data[:nsites][5], my_data[:nnodes][5]), false, false),
     mypi_ie = Stochastic(1, ()-> Dirichlet(2,1)),
@@ -80,14 +80,14 @@ inits = [ Dict{Symbol, Union{Any, Real}}(
     :df_aa => my_data[:df][3],
     :df_an => my_data[:df][4],
     :df_pn => my_data[:df][5],
-    :αs => rand(5),
+    :αs => rand(2),
     :co => rand(2),
     ),
     ]
 
 scheme = [PNUTS(:mtree_ie),
           #PNUTS(:mtree_st),
-          PNUTS(:mtree_an),
+          #PNUTS(:mtree_an),
           #PNUTS(:mtree_aa),
           #PNUTS(:mtree_pn),
           #RWM(:mtree_ie, :all),
@@ -96,9 +96,9 @@ scheme = [PNUTS(:mtree_ie),
           #RWM(:mtree_aa, :all),
           #RWM(:mtree_pn, :all),
           #Slice(:mtree_ie, 1.0, Multivariate),
-          Slice(:mtree_an, 1.0, Multivariate),
+          #Slice(:mtree_an, 1.0, Multivariate),
           SliceSimplex(:mypi_ie),
-          SliceSimplex(:mypi_an),
+          #SliceSimplex(:mypi_an),
           #SliceSimplex(:mypi_st),
           #SliceSimplex(:mypi_aa),
           #SliceSimplex(:mypi_pn),
@@ -110,7 +110,7 @@ setsamplers!(model, scheme);
 
 # do the mcmc simmulation. if trees=true the trees are stored and can later be
 # flushed ot a file output.
-sim = mcmc(model, my_data, inits, 100, burnin=50,thin=5, chains=1, trees=true)
+sim = mcmc(model, my_data, inits, 5, burnin=1,thin=1, chains=1, trees=true)
 
 
 using Cthulhu
@@ -122,9 +122,11 @@ mr = discrete_gamma_rates(0.5, 0.5, 4)
 pd = PhyloDist(mt_ie,[0.5, 0.5], mr, my_data[:nbase][2], my_data[:nsites][2], my_data[:nnodes][2])
 
 #Zygote.@showgrad
-#@descend
+@descend mcmc(model, my_data, inits, 5, burnin=1,thin=1, chains=1, trees=true)
 
-gradlogpdf(pd, df_ie)
+r3, r4 = gradlogpdf(pd, df_ie)
+
+r1, r2 = gradlogpdf(pd, df_ie)
 
 blv = get_branchlength_vector(mt_ie)
 po = post_order(mt_ie)
@@ -177,3 +179,15 @@ using BenchmarkTools
 @benchmark Base.maximum(mtres, dims=1)
 
 @benchmark mapslices(maximum, mtres, dims=1)
+using LoopVectorization
+function mygemmavx!(C, A, B)
+   @avx for m ∈ axes(A,1), n ∈ axes(B,2)
+       Cmn = zero(eltype(C))
+       for k ∈ axes(A,2)
+           Cmn += A[m,k] * B[k,n]
+       end
+       C[m,n] = Cmn
+   end
+end
+
+mygemmavx!(rand(4,4), rand(4,4), rand(4,4))
