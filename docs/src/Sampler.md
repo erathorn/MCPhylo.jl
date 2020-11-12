@@ -1,5 +1,5 @@
 # Sampler
 ```@autodocs
 Modules = [MCPhylo]
-Pages   = ["Sampler/SamplerFunctions.jl", "ProbPathHMC.jl", "PNUTS.jl"]
+Pages   = ["Sampler/SamplerFunctions.jl", "PNUTS.jl", "ProbPathHMC.jl"]
 ```
