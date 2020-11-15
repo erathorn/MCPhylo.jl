@@ -252,7 +252,7 @@ function get_cluster_start_indeces(ref_tree::T, tree::T)::Dict{T, Int64} where T
         end # if / else
     end # for
     return cluster_start_indeces
-
+end
 
 """
     order_tree!(root::T, cluster_start_indeces::Dict{T, Int64}, leaves=Vector{T}())
