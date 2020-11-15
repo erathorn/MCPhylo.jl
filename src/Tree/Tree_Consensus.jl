@@ -80,7 +80,7 @@ are not compatible with the second tree are removed.
 """
 function one_way_compatible(ref_tree::T, tree::T)::T where T<:AbstractNode
     ref_tree_copy = deepcopy(ref_tree)
-    ref_nodes = post_order(ref_tree)
+    ref_nodes = post_order(ref_tree_copy)
     cluster_start_indeces = get_cluster_start_indeces(ref_nodes, tree)
     leaves::Vector{Node} = order_tree!(tree, cluster_start_indeces)
     leaf_ranks_reverse = Dict(node.name => ind for (ind, node) in enumerate(leaves))
@@ -399,7 +399,6 @@ function majority_consensus_tree(trees::Vector{T}, percentage::Float64=0.5)::T w
             count += 1
         end # if
     end # for
-    ladderize_tree!(merged_tree)
     node_counts = convert(Vector{Int64}, ones(length(nodes)))
     count_dict = Dict(zip(nodes, node_counts))
     for tree in trees[2:end]
