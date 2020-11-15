@@ -83,7 +83,6 @@ function one_way_compatible(ref_tree::T, tree::T)::T where T<:AbstractNode
     ref_nodes = post_order(ref_tree)
     cluster_start_indeces = get_cluster_start_indeces(ref_nodes, tree)
     leaves::Vector{Node} = order_tree!(tree, cluster_start_indeces)
-    set_binary!(tree)
     leaf_ranks_reverse = Dict(node.name => ind for (ind, node) in enumerate(leaves))
     xleft_dict, xright_dict = depth_dicts(leaves)
     marked_nodes = Dict{Int64, Bool}()
@@ -143,17 +142,15 @@ end # function one_way_compatible
 
 
 """
-    merge_trees(ref_tree::T, tree::T)::Tuple{T, Vector{T}} where T<:AbstractNode
+    merge_trees(ref_tree::T, tree::T)::Vector{T}} where T<:AbstractNode
 
 Merge two compatible trees, i.e. inserts all cluster of the first tree, which
 aren't already in the second tree, into the second tree
 """
-function merge_trees(ref_tree::T, tree::T)::Tuple{T, Vector{T}} where T<:AbstractNode
-    tree_copy = deepcopy(tree)
+function merge_trees(ref_tree::T, tree::T)::Vector{T} where T<:AbstractNode
     ref_nodes = post_order(ref_tree)
     cluster_start_indeces = get_cluster_start_indeces(ref_nodes, tree)
-    leaves::Vector{Node} = order_tree!(tree_copy, cluster_start_indeces)
-    set_binary!(tree_copy)
+    leaves::Vector{Node} = order_tree!(tree, cluster_start_indeces)
     leaf_ranks_reverse = Dict(node.name => ind for (ind, node) in enumerate(leaves))
     xleft_dict, xright_dict = depth_dicts(leaves)
     inserted_nodes = Vector{Node}()
@@ -199,8 +196,7 @@ function merge_trees(ref_tree::T, tree::T)::Tuple{T, Vector{T}} where T<:Abstrac
             if !(left && right)
                 index_d = findfirst(x -> x == d, r.children)
                 index_e = findfirst(x -> x == e, r.children)
-                inserted_node =
-                    insert_node!(r, r.children[index_d:index_e])
+                inserted_node = insert_node!(r, r.children[index_d:index_e])
                 push!(inserted_nodes, inserted_node)
                 # ensures correct depth
                 inserted_node.binary = string(r.binary, "z")
@@ -221,9 +217,8 @@ function merge_trees(ref_tree::T, tree::T)::Tuple{T, Vector{T}} where T<:Abstrac
             end # if
         end # if
     end # for
-    set_binary!(tree_copy)
-    number_nodes!(tree_copy)
-    return tree_copy, inserted_nodes
+    set_binary!(tree)
+    return inserted_nodes
 end # function merge_trees
 
 
@@ -246,8 +241,8 @@ function get_cluster_start_indeces(ref_nodes::Vector{T}, tree::T)::Dict{T, Int64
     cluster_start_indeces = Dict{Node, Int64}()
     for node in nodes
         if node.nchild != 0
-            cluster_start_indeces[node] = minimum(cluster_start_indeces[n] for n in node.children)
-            # cluster_start_indeces[node.children[1]]
+            # cluster_start_indeces[node] = minimum(cluster_start_indeces[n] for n in node.children)
+            cluster_start_indeces[node] = cluster_start_indeces[node.children[1]]
         else
             cluster_start_indeces[node] = leaves_dict[node.name]
         end # if / else
@@ -272,6 +267,7 @@ function order_tree!(root::T, cluster_start_indeces::Dict{T, Int64}, leaves=Vect
         end # if/else
     end # for
     return leaves
+    set_binary!(root)
 end # function order_tree!
 
 
@@ -388,14 +384,14 @@ includes cluster that occur in over 50% of the trees.
 """
 function majority_consensus_tree(trees::Vector{T}, percentage::Float64=0.5)::T where T<:AbstractNode
     merged_tree = deepcopy(trees[1])
-    leaveset = Set([n.name for n in get_leaves(first_tree)])
+    leaveset = Set([n.name for n in get_leaves(merged_tree)])
     for tree in trees[2:end]
         leaveset2 = Set([n.name for n in get_leaves(tree)])
         leaveset != leaveset2 && throw(ArgumentError("The trees do not have the same set of leaves"))
     end
-    nodes = post_order(first_tree)
+    nodes = post_order(merged_tree)
     leaf_ranks = Dict{String, Int64}()
-    count = 0
+    count = 1
     # save leaf ranks to order the resulting tree in the end
     for node in nodes
         if node.nchild == 0
@@ -403,29 +399,27 @@ function majority_consensus_tree(trees::Vector{T}, percentage::Float64=0.5)::T w
             count += 1
         end # if
     end # for
-    ladderize_tree!(first_tree)
+    ladderize_tree!(merged_tree)
     node_counts = convert(Vector{Int64}, ones(length(nodes)))
     count_dict = Dict(zip(nodes, node_counts))
     for tree in trees[2:end]
         nodes = level_order(merged_tree)
         is_common_cluster = find_common_clusters(tree, merged_tree)
         for node in nodes
-            # increment count of clusters of the first tree that are in the other tree
+            # increment count of clusters of the merged_tree that are in the other tree
             if is_common_cluster[node.num][1] == true
                 count_dict[node] += 1
             # delete clusters which are not
             else
                 count_dict[node] -= 1
                 if count_dict[node] == 0
-                    # delete_node!(first_tree, node)
                     delete_node!(node)
                 end # if
             end # else
         end # for
         set_binary!(merged_tree)
-        number_nodes!(merged_tree)
         compatible_tree = one_way_compatible(tree, merged_tree)
-        merged_tree, inserted_nodes = merge_trees(compatible_tree, merged_tree)
+        inserted_nodes = merge_trees(compatible_tree, merged_tree)
         # intialize counts for the new nodes
         for node in inserted_nodes
             count_dict[node] = 1
@@ -474,30 +468,27 @@ function majority_consensus_tree(trees::Vector{T}, percentage::Float64=0.5)::T w
     end # for
     order_tree!(merged_tree, cluster_start_indeces)
     # """
-
-    set_binary!(merged_tree)
     return merged_tree
 end
 
 
 """
-    loose_consensus_tree(trees::Vector{T}, percentage::Float64=0.5)::T where T<:AbstractNode
+    loose_consensus_tree(trees::Vector{T})::T where T<:AbstractNode
 
 Construct the loose consensus tree from a set of trees. I.e. the clusters appear in at least one
 tree and are compatible with all trees.
 """
-function loose_consensus_tree(trees::Vector{T}, percentage::Float64=0.5)::T where T<:AbstractNode
-    # tree_copies = deepcopy(trees)
-    r_tree = trees[1]
+function loose_consensus_tree(trees::Vector{T})::T where T<:AbstractNode
+    trees_copy = deepcopy(trees)
+    r_tree = trees_copy[1]
     leaveset = Set([n.name for n in get_leaves(r_tree)])
-    for tree in trees[2:end]
+    for tree in trees_copy[2:end]
         leaveset2 = Set([n.name for n in get_leaves(tree)])
         leaveset != leaveset2 && throw(ArgumentError("The trees do not have the same set of leaves"))
     end
-
-    nodes = post_order(trees[1])
+    nodes = post_order(r_tree)
     leaf_ranks = Dict{String, Int64}()
-    count = 0
+    count = 1
     # save leaf ranks to order the resulting tree in the end
     for node in nodes
         if node.nchild == 0
@@ -505,11 +496,11 @@ function loose_consensus_tree(trees::Vector{T}, percentage::Float64=0.5)::T wher
             count += 1
         end # if
     end # for
-    for i in 2:length(trees)
-        compatible_tree = one_way_compatible(r_tree, trees[i])
-        r_tree = merge_trees(compatible_tree, tree_copies[i])[1]
+    for i in 2:length(trees_copy)
+        compatible_tree = one_way_compatible(r_tree, trees_copy[i])
+        r_tree = merge_trees(compatible_tree, trees_copy[i])[1]
     end
-    for tree in trees
+    for tree in trees_copy
         r_tree = one_way_compatible(r_tree, tree)
     end
     nodes = post_order(r_tree)
@@ -522,6 +513,5 @@ function loose_consensus_tree(trees::Vector{T}, percentage::Float64=0.5)::T wher
         end # if/else
     end # for
     order_tree!(r_tree, cluster_start_indeces)
-    set_binary!(r_tree)
     return r_tree
 end
