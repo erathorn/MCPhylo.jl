@@ -80,7 +80,8 @@ are not compatible with the second tree are removed.
 """
 function one_way_compatible(ref_tree::T, tree::T)::T where T<:AbstractNode
     ref_tree_copy = deepcopy(ref_tree)
-    cluster_start_indeces = get_cluster_start_indeces(ref_tree_copy, tree)
+    ref_nodes = post_order(ref_tree)
+    cluster_start_indeces = get_cluster_start_indeces(ref_nodes, tree)
     leaves::Vector{Node} = order_tree!(tree, cluster_start_indeces)
     set_binary!(tree)
     leaf_ranks_reverse = Dict(node.name => ind for (ind, node) in enumerate(leaves))
@@ -149,7 +150,8 @@ aren't already in the second tree, into the second tree
 """
 function merge_trees(ref_tree::T, tree::T)::Tuple{T, Vector{T}} where T<:AbstractNode
     tree_copy = deepcopy(tree)
-    cluster_start_indeces = get_cluster_start_indeces(ref_tree, tree_copy)
+    ref_nodes = post_order(ref_tree)
+    cluster_start_indeces = get_cluster_start_indeces(ref_nodes, tree)
     leaves::Vector{Node} = order_tree!(tree_copy, cluster_start_indeces)
     set_binary!(tree_copy)
     leaf_ranks_reverse = Dict(node.name => ind for (ind, node) in enumerate(leaves))
@@ -231,8 +233,7 @@ end # function merge_trees
 Helper function to obtain the cluster_start_indeces for the second tree, based
 on the first tree.
 """
-function get_cluster_start_indeces(ref_tree::T, tree::T)::Dict{T, Int64} where T<:AbstractNode
-    ref_nodes = post_order(ref_tree)
+function get_cluster_start_indeces(ref_nodes::Vector{T}, tree::T)::Dict{T, Int64} where T<:AbstractNode
     leaves_dict = Dict{String, Int64}()
     count = 1
     for ref_node in ref_nodes
