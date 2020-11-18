@@ -44,35 +44,112 @@ function create_weighted_graph(x)
     return x
 end
 
-
-"""
-To set the value of y for each vertex in the graph, convert
-the SimpleGraph (ng) to a MetaGraph (mg).
-Use set_prop! to set a property for a vertex or edge;
-set_yvals! does t[his for the whole graph.
-"""
-
-function set_yvals!(g::MetaGraph, Y::Vector) # or: rewrite to take df as input
-    for (i, y) in enumerate(Y)
-        set_prop!(g, i, :y, y)
-    end
-    return g
-end
-
 """
 The functions below find neighbouring pairs for vertex v
-that are concordant for trait y.
+that are concordant for trait x.
 """
 
-function concordant_sum(X::Array{Int64,1}, y::Symbol, g::MetaGraph, v::Int64)
+function concordant_sum(X::Array{Int64,1}, g::MetaGraph, v::Int64)
     concordant_sum = 0
     for n in neighbors(g, v)
 #        if has_prop(mg, :x, v) - build this in to throw an error if prop not defined for g, v
-        if get_prop(g, n, :y) == get_prop(g, v, :y)
+        if get_prop(g, n, :x) == get_prop(g, v, :x)
             concordant_pairs += 1 # or another way to measure the pairs?
         end
     end
     return concordant_sum
 end
 
-# Example
+"""
+nmat_sum takes args:
+- x: vector of data (feature values),
+- nmat: either linguistic or spatial adjacency matrix,
+- k: feature value of interest, and
+- l: language (data point) of interest.
+
+NB: it throws a BoundsError when I try to iterate through x in the sampler,
+probably an issue with the way I index x[i], but I don't have
+a good solution (except using graphs, which are easier to work with
+due to the neighbor() function).
+"""
+
+function nmat_sum(x::Array{Int64,1}, nmat::Array{Int64,2}, k::Int64, l::Int64)
+	concordant_pairs = 0.0
+	neighbour_indices = findall(x -> x != 0, nmat[l,:])
+    for i in neighbour_indices
+        if x[i] == k
+			concordant_pairs += 1
+		end
+    end
+    return concordant_pairs
+end
+
+"""
+set_k_vals! sets the feature values for the MetaGraph. Args:
+- the dictionary of data (symbols to feature value arrays);
+- the MetaGraph.
+"""
+
+function set_k_vals!(data::Dict, g::MetaGraph)
+	nfeatures = length(data)
+	for key in keys(data)
+		feature_vals = data[key]
+    	for (v, x) in enumerate(feature_vals)
+        	set_prop!(g, v, key, x)
+		end
+    end
+    return g
+end
+
+
+function create_neighbour_graph(nmat::Array{Int64,2}, X::Array{Any,2})
+	g = MetaGraph(nmat)
+	set_k_vals!(g, X)
+	return g
+end
+
+"""
+concordant neighbour sum: the sum of all neighbours of l that share feature k
+(when l also has feature k).
+- X: data vector,
+- g: spatial or linguistic graph,
+- l: the  language (vertex in the graph),
+- k: the feature value (e.g. SOV, SVO...)
+- sym: the feature value name as a symbol, e.g. Symbol("81A")
+
+neighbour k sum: the sum of all neighbours of l that have feature k
+(when v doesn't necessarily have feature k). Same args as above.
+"""
+
+function concordant_neighbour_sum(X::Array{Int64,1}, g::MetaGraph, l::Int64, k::Int64, sym::Symbol)
+	k_pairs = 0.0
+	concordant_pairs = []
+	for n in neighbors(g, v)
+        if get_prop(g, n, sym) == get_prop(g, v, sym)
+			pair = (n, v)
+			push!(concordant_pairs, pair)
+		end
+	end
+	for (p1, p2) in concordant_pairs
+		if get_prop(g, p1, sym) == k
+			k_pairs += 1
+		end
+		if get_prop(g, p2, sym) == k
+			k_pairs += 1
+		end
+	end
+	return k_pairs
+end
+
+function neighbour_k_sum(X::Array{Union{Int64,Missing},1}, g::MetaGraph, l::Int64, k::Int64, sym::Symbol)
+	sum = 0.0
+	for n in neighbors(g, l)
+		val = get_prop(g, n, sym)
+		if ismissing(val)
+			continue
+		elseif val == k
+			sum += 1
+		end
+	end
+	return sum
+end

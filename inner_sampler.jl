@@ -1,159 +1,49 @@
 using LightGraphs, MetaGraphs, Random
 using LinearAlgebra, Distributions, StatsBase
 
-
-"""
-Including the two files below loads sorted data and functions for
-creating neighbourhood matrices, to enable you to test the code
-on some data (in this case, the word order).
-"""
-
-include("linguistic_features.jl")
+include("wals_features.jl")
 include("neighbour_graphs.jl")
 
-wo_nmat = create_nmat(wo_dmat, 500)
-nusy_nmat = create_nmat(wo_dmat, 500)
+lmat = create_linguistic_nmat(langs)
+nmat = create_nmat(sample_dmat, 1000)
+nmat = Int64.(nmat)
 
+ngraph = MetaGraph(nmat)
+lgraph = MetaGraph(lmat)
+set_k_vals!(datadict, ngraph)
+set_k_vals!(datadict, lgraph)
 
-overall_nmat = zeros(1,1296,1296)
-overall_nmat[1, :, : ] .= wo_nmat
-#overall_nmat[2, :, : ] .= nusy_nmat
-wo_nmat .== overall_nmat[1, :, :]
-
-
-
-wo_nmat = Int64.(wo_nmat)
-wo_lmat = create_linguistic_nmat(wo_data)
-
-"""
-neighbour_sum takes args:
-- x: vector of data (feature values),
-- nmat: either linguistic or spatial adjacency matrix,
-- k: feature value of interest, and
-- l: language (data point) of interest.
-
-NB: it throws a BoundsError when I try to iterate through x in the sampler,
-probably an issue with the way I index x[i], but I don't have
-a good solution (except using graphs, which are easier to work with
-due to the neighbor() function).
-"""
-
-function neighbour_sum(x::Array{Int64,1}, nmat::Array{Int64,2}, k::Int64, l::Int64)
-	concordant_pairs = 0.0
-	neighbour_indices = findall(x -> x != 0, nmat[l,:])
-    for i in neighbour_indices
-        if x[i] == k
-			concordant_pairs += 1
-		end
-    end
-    return concordant_pairs
-end
-
-"""
-The functions below make use of graphs instead of matrices.
-This will enable us to more easily implement weighted graphs
-in the future.
-"""
-
-function set_xvals!(g::MetaGraph, X::Array{Int64,1})
-    for (i, x) in enumerate(X)
-        set_prop!(g, i, :x, x)
-    end
-    return g
-end
-
-function create_neighbour_graph(nmat::Array{Int64,2}, X::Array{Int64,1})
-	g = MetaGraph(nmat)
-	set_xvals!(g, X)
-	return g
-end
-
-wo_ngraph = create_neighbour_graph(wo_nmat, wo_values)
-wo_lgraph = create_neighbour_graph(wo_lmat, wo_values)
-
-"""
-concordant neighbour sum: the sum of all neighbours of l that share feature k
-(when l also has feature k).
-- X: data vector,
-- g: spatial or linguistic graph,
-- l: the  language (vertex in the graph),
-- k: the feature value (e.g. SOV, SVO...)
-
-neighbour k sum: the sum of all neighbours of l that have feature k
-(when v doesn't necessarily have feature k). Same args as above.
-
-Uncertainty about whether we should calculate only the concordant sums,
-or the overall k sums.
-"""
-
-function concordant_neighbour_sum(X::Array{Int64,1}, g::MetaGraph, l::Int64, k::Int64)
-	k_pairs = 0.0
-	concordant_pairs = []
-	for n in neighbors(g, v)
-        if get_prop(g, n, :x) == get_prop(g, v, :x)
-			pair = (n, v)
-			push!(concordant_pairs, pair)
-		end
-	end
-	for (p1, p2) in concordant_pairs
-		if get_prop(g, p1, :x) == k
-			k_pairs += 1
-		end
-		if get_prop(g, p2, :x) == k
-			k_pairs += 1
-		end
-	end
-	return k_pairs
-end
-
-function neighbour_k_sum(X::Array{Int64,1}, g::MetaGraph, l::Int64, k::Int64)
-	sum = 0.0
-	for n in neighbors(g, l)
-		if get_prop(g, l, :x) == k
-			sum += 1
-		end
-	end
-	return sum
-end
-
-r = range(0.0001, 0.05, length=100) # some range
-dummy_v = rand(r, length(wo_values)) # dummy parameters
-dummy_h = rand(r, length(wo_values))
-dummy_u = rand(r, length(wo_values))
+# to retrieve the value for language 1, feature k:
+get_prop(ngraph, 5, Symbol("81A"))
 
 """
 function for retrieving all the neighbour sums for x's and k's and
 returning them as an array of (nlanguages, nfeatures) such that
 the sums array[i,k] returns the sum for the ith language and the
-kth feature.
+kth feature. (The names of the features should still be passed
+as a vector of strings).
 """
 
-function get_neighbour_sums(X::Array{Int64,1}, g::MetaGraph)
-	feature_vals = unique(X)
-	N = length(X)
-	K = length(feature_vals)
-	sums = Array{Float64,2}(undef, N, K)
-	for (i, x) in enumerate(X)
-		for k in feature_vals
-			sums[i,k] = neighbour_k_sum(X, g, i, k)
+function n_sum_all(X::Array{Union{Missing,Int64},2}, g::MetaGraph, features::Vector{String})
+	nvals = maximum(skipmissing(X)) # problem: might get number of features if nfeatures > max value
+	nfeatures, nlang = size(X)
+	sums = Array{Float64,3}(undef, nfeatures, nlang, nvals)
+	for feature_idx in 1:nfeatures
+		sym = Symbol(features[feature_idx])
+		ith_feature = X[feature_idx,:]
+		max_val = maximum(ith_feature)
+		for (i, x) in enumerate(ith_feature)
+			for k in 1:nvals
+				sums[feature_idx, i, k] = neighbour_k_sum(X[feature_idx,:], g, i, k, sym)
+			end
 		end
 	end
 	return sums
 end
 
-function get_neighbour_sum_ov(X::Array{Int64,2},g::MetaGraph)
-	third_dim = maximum(X)
-	N,M = size(X)
-	ov_array::Array{Float64,3} = Array{Float64,3}(undef,N,M, third_dim)
-	ov_array .= -10
-	for i in 1:N
-		n_sums = get_neighbour_sums(X[i,:], g)
-		max_val = maximum(X[i,:])
-		ov_array[i, :, 1:max_val] .= n_sums
-	end
-	ov_array
-end
-
+spatial_sums = n_sum_all(data_array, ngraph, feature_list)
+linguistic_sums = n_sum_all(data_array, lgraph, feature_list)
+#sums[feature,language,value]
 
 """
 size(wo_co_sum) => 1296, 7
@@ -163,30 +53,37 @@ ov_con_sum -> 3d array with #feauters x #languages x #(max(feature_vals))+1
 [2, 3, :end] => 4
 
 """
-
-
 # To do
 function weighted_neighbour_sums(x::Array{Int64,1}, ling_graph::MetaGraph,
 	spatial_graph::MetaGraph)
 	return x
 end
 
-spatial_sums = get_neighbour_sums(wo_values, wo_ngraph)
-linguistic_sums = get_neighbour_sums(wo_values, wo_lgraph)
-
 """
-cond_prob takes the neighbour sums calculated above; in the sampler,
-we will loop through it and normalise the probabilities.
+cond_sum takes the neighbour sums calculated above; in the sampler,
+we will loop through the array and normalise the probabilities.
+Args:
+- the data array X
+- the language index l
+- the feature index f
+- the spatial sums
+- the linguistic sums
+- the simulated parameters v, h, u
 """
 
-function cond_prob(X::Array{Int64,1}, l::Int64, k::Int64, spatial_sums::Array{Float64,2},
-	ling_sums::Array{Float64,2}, v_params, h_params, u_params)
-	p = v_params[l] * spatial_sums[l,k] + h_params[l] * ling_sums[l,k] + u_params[l]
-    return exp(p)
+function cond_sum(X::Array{Union{Missing,Int64},2}, l::Int64, f::Int64, spatial_sums::Array{Float64,3},
+	ling_sums::Array{Float64,3}, v_params, h_params, u_params)
+	nvals = maximum(skipmissing(X[f,:]))
+	prob_kth_val = Vector{Float64}()
+	for k in 1:nvals
+		p = v_params[l] * spatial_sums[f,l,k] + h_params[l] * ling_sums[f,l,k] + u_params[l]
+		push!(prob_kth_val, p)
+	end
+	return exp.(prob_kth_val)
 end
 
 """
-Inner sampler for double MH - args:
+Inner sampler for DMH - args:
 	- X: the data vector,
 	- v_params: array of generated parameters v',
 	- h_params: array of generated parameters h',
@@ -195,31 +92,39 @@ Inner sampler for double MH - args:
 	- m: the number of update steps.
 """
 
-function inner_sampler(X::Array{Int64,1}, v_params, h_params,
-	u_params, spatial_sums::Array{Float64,2}, ling_sums::Array{Float64,2}, m::Int64)
-	feature_vals = sort!(unique(X))
-	N = length(X)
-	@assert m >= N
+r = range(0.0001, 0.05, length=100) # some range
+dummy_v = rand(r, length(1:183)) # dummy parameters
+dummy_h = rand(r, length(1:183))
+dummy_u = rand(r, length(1:183))
+
+function inner_sampler(X::Array{Union{Missing,Int64},2}, v_params, h_params,
+	u_params, spatial_sums::Array{Float64,3}, ling_sums::Array{Float64,3}, m::Int64)
+	nfeatures, nlang = size(X)
+	@assert m >= nlang
 	samples = deepcopy(X)
-	idx_list = Vector(1:N)
 	counter = 0
 	while true
-		random_index_order = shuffle(1:N)
-		for i in random_index_order
-			if ismissing(X[i]) # no missing values yet, and this part needs improvement;
-				# To do: add the neighbour and global majority methods
-				throw("We should not end up here")
-				missing_probs = cond_prob.(Ref(samples), i, feature_vals, Ref(spatial_sums),
+		random_language_idx = shuffle(1:nlang)
+		random_feature_idx = shuffle(1:nfeatures)
+		for i in random_language_idx
+			for f in random_feature_idx
+				@show f
+				feature_vals = sort!(unique(skipmissing(X[f,:])))
+				@show feature_vals
+				if ismissing(X[i])
+					missing_probs = cond_sum.(Ref(samples), i, f, Ref(spatial_sums),
 					Ref(ling_sums), Ref(v_params), Ref(h_params), Ref(u_params))
-				missing_probs ./= sum(missing_probs)
-				new_x = sample(feature_vals, StatsBase.weights(missing_probs))
-				samples[i] = new_x
-			end
-				probs = cond_prob.(Ref(samples), i, feature_vals, Ref(spatial_sums), Ref(ling_sums),
-					Ref(v_params), Ref(h_params), Ref(u_params))
-				probs ./= sum(probs)
-				new_x = sample(feature_vals, StatsBase.weights(probs))
-				samples[i] = new_x
+					missing_probs ./= sum(missing_probs)
+					new_x = sample(feature_vals, StatsBase.weights(missing_probs))
+					samples[f, i] = new_x
+				end
+					probs = cond_sum.(Ref(samples), i, f, Ref(spatial_sums), Ref(ling_sums),
+						Ref(v_params), Ref(h_params), Ref(u_params))
+					probs ./= sum(probs)
+					@show probs
+					new_x = sample(feature_vals, StatsBase.weights(probs))
+					samples[f, i] = new_x
+				end
 			end
 			counter += 1
 			if counter > m
@@ -231,4 +136,4 @@ end
 
 
 # TEST
-inner_sampler(wo_values, dummy_v, dummy_h, dummy_u, spatial_sums, linguistic_sums, 1296)
+inner_sampler(data_array, dummy_v, dummy_h, dummy_u, spatial_sums, linguistic_sums, 183)
