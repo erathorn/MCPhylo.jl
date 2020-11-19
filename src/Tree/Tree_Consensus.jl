@@ -168,8 +168,8 @@ function merge_trees(ref_tree::T, tree::T)::Vector{T} where T<:AbstractNode
             if intersect(values(left_path), values(right_path)) == []
                 continue
             end
-            !xleft.root && delete!(left_path, (node_depth(xleft.mother))
-            !xright.root && delete!(right_path, (node_depth(xright.mother))
+            !xleft.root && delete!(left_path, node_depth(xleft.mother))
+            !xright.root && delete!(right_path, node_depth(xright.mother))
             depth_left = node_depth(xleft)
             depth_right = node_depth(xright)
             depth = depth_left >= depth_right
