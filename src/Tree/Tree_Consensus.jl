@@ -94,7 +94,6 @@ function one_way_compatible(ref_tree::T, tree::T)::T where T<:AbstractNode
             stop_node = leaves[stop]
             xleft, left_path = xleft_dict[start_node]
             xright, right_path = xright_dict[stop_node]
-
             if intersect(values(left_path), values(right_path)) == []
                 marked_nodes[ref_node.num] = true
                 continue
@@ -123,7 +122,7 @@ function one_way_compatible(ref_tree::T, tree::T)::T where T<:AbstractNode
                 marked_nodes[ref_node.num] = true
                 continue
             end # if/else
-            if node_depth(d.mother) <= node_depth(r) && node_depth(e.mother) <= node_depth(r)
+            if (node_depth(d.mother) <= node_depth(r)) && (node_depth(e.mother) <= node_depth(r))
                 marked_nodes[ref_node.num] = false
             else
                 marked_nodes[ref_node.num] = true
@@ -193,7 +192,7 @@ function merge_trees(ref_tree::T, tree::T)::Vector{T} where T<:AbstractNode
                 continue
             end # if/else
             if !(node_depth(d.mother) <= node_depth(r) && node_depth(e.mother) <= node_depth(r))
-               continue
+                continue
             end
             left = d == r.children[1]
             right = e == r.children[end]
@@ -207,7 +206,7 @@ function merge_trees(ref_tree::T, tree::T)::Vector{T} where T<:AbstractNode
                 # give unique number to avoid false positive "==" statements
                 inserted_node.num = count
                 count -= 1
-                inserted_depth = (node_depth(inserted_node))
+                inserted_depth = node_depth(inserted_node)
                 if !left
                     left_path[inserted_depth] = inserted_node
                     right_path[inserted_depth] = inserted_node
