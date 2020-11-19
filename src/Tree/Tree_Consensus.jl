@@ -188,9 +188,14 @@ function merge_trees(ref_tree::T, tree::T)::Vector{T} where T<:AbstractNode
                 r = p1.mother
                 depth ? d = p1 : d = p2
                 depth ? e = p2 : e = p1
+
             else
                 continue
             end # if/else
+            if !(length(split(d.mother.binary, ",")) <= length(split(r.binary, ",")) &&
+                 length(split(e.mother.binary, ",")) <= length(split(r.binary, ",")))
+               continue
+            end
             left = d == r.children[1]
             right = e == r.children[end]
             if !(left && right)
@@ -364,6 +369,7 @@ function x_right(node::T)::Tuple{T, Vector{T}} where T<:AbstractNode
     end # while
 end # function x_right
 
+
 function depth_dicts(leaves::Vector{Node})
     xleft_dict = Dict{Node, Tuple{Node, Dict{Int64,Node}}}()
     xright_dict = Dict{Node, Tuple{Node, Dict{Int64, Node}}}()
@@ -375,6 +381,8 @@ function depth_dicts(leaves::Vector{Node})
     end
     return xleft_dict, xright_dict
 end
+
+
 
 """
     majority_consensus_tree(trees::Vector{T}, percentage::Float64=0.5)::T where T<:AbstractNode
