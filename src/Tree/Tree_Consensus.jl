@@ -374,9 +374,9 @@ function depth_dicts(leaves::Vector{Node})
     xright_dict = Dict{Node, Tuple{Node, Dict{Int64, Node}}}()
     for leaf in leaves
         x, path = x_left(leaf)
-        xleft_dict[leaf] = (x, Dict(node_depth(node)) => node for node in path))
+        xleft_dict[leaf] = (x, Dict(node_depth(node)) => node for node in path)
         x, path = x_right(leaf)
-        xright_dict[leaf] = (x, Dict(node_depth(node)) => node for node in path))
+        xright_dict[leaf] = (x, Dict(node_depth(node)) => node for node in path)
     end
     return xleft_dict, xright_dict
 end
