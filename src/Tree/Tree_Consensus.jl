@@ -37,7 +37,7 @@ function find_common_clusters(ref_tree::T, tree::T)::Dict{Int64, Tuple{Bool, Uni
     end # for
     clusters_reverse = Dict(value => key.inc_length for (key, value) in clusters)
     is_common_cluster = Dict{Int64, Tuple{Bool, Union{Float64, Missing}}}()
-    clusters = Dict{Int64, Vector{String}}()
+    clusters = Dict{Node, Vector{String}}()
     leaf_count = 0
     nodes = post_order(tree)
     for node in nodes
@@ -52,9 +52,9 @@ function find_common_clusters(ref_tree::T, tree::T)::Dict{Int64, Tuple{Bool, Uni
         else
             cluster = Vector{String}()
             for child in node.children
-                child.nchild == 0 ? push!(cluster, child.name) : append!(cluster, clusters[child.num])
+                child.nchild == 0 ? push!(cluster, child.name) : append!(cluster, clusters[child])
             end # for
-            clusters[node.num] = cluster
+            clusters[node] = cluster
             cluster_indeces = [leaves_dict[leaf][1] for leaf in cluster]
             if length(cluster) != maximum(cluster_indeces) - minimum(cluster_indeces) + 1
                 is_common_cluster[node.num] = (false, missing)
@@ -240,18 +240,25 @@ function get_cluster_start_indeces(ref_nodes::Vector{T}, tree::T)::Dict{T, Int64
             count += 1
         end # if
     end # for
-    nodes = post_order(tree)
+    leaves = Vector{Node}()
     cluster_start_indeces = Dict{Node, Int64}()
+    nodes = post_order(tree)
     for node in nodes
         if node.nchild != 0
-            # cluster_start_indeces[node] = minimum(cluster_start_indeces[n] for n in node.children)
-            cluster_start_indeces[node] = cluster_start_indeces[node.children[1]]
+            for leaf in leaves
+                if node_depth(node) <= node_depth(leaf) && node.binary == leaf.binary[1:length(node.binary)]
+                    cluster_start_indeces[node] = leaves_dict[leaf.name]
+                    break
+                end # if
+            end # for
         else
             cluster_start_indeces[node] = leaves_dict[node.name]
+            push!(leaves, node)
         end # if / else
     end # for
     return cluster_start_indeces
 end
+
 
 """
     order_tree!(root::T, cluster_start_indeces::Dict{T, Int64}, leaves=Vector{T}())
