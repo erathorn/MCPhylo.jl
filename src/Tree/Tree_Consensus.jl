@@ -496,8 +496,8 @@ function loose_consensus_tree(trees::Vector{T})::T where T<:AbstractNode
         end # if
     end # for
     for i in 2:length(trees_copy)
-        compatible_tree = one_way_compatible(r_tree, trees_copy[i])
-        r_tree = merge_trees(compatible_tree, trees_copy[i])[1]
+        compatible_tree = one_way_compatible(trees_copy[i-1], trees_copy[i])
+        merge_trees(compatible_tree, trees_copy[i])
     end
     for tree in trees_copy
         r_tree = one_way_compatible(r_tree, tree)
