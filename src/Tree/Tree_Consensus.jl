@@ -123,7 +123,7 @@ function one_way_compatible(ref_tree::T, tree::T)::T where T<:AbstractNode
                 marked_nodes[ref_node.num] = true
                 continue
             end # if/else
-            if length(d.mother.binary) <= length(r.binary) && length(e.mother.binary) <= length(r.binary)
+            if length(split(d.mother.binary,",")) <= length(split(r.binary, ",")) && length(split(e.mother.binary,",")) <= length(split(r.binary, ","))
                 marked_nodes[ref_node.num] = false
             else
                 marked_nodes[ref_node.num] = true
@@ -199,11 +199,11 @@ function merge_trees(ref_tree::T, tree::T)::Vector{T} where T<:AbstractNode
                 inserted_node = insert_node!(r, r.children[index_d:index_e])
                 push!(inserted_nodes, inserted_node)
                 # ensures correct depth
-                inserted_node.binary = string(r.binary, "z")
+                inserted_node.binary = string(r.binary, ",z")
                 # give unique number to avoid false positive "==" statements
                 inserted_node.num = count
                 count -= 1
-                inserted_depth = length(inserted_node.binary)
+                inserted_depth = length(split(inserted_node.binary, ","))
                 if !left
                     left_path[inserted_depth] = inserted_node
                     right_path[inserted_depth] = inserted_node
