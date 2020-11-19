@@ -99,10 +99,10 @@ function one_way_compatible(ref_tree::T, tree::T)::T where T<:AbstractNode
                 marked_nodes[ref_node.num] = true
                 continue
             end
-            !xleft.root && delete!(left_path, length(split(xleft.mother.binary,",")))
-            !xright.root && delete!(right_path, length(split(xright.mother.binary,",")))
-            depth_left = length(split(xleft.binary,","))
-            depth_right = length(split(xright.binary, ","))
+            !xleft.root && delete!(left_path, node_depth(xleft.mother))
+            !xright.root && delete!(right_path, node_depth(xright.mother))
+            depth_left = node_depth(xleft)
+            depth_right = node_depth(xright)
             depth = depth_left >= depth_right
             depth ? p2 = right_path[depth_left] : p2 = left_path[depth_right]
             depth ? p1 = xleft : p1 = xright
@@ -123,7 +123,7 @@ function one_way_compatible(ref_tree::T, tree::T)::T where T<:AbstractNode
                 marked_nodes[ref_node.num] = true
                 continue
             end # if/else
-            if length(split(d.mother.binary,",")) <= length(split(r.binary, ",")) && length(split(e.mother.binary,",")) <= length(split(r.binary, ","))
+            if node_depth(d.mother) <= node_depth(r) && node_depth(e.mother) <= node_depth(r)
                 marked_nodes[ref_node.num] = false
             else
                 marked_nodes[ref_node.num] = true
@@ -168,10 +168,10 @@ function merge_trees(ref_tree::T, tree::T)::Vector{T} where T<:AbstractNode
             if intersect(values(left_path), values(right_path)) == []
                 continue
             end
-            !xleft.root && delete!(left_path, length(split(xleft.mother.binary, ",")))
-            !xright.root && delete!(right_path, length(split(xright.mother.binary,",")))
-            depth_left = length(split(xleft.binary, ","))
-            depth_right = length(split(xright.binary, ","))
+            !xleft.root && delete!(left_path, (node_depth(xleft.mother))
+            !xright.root && delete!(right_path, (node_depth(xright.mother))
+            depth_left = node_depth(xleft)
+            depth_right = node_depth(xright)
             depth = depth_left >= depth_right
             depth ? p2 = right_path[depth_left] : p2 = left_path[depth_right]
             depth ? p1 = xleft : p1 = xright
@@ -192,8 +192,7 @@ function merge_trees(ref_tree::T, tree::T)::Vector{T} where T<:AbstractNode
             else
                 continue
             end # if/else
-            if !(length(split(d.mother.binary, ",")) <= length(split(r.binary, ",")) &&
-                 length(split(e.mother.binary, ",")) <= length(split(r.binary, ",")))
+            if !(node_depth(d.mother) <= node_depth(r) && node_depth(e.mother) <= node_depth(r))
                continue
             end
             left = d == r.children[1]
@@ -208,7 +207,7 @@ function merge_trees(ref_tree::T, tree::T)::Vector{T} where T<:AbstractNode
                 # give unique number to avoid false positive "==" statements
                 inserted_node.num = count
                 count -= 1
-                inserted_depth = length(split(inserted_node.binary, ","))
+                inserted_depth = (node_depth(inserted_node))
                 if !left
                     left_path[inserted_depth] = inserted_node
                     right_path[inserted_depth] = inserted_node
@@ -375,14 +374,16 @@ function depth_dicts(leaves::Vector{Node})
     xright_dict = Dict{Node, Tuple{Node, Dict{Int64, Node}}}()
     for leaf in leaves
         x, path = x_left(leaf)
-        xleft_dict[leaf] = (x, Dict(length(split(node.binary, ",")) => node for node in path))
+        xleft_dict[leaf] = (x, Dict(node_depth(node)) => node for node in path))
         x, path = x_right(leaf)
-        xright_dict[leaf] = (x, Dict(length(split(node.binary, ",")) => node for node in path))
+        xright_dict[leaf] = (x, Dict(node_depth(node)) => node for node in path))
     end
     return xleft_dict, xright_dict
 end
 
-
+function node_depth(node::T)::Int64 where T<:AbstractNode
+    return length(split(node.binary, ","))
+end
 
 """
     majority_consensus_tree(trees::Vector{T}, percentage::Float64=0.5)::T where T<:AbstractNode
