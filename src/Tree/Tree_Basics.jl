@@ -30,7 +30,8 @@ end # function add_child
     remove_child!(mother_node::Node, left::Bool)::Node
 
 This function removes a child from the list of nodes which are daughters of this
-node. The removed node is returned.
+node. The removed node is returned. An input of "True" removes the left child,
+while "False" removes the right child.
 """
 function remove_child!(mother_node::N, left::Bool)::N where N<:GeneralNode
     if left
@@ -645,7 +646,7 @@ end
 """
     check_binary(root::Node)::Bool
 
-Checks to see if given tree is binary; returns true if properly formatted and false otherwise
+checks to see if given tree is binary; returns true if properly formatted and false otherwise
 """
 function check_binary(root::Node)::Bool
     if root.root
