@@ -1,4 +1,15 @@
 
+"""
+    to_file(model::ModelChains, outpath::AbstractString)
+
+This function writes the results of the MCMC runs into files. The destination of
+the files is specified using `outpath`. It will create a files for each chain. A
+`params_x.log` file storing each parameter sample. In this case `x` specifies the
+index of the chain. The file is compatible with MCMC analysis tools like `Tracer`
+(http://tree.bio.ed.ac.uk/software/tracer/). If in addition trees are sampled,
+they are stored in newick format in a file called `trees_x.nwk`, where `x` again
+specifies the index of the respective chain.
+"""
 function to_file(model::ModelChains, outpath::AbstractString)
 
     for run in 1:size(model.value,3)

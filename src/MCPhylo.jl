@@ -328,9 +328,6 @@ include("Parser/ParseNewick.jl")
 include("Sampler/PNUTS.jl")
 include("Sampler/EmpiricalMove.jl")
 
-include("Substitution/SubstitutionMat.jl")
-
-include("Utils/SIMD_Mat.jl")
 include("Utils/FileIO.jl")
 
 include("Likelihood/LikelihoodCalculator_Node.jl")
