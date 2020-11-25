@@ -11,8 +11,3 @@ Pages   = ["utils.jl"]
 Modules = [MCPhylo]
 Pages   = ["Utils/FileIO.jl"]
 ```
-## SIMD_Mat.jl
-```@autodocs
-Modules = [MCPhylo]
-Pages   = ["SIMD_Mat.jl"]
-```

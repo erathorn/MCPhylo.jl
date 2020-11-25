@@ -25,5 +25,5 @@ All functions provided by the MCPhylo package are detailed below, organized acco
     these can be multi-line
 
 ```@contents
-Pages = ["Tree.md", "Likelihood.md", "Parser.md", "distributions.md", "model.md", "output.md", "Sampler.md", "samplers.md", "Substitution.md", "Utils.md"]
+Pages = ["Tree.md", "Likelihood.md", "Parser.md", "distributions.md", "model.md", "output.md", "Sampler.md", "samplers.md", "Utils.md"]
 ```

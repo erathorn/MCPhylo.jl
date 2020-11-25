@@ -20,6 +20,5 @@ makedocs(root="./",
         "Output" => "output.md",
         "Sampler" => "Sampler.md",
         "Samplers" => "samplers.md",
-        "Substitution" => "Substitution.md",
         "Utils" => "Utils.md"]
    )
