@@ -129,6 +129,9 @@ function pseudologpdf!(block::SamplingBlock, x::AbstractArray{T}, y::AbstractArr
   pseudologpdf!(block.model, x, y, block.index , block.transform)
 end
 
+function conditional_likelihood!(block::SamplingBlock, x::AbstractArray{T}, args...) where {T<:Real}
+  conditional_likelihood!(block.model, x, block.index, args...)
+end
 
 function logpdf!(block::SamplingBlock, x::AbstractArray{T}) where {T<:GeneralNode}
   logpdf!(block.model, x[1])
@@ -154,13 +157,6 @@ function logpdfgrad!(block::SamplingBlock, x::AbstractVector{T},
   logf = logpdf!(block, x)
   (logf, ifelse.(isfinite.(grad), grad, 0.0))
 end
-
-#################### Functionalities for conditional likelihoods ####################
-
-function logcond(block::SamplingBlock, x::AbstractArray{T}; args...) where {T<:Real}
-  logcond(block.model, x, block.index, block.transform, args...)
-end
-
 
 #################### unlist and relist functionality ####################
 

@@ -136,6 +136,8 @@ function invlink_sub(D::Array{MultivariateDistribution}, X::AbstractArray)
 end
 
 
+logcond(d::Distribution, x, args...) = logcond(d, x, args...)
+
 #################### Logpdf Fallbacks ####################
 
 logpdf(d::Distribution, x, transform::Bool) = logpdf(d, x)

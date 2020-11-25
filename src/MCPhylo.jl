@@ -319,6 +319,7 @@ include("Parser/ParseCSV.jl")
 include("Parser/ParseNexus.jl")
 include("Parser/ParseNewick.jl")
 include("Sampler/PNUTS.jl")
+include("Sampler/DMH.jl")
 
 include("Substitution/SubstitutionMat.jl")
 

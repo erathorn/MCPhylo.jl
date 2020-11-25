@@ -2,7 +2,7 @@ using CSV, DataFrames, DataFramesMeta, Distances
 
 languages = DataFrame!(CSV.File("data/languages.csv"))
 languages_df = select(languages, :ID, :Name, :Latitude, :Longitude, :Glottocode, :Genus, :ISO_codes, :Samples_200)
-vals = DataFrame!(CSV.File("wals/cldf/values.csv"))
+vals = DataFrame!(CSV.File("data/values.csv"))
 vals = select(vals, :Language_ID, :Parameter_ID, :Value)
 rename!(vals, (:Language_ID => :ID))
 

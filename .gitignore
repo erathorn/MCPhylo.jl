@@ -4,7 +4,10 @@ doc/make.bat
 *params.log
 *.nwk
 *.jls
-*.nex
+*.tsv
+*Drav*
 *params*.log
 docs/build/
 untracked_files/
+p_data/
+notebook/.ipynb_checkpoints/

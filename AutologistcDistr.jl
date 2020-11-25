@@ -9,7 +9,7 @@ mutable struct AutologisticDistr <: DiscreteMatrixDistribution
 	nfeat::Int64
 end # mutable struct
 
-Base.size(d::AutologisticDistr) = size(d.nlangs, d.nfeat)
+Base.size(d::AutologisticDistr) = (d.nfeat, d.nlangs)
 
 """
 	This is the unnormalized logpdf
@@ -17,18 +17,26 @@ IT WILL NOT WORK
 """
 function logpdf(d::AutologisticDistr, X::Array{N,2}) where N <: Real
 	res = 0
-	for i in 1:d.nfeat
-		res += d.verticalWeights[i] * d.concordantVertical[i] + d.horizontalWeights[i] * d.concordantHorizontal[i] + d.universality[i]
-	end
+	#for i in 1:d.nfeat
+	#	res += d.verticalWeights[i] * d.concordantVertical[i] + d.horizontalWeights[i] * d.concordantHorizontal[i] + d.universality[i]
+	#end
 	res
 end
 
-function logcond(d::AutologisticDistr, X::Array{N, 2}, l::Int64, k::Int64) where N <: Real
+function logcond(d::AutologisticDistr, X::Array{N, 2}, l::Int64, f::Int64) where N <: Real
 	# l -> language_index
 	# k -> index of feature value
-	p = 0.0
-	for i in 1:d.nfeat
-		p += spatial_params[l] * spatial_concordant[l,i,k] + ling_params[l] * ling_concordant[l,i,k] + universality_params[l]
-    end
-    return exp(p)
+	nvals = Int(maximum(skipmissing(X[f,:])))
+	
+	prob_kth_val = Vector{Float64}(undef, nvals)
+	for k in 1:nvals
+
+		d.spatial_params[l] * d.spatial_concordant[f,l,k]
+		d.ling_params[l] * d.ling_concordant[f,l,k]
+		p = d.spatial_params[l] * d.spatial_concordant[f,l,k] +
+			d.ling_params[l] * d.ling_concordant[f,l,k] +
+			d.universality_params[l]
+		prob_kth_val[k] = exp(p)
+	end
+	return prob_kth_val
 end
