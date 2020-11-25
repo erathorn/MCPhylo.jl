@@ -234,6 +234,7 @@ on the first tree.
 function get_cluster_start_indeces(ref_nodes::Vector{T}, tree::T)::Dict{T, Int64} where T<:AbstractNode
     leaves_dict = Dict{String, Int64}()
     count = 1
+    # CHECK IF NAMES ARE UNIQUE OR IF THERE ARE DOUBLETS
     for ref_node in ref_nodes
         if ref_node.nchild == 0
             leaves_dict[ref_node.name] = count
@@ -277,7 +278,7 @@ function order_tree!(root::T, cluster_start_indeces::Dict{T, Int64}, leaves=Vect
         end # if/else
     end # for
     return leaves
-    set_binary!(root)
+    set_binary!(root) #-> THIS FUNCTION WILL NEVER BE CALLED
 end # function order_tree!
 
 
@@ -388,6 +389,15 @@ function depth_dicts(leaves::Vector{Node})
 end
 
 function node_depth(node::T)::Int64 where T<:AbstractNode
+    """
+    By definition the depth of the node is the number of edges from the root to
+    the node in question. Thus the root has depth 0.
+    If you calcualte the depth of a node like this:
+        length(split(node.binary, ","))
+    You need to subtract 1. Otherwise the depth of the root will be 1 and not 0.
+
+    BTW: Please move this function to the Tree_Basics.jl file when you are done.
+    """
     return length(split(node.binary, ","))
 end
 
