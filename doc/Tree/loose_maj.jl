@@ -23,8 +23,10 @@ end
     @test newick(MCPhylo.loose_consensus_tree(trees)) == result
 end
 
+"""
 trees = MCPhylo.ParseNewick("./doc/Tree/Drav_mytrees_1.nwk")
 MCPhylo.set_binary!.(trees)
 MCPhylo.number_nodes!.(trees)
 loose_tree = MCPhylo.loose_consensus_tree(trees)
 println(newick(loose_tree))
+"""
