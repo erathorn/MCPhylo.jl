@@ -277,8 +277,8 @@ function order_tree!(root::T, cluster_start_indeces::Dict{T, Int64}, leaves=Vect
             order_tree!(child, cluster_start_indeces, leaves)
         end # if/else
     end # for
+    set_binary!(root)
     return leaves
-    set_binary!(root) #-> THIS FUNCTION WILL NEVER BE CALLED
 end # function order_tree!
 
 
@@ -398,7 +398,7 @@ function node_depth(node::T)::Int64 where T<:AbstractNode
 
     BTW: Please move this function to the Tree_Basics.jl file when you are done.
     """
-    return length(split(node.binary, ","))
+    return length(split(node.binary, ",")) - 1
 end
 
 """
