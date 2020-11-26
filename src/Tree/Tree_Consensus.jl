@@ -247,7 +247,8 @@ function get_cluster_start_indeces(ref_nodes::Vector{T}, tree::T)::Dict{T, Int64
     for node in nodes
         if node.nchild != 0
             for leaf in leaves
-                if node_depth(node) <= node_depth(leaf) && node.binary == leaf.binary[1:length(node.binary)]
+                path = split(node.binary, ",")
+                if node_depth(node) <= node_depth(leaf) && path == split(leaf.binary, ",")[1:length(path)]
                     cluster_start_indeces[node] = leaves_dict[leaf.name]
                     break
                 end # if
