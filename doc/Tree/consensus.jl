@@ -1,5 +1,4 @@
-include("../../src/MCPhylo.jl")
-using .MCPhylo
+using MCPhylo
 using Test
 
 @testset "find_common_clusters" begin
@@ -176,3 +175,12 @@ end
     result = newick(MCPhylo.parsing_newick_string("(A,B,C,(D,E)DE)"))
     @test newick(MCPhylo.loose_consensus_tree(trees)) == result
 end
+
+
+"""
+trees = MCPhylo.ParseNewick("./doc/Tree/Drav_mytrees_1.nwk")
+MCPhylo.set_binary!.(trees)
+MCPhylo.number_nodes!.(trees)
+majority_tree = MCPhylo.majority_consensus_tree(trees)
+println(newick(majority_tree))
+"""
