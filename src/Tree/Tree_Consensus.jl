@@ -378,14 +378,13 @@ end # function x_right
 
 
 """
-    depth_dicts(leaves::Vector{Node})
-        ::Tuple{Dict{Node, Tuple{T, Dict{Int64, T}}}, Dict{T, Tuple{T, Dict{Int64, T}}}} where T<:AbstractNode
+    depth_dicts(leaves::Vector{T})
+        ::Tuple{Dict{T, Tuple{T, Dict{Int64, T}}}, Dict{T, Tuple{T, Dict{Int64, T}}}} where T<:AbstractNode
 
 create a Dictionary that stores the depth of each node, as well as the left
 and right paths leading to it
 """
-function depth_dicts(leaves::Vector{Node})
-    ::Tuple{Dict{Node, Tuple{T, Dict{Int64, T}}}, Dict{T, Tuple{T, Dict{Int64, T}}}} where T<:AbstractNode
+function depth_dicts(leaves::Vector{T})::Tuple{Dict{T, Tuple{T, Dict{Int64, T}}}, Dict{T, Tuple{T, Dict{Int64, T}}}} where T<:AbstractNode
 
     xleft_dict = Dict{Node, Tuple{Node, Dict{Int64,Node}}}()
     xright_dict = Dict{Node, Tuple{Node, Dict{Int64, Node}}}()
