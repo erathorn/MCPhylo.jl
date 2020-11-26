@@ -1,5 +1,4 @@
-include("../../src/MCPhylo.jl")
-using .MCPhylo
+using MCPhylo
 using Test
 
 @testset "loose_consensus_tree" begin
@@ -28,4 +27,4 @@ trees = MCPhylo.ParseNewick("./doc/Tree/Drav_mytrees_1.nwk")
 MCPhylo.set_binary!.(trees)
 MCPhylo.number_nodes!.(trees)
 loose_tree = MCPhylo.loose_consensus_tree(trees)
-print(newick(loose_tree))
+println(newick(loose_tree))
