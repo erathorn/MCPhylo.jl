@@ -442,6 +442,7 @@ function majority_consensus_tree(trees::Vector{T}, percentage::Float64=0.5)::T w
             end # else
         end # for
         set_binary!(merged_tree)
+        number_nodes!(merged_tree)
         compatible_tree = one_way_compatible(tree, merged_tree)
         inserted_nodes = merge_trees(compatible_tree, merged_tree)
         # intialize counts for the new nodes
