@@ -353,6 +353,14 @@ function node_height_vec(root::T)::Vector{Float64} where T<:GeneralNode
     t
 end # function node_height
 
+"""
+    node_depth(node::T)::Int64 where T<:GeneralNode
+
+Calculate the depth of a node.
+"""
+function node_depth(node::T)::Int64 where T<:GeneralNode
+    return length(split(node.binary, ",")) - 1
+end
 
 function node_distance(tree::T, node1::T, node2::T)::Float64 where T<:GeneralNode
     lca = find_lca(tree, node1, node2)
@@ -427,7 +435,6 @@ function set_binary!(root::T)  where T<:GeneralNode
             node.binary = string(root.binary,",", ind)
             set_binary!(node)
         end
-
     end # if
 end # function set_binary
 
