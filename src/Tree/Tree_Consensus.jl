@@ -377,7 +377,16 @@ function x_right(node::T)::Tuple{T, Vector{T}} where T<:AbstractNode
 end # function x_right
 
 
+"""
+    depth_dicts(leaves::Vector{Node})
+        ::Tuple{Dict{Node, Tuple{T, Dict{Int64, T}}}, Dict{T, Tuple{T, Dict{Int64, T}}}} where T<:AbstractNode
+
+create a Dictionary that stores the depth of each node, as well as the left
+and right paths leading to it
+"""
 function depth_dicts(leaves::Vector{Node})
+    ::Tuple{Dict{Node, Tuple{T, Dict{Int64, T}}}, Dict{T, Tuple{T, Dict{Int64, T}}}} where T<:AbstractNode
+
     xleft_dict = Dict{Node, Tuple{Node, Dict{Int64,Node}}}()
     xright_dict = Dict{Node, Tuple{Node, Dict{Int64, Node}}}()
     for leaf in leaves
@@ -389,18 +398,6 @@ function depth_dicts(leaves::Vector{Node})
     return xleft_dict, xright_dict
 end
 
-function node_depth(node::T)::Int64 where T<:AbstractNode
-    """
-    By definition the depth of the node is the number of edges from the root to
-    the node in question. Thus the root has depth 0.
-    If you calcualte the depth of a node like this:
-        length(split(node.binary, ","))
-    You need to subtract 1. Otherwise the depth of the root will be 1 and not 0.
-
-    BTW: Please move this function to the Tree_Basics.jl file when you are done.
-    """
-    return length(split(node.binary, ",")) - 1
-end
 
 """
     majority_consensus_tree(trees::Vector{T}, percentage::Float64=0.5)::T where T<:AbstractNode
