@@ -525,6 +525,29 @@ function loose_consensus_tree(trees::Vector{T})::T where T<:AbstractNode
     for tree in trees_copy
         r_tree = one_way_compatible(r_tree, tree)
     end
+    nodes = level_order(r_tree)
+    count_dict = Dict(zip([n.num for n in nodes], zeros(Int64, length(nodes))))
+    inc_length_dict = Dict{Int64, Vector{Float64}}()
+    for tree in trees
+        is_common_cluster = find_common_clusters(tree, r_tree)
+        for node in nodes
+            if is_common_cluster[node.num][1]
+                count_dict[node.num] += 1
+                try
+                    push!(inc_length_dict[node.num], is_common_cluster[node.num][2])
+                catch KeyError
+                    inc_length_dict[node.num] = [is_common_cluster[node.num][2]]
+                end # try/catch
+            end # if
+        end # for
+    end # for
+    for node in nodes
+        node.inc_length = mean(inc_length_dict[node.num])
+        node.stats["sd"] = std(inc_length_dict[node.num])
+        node.stats["median"] = median(inc_length_dict[node.num])
+        node.stats["frequency"] = count_dict[node.num] / length(trees)
+    end # for
+
     nodes = post_order(r_tree)
     cluster_start_indeces = Dict{Node, Int64}()
     for node in nodes
