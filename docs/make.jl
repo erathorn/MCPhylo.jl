@@ -11,7 +11,7 @@ makedocs(root="./",
     sitename="MCPhylo",
     format = Documenter.HTML(prettyurls = false),
     pages = [
-        "Table of Content" => "toc.md",
+        "Introduction" => "intro.md",
         "Tree Functionality" => "Tree.md",
         "Likelihood" => "Likelihood.md",
         "Parser" => "Parser.md",
@@ -21,5 +21,6 @@ makedocs(root="./",
         "Sampler" => "Sampler.md",
         "Samplers" => "samplers.md",
         "Substitution" => "Substitution.md",
-        "Utils" => "Utils.md"]
+        "Utils" => "Utils.md",
+        "Links" => "Links.md"]
    )
