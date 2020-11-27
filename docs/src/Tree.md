@@ -1,10 +1,6 @@
 # Tree Functionality
 Functions found in all files of Tree folder, ordered according to file of origin.
 
-```@index
-Pages = ["Tree.md"]
-```
-
 ## Converter.jl
 ```@docs
 Main.MCPhylo.from_df
@@ -91,8 +87,8 @@ Main.MCPhylo.perform_spr
 Main.MCPhylo.randomize!
 Main.MCPhylo.risky_SPR!
 Main.MCPhylo.risky_SPR
-Main.MCPhylo.slide!
 Main.MCPhylo.slide
+Main.MCPhylo.slide!
 Main.MCPhylo.swing!
 Main.MCPhylo.swing
 ```

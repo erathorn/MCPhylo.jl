@@ -1,8 +1,15 @@
 """
-    ParseCSV(filename::String)
+    ParseCSV(filename::String, header::Bool=true)
 
-This function parses a CSV file which stores the input for the MCMC compuation.
-The file should follow the conventions used for MrBayes.
+This function parses a CSV file containing input for the MCMC compuation.
+The file should follow the conventions used for MrBayes. For example:
+
+    Swedish_0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,?,0,0,?,0,0
+    Welsh_N_0,0,0,0,0,0,0,?,0,0,0,0,?,?,0,0,?,0,0,0,1,?,?,0
+    Sardinian_N_0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1,0,0,?,0,0,0,0,0
+
+ Set input for "header" to false
+if no header is present in the file.
 """
 function ParseCSV(filename::String, header::Bool=true)
     open(filename, "r") do file

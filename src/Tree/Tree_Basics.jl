@@ -506,7 +506,7 @@ function set_branchlength_vector!(t::TreeStochastic, blenvec::Array{T}) where T 
 end # function
 
 """
-    set_branchlength_vector!(t::TreeStochastic, blenvec::Array{T}) where T <: Real
+    set_branchlength_vector!(t::TreeStochastic, blenvec::ArrayStochastic)
 
 Get the vector of branch lengths of the tree.
 """
@@ -538,7 +538,7 @@ end # function set_branchlength_vector!
 
 
 """
-    get_sum_seperate_length!(root::Node)::Vector{Float64}
+    get_sum_seperate_length!(root::T)::Vector{Float64}  where T<:GeneralNode
 
 This function gets the sum of the branch lengths of the internal branches and the
 branches leading to the leave nodes.
@@ -549,7 +549,7 @@ end # function get_sum_seperate_length!
 
 
 """
-    get_sum_seperate_length!(root::Node)::Vector{Float64}
+    get_sum_seperate_length!(post_order::Vector{T})::Vector{Float64}  where T<:GeneralNode
 
 This function gets the sum of the branch lengths of the internal branches and the
 branches leading to the leave nodes.
