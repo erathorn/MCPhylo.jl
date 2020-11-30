@@ -38,6 +38,7 @@ function n_sum_all(X::Array{Union{Missing,Int64},2}, g::MetaGraph, features::Vec
 	for feature_idx in 1:nfeatures
 		sym = Symbol(features[feature_idx])
 		ith_feature = X[feature_idx,:]
+		# get language index and language feature value
 		for (i, x) in enumerate(ith_feature)
 			for k in 1:nvals
 				sums[feature_idx, i, k] = neighbour_k_sum(X[feature_idx,:], g, i, k, sym)
@@ -62,7 +63,7 @@ my_data = Dict{Symbol, Any}(
 # model setup
 model =  Model(
     df = Stochastic(2, (linw, spaw, uniw) ->
-                    AutologisticDistr(linguistic_sums, linw, spatial_sums, spaw, uniw, 183, 4), false, false),
+        AutologisticDistr(linguistic_sums, linw, spatial_sums, spaw, uniw, 183, 4), false, false),
 	linw = Stochastic(1, ()->Normal(), true),
 	spaw = Stochastic(1, ()->Normal(), true),
 	uniw = Stochastic(1, ()->Normal(), true)

@@ -27,12 +27,9 @@ function logcond(d::AutologisticDistr, X::Array{N, 2}, l::Int64, f::Int64) where
 	# l -> language_index
 	# k -> index of feature value
 	nvals = Int(maximum(skipmissing(X[f,:])))
-	
+
 	prob_kth_val = Vector{Float64}(undef, nvals)
 	for k in 1:nvals
-
-		d.spatial_params[l] * d.spatial_concordant[f,l,k]
-		d.ling_params[l] * d.ling_concordant[f,l,k]
 		p = d.spatial_params[l] * d.spatial_concordant[f,l,k] +
 			d.ling_params[l] * d.ling_concordant[f,l,k] +
 			d.universality_params[l]

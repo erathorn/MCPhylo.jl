@@ -4,7 +4,7 @@
 
 mutable struct DMHTune <: SamplerTune
   logf::Union{Function, Missing}
-  pseudolog::Union{Function, Missing}
+  pseudolog::Union{Function, Missing} # AuxLog
   condlike::Union{Function, Missing}
   datakeys::Vector{Symbol}
   m::Int64
@@ -27,12 +27,12 @@ DMHTune(x::Vector, f, ps, cl, dk, m, s) = DMHTune(f, ps, cl, dk, m, s)
 #################### Sampler Constructor ####################
 
 function DMH(params::ElementOrVector{Symbol}, m::Int64, scale::Float64)
-	println("This")
-  samplerfx = function(model::Model, block::Integer)
-	println("here")
+
+  	samplerfx = function(model::Model, block::Integer)
+
 	tune = gettune(model, block)
 	params = asvec(params)
-	println(params)
+
 	targets = keys(model, :target, params)
 	tune.datakeys = targets
     block = SamplingBlock(model, block, true)
@@ -109,21 +109,10 @@ function inner_sampler(v::DMHVariate, X)
 		for i in random_language_idx
 			for f in random_feature_idx
 				feature_vals = sort!(unique(skipmissing(X[f,:])))
-				if ismissing(X[i])
-					#missing_probs = cond_sum.(Ref(samples), i, f, Ref(spatial_sums),
-					#Ref(ling_sums), Ref(v_params), Ref(h_params), Ref(u_params))
-					probs = v.tune.condlike(v, i, f)
-					missing_probs ./= sum(missing_probs)
-					new_x = rand(Categorical(probs))#sample(feature_vals, StatsBase.weights(missing_probs))
-					X[f, i] = new_x
-				else
-					#probs = cond_sum.(Ref(samples), i, f, Ref(spatial_sums), Ref(ling_sums),
-					#	Ref(v_params), Ref(h_params), Ref(u_params))
-					probs = v.tune.condlike(v, i, f)
-					probs ./= sum(probs)
-					new_x = rand(Categorical(probs))#sample(feature_vals, StatsBase.weights(probs))
-					X[f, i] = new_x
-				end
+				probs = v.tune.condlike(v, i, f)
+				probs ./= sum(probs)
+				new_x = rand(Categorical(probs))
+				X[f, i] = new_x
 			end
 			counter += 1
 			if counter > v.tune.m
@@ -131,16 +120,4 @@ function inner_sampler(v::DMHVariate, X)
 			end
 		end
 	end
-end
-
-
-function cond_sum(X::Array{Union{Missing,Int64},2}, l::Int64, f::Int64,
-	spatial_sums::Array{Float64,3}, ling_sums::Array{Float64,3}, v_params, h_params, u_params)
-	nvals = maximum(skipmissing(X[f,:]))
-	prob_kth_val = Vector{Float64}(undef, nvals)
-	for k in 1:nvals
-		p = v_params[l] * spatial_sums[f,l,k] + h_params[l] * ling_sums[f,l,k] + u_params[l]
-		prob_kth_val[k] = exp(p)
-	end
-	return prob_kth_val
 end
