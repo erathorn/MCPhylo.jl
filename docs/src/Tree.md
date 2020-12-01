@@ -18,41 +18,68 @@ Pages   = ["Node_Type.jl"]
 Filter =
 ```
 ## Tree_Basics.jl
+
+This file is a bit larger, and so will be broken into (hopefully coherent) subgroups, listed here:
+
+[Tree Editing] (@ref)
+
+[Return Functions] (@ref)
+
+[Metavariable Functions] (@ref)
+
+[Variable Functions] (@ref)
+
+### Tree Editing
+These functions edit the makeup of an existing tree.
 ```@docs
 Main.MCPhylo.add_child!
-Main.MCPhylo.check_binary
-Main.MCPhylo.create_tree_from_leaves
 Main.MCPhylo.delete_node!
-Main.MCPhylo.force_ultrametric!
-Main.MCPhylo.get_branchlength_vector
+Main.MCPhylo.insert_node!
+Main.MCPhylo.remove_child!
+Main.MCPhylo.create_tree_from_leaves
+
+```
+### Return Functions
+These functions return the values of a given variable of a tree.
+```@docs
 Main.MCPhylo.get_mother
 Main.MCPhylo.get_sister
-Main.MCPhylo.get_sum_seperate_length!
-Main.MCPhylo.insert_node!
 Main.MCPhylo.node_height
-Main.MCPhylo.number_nodes!
-Main.MCPhylo.path_length
 Main.MCPhylo.random_node
-Main.MCPhylo.remove_child!
-Main.MCPhylo.set_binary!
-Main.MCPhylo.set_branchlength_vector!
-Main.MCPhylo.tree_height
-Main.MCPhylo.tree_length(::T) where T<:Main.MCPhylo.GeneralNode
+
+
 ```
 
+### Metavariable Functions
+These functions calculate metavariables for a given tree.
+```@docs
+Main.MCPhylo.tree_length(::T) where T<:Main.MCPhylo.GeneralNode
+Main.MCPhylo.tree_height
+Main.MCPhylo.get_branchlength_vector
+Main.MCPhylo.get_sum_seperate_length!
+Main.MCPhylo.check_binary
+Main.MCPhylo.path_length
+```
+### Variable Functions
+These Functions calculate/edit variables for a given tree.
+```@docs
+Main.MCPhylo.force_ultrametric!
+Main.MCPhylo.number_nodes!
+Main.MCPhylo.set_branchlength_vector!
+Main.MCPhylo.set_binary!
+```
+
+
+
+
 ## Tree_Clustering.jl
+
 ```@docs
 Main.MCPhylo.neighbor_joining
 Main.MCPhylo.upgma
 ```
 
-```
-```@autodocs
-Modules = [MCPhylo]
-Pages   = ["Tree_Clustering.jl"]
-Filter =
-```
-```
+
 ## Tree_Consensus.jl
 ```@autodocs
 Modules = [MCPhylo]
