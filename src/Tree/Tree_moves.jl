@@ -8,7 +8,7 @@ This function does a nearest neighbour interchange (NNI) move on the tree specif
 by `root`. The parameter `target` specifies the node which performs the interchange
 move using the left or right child of the target node. If the left child should
 be used `lor=true`.
-The function returns 1 if the move was successfull and 0 else.
+The function returns 1 if the move was successful and 0 else.
 """
 function NNI!(root::T, target::T, lor::Bool)::Int64  where T<:GeneralNode
     # NNI move would be illegal
@@ -36,7 +36,7 @@ end # function
 
 This function does a nearest neighbour interchange (NNI) move on the tree specified
 by `root`. The target is identified by the number of the target node.
-The function returns 1 if the move was successfull and 0 else.
+The function returns 1 if the move was successful and 0 else.
 """
 function NNI!(root::T, target::Int64)::Int64  where T<:GeneralNode
    tn::T = find_num(root, target)
@@ -49,7 +49,7 @@ end #function
 
 This function does a nearest neighbour interchange (NNI) move on the tree specified
 by `root`. The target is identified by the number of the target node.
-The function returns 1 if the move was successfull and 0 else.
+The function returns 1 if the move was successful and 0 else.
 """
 function NNI!(root::T)::Int64  where T<:GeneralNode
     n = rand(1:size(root)[1])
@@ -188,7 +188,7 @@ end
 """
     move!(node1::Node, node2::Node, proportion::Float64)
 
-Change the incomming length of node1 and node2 while keeping there combined length
+Change the incoming length of node1 and node2 while keeping their combined length
 constant.
 """
 function move!(node1::T, node2::T, proportion::Float64) where T <:GeneralNode
@@ -238,8 +238,8 @@ end
 
 """
     SPR(original_root::Node)::AbstractNode
-Performs SPR on tree; takes a copy of root of the tree;
-Returns a copy of root of altered tree
+Performs SPR on tree. Takes a copy of root of the tree;
+Returns a copy of root of altered tree. Throws error if tree is improperly formatted.
 """
 
 
@@ -251,8 +251,8 @@ end #func
 
 """
         SPR!(root::Node)::AbstractNode
-    Performs SPR on tree in place; takes reference to root of tree, boolean value necessary to determine if tree should be treated as binary or not
-    Returns reference to root of altered tree
+    Performs SPR on tree in place. Takes reference to root of tree;
+    Returns reference to root of altered tree. Throws error if tree is improperly formatted.
 """
 
 function SPR!(root::Node)
@@ -266,7 +266,7 @@ end #function
 
 """
         risky_SPR(root::Node)::AbstractNode
-    Performs SPR on tree in place; takes reference to root of tree, boolean value necessary to determine if tree should be treated as binary or not
+    Performs SPR on tree in place. Takes reference to root of tree
     Returns copy of root of altered tree. Does not check for correct formatting of tree.
 """
 function risky_SPR(original_root::Node)
@@ -277,7 +277,7 @@ end #function
 
 """
         risky_SPR!(root::Node)::AbstractNode
-    Performs SPR on tree in place; takes reference to root of tree, boolean value necessary to determine if tree should be treated as binary or not
+    Performs SPR on tree in place. Takes reference to root of tree
     Returns reference to root of altered tree. Does not check for correct formatting of tree.
 """
 function risky_SPR!(root::Node)
