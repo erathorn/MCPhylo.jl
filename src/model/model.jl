@@ -2,7 +2,12 @@
 
 #################### Constructors ####################
 
+"""
+    function Model(; iter::Integer=0, burnin::Integer=0, samplers::Vector{Sampler}=Sampler[], nodes...)
 
+Construct a model from an arbitrary number of user defined Stochastic or Logical
+nodes.
+"""
 function Model(; iter::Integer=0, burnin::Integer=0,
                samplers::Vector{Sampler}=Sampler[], nodes...)
 

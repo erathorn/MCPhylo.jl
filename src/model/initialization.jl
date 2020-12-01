@@ -38,7 +38,14 @@ function setinputs!(m::Model, inputs::Dict{Symbol})::Model
   m
 end
 
-function setsamplers!(m::Model, samplers::Vector{V} where V<:Sampler)::Model
+
+"""
+    function setsamplers!(m::Model, samplers::Vector{V} where V<:Sampler)
+
+Set the samplers for the Stocastic nodes of Model `m`. The function
+updates `m` inplace and returns it.
+"""
+function setsamplers!(m::Model, samplers::Vector{V} where V<:Sampler)
   m.samplers = deepcopy(samplers)
   for sampler in m.samplers
     sampler.targets = keys(m, :target, sampler.params)
