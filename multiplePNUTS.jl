@@ -110,7 +110,8 @@ setsamplers!(model, scheme);
 
 # do the mcmc simmulation. if trees=true the trees are stored and can later be
 # flushed ot a file output.
-sim = mcmc(model, my_data, inits, 5, burnin=1,thin=1, chains=1, trees=true)
+sim = mcmc(model, my_data, inits, 5,
+    burnin=1,thin=1, chains=1, trees=true)
 
 
 using Cthulhu

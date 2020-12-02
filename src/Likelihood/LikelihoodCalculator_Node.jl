@@ -11,8 +11,8 @@ function FelsensteinFunction(tree_postorder::Vector{N}, pi_::Array{Float64}, rat
                              data::Array{Float64,3}, n_c::Int64, blv::Array{Float64,1})::Float64 where {N<:GeneralNode}
 
     mu::Float64 =  1.0 / (2.0 * prod(pi_))
-    mutationArray::Array{Float64} = reshape(vcat(calc_trans.(blv, Ref(pi_), mu, rates)...) ,
-                            (length(blv), length(pi_), length(pi_)))
+    mutationArray::Array{Float64} = reshape(hcat(calc_trans.(blv, Ref(pi_), mu, rates)...) ,
+                            (length(pi_), length(pi_), length(blv)))
     root_node::N = last(tree_postorder)
     rns::Array{Float64} = zeros(Float64, 1, n_c)
 
@@ -40,7 +40,7 @@ function node_loop(node::N, mutationArray::Array{Float64, 3})::Array{Float64,2} 
     # creating a new array is necessary because Zygote can not differentiate otherwise
     out = ones(size(node.data))
     @inbounds @views for child in node.children
-            out = out .* (mutationArray[child.num,:,:]*child.data)
+            out = out .* BLAS.gemm('N','N',mutationArray[:,:,child.num], child.data)
     end
     out
     #mapreduce(y->mutationArray[y.num, :, :]*y.data, (x,z)->x .* z, node.children)
