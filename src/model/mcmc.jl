@@ -25,7 +25,7 @@ function mcmc(m::Model, inputs::Dict{Symbol},
   length(inits) >= chains ||
     throw(ArgumentError("fewer initial values than chains"))
 
-  mm = deepcopy(m)
+  mm::Model = deepcopy(m)
   setinputs!(mm, inputs)
   setinits!(mm, inits[1:chains])
   mm.burnin = burnin
@@ -35,13 +35,13 @@ end
 
 function mcmc_master!(m::Model, window::UnitRange{Int}, burnin::Integer,
                       thin::Integer, chains::AbstractArray{Int}, verbose::Bool, trees::Bool)
-  states = m.states
+  states::Vector{ModelState} = m.states
   m.states = ModelState[]
 
   N = length(window)
   K = length(chains)
 
-  frame = ChainProgressFrame(
+  frame::ChainProgressFrame = ChainProgressFrame(
     "MCMC Simulation of $N Iterations x $K Chain" * "s"^(K > 1), verbose
   )
 
@@ -49,17 +49,17 @@ function mcmc_master!(m::Model, window::UnitRange{Int}, burnin::Integer,
     Any[m, states[k], window, burnin, thin, ChainProgress(frame, k, N), trees]
     for k in chains
   ]
-  results = pmap2(mcmc_worker!, lsts)
+  results::Vector{Tuple{Chains, Model, ModelState}} = pmap2(mcmc_worker!, lsts)
 
-  sims  = Chains[results[k][1] for k in 1:K]
-  model = results[1][2]
+  sims::Array{Chains}  = Chains[results[k][1] for k in 1:K]
+  model::Model = results[1][2]
   model.states = ModelState[results[k][3] for k in sortperm(chains)]
 
   ModelChains(cat(sims..., dims=3), model)
 end
 
 
-function mcmc_worker!(args::Vector)
+function mcmc_worker!(args::Vector)::Tuple{Chains, Model, ModelState}
   m::Model, state::ModelState, window::UnitRange{Int}, burnin::Integer, thin::Integer, meter::ChainProgress, store_trees::Bool = args
   llname::AbstractString = "likelihood"
   treeind = 1

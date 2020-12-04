@@ -229,22 +229,22 @@ abstract type AbstractChains end
 struct Chains <: AbstractChains
   value::Array{Float64, 3}
   range::StepRange{Int, Int}
-  names::Vector{S} where S <: AbstractString
+  names::Vector{AbstractString}
   chains::Vector{Int}
-  trees::Array{S, 3} where S <: AbstractString
+  trees::Array{AbstractString, 3}
   moves::Array{Int, 1}
-  tree_names::Vector{S} where S<:AbstractString
+  tree_names::Vector{AbstractString}
 end
 
 struct ModelChains <: AbstractChains
   value::Array{Float64, 3}
   range::StepRange{Int, Int}
-  names::Vector{S} where S <: AbstractString
+  names::Vector{AbstractString}
   chains::Vector{Int}
   model::Model
-  trees::Array{S, 3} where S <: AbstractString
+  trees::Array{AbstractString, 3}
   moves::Array{Int, 1}
-  tree_names::Vector{S} where S<:AbstractString
+  tree_names::Vector{AbstractString}
 end
 
 

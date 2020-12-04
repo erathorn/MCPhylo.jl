@@ -41,24 +41,28 @@ my_data = Dict{Symbol, Any}(
 model =  Model(
     df_ie = Stochastic(3, (mtree_ie, mypi_ie,  rates) ->
                             PhyloDist(mtree_ie, mypi_ie, rates[1:4], my_data[:nbase][2], my_data[:nsites][2], my_data[:nnodes][2]), false, false),
-    #df_st = Stochastic(3, (mtree_st, mypi_st, rates) ->
-    #                        PhyloDist(mtree_st, mypi_st[1], rates[5:8], my_data[:nbase][1], my_data[:nsites][1], my_data[:nnodes][1]), false, false),
-    #df_aa = Stochastic(3, (mtree_aa, mypi_aa, rates) ->
-    #                        PhyloDist(mtree_aa, mypi_aa[1], rates[9:12], my_data[:nbase][3], my_data[:nsites][3], my_data[:nnodes][3]), false, false),
+    df_st = Stochastic(3, (mtree_st, mypi_st, rates) ->
+                            PhyloDist(mtree_st, mypi_st, rates[5:8], my_data[:nbase][1], my_data[:nsites][1], my_data[:nnodes][1]), false, false),
+    df_aa = Stochastic(3, (mtree_aa, mypi_aa, rates) ->
+                            PhyloDist(mtree_aa, mypi_aa, rates[9:12], my_data[:nbase][3], my_data[:nsites][3], my_data[:nnodes][3]), false, false),
     df_an = Stochastic(3, (mtree_an, mypi_an, rates) ->
                             PhyloDist(mtree_an, mypi_an, rates[5:8], my_data[:nbase][4], my_data[:nsites][4], my_data[:nnodes][4]), false, false),
-    #df_pn = Stochastic(3, (mtree_pn, mypi_pn, rates) ->
-    #                        PhyloDist(mtree_pn, mypi_pn[1], rates[17:20], my_data[:nbase][5], my_data[:nsites][5], my_data[:nnodes][5]), false, false),
+    df_pn = Stochastic(3, (mtree_pn, mypi_pn, rates) ->
+                            PhyloDist(mtree_pn, mypi_pn, rates[17:20], my_data[:nbase][5], my_data[:nsites][5], my_data[:nnodes][5]), false, false),
     mypi_ie = Stochastic(1, ()-> Dirichlet(2,1)),
-    #mypi_st = Stochastic(1, ()-> Dirichlet(2,1)),
-    #mypi_aa = Stochastic(1, ()-> Dirichlet(2,1)),
+    mypi_st = Stochastic(1, ()-> Dirichlet(2,1)),
+    mypi_aa = Stochastic(1, ()-> Dirichlet(2,1)),
     mypi_an = Stochastic(1, ()-> Dirichlet(2,1)),
-    #mypi_pn = Stochastic(1, ()-> Dirichlet(2,1)),
-    mtree_ie = Stochastic(Node(), () -> CompoundDirichlet(1.0,1.0,0.100,1.0), true),
-    #mtree_st = Stochastic(Node(), () -> CompoundDirichlet(1.0,1.0,0.100,1.0), true),
-    #mtree_aa = Stochastic(Node(), () -> CompoundDirichlet(1.0,1.0,0.100,1.0), true),
-    mtree_an = Stochastic(Node(), () -> CompoundDirichlet(1.0,1.0,0.100,1.0), true),
-    #mtree_pn = Stochastic(Node(), () -> CompoundDirichlet(1.0,1.0,0.100,1.0), true),
+    mypi_pn = Stochastic(1, ()-> Dirichlet(2,1)),
+    mtree_ie = Stochastic(Node(), (a,b,c,d) -> CompoundDirichlet(a[1],b[1],c[1],d[1]), true),
+    mtree_st = Stochastic(Node(), (a,b,c,d) -> CompoundDirichlet(a[2],b[2],c[2],d[2]), true),
+    mtree_aa = Stochastic(Node(), (a,b,c,d) -> CompoundDirichlet(a[3],b[3],c[3],d[3]), true),
+    mtree_an = Stochastic(Node(), (a,b,c,d) -> CompoundDirichlet(a[4],b[4],c[4],d[4]), true),
+    mtree_pn = Stochastic(Node(), (a,b,c,d) -> CompoundDirichlet(a[5],b[5],c[5],d[5]), true),
+    a = Stochastic(1, ()->Gamma()),
+    b = Stochastic(1, ()->Gamma()),
+    c = Stochastic(1, ()->Beta(2,2)),
+    d = Stochastic(1, ()->Gamma()),
     rates = Logical(1, (αs) -> vcat(discrete_gamma_rates.(αs, αs, 4)...),false),
     αs = Stochastic(1, () -> Gamma(), true),
      )
@@ -80,16 +84,20 @@ inits = [ Dict{Symbol, Union{Any, Real}}(
     :df_aa => my_data[:df][3],
     :df_an => my_data[:df][4],
     :df_pn => my_data[:df][5],
-    :αs => rand(2),
-    :co => rand(2),
+    :αs => rand(5),
+    :co => rand(5),
+    :a => rand(5),
+    :b => rand(5),
+    :c => rand(5),
+    :d => rand(5),
     ),
     ]
 
 scheme = [PNUTS(:mtree_ie),
-          #PNUTS(:mtree_st),
-          #PNUTS(:mtree_an),
-          #PNUTS(:mtree_aa),
-          #PNUTS(:mtree_pn),
+          PNUTS(:mtree_st),
+          PNUTS(:mtree_an),
+          PNUTS(:mtree_aa),
+          PNUTS(:mtree_pn),
           #RWM(:mtree_ie, :all),
           #RWM(:mtree_st, :all),
           #RWM(:mtree_an, :all),
@@ -98,11 +106,12 @@ scheme = [PNUTS(:mtree_ie),
           #Slice(:mtree_ie, 1.0, Multivariate),
           #Slice(:mtree_an, 1.0, Multivariate),
           SliceSimplex(:mypi_ie),
-          #SliceSimplex(:mypi_an),
-          #SliceSimplex(:mypi_st),
-          #SliceSimplex(:mypi_aa),
-          #SliceSimplex(:mypi_pn),
-          Slice(:αs, 1.0, Multivariate)
+          SliceSimplex(:mypi_an),
+          SliceSimplex(:mypi_st),
+          SliceSimplex(:mypi_aa),
+          SliceSimplex(:mypi_pn),
+          Slice(:αs, 1.0, Multivariate),
+          Slice([:a, :b, :c, :d], 1.0, Multivariate)
           #RWM(:αs, 1.0)
           ]
 
@@ -110,9 +119,9 @@ setsamplers!(model, scheme);
 
 # do the mcmc simmulation. if trees=true the trees are stored and can later be
 # flushed ot a file output.
-sim = mcmc(model, my_data, inits, 5,
-    burnin=1,thin=1, chains=1, trees=true)
-
+sim = mcmc(model, my_data, inits, 10,
+    burnin=5,thin=1, chains=1, trees=true)
+to_file(sim, "testMult_")
 
 using Cthulhu
 using Zygote
@@ -131,17 +140,38 @@ r1, r2 = gradlogpdf(pd, df_ie)
 
 blv = get_branchlength_vector(mt_ie)
 po = post_order(mt_ie)
-Juno.@profiler MCPhylo.FelsensteinFunction(po, [0.5,0.5], mr[1], df_ie, size(df_ie,2), blv)
+@descend MCPhylo.FelsensteinFunction(po, [0.5,0.5], mr[1], df_ie, size(df_ie,2), blv)
 
 
 mu =  1.0 / (2.0 * 0.7 * (1-0.7))
 
-MCPhylo.calc_trans(1.0, 0.7, mu, 0.3)
-
-MA = MCPhylo.calc_trans.(blv, Ref(Array([0.7 0.3])), mu, 0.3)
-
+res = MCPhylo.calc_trans.(blv, 0.7, mu, 0.3)
+hcat(res...)
 
 
+
+@descend MCPhylo.calc_trans(0.3, Array([0.7 0.3]), mu, 0.3)
+@benchmark MCPhylo.calc_trans(0.3, Array([0.7 0.3]), mu, 0.3)
+@benchmark MCPhylo.calc_trans(0.3, 0.7, mu, 0.3)
+
+function exp_la(t::Float64, pa::Array{Float64,1}, mu::Float64, r::Float64)
+    v = exp(-r*t*mu)
+    di = similar(pa) .= 1.0-v
+    di2 = similar(pa) .= v
+    di * pa' .+ diagm(di2)
+
+end
+
+
+
+res::Array{Float64} = repeat(reshape(pi_, (1,2)), 2)
+di = Diagonal(ones(2))
+v = exp(-r*time*mu)
+res = res .*(1.0-v)
+res .+ (di .* v)
+
+p = Array([0.7 0.3])
+d = Array([1. 1.])
 mr = Zygote._pullback(f, 2.0)
 mr2 = Zygote.pullback(g, 2.0)
 @code_warntype mr[2](1.0)

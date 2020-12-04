@@ -120,14 +120,14 @@ names2inds(c::AbstractChains, names::Vector{T}) where {T<:AbstractString} =
 
 #################### Concatenation ####################
 
-function Base.cat(c1::AbstractChains, args::AbstractChains...; dims::Integer)
+function Base.cat(c1::A, args::A...; dims::Integer)::A where A <: AbstractChains
   dims == 1 ? cat1(c1, args...) :
   dims == 2 ? cat2(c1, args...) :
   dims == 3 ? cat3(c1, args...) :
     throw(ArgumentError("cannot concatenate along dimension $dim"))
 end
 
-function cat1(c1::AbstractChains, args::AbstractChains...)
+function cat1(c1::A, args::A...)::A where A <: AbstractChains
 
   range = c1.range
   for c in args
@@ -162,7 +162,7 @@ function cat1(c1::AbstractChains, args::AbstractChains...)
          chains=chains, moves=moves, tree_names=tree_names)
 end
 
-function cat2(c1::AbstractChains, args::AbstractChains...)
+function cat2(c1::A, args::A...)::A where A <: AbstractChains
   range = c1.range
   all(c -> c.range == range, args) ||
     throw(ArgumentError("chain ranges differ"))
@@ -191,7 +191,7 @@ function cat2(c1::AbstractChains, args::AbstractChains...)
          chains=chains, moves=moves)
 end
 
-function cat3(c1::AbstractChains, args::AbstractChains...)
+function cat3(c1::A, args::A...)::A where A <: AbstractChains
   range = c1.range
   all(c -> c.range == range, args) ||
     throw(ArgumentError("chain ranges differ"))

@@ -155,7 +155,7 @@ function sample!(m::Model, block::Integer=0)
     end
   end
   m.iter -= isoneblock
-  m.likelihood = logpdf(m)
+  m.likelihood = 0.0#logpdf(m)
   m
 end
 
