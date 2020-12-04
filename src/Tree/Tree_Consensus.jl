@@ -1,9 +1,22 @@
+#=
+    The consensus tree functions are implemented on basis of the following paper:
+
+   Jesper Jansson, Chuanqi Shen, and Wing-Kin Sung. 2016. Improved algorithms
+   for constructing consensustrees. J. ACM 63, 3, Article 28 (June 2016), 24 pages
+
+   Link: https://dl.acm.org/doi/pdf/10.1145/2925985
+
+   Most of the major functions include a note to find the section of the paper
+   they were based on.
+=#
+
 """
     find_common_clusters(ref_tree, tree:T)
         ::Dict{Int64, Tuple{Bool, Union{Float64, Missing}}}
 
 Use Day's algorithm to create a dictionary, that tells us for each node of the
-second input tree, if its corresponding cluster is a common cluster of the trees
+second input tree, if its corresponding cluster is a common cluster of the trees.
+Based on section 2.1. of the paper.
 """
 function find_common_clusters(ref_tree::T, tree::T)::Dict{Int64, Tuple{Bool, Union{Float64, Missing}}} where T<:AbstractNode
     ref_nodes = post_order(ref_tree)
@@ -76,7 +89,8 @@ end # function find_common_clusters
     one_way_compatible(ref_tree::T, tree::T)::T where T<:AbstractNode
 
 Takes two trees and returns a copy of the first one, where all the clusters that
-are not compatible with the second tree are removed.
+are not compatible with the second tree are removed. Based on section 2.5 of the
+paper.
 """
 function one_way_compatible(ref_tree::T, tree::T)::T where T<:AbstractNode
     ref_tree_copy = deepcopy(ref_tree)
@@ -144,7 +158,8 @@ end # function one_way_compatible
     merge_trees(ref_tree::T, tree::T)::Vector{T}} where T<:AbstractNode
 
 Merge two compatible trees, i.e. inserts all cluster of the first tree, which
-aren't already in the second tree, into the second tree
+aren't already in the second tree, into the second tree. Based on section 2.4 of
+the paper.
 """
 function merge_trees(ref_tree::T, tree::T)::Vector{T} where T<:AbstractNode
     ref_nodes = post_order(ref_tree)
@@ -228,8 +243,8 @@ end # function merge_trees
 """
     get_cluster_start_indeces(ref_tree::T, tree::T)::Dict{T, Int64} where T<:AbstractNode
 
-Helper function to obtain the cluster_start_indeces for the second tree, based
-on the first tree.
+Helper function to obtain the cluster start indeces for a tree (tree), based
+on another tree (ref_tree).
 """
 function get_cluster_start_indeces(ref_nodes::Vector{T}, tree::T)::Dict{T, Int64} where T<:AbstractNode
     leaves_dict = Dict{String, Int64}()
@@ -381,8 +396,9 @@ end # function x_right
     depth_dicts(leaves::Vector{T})
         ::Tuple{Dict{T, Tuple{T, Dict{Int64, T}}}, Dict{T, Tuple{T, Dict{Int64, T}}}} where T<:AbstractNode
 
-create a Dictionary that stores the depth of each node, as well as the left
-and right paths leading to it
+Helper function for one_way_compatible and merge_trees that creates a dictionary
+that stores the depth of each node, as well as the left and right path leading
+to it. This is based on section 6.1 of the paper.
 """
 function depth_dicts(leaves::Vector{T})::Tuple{Dict{T, Tuple{T, Dict{Int64, T}}}, Dict{T, Tuple{T, Dict{Int64, T}}}} where T<:AbstractNode
 
@@ -401,8 +417,10 @@ end
 """
     majority_consensus_tree(trees::Vector{T}, percentage::Float64=0.5)::T where T<:AbstractNode
 
-Construct the majority rule consensus tree from a set of trees. By default
-includes cluster that occur in over 50% of the trees.
+Construct the majority rule consensus tree from a set of trees. By default the
+output tree includes clusters that occur in over 50% of the trees. This can be
+customized when calling the function. The algorithm is based on section 3 of the
+paper and uses all functions above (pseudocode on page 28:12 of the paper)
 """
 function majority_consensus_tree(trees::Vector{T}, percentage::Float64=0.5)::T where T<:AbstractNode
     merged_tree = deepcopy(trees[1])
@@ -497,8 +515,9 @@ end
 """
     loose_consensus_tree(trees::Vector{T})::T where T<:AbstractNode
 
-Construct the loose consensus tree from a set of trees. I.e. the clusters appear in at least one
-tree and are compatible with all trees.
+Construct the loose consensus tree from a set of trees that share the same
+leafset. I.e. a tree with all the clusters that appear in at least one tree
+and are compatible with all trees. Based on section 4 of the paper.
 """
 function loose_consensus_tree(trees::Vector{T})::T where T<:AbstractNode
     trees_copy = deepcopy(trees)
