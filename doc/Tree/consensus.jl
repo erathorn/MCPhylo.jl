@@ -62,6 +62,14 @@ end
     @test MCPhylo.newick(MCPhylo.one_way_compatible(tree, tree2)) == MCPhylo.newick(expected_tree)
 end
 
+@testset "get_leaf_ranks" begin
+    ref_tree = MCPhylo.parsing_newick_string("((A,(B,(C,(D,E)))),(F,(G,H)))")
+    nodes = post_order(ref_tree)
+    @test MCPhylo.get_leaf_ranks(nodes) == Dict([("A", 1), ("B", 2), ("C", 3),
+                                                 ("D", 4), ("E", 5), ("F", 6),
+                                                 ("G", 7), ("H", 8)])
+end
+
 @testset "order_tree!" begin
     tree = MCPhylo.parsing_newick_string("(A,B,(C,(D,E)F)G)H;")
     MCPhylo.number_nodes!(tree)
