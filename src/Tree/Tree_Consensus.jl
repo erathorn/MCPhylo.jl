@@ -396,9 +396,9 @@ end # function x_right
     depth_dicts(leaves::Vector{T})
         ::Tuple{Dict{T, Tuple{T, Dict{Int64, T}}}, Dict{T, Tuple{T, Dict{Int64, T}}}} where T<:AbstractNode
 
-Helper function for one_way_compatible and merge_trees that creates a dictionary
-that stores the depth of each node, as well as the left and right path leading
-to it. This is based on section 6.1 of the paper.
+Helper function for one_way_compatible and merge_trees. Creates a dictionary
+based on a vector of leaf nodes, and stores the depth of each node, as well as
+the left and right path leading to it. Based on section 6.1 of the paper.
 """
 function depth_dicts(leaves::Vector{T})::Tuple{Dict{T, Tuple{T, Dict{Int64, T}}}, Dict{T, Tuple{T, Dict{Int64, T}}}} where T<:AbstractNode
 
@@ -413,6 +413,46 @@ function depth_dicts(leaves::Vector{T})::Tuple{Dict{T, Tuple{T, Dict{Int64, T}}}
     return xleft_dict, xright_dict
 end
 
+
+"""
+    set_node_stats!(tree::T, trees::Vector{T}, majority::Bool)
+        ::Nothing where T<:AbstractNode
+
+Helper function for the construction of a consensus tree. Calculates the
+inc_lengths and statistics of the nodes in the consensus tree. If dealing with a
+(in-progress) majority consensus tree, this function will also delete its
+non-majority clusters (handled by the 'majority' boolean).
+"""
+function set_node_stats!(main_tree::T, trees::Vector{T}, majority::Bool)::Nothing where T<:AbstractNode
+    nodes = level_order(main_tree)
+    count_dict = Dict(zip([n.num for n in nodes], zeros(Int64, length(nodes))))
+    inc_length_dict = Dict{Int64, Vector{Float64}}()
+    for tree in trees
+        is_common_cluster = find_common_clusters(tree, main_tree)
+        for node in nodes
+            if is_common_cluster[node.num][1]
+                count_dict[node.num] += 1
+                try
+                    push!(inc_length_dict[node.num], is_common_cluster[node.num][2])
+                catch KeyError
+                    inc_length_dict[node.num] = [is_common_cluster[node.num][2]]
+                end # try/catch
+            end # if
+        end # for
+    end # for
+    half = length(trees) * percentage
+    # delete non-majority clusters
+    for node in nodes
+        if type && count_dict[node.num] <= half
+            delete_node!(node)
+        else
+            node.inc_length = mean(inc_length_dict[node.num])
+            node.stats["sd"] = std(inc_length_dict[node.num])
+            node.stats["median"] = median(inc_length_dict[node.num])
+            node.stats["frequency"] = count_dict[node.num] / length(trees)
+        end # if
+    end # for
+end
 
 """
     majority_consensus_tree(trees::Vector{T}, percentage::Float64=0.5)::T where T<:AbstractNode
@@ -432,9 +472,9 @@ function majority_consensus_tree(trees::Vector{T}, percentage::Float64=0.5)::T w
         leaveset != leaveset2 && throw(ArgumentError("The trees do not have the same set of leaves"))
     end
     nodes = post_order(merged_tree)
+    # save leaf ranks to order the resulting tree in the end
     leaf_ranks = Dict{String, Int64}()
     count = 1
-    # save leaf ranks to order the resulting tree in the end
     for node in nodes
         if node.nchild == 0
             leaf_ranks[node.name] = count
@@ -498,7 +538,6 @@ function majority_consensus_tree(trees::Vector{T}, percentage::Float64=0.5)::T w
     end # for
 
     # order the resulting tree
-    # """
     nodes = post_order(merged_tree)
     cluster_start_indeces = Dict{Node, Int64}()
     for node in nodes
@@ -509,7 +548,6 @@ function majority_consensus_tree(trees::Vector{T}, percentage::Float64=0.5)::T w
         end # if/else
     end # for
     order_tree!(merged_tree, cluster_start_indeces)
-    # """
     return merged_tree
 end
 
@@ -532,9 +570,9 @@ function loose_consensus_tree(trees::Vector{T})::T where T<:AbstractNode
         leaveset != leaveset2 && throw(ArgumentError("The trees do not have the same set of leaves"))
     end
     nodes = post_order(r_tree)
+    # save leaf ranks to order the resulting tree in the end
     leaf_ranks = Dict{String, Int64}()
     count = 1
-    # save leaf ranks to order the resulting tree in the end
     for node in nodes
         if node.nchild == 0
             leaf_ranks[node.name] = count
@@ -571,6 +609,7 @@ function loose_consensus_tree(trees::Vector{T})::T where T<:AbstractNode
         node.stats["frequency"] = count_dict[node.num] / length(trees)
     end # for
 
+    # order the resulting tree
     nodes = post_order(r_tree)
     cluster_start_indeces = Dict{Node, Int64}()
     for node in nodes
