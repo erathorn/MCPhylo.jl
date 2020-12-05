@@ -241,11 +241,11 @@ end # function merge_trees
 
 
 """
-    get_cluster_start_indeces(ref_tree::T, tree::T)
+    get_cluster_start_indeces(ref_nodes::T, tree::T)
         ::Dict{T, Int64} where T<:AbstractNode
 
 Helper function to obtain the cluster start indeces for a tree (tree), based
-on another tree (ref_tree).
+on the nodes of another tree (ref_nodes).
 """
 function get_cluster_start_indeces(ref_nodes::Vector{T}, tree::T)::Dict{T, Int64} where T<:AbstractNode
     leaf_ranks = get_leaf_ranks(ref_nodes)
