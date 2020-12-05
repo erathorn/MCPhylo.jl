@@ -241,21 +241,14 @@ end # function merge_trees
 
 
 """
-    get_cluster_start_indeces(ref_tree::T, tree::T)::Dict{T, Int64} where T<:AbstractNode
+    get_cluster_start_indeces(ref_tree::T, tree::T)
+        ::Dict{T, Int64} where T<:AbstractNode
 
 Helper function to obtain the cluster start indeces for a tree (tree), based
 on another tree (ref_tree).
 """
 function get_cluster_start_indeces(ref_nodes::Vector{T}, tree::T)::Dict{T, Int64} where T<:AbstractNode
-    leaves_dict = Dict{String, Int64}()
-    count = 1
-    # CHECK IF NAMES ARE UNIQUE OR IF THERE ARE DOUBLETS
-    for ref_node in ref_nodes
-        if ref_node.nchild == 0
-            leaves_dict[ref_node.name] = count
-            count += 1
-        end # if
-    end # for
+    leaf_ranks = get_leaf_ranks(ref_nodes)
     leaves = Vector{Node}()
     cluster_start_indeces = Dict{Node, Int64}()
     nodes = post_order(tree)
@@ -264,16 +257,35 @@ function get_cluster_start_indeces(ref_nodes::Vector{T}, tree::T)::Dict{T, Int64
             for leaf in leaves
                 path = split(node.binary, ",")
                 if node_depth(node) <= node_depth(leaf) && path == split(leaf.binary, ",")[1:length(path)]
-                    cluster_start_indeces[node] = leaves_dict[leaf.name]
+                    cluster_start_indeces[node] = leaf_ranks[leaf.name]
                     break
                 end # if
             end # for
         else
-            cluster_start_indeces[node] = leaves_dict[node.name]
+            cluster_start_indeces[node] = leaf_ranks[node.name]
             push!(leaves, node)
         end # if / else
     end # for
     return cluster_start_indeces
+end
+
+
+"""
+    function get_leaf_ranks(nodes::Vector{T})
+        ::Dict{String, Int64} where T<:AbstractNode
+
+Enumerate the leaf nodes in a tree. Returns a dictionary of this mapping.
+"""
+function get_leaf_ranks(nodes::Vector{T})::Dict{String, Int64} where T<:AbstractNode
+    leaf_ranks = Dict{String, Int64}()
+    count = 1
+    for node in nodes
+        if node.nchild == 0
+            leaf_ranks[node.name] = count
+            count += 1
+        end # if
+    end # for
+    return leaf_ranks
 end
 
 
@@ -473,14 +485,7 @@ function majority_consensus_tree(trees::Vector{T}, percentage::Float64=0.5)::T w
     end
     nodes = post_order(merged_tree)
     # save leaf ranks to order the resulting tree in the end
-    leaf_ranks = Dict{String, Int64}()
-    count = 1
-    for node in nodes
-        if node.nchild == 0
-            leaf_ranks[node.name] = count
-            count += 1
-        end # if
-    end # for
+    leaf_ranks = get_leaf_ranks(nodes)
     node_counts = convert(Vector{Int64}, ones(length(nodes)))
     count_dict = Dict(zip(nodes, node_counts))
     for tree in trees[2:end]
@@ -543,14 +548,7 @@ function loose_consensus_tree(trees::Vector{T})::T where T<:AbstractNode
     end
     nodes = post_order(r_tree)
     # save leaf ranks to order the resulting tree in the end
-    leaf_ranks = Dict{String, Int64}()
-    count = 1
-    for node in nodes
-        if node.nchild == 0
-            leaf_ranks[node.name] = count
-            count += 1
-        end # if
-    end # for
+    leaf_ranks = get_leaf_ranks(nodes)
     for i in 2:length(trees_copy)
         compatible_tree = one_way_compatible(trees_copy[i-1], trees_copy[i])
         merge_trees(compatible_tree, trees_copy[i])
