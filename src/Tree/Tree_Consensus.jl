@@ -423,7 +423,7 @@ inc_lengths and statistics of the nodes in the consensus tree. If dealing with a
 (in-progress) majority consensus tree, this function will also delete its
 non-majority clusters (handled by the 'majority' boolean).
 """
-function set_node_stats!(main_tree::T, trees::Vector{T}, majority::Bool)::Nothing where T<:AbstractNode
+function set_node_stats!(main_tree::T, trees::Vector{T}, majority::Bool, percentage::Float64=0.0)::Nothing where T<:AbstractNode
     nodes = level_order(main_tree)
     count_dict = Dict(zip([n.num for n in nodes], zeros(Int64, length(nodes))))
     inc_length_dict = Dict{Int64, Vector{Float64}}()
@@ -443,7 +443,7 @@ function set_node_stats!(main_tree::T, trees::Vector{T}, majority::Bool)::Nothin
     half = length(trees) * percentage
     # delete non-majority clusters
     for node in nodes
-        if type && count_dict[node.num] <= half
+        if majority && count_dict[node.num] <= half
             delete_node!(node)
         else
             node.inc_length = mean(inc_length_dict[node.num])
@@ -508,35 +508,7 @@ function majority_consensus_tree(trees::Vector{T}, percentage::Float64=0.5)::T w
         end # for
     end # for
     # find clusters of the final tree in the other tree, store inc_length and count
-    nodes = level_order(merged_tree)
-    count_dict = Dict(zip([n.num for n in nodes], zeros(Int64, length(nodes))))
-    inc_length_dict = Dict{Int64, Vector{Float64}}()
-    for tree in trees
-        is_common_cluster = find_common_clusters(tree, merged_tree)
-        for node in nodes
-            if is_common_cluster[node.num][1]
-                count_dict[node.num] += 1
-                try
-                    push!(inc_length_dict[node.num], is_common_cluster[node.num][2])
-                catch KeyError
-                    inc_length_dict[node.num] = [is_common_cluster[node.num][2]]
-                end # try/catch
-            end # if
-        end # for
-    end # for
-    half = length(trees) * percentage
-    # delete non-majority clusters
-    for node in nodes
-        if count_dict[node.num] <= half
-            delete_node!(node)
-        else
-            node.inc_length = mean(inc_length_dict[node.num])
-            node.stats["sd"] = std(inc_length_dict[node.num])
-            node.stats["median"] = median(inc_length_dict[node.num])
-            node.stats["frequency"] = count_dict[node.num] / length(trees)
-        end # if
-    end # for
-
+    set_node_stats!(merged_tree, trees, true, percentage)
     # order the resulting tree
     nodes = post_order(merged_tree)
     cluster_start_indeces = Dict{Node, Int64}()
@@ -586,29 +558,7 @@ function loose_consensus_tree(trees::Vector{T})::T where T<:AbstractNode
     for tree in trees_copy
         r_tree = one_way_compatible(r_tree, tree)
     end
-    nodes = level_order(r_tree)
-    count_dict = Dict(zip([n.num for n in nodes], zeros(Int64, length(nodes))))
-    inc_length_dict = Dict{Int64, Vector{Float64}}()
-    for tree in trees
-        is_common_cluster = find_common_clusters(tree, r_tree)
-        for node in nodes
-            if is_common_cluster[node.num][1]
-                count_dict[node.num] += 1
-                try
-                    push!(inc_length_dict[node.num], is_common_cluster[node.num][2])
-                catch KeyError
-                    inc_length_dict[node.num] = [is_common_cluster[node.num][2]]
-                end # try/catch
-            end # if
-        end # for
-    end # for
-    for node in nodes
-        node.inc_length = mean(inc_length_dict[node.num])
-        node.stats["sd"] = std(inc_length_dict[node.num])
-        node.stats["median"] = median(inc_length_dict[node.num])
-        node.stats["frequency"] = count_dict[node.num] / length(trees)
-    end # for
-
+    set_node_stats!(r_tree, trees, false)
     # order the resulting tree
     nodes = post_order(r_tree)
     cluster_start_indeces = Dict{Node, Int64}()
