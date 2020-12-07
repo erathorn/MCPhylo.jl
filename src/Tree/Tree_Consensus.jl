@@ -473,8 +473,11 @@ Construct the majority rule consensus tree from a set of trees that share the
 same leafset. By default the output tree includes clusters that occur in over
 50% of the trees. This can be customized when calling the function. The function
 returns the root node of the majority consensus tree, from which it can be
-traversed. The algorithm is based on section 3 of the paper and uses all
-functions above (pseudocode on page 28:12 of the paper).
+traversed. The algorithm is based on section 3 of:
+
+Jesper Jansson, Chuanqi Shen, and Wing-Kin Sung. 2016. Improved algorithms
+for constructing consensustrees. J. ACM 63, 3, Article 28 (June 2016), 24 pages
+https://dl.acm.org/doi/pdf/10.1145/2925985
 """
 function majority_consensus_tree(trees::Vector{T}, percentage::Float64=0.5)::T where T<:AbstractNode
     merged_tree = deepcopy(trees[1])
@@ -535,8 +538,11 @@ end
 Construct the loose consensus tree from a set of trees that share the same
 leafset. I.e. a tree with all the clusters that appear in at least one tree
 and are compatible with all trees. Returns the root node of the loose consensus
-tree, from which it can be traversed. This algorithm is based on section 4 of
-the paper (pseudocode on page 28:15).
+tree, from which it can be traversed. This algorithm is based on section 4 of:
+
+Jesper Jansson, Chuanqi Shen, and Wing-Kin Sung. 2016. Improved algorithms
+for constructing consensustrees. J. ACM 63, 3, Article 28 (June 2016), 24 pages
+https://dl.acm.org/doi/pdf/10.1145/2925985
 """
 function loose_consensus_tree(trees::Vector{T})::T where T<:AbstractNode
     trees_copy = deepcopy(trees)
