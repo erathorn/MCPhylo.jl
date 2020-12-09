@@ -39,7 +39,15 @@ const NUTSVariate = SamplerVariate{NUTSTune}
 
 
 #################### Sampler Constructor ####################
+"""
+    NUTS(params::ElementOrVector{Symbol}; dtype::Symbol=:forward, args...)
 
+Construct a `Sampler` object for NUTS sampling, with the algorithm’s step size
+parameter adaptively tuned during burn-in iterations. Parameters are assumed
+to be continuous, but may be constrained or unconstrained.
+
+Returns a `Sampler{NUTSTune}` type object.
+"""
 function NUTS(params::ElementOrVector{Symbol}; dtype::Symbol=:forward, args...)
   samplerfx = function(model::Model, block::Integer)
     block = SamplingBlock(model, block, true)
@@ -55,7 +63,14 @@ end
 #################### Sampling Functions ####################
 
 sample!(v::NUTSVariate; args...) = sample!(v, v.tune.logfgrad; args...)
+"""
+    sample!(v::NUTSVariate, logfgrad::Function; adapt::Bool=false)
 
+Draw one sample from a target distribution using the NUTS sampler. Parameters
+are assumed to be continuous and unconstrained.
+
+Returns `v` updated with simulated values and associated tuning parameters.
+"""
 function sample!(v::NUTSVariate, logfgrad::Function; adapt::Bool=false)
   tune = v.tune
   setadapt!(v, adapt)

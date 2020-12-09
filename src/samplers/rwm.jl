@@ -40,7 +40,15 @@ end
 
 
 #################### Sampler Constructor ####################
+"""
+    RWM(params::ElementOrVector{Symbol},
+                  scale::ElementOrVector{T}; args...) where {T<:Real})
 
+Construct a `Sampler` object for RWM sampling. Parameters are assumed to be
+continuous, but may be constrained or unconstrained.
+
+Returns a `Sampler{RWMTune}` type object.
+"""
 function RWM(params::ElementOrVector{Symbol},
               scale::ElementOrVector{T}; args...) where {T<:Real}
 
@@ -116,6 +124,14 @@ function sample!(v::RWMVariate, logf::Function, moves::Array{Symbol})
   v
 end
 
+"""
+    sample!(v::RWMVariate, logf::Function)
+
+Draw one sample from a target distribution using the RWM sampler. Parameters
+are assumed to be continuous and unconstrained.
+
+Returns `v` updated with simulated values and associated tuning parameters.
+"""
 function sample!(v::RWMVariate, logf::Function)
   x = v + v.tune.scale .* rand(v.tune.proposal(0.0, 1.0), length(v))
   if rand() < exp(logf(x) - logf(v.value))

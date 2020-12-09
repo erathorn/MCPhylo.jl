@@ -60,6 +60,7 @@ Main.MCPhylo.get_sum_seperate_length!
 Main.MCPhylo.check_binary
 Main.MCPhylo.path_length
 ```
+
 ### Variable Functions
 These Functions calculate/edit variables for a given tree.
 ```@docs
