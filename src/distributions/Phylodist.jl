@@ -31,35 +31,43 @@ Base.size(d::PhyloDist) = (d.nbase, d.nsites, d.nnodes)
 function logpdf(d::PhyloDist, x::AbstractArray)
 
     mt = post_order(d.my_tree)
+    data = Array{Float64, 4}(undef, d.nbase, d.nsites, length(d.rates), d.nnodes)
 
-    blv = get_branchlength_vector(d.my_tree)
-    res = Threads.Atomic{Float64}(0.0)
-
-    Base.Threads.@threads for r in d.rates
-        Threads.atomic_add!(
-        res, FelsensteinFunction(mt, d.mypi, r, x, d.nsites, blv)
-        )
+    @inbounds for i in 1:length(d.rates)
+        data[:, :, i, :] .= x
     end
-    res[]
+
+    Nbases, Nsites, Nrates, Nnodes = size(data)
+    Q::Array{Float64,2} = ones(Nbases,Nbases)
+    Q[diagind(Nbases,Nbases)] .= -1
+    Q .*= d.mypi
+    D, _ , U, _ = LAPACK.geev!('V', 'N',Q)
+    Uinv = inv(U)
+
+    mu::Float64 =  1.0 / (2.0 * prod(d.mypi))
+    mutationArray::Array{Float64,4} = Array{Float64,4}(undef, Nbases, Nbases, Nrates, Nnodes-1)
+
+
+    Down::Array{Float64,4} = similar(data)
+    fels_ll(mt, data, D, U, Uinv, d.rates, mu, Nrates, Nsites, Down, d.mypi, mutationArray)
 end
 
 
 function gradlogpdf(d::PhyloDist, x::AbstractArray)
 
     mt = post_order(d.my_tree)
-    N = length(mt)-1
-    mg = Threads.Atomic{Float64}.(zeros(N))
-    res = Threads.Atomic{Float64}(0.0)
-
-
-    # use ∇(F+G) = ∇F + ∇G to speed up the process
-    Base.Threads.@threads for mrx in d.rates
-        r1, gv = Felsenstein_grad(mt, d.mypi, mrx, x, d.nsites)
-        Threads.atomic_add!(res, r1)
-        @inbounds @simd for i in 1:N
-            Threads.atomic_add!(mg[i], gv[i])
-        end
+    data = Array{Float64, 4}(undef, d.nbase, d.nsites, length(d.rates), d.nnodes)
+    @inbounds for i in 1:length(d.rates)
+        data[:, :, i, :] .= x
     end
+    # use ∇(F+G) = ∇F + ∇G to speed up the process
+    #Base.Threads.@threads for mrx in d.rates
+    Felsenstein_grad(mt, d.mypi, d.rates, data)
+    #    Threads.atomic_add!(res, r1)
+    #    @inbounds @simd for i in 1:N
+    #        Threads.atomic_add!(mg[i], gv[i])
+    #    end
+    #end
 
-    res[], getproperty.(mg, :value)
+    #res[], getproperty.(mg, :value)
 end
