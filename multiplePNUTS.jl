@@ -36,11 +36,11 @@ my_data = Dict{Symbol, Any}(
 );
 
 
-
+#rates[1:4]
 # model setup
 model =  Model(
     df_ie = Stochastic(3, (mtree_ie, mypi_ie,  rates) ->
-                            PhyloDist(mtree_ie, mypi_ie, rates[1:4], my_data[:nbase][2], my_data[:nsites][2], my_data[:nnodes][2]), false, false),
+                            PhyloDist(mtree_ie, mypi_ie, 1.0, my_data[:nbase][2], my_data[:nsites][2], my_data[:nnodes][2]), false, false),
     df_st = Stochastic(3, (mtree_st, mypi_st, rates) ->
                             PhyloDist(mtree_st, mypi_st, rates[5:8], my_data[:nbase][1], my_data[:nsites][1], my_data[:nnodes][1]), false, false),
     df_aa = Stochastic(3, (mtree_aa, mypi_aa, rates) ->
@@ -94,10 +94,10 @@ inits = [ Dict{Symbol, Union{Any, Real}}(
     ]
 
 scheme = [PNUTS(:mtree_ie),
-          PNUTS(:mtree_st),
-          PNUTS(:mtree_an),
-          PNUTS(:mtree_aa),
-          PNUTS(:mtree_pn),
+          #PNUTS(:mtree_st),
+          #PNUTS(:mtree_an),
+          #PNUTS(:mtree_aa),
+          #PNUTS(:mtree_pn),
           #RWM(:mtree_ie, :all),
           #RWM(:mtree_st, :all),
           #RWM(:mtree_an, :all),
@@ -106,12 +106,12 @@ scheme = [PNUTS(:mtree_ie),
           #Slice(:mtree_ie, 1.0, Multivariate),
           #Slice(:mtree_an, 1.0, Multivariate),
           SliceSimplex(:mypi_ie),
-          SliceSimplex(:mypi_an),
-          SliceSimplex(:mypi_st),
-          SliceSimplex(:mypi_aa),
-          SliceSimplex(:mypi_pn),
-          Slice(:αs, 1.0, Multivariate),
-          Slice([:a, :b, :c, :d], 1.0, Multivariate)
+          #SliceSimplex(:mypi_an),
+          #SliceSimplex(:mypi_st),
+          #SliceSimplex(:mypi_aa),
+          #SliceSimplex(:mypi_pn),
+          #Slice(:αs, 1.0, Multivariate),
+          #Slice([:a, :b, :c, :d], 1.0, Multivariate)
           #RWM(:αs, 1.0)
           ]
 
@@ -119,8 +119,8 @@ setsamplers!(model, scheme);
 
 # do the mcmc simmulation. if trees=true the trees are stored and can later be
 # flushed ot a file output.
-sim = mcmc(model, my_data, inits, 10,
-    burnin=5,thin=1, chains=1, trees=true)
+sim = mcmc(model, my_data, inits, 5,
+    burnin=2,thin=1, chains=1, trees=true)
 to_file(sim, "testMult_")
 
 using Cthulhu
@@ -129,96 +129,105 @@ using LinearAlgebra
 using Juno
 using Profile
 mr = discrete_gamma_rates(0.5, 0.5, 4)
+
 pd = PhyloDist(mt_ie,[0.5, 0.5], mr, my_data[:nbase][2], my_data[:nsites][2], my_data[:nnodes][2])
-
-#Zygote.@showgrad
-@descend mcmc(model, my_data, inits, 5, burnin=1,thin=1, chains=1, trees=true)
-
-r3, r4 = gradlogpdf(pd, df_ie)
-
-r1, r2 = gradlogpdf(pd, df_ie)
 
 blv = get_branchlength_vector(mt_ie)
 po = post_order(mt_ie)
-@descend MCPhylo.FelsensteinFunction(po, [0.5,0.5], mr[1], df_ie, size(df_ie,2), blv)
+MCPhylo.FelsensteinFunction(po, [0.5,0.5], mr[2], df_ie, size(df_ie,2), blv)
+f(x) = MCPhylo.FelsensteinFunction(po, [0.5,0.5], mr[2], df_ie, size(df_ie,2), x)
+ll, grad = MCPhylo.Felsenstein_grad(po, [0.5,0.5], mr[2], df_ie, size(df_ie,2))
+grad2 = gradient(f, blv)[1]
+@descend MCPhylo.Felsenstein_grad(po, [0.5,0.5], mr[2], df_ie, size(df_ie,2))
+grad.== grad2
+
+function mFelsenstein_grad(tree_postorder::Vector{N}, pi_::Array{Float64}, rates::Float64,
+                             data::Array{Float64,3}, n_c::Int64, blv::Array{Float64,1}) where {N<:GeneralNode}
+
+     mu::Float64 =  1.0 / (2.0 * prod(pi_))
+     mutationArray::Vector{Array{Float64, 2}} = MCPhylo.calc_trans.(blv, pi_[1], mu, rates)
+     root_node::N = last(tree_postorder)
+     ll = 0.0
+     Down = similar(data)
+     Down .= -Inf
+
+     #@views
+     for node in tree_postorder
+         if node.nchild > 0
+             out = ones(size(node.data))
+             @inbounds @views for child in node.children
+                 Down[:, :, child.num] = BLAS.gemm('N','N',mutationArray[child.num], child.data)
+                 out .*= Down[:, :, child.num]
+             end
+             if !node.root
+                 scaler::Array{Float64} = maximum(out, dims=1)
+                 out ./= scaler
+                 ll += sum(log.(scaler))
+             end
+             node.data = out
+         end #if
+     end # for
+     ll += sum(log.(sum(root_node.data .* pi_, dims=1)))
 
 
-mu =  1.0 / (2.0 * 0.7 * (1-0.7))
 
-res = MCPhylo.calc_trans.(blv, 0.7, mu, 0.3)
-hcat(res...)
+     pre_order_partial = similar(data)
+     pre_order_partial .= -Inf
+
+     pre_order_partial[:, :, root_node.num] .= pi_
+
+     c = size(pre_order_partial, 2)
+     tree_preorder = pre_order(root_node)
+     #grv = ones(c, length(blv))#
+     grv = similar(blv)
+     grv .= 1.0
+     Q = ones(2,2)
+     Q[diagind(2,2)] .= -1
+     Q .*= pi_
+
+     #@views
+     for node in reverse(tree_postorder)#tree_preorder
+             if !node.root
+                 mother = node.mother
+                 pre_order_partial[:, :, node.num] .= pre_order_partial[:, :, mother.num]
+                 for child in mother.children
+                     if child.num != node.num
+                         pre_order_partial[:, :, node.num] .*= Down[:, :, child.num]
+                     end
+                 end
+                 Pi = mutationArray[node.num]
+                 ptg = (rates*mu*Q)*Pi
+                 gradi = sum(pre_order_partial[:, :, node.num] .* (ptg * node.data), dims=1)
+                 pre_order_partial[:, :, node.num] .= Pi' * pre_order_partial[:, :, node.num]
+                 gradi ./= sum(pre_order_partial[:, :, node.num] .* node.data, dims=1)
 
 
+                 #gr /= sum(pre_order_partial[:, :, node.num] .* node.data, dims=1)
+                 #sp = (mu .* rates .* Q) * Down[:, :, node.num]
+                 #sp =  Q * Down[:, :, node.num]
+                 #grv[:, node.num] .= map(x -> sum(pre_order_partial[:,x,node.num] .* sp[:, x]), 1:c)
+                 #divider = map(x -> sum(pre_order_partial[:,x,node.num] .* Down[:, x, node.num]), 1:c)
 
-@descend MCPhylo.calc_trans(0.3, Array([0.7 0.3]), mu, 0.3)
-@benchmark MCPhylo.calc_trans(0.3, Array([0.7 0.3]), mu, 0.3)
-@benchmark MCPhylo.calc_trans(0.3, 0.7, mu, 0.3)
+                 grv[node.num] =  sum(gradi)#map(x -> sum(pre_order_partial[:,x,node.num] .* sp[:, x]), 1:c) ./ divider
 
-function exp_la(t::Float64, pa::Array{Float64,1}, mu::Float64, r::Float64)
-    v = exp(-r*t*mu)
-    di = similar(pa) .= 1.0-v
-    di2 = similar(pa) .= v
-    di * pa' .+ diagm(di2)
+
+                 if node.nchild > 0
+                     scaler = maximum(pre_order_partial[:, :, node.num], dims = 1)
+                     pre_order_partial[:, :, node.num] ./= scaler
+                 end
+
+             end #if
+
+     end # for
+     #ll = MCPhylo.likelihood_root(root_node.data, pi_, rns)
+
+     return ll, grv
 
 end
 
+function testmf(arr, q)
+    sp = Q*arr
+    r, c = size(arr)
+    map(x -> sum(arr[:,x] .* sp[:, x]), 1:c)
 
-
-res::Array{Float64} = repeat(reshape(pi_, (1,2)), 2)
-di = Diagonal(ones(2))
-v = exp(-r*time*mu)
-res = res .*(1.0-v)
-res .+ (di .* v)
-
-p = Array([0.7 0.3])
-d = Array([1. 1.])
-mr = Zygote._pullback(f, 2.0)
-mr2 = Zygote.pullback(g, 2.0)
-@code_warntype mr[2](1.0)
-mr[2](1.0)
-mr2[2](1.0)
-
-
-
-function nct(time::Float64, pi_::Array{Float64}, mu, r)
-    res = repeat(pi_, 2)
-    test = Diagonal(ones(2))
-    v = exp(-r*time*mu)
-    res = res .*(1-v)
-    test = test .* v
-    res .+ test
-    #res[1,1] = res[1,1]+v
-    #res[2,2] = res[2,2]+v
-    #res
 end
-
-da = rand(2,2157)
-da2 = rand(2,2)
-lda = [da2, da2, da2]
-function test(da, lda)
-    res = ones(2,2157)
-    for i in 1:3
-        res = res .* (lda[i]*da)
-    end
-    res
-end
-
-mtres = mapreduce(y->y*da, (x,z)->x .* z, lda)
-
-
-using BenchmarkTools
-@benchmark Base.maximum(mtres, dims=1)
-
-@benchmark mapslices(maximum, mtres, dims=1)
-using LoopVectorization
-function mygemmavx!(C, A, B)
-   @avx for m ∈ axes(A,1), n ∈ axes(B,2)
-       Cmn = zero(eltype(C))
-       for k ∈ axes(A,2)
-           Cmn += A[m,k] * B[k,n]
-       end
-       C[m,n] = Cmn
-   end
-end
-
-mygemmavx!(rand(4,4), rand(4,4), rand(4,4))
