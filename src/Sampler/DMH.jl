@@ -5,7 +5,7 @@
 mutable struct DMHTune <: SamplerTune
   logf::Union{Function, Missing}
   pseudolog::Union{Function, Missing} # AuxLog
-  condlike::Union{Function, Missing}
+  condlike::Union{Function, Missing} # do we still need the missing types?
   datakeys::Vector{Symbol}
   m::Int64
   scale::Float64
@@ -36,7 +36,6 @@ function DMH(params::ElementOrVector{Symbol}, m::Int64, scale::Float64)
 	targets = keys(model, :target, params)
 	tune.datakeys = targets
     block = SamplingBlock(model, block, true)
-	println(tune.datakeys)
 
     f = x -> logpdf!(block, x)
 	fp = (x, y) -> pseudologpdf!(block, x, y)
@@ -101,14 +100,13 @@ end
 function inner_sampler(v::DMHVariate, X)
 
 
-	nfeatures, nlang = size(X)
+	nfeatures, nlangs = size(X)
 	counter = 0
 	while true
-		random_language_idx = shuffle(1:nlang)
+		random_language_idx = shuffle(1:nlangs)
 		random_feature_idx = shuffle(1:nfeatures)
 		for i in random_language_idx
 			for f in random_feature_idx
-				feature_vals = sort!(unique(skipmissing(X[f,:])))
 				probs = v.tune.condlike(v, i, f)
 				probs ./= sum(probs)
 				new_x = rand(Categorical(probs))

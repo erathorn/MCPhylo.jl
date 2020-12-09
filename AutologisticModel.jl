@@ -5,87 +5,68 @@ using Random
 import Distributions: logpdf
 Random.seed!(42)
 
-using LightGraphs, MetaGraphs, Random
+using LightGraphs, Random
 using LinearAlgebra, Distributions, StatsBase
 
 include("wals_features.jl")
 include("neighbour_graphs.jl")
+include("AutologistcDistr.jl")
 
 lmat = create_linguistic_nmat(langs)
 nmat = create_nmat(sample_dmat, 1000)
 nmat = Int64.(nmat)
 
-ngraph = MetaGraph(nmat)
-lgraph = MetaGraph(lmat)
-set_k_vals!(datadict, ngraph)
-set_k_vals!(datadict, lgraph)
+ngraph = SimpleGraph(nmat)
+lgraph = SimpleGraph(lmat)
 
-# to retrieve the value for language 1, feature k:
-get_prop(ngraph, 5, Symbol("81A"))
+ov_space = ov_concordant_sums(data_array, nmat)
+ov_ling = ov_concordant_sums(data_array, lmat)
+ov_uni = universality(data_array)
 
-"""
-function for retrieving all the neighbour sums for x's and k's and
-returning them as an array of (nlanguages, nfeatures) such that
-the sums array[i,k] returns the sum for the ith language and the
-kth feature. (The names of the features should still be passed
-as a vector of strings).
-"""
+spacesums = cond_concordant_sums(data_array, ngraph)
+lingsums = cond_concordant_sums(data_array, lgraph)
 
-function n_sum_all(X::Array{Union{Missing,Int64},2}, g::MetaGraph, features::Vector{String})
-	nvals = maximum(skipmissing(X)) # problem: might get number of features if nfeatures > max value
-	nfeatures, nlang = size(X)
-	sums = Array{Float64,3}(undef, nfeatures, nlang, nvals)
-	for feature_idx in 1:nfeatures
-		sym = Symbol(features[feature_idx])
-		ith_feature = X[feature_idx,:]
-		# get language index and language feature value
-		for (i, x) in enumerate(ith_feature)
-			for k in 1:nvals
-				sums[feature_idx, i, k] = neighbour_k_sum(X[feature_idx,:], g, i, k, sym)
-			end
-		end
-	end
-	return sums
-end
-
-spatial_sums = n_sum_all(data_array, ngraph, feature_list)
-linguistic_sums = n_sum_all(data_array, lgraph, feature_list)
-
-include("AutologistcDistr.jl")
-
-data_array[ismissing.(data_array)] .= -100
+nvals = extract_nvals(data_array)
 
 my_data = Dict{Symbol, Any}(
   :df => data_array
 );
 
+nlangs = length(data_array[1,:])
+nfeat = 4
 
 # model setup
 model =  Model(
     df = Stochastic(2, (linw, spaw, uniw) ->
-        AutologisticDistr(linguistic_sums, linw, spatial_sums, spaw, uniw, 183, 4), false, false),
-	linw = Stochastic(1, ()->Normal(), true),
-	spaw = Stochastic(1, ()->Normal(), true),
-	uniw = Stochastic(1, ()->Normal(), true)
+        AutologisticDistr(lingsums, ov_ling, linw, spacesums, ov_space, spaw,
+		ov_uni, uniw, nvals, nlangs, nfeat), false, false),
+	linw = Stochastic(1, ()-> Gamma(1.0, 1.0), true),
+	spaw = Stochastic(1, ()-> Gamma(1.0, 1.0), true),
+	uniw = Stochastic(1, ()-> Normal(0, 10), true)
      )
 
 
 # intial model values
-inits = [ Dict{Symbol, Union{Any, Real}}(
+inits = [Dict{Symbol, Union{Any, Real}}(
  :df => data_array,
- :linguistic_sums => linguistic_sums,
- :spatial_sums => spatial_sums,
+ :lingsums => lingsums,
+ :spacesums => spacesums,
+ :ov_ling => ov_ling,
+ :ov_space => ov_space,
+ :ov_uni => ov_uni,
  :linw => rand(183),
  :spaw => rand(183),
- :uniw => rand(183)
- ),
-]
+ :uniw => rand(183))
+ for i in 1:10]
 
-
-scheme = [MCPhylo.DMH(:linw, 250, 1.0)
+scheme = [MCPhylo.DMH(:linw, 250, 1.0), #m and s
+ 		MCPhylo.DMH(:spaw, 250, 1.0),
+		MCPhylo.DMH(:uniw, 250, 1.0)
            ]
 
 setsamplers!(model, scheme)
 
-sim = mcmc(model, my_data, inits, 5,
-   burnin=1,thin=1, chains=1)
+sim = mcmc(model, my_data, inits, 10, #n generations
+   burnin=2,thin=1, chains=10)
+
+to_file(sim, "myDMH")

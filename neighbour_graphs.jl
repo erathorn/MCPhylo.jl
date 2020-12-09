@@ -1,4 +1,4 @@
-using Distances, LinearAlgebra, LightGraphs, MetaGraphs
+using Distances, DataFrames, LinearAlgebra, LightGraphs
 
 function create_neighbour_list(dm::Array{Float64,2}, threshold::Int64, languages::Vector{String})
     neighbours = Vector()
@@ -45,111 +45,99 @@ function create_weighted_graph(x)
 end
 
 """
-The functions below find neighbouring pairs for vertex v
-that are concordant for trait x.
+count_concordant_edges calculates the total number of concordant edges in
+an adjacency matrix. Args:
+- x: vector of data (values for one feature),
+- nmat: either linguistic or spatial adjacency matrix
 """
 
-function concordant_sum(X::Array{Int64,1}, g::MetaGraph, v::Int64)
-    concordant_sum = 0
-    for n in neighbors(g, v)
-#        if has_prop(mg, :x, v) - build this in to throw an error if prop not defined for g, v
-        if get_prop(g, n, :x) == get_prop(g, v, :x)
-            concordant_pairs += 1 # or another way to measure the pairs?
-        end
-    end
-    return concordant_sum
-end
-
-"""
-nmat_sum takes args:
-- x: vector of data (feature values),
-- nmat: either linguistic or spatial adjacency matrix,
-- k: feature value of interest, and
-- l: language (data point) of interest.
-
-NB: it throws a BoundsError when I try to iterate through x in the sampler,
-probably an issue with the way I index x[i], but I don't have
-a good solution (except using graphs, which are easier to work with
-due to the neighbor() function).
-"""
-
-function nmat_sum(x::Array{Int64,1}, nmat::Array{Int64,2}, k::Int64, l::Int64)
-	concordant_pairs = 0.0
-	neighbour_indices = findall(x -> x != 0, nmat[l,:])
-    for i in neighbour_indices
-        if x[i] == k
-			concordant_pairs += 1
-		end
-    end
-    return concordant_pairs
-end
-
-"""
-set_k_vals! sets the feature values for the MetaGraph. Args:
-- the dictionary of data (symbols to feature value arrays);
-- the MetaGraph.
-"""
-
-function set_k_vals!(data::Dict, g::MetaGraph)
-	nfeatures = length(data)
-	for key in keys(data)
-		feature_vals = data[key]
-    	for (v, x) in enumerate(feature_vals)
-        	set_prop!(g, v, key, x)
-		end
-    end
-    return g
-end
-
-
-function create_neighbour_graph(nmat::Array{Int64,2}, X::Array{Any,2})
-	g = MetaGraph(nmat)
-	set_k_vals!(g, X)
-	return g
-end
-
-"""
-concordant neighbour sum: the sum of all neighbours of l that share feature k
-(when l also has feature k).
-- X: data vector,
-- g: spatial or linguistic graph,
-- l: the  language (vertex in the graph),
-- k: the feature value (e.g. SOV, SVO...)
-- sym: the feature value name as a symbol, e.g. Symbol("81A")
-
-neighbour k sum: the sum of all neighbours of l that have feature k
-(when v doesn't necessarily have feature k). Same args as above.
-"""
-
-function concordant_neighbour_sum(X::Array{Int64,1}, g::MetaGraph, l::Int64, k::Int64, sym::Symbol)
-	k_pairs = 0.0
-	concordant_pairs = []
-	for n in neighbors(g, v)
-        if get_prop(g, n, sym) == get_prop(g, v, sym)
-			pair = (n, v)
-			push!(concordant_pairs, pair)
+function count_concordant_edges(X::Array{Int64,1}, nmat::Array{Int64,2})
+	sum = 0
+	n = length(X)
+	for i in 1:n, j in 1:n
+	    if i < j && nmat[i,j] == 1
+			if X[i] == X[j] && X[i] ≠ -10
+				sum += 1
+			end
 		end
 	end
-	for (p1, p2) in concordant_pairs
-		if get_prop(g, p1, sym) == k
-			k_pairs += 1
-		end
-		if get_prop(g, p2, sym) == k
-			k_pairs += 1
-		end
-	end
-	return k_pairs
+	return sum
 end
 
-function neighbour_k_sum(X::Array{Union{Int64,Missing},1}, g::MetaGraph, l::Int64, k::Int64, sym::Symbol)
+"""
+function ov_concordant_sums: retrieves the overall number of concordant pairs
+for each feature in a graph (regardless of value). Returns an array
+of length(nfeatures) with one sum per feature.
+"""
+
+function ov_concordant_sums(X::Array{Int64,2}, nmat::Array{Int64,2})
+	sums = Vector{Float64}()
+	nfeatures, nlang = size(X)
+	for feat in 1:nfeatures
+		sum_feat = count_concordant_edges(X[feat,:], nmat)
+		push!(sums, sum_feat)
+	end
+	return sums
+end
+
+"""
+neighbour k sum: the sum of all neighbours of l that have feature value k
+(when l doesn't necessarily have value k). Needed for the sums for
+the conditional distribution.
+"""
+
+function neighbour_k_sum(X::Array{Int64,1}, g::SimpleGraph, l::Int64, k::Int64)
 	sum = 0.0
 	for n in neighbors(g, l)
-		val = get_prop(g, n, sym)
-		if ismissing(val)
-			continue
+		val = X[n]
+		if val == -10
+			sum += 0
 		elseif val == k
 			sum += 1
 		end
 	end
 	return sum
+end
+
+"""
+function cond_concordant_sums: retrieves all the neighbour sums for features
+and values and returns them as an array of (nfeatures, nlangs, nvals)
+such that the new array[i,l,k] returns the sum for the ith language and the
+kth feature value.
+"""
+
+function cond_concordant_sums(X::Array{Int64,2}, g::SimpleGraph)
+	nvals = maximum(X)
+	nfeatures, nlang = size(X)
+	sums = Array{Float64,3}(undef, nfeatures, nlang, nvals)
+	for feature_idx in 1:nfeatures
+		lang_vals = X[feature_idx,:]
+		for (lang_idx, x) in enumerate(lang_vals)
+			for k in 1:nvals
+				sums[feature_idx, lang_idx, k] = neighbour_k_sum(X[feature_idx,:], g, lang_idx, k,)
+			end
+		end
+	end
+	return sums
+end
+
+"""
+universality: gets the universality of each feature value per feature.
+Returns an array of dimensions nfeatures, nvals (max val).
+arr[feature, value] = the sum of all langs for that feature with that value.
+"""
+
+function universality(X::Array{Int64,2})
+	nfeatures, nlangs = size(X)
+	nvals = maximum(X)
+	sums = zeros(nfeatures, nvals)
+	for i in 1:nfeatures
+		feat_values = X[i,:]
+		nvals_x = maximum(feat_values)
+		for k in 1:nvals_x
+			sum_k = count(x -> x == k, feat_values)
+			sums[i, k] = sum_k
+		end
+	end
+	return sums
 end
