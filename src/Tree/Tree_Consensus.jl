@@ -473,7 +473,7 @@ Construct the majority rule consensus tree from a set of trees that share the
 same leafset. By default the output tree includes clusters that occur in over
 50% of the trees. This can be customized when calling the function. The function
 returns the root node of the majority consensus tree, from which it can be
-traversed. The algorithm is based on section 3 of:
+traversed. The algorithm is based on section 3 and 6.1 of:
 
 Jesper Jansson, Chuanqi Shen, and Wing-Kin Sung. 2016. Improved algorithms
 for constructing consensustrees. J. ACM 63, 3, Article 28 (June 2016), 24 pages
@@ -538,7 +538,8 @@ end
 Construct the loose consensus tree from a set of trees that share the same
 leafset. I.e. a tree with all the clusters that appear in at least one tree
 and are compatible with all trees. Returns the root node of the loose consensus
-tree, from which it can be traversed. This algorithm is based on section 4 of:
+tree, from which it can be traversed. This algorithm is based on section 4 and
+6.1 of:
 
 Jesper Jansson, Chuanqi Shen, and Wing-Kin Sung. 2016. Improved algorithms
 for constructing consensustrees. J. ACM 63, 3, Article 28 (June 2016), 24 pages
@@ -576,3 +577,121 @@ function loose_consensus_tree(trees::Vector{T})::T where T<:AbstractNode
     order_tree!(r_tree, cluster_start_indeces)
     return r_tree
 end
+
+
+"""
+    greedy_consensus_tree(trees::Vector{T})::T where T<:AbstractNode
+
+
+Construct the greedy consensus tree from a set of trees that share the same
+leafset.  Returns the root node of the greedy consensus tree, from which it can
+be traversed. This algorithm is based on section 5 and 6.1 of:
+
+Jesper Jansson, Chuanqi Shen, and Wing-Kin Sung. 2016. Improved algorithms
+for constructing consensustrees. J. ACM 63, 3, Article 28 (June 2016), 24 pages
+https://dl.acm.org/doi/pdf/10.1145/2925985
+"""
+function greedy_consensus_tree(trees::Vector{T})::T where T<:AbstractNode
+    leaveset = Set([n.name for n in get_leaves(trees[1])])
+    l = length(leaveset)
+    for tree in trees[2:end]
+        leaveset2 = Set([n.name for n in get_leaves(tree)])
+        leaveset != leaveset2 && throw(ArgumentError("The trees do not have the same set of leaves"))
+    end # for
+    nodes = post_order(trees[1])
+    # PSEUDOCODE Step 1
+    leaf_ranks = get_leaf_ranks(nodes)
+    bit_vectors = Vector{BitVector}()
+    for tree in trees
+        temp_bit_vectors = Dict{Node, BitVector}()
+        for node in post_order(tree)
+            if node.root
+                continue
+            elseif node.nchild == 0
+                bit_vector = falses(l)
+                bit_vector[leaf_ranks[node.name]] = 1
+                temp_bit_vectors[node] = bit_vector
+            else
+                bit_vector = temp_bit_vectors[node.children[1]]
+                for child in node.children[2:end]
+                    bit_vector = bit_vector .| temp_bit_vectors[child]
+                end # for
+                temp_bit_vectors[node] = bit_vector
+            end # if/else
+        end # for
+        append!(bit_vectors, values(temp_bit_vectors))
+    end # for
+    # PSEUDOCODE Step 2
+    sort!(bit_vectors, alg=QuickSort)
+    # PSEUDOCODE Step 3
+    cluster_queue = count_cluster_occurences(bit_vectors)
+    # PSEUDOCODE Step 4
+    greedy_consensus_tree = Node()
+    for leaf in get_leaves(trees[1])
+        add_child!(greedy_consensus_tree, deepcopy(leaf))
+    end # for
+    # PSEUDOCODE Step 5
+    while !isempty(cluster_queue)
+        cluster = dequeue!(cluster_queue)
+        # ignore trivial leaf clusters
+        sum(cluster) == 1 && continue
+        cluster_length = sum(cluster)
+        # num stores the number of shared leaves between a node and the current
+        # cluster. It also stores the number of leaf nodes of the node.
+        num = Dict{Node, Vector{Int64}}()
+        for node in post_order(greedy_consensus_tree)
+            if node.nchild == 0
+                cluster[leaf_ranks[node.name]] == 1 ? num[node] = [1, 1] : num[node] = [0, 1]
+            else
+                num[node] = [sum([num[child][1] for child in node.children])]
+                n_leaves = 0
+                for child in node.children
+                        n_leaves += num[child][2]
+                end # for
+                push!(num[node], n_leaves)
+                children = Vector{Node}()
+                if num[node][1] == cluster_length
+                    insert = true
+                    for child in node.children
+                        if num[child][1] == num[child][2]
+                            push!(children, child)
+                        elseif num[child][1] != 0
+                            insert = false
+                            break
+                        end # if
+                    end # for
+                    insert && insert_node!(node, children)
+                    number_nodes!(greedy_consensus_tree)
+                    break
+                end # if
+            end # if/else
+        end # for
+    end # while
+    set_node_stats!(greedy_consensus_tree, trees, false)
+    return greedy_consensus_tree
+end # greedy_consensus_tree
+
+
+"""
+    count_cluster_occurences(bit_vectors::BitVector)
+        ::PriorityQueue{BitVector, Int64}
+
+Helper function for greedy_consensus_tree that counts the occurrences of each
+bit vector representing a cluster. Returns a priority queue.
+"""
+function count_cluster_occurences(bit_vectors::Vector{BitVector})::PriorityQueue{BitVector, Int64}
+    cluster_queue = PriorityQueue{BitVector, Int64}()
+    start = bit_vectors[1]
+    count = 1
+    for bit_vector in bit_vectors[2:end]
+        if bit_vector == start
+            count += 1
+        else
+            cluster_queue[start] = -count
+            start = bit_vector
+            count = 1
+        end # if/else
+    end # for
+    cluster_queue[start] = -count
+    return cluster_queue
+end # count_cluster_occurences
