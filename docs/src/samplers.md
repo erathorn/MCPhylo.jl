@@ -1,6 +1,9 @@
 # samplers
 Functions found in all files of samplers folder, ordered according to file of origin.
 
+```@index
+Pages = ["samplers.md"]
+```
 
 ## abc.jl
 ```@docs
@@ -32,6 +35,8 @@ Main.MCPhylo.ABC
 
 * `args...` : additional keyword arguments to be passed to the `dist` function.
 
+[Back to top.](@ref samplers)
+
 ## amm.jl
 ```@docs
 Main.MCPhylo.AMM
@@ -50,16 +55,7 @@ Main.MCPhylo.AMM
 	
 * `args...` : additional keyword arguments to be passed to the `AMMVariate` constructor.
 
-
-```@docs
-Main.MCPhylo.sample!(::Main.MCPhylo.AMMVariate, ::Function; ::Bool=true)
-```
-
-#### Arguments
-
-* `v` : current state of parameters to be simulated.  When running the sampler in adaptive mode, the `v` argument in a successive call to the function will contain the `tune` field returned by the previous call.
-	
-* `adapt` : whether to adaptively update the proposal distribution.
+[Back to top.](@ref samplers)
 
 ## amwg.jl
 ```@docs
@@ -79,18 +75,9 @@ Main.MCPhylo.AMWG
     * `:burnin` : adapt proposal during burn-in iterations.
     * `:none` : no adaptation (Metropolis-within-Gibbs sampling with fixed proposal).
 	
-
 * `args...`: additional keyword arguments to be passed to the `AMWGVariate` constructor.
 
-```@docs
-Main.MCPhylo.sample!(::Main.MCPhylo.AMWGVariate, ::Function; ::Bool=true)
-```
-
-#### Arguments
-
-* `v`: current state of parameters to be simulated. When running the sampler in adaptive mode, the `v` argument in a successive call to the function will contain the `tune` field returned by the previous call.
-
-* `adapt`: whether to adaptively update the proposal distribution.
+[Back to top.](@ref samplers)
 
 ## bhmc.jl
 
@@ -104,13 +91,7 @@ Main.MCPhylo.BHMC
 
 * `traveltime`: length of time over which particle paths are simulated. It is recommended that supplied values be of the form ``(n + \frac{1}{2}) \pi``, where optimal choices of n ``\in \mathbb{Z}^+`` are expected to grow with the parameter space dimensionality. 
 
-```@docs
-Main.MCPhylo.sample!(::Main.MCPhylo.BHMCVariate, ::Function)
-```
-
-#### Arguments
-
-* `v`: current state of parameters to be simulated.
+[Back to top.](@ref samplers)
 
 ## bia.jl
 
@@ -123,13 +104,7 @@ Main.MCPhylo.BIA
 
 * `args...`: additional keyword arguments to be passed to the `BIAVariate` constructor.
 
-```@docs
-Main.MCPhylo.sample!(::Main.MCPhylo.BIAVariate, ::Function)
-```
-
-#### Arguments
-
-* `v`: current state of parameters to be simulated.
+[Back to top.](@ref samplers)
 
 ## bmc3.jl
 
@@ -143,13 +118,7 @@ Main.MCPhylo.BMC3
 
 * `k`: number of parameters or vector of parameter indices to select at random for simultaneous updating in each call of the sampler.
 
-```@docs
-Main.MCPhylo.sample!(::Main.MCPhylo.SamplerVariate{Main.MCPhylo.BMC3Tune{Main.MCPhylo.BMC3Form}}, ::Function)
-```
-
-#### Arguments 
-
-* `v`: current state of parameters to be simulated.
+[Back to top.](@ref samplers)
 
 ## bmg.jl
 
@@ -163,13 +132,7 @@ Main.MCPhylo.BMG
 
 * `k`:  number of parameters or vector of parameter indices to select at random for simultaneous updating in each call of the sampler.
 
-```@docs
-Main.MCPhylo.sample!(::Main.MCPhylo.SamplerVariate{Main.MCPhylo.BMGTune{Main.MCPhylo.BMGForm}}, ::Function)
-```
-
-#### Arguments
-
-* `v`: current state of parameters to be simulated.
+[Back to top.](@ref samplers)
 
 ## dgs.jl
 
@@ -181,14 +144,7 @@ Main.MCPhylo.DGS
 
 * `params`: stochastic node(s) to be updated with the sampler.
 
-```@docs
-Main.MCPhylo.sample!(::Main.MCPhylo.DGSVariate, ::Function)
-Main.MCPhylo.sample!(::Main.MCPhylo.DiscreteVariate, ::Vector{Float64})
-```
-
-#### Arguments
-
-* `v`: current state of parameters to be simulated.
+[Back to top.](@ref samplers)
 
 ## hmc.jl
 
@@ -210,13 +166,7 @@ Main.MCPhylo.HMC
     * `:central` : central differencing
     * `:forward` : forward differencing.
 	
-```@docs
-Main.MCPhylo.sample!(::Main.MCPhylo.HMCVariate, ::Function)
-```
-
-#### Arguments
-
-* `v`: current state of parameters to be simulated.
+[Back to top.](@ref samplers)
 
 ## mala.jl
 
@@ -236,13 +186,7 @@ Main.MCPhylo.MALA
     * `:central` : central differencing
     * `:forward` : forward differencing.
 
-```@docs
-Main.MCPhylo.sample!(::Main.MCPhylo.MALAVariate, ::Function)
-```
-
-#### Arguments
-
-* `v`: current state of parameters to be simulated.
+[Back to top.](@ref samplers)
 
 ## miss.jl
 
@@ -253,6 +197,8 @@ Main.MCPhylo.MISS
 #### Arguments
 
 * `params`: stochastic node(s) that contain missing values (`NaN`) to be updated with the sampler.
+
+[Back to top.](@ref samplers)
 
 ## nuts.jl
 
@@ -270,15 +216,7 @@ Main.MCPhylo.NUTS
 	
 * `args...`: additional keyword arguments to be passed to the `NUTSVariate` constructor.
 
-```@docs
-Main.MCPhylo.sample!(::Main.MCPhylo.NUTSVariate, ::Function; ::Bool=false)
-```
-
-#### Arguments
-
-* `v`: current state of parameters to be simulated. When running the sampler in adaptive mode, the `v` argument in a successive call to the function will contain the `tune` field returned by the previous call.
-
-* `adapt`: whether to adaptively update the `epsilon` step size parameter.
+[Back to top.](@ref samplers)
 
 ## rwm.jl
 
@@ -294,14 +232,7 @@ Main.MCPhylo.RWM(::Main.MCPhylo.ElementOrVector{Symbol}, ::Main.MCPhylo.ElementO
 
 * `args...`: additional keyword arguments to be passed to the `RWMVariate` constructor.
 
-
-```@docs
-Main.MCPhylo.sample!(::Main.MCPhylo.RWMVariate, ::Function)
-```
-
-#### Arguments
-
-* `v`: current state of parameters to be simulated.
+[Back to top.](@ref samplers)
 
 ## slice.jl
 
@@ -321,6 +252,8 @@ Main.MCPhylo.Slice
 
 * `transform`: whether to sample parameters on the link-transformed scale (unconstrained parameter space). If `true`, then constrained parameters are mapped to unconstrained space according to transformations defined by the Stochastic `unlist()` function, and `width` is interpreted as being relative to the unconstrained parameter space. Otherwise, sampling is relative to the untransformed space.
 
+[Back to top.](@ref samplers)
+
 ## slicesimplex.jl
 
 ```@docs
@@ -333,16 +266,4 @@ Main.MCPhylo.SliceSimplex
 
 * `args...`: additional keyword arguments to be passed to the `SliceSimplexVariate` constructor.
 
-```@docs
-Main.MCPhylo.sample!(::Main.MCPhylo.SliceSimplexVariate, ::Function)
-```
-
-#### Arguments
-
-* `v`: current state of parameters to be simulated.
-
-```@autodocs
-Modules = [MCPhylo]
-Pages   = ["sampler/rwmc.jl", "sampler.jl"]
-Filter = 
-```
+[Back to top.](@ref samplers)
