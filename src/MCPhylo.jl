@@ -481,7 +481,20 @@ export
   px
 
 #################### Deprecated ####################
+println("test")
+bla = make_tree_with_data("C:/Users/Adham/Desktop/shorterdata.paps.nex";replace_missing=false)
+da_dataframe = bla[2]
+da_tree = bla[1]
 
+
+missingcounter = 0
+for thing in da_dataframe
+  if thing == 3.0
+    global missingcounter +=1
+  end #if
+end #for
+println(missingcounter)
+println(da_dataframe)
 include("deprecated.jl")
 
 end # module

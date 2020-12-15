@@ -3,7 +3,9 @@
 function make_tree_with_data_cu(filename::String, dialect::AbstractString="nexus",
                              gap::Union{Missing, AbstractString}=missing,
                              miss::Union{Missing,AbstractString}=missing,
-                             header::Bool=false)
+                             header::Bool=false;
+							 replace_missing::Bool=true
+							 )
 		 # get all the information from the input file
      if lowercase(dialect) == "nexus"
          n_tax, nc, gap, miss, df = ParseNexus(filename)
@@ -34,6 +36,14 @@ function make_tree_with_data_cu(filename::String, dialect::AbstractString="nexus
              elseif i == '1'
                  my_df[1,ind,mind] = 0.0
                  my_df[2,ind, mind] = 1.0
+			 elseif i == '?'
+				 if replace_missing == true
+					 my_df[1, ind, mind] = 1.0
+					 my_df[2, ind, mind] = 1.0
+				 else
+					 my_df[1,ind,mind] = 3.0
+					 my_df[2,ind,mind] = 3.0
+				 end #if
              else
                  my_df[1, ind, mind] = 1.0
                  my_df[2, ind, mind] = 1.0
@@ -56,7 +66,9 @@ function make_tree_with_data(filename::String, dialect::AbstractString="nexus",
                              gap::Union{Missing, AbstractString}=missing,
                              miss::Union{Missing,AbstractString}=missing,
                              header::Bool=false;
-							 binary::Bool=true)
+							 binary::Bool=true,
+							 replace_missing::Bool=true
+							 )
     # get all the information from the input file
     if lowercase(dialect) == "nexus"
         n_tax, nc, gap, miss, df = ParseNexus(filename)
@@ -76,6 +88,7 @@ function make_tree_with_data(filename::String, dialect::AbstractString="nexus",
     n_nodes = length(post_order(new_tree))
 	my_df = Array{Float64}(undef, 2, nc, n_nodes)
 
+
     # iterate through the data frame and get the node information
     for row in eachrow(df)
 
@@ -89,6 +102,15 @@ function make_tree_with_data(filename::String, dialect::AbstractString="nexus",
             elseif i == '1'
                 my_df[1,ind,mind] = 0.0
                 my_df[2,ind, mind] = 1.0
+			elseif i == '?'
+				if replace_missing == true
+					my_df[1, ind, mind] = 1.0
+					my_df[2, ind, mind] = 1.0
+				else
+					my_df[1,ind,mind] = 3.0
+					my_df[2,ind,mind] = 3.0
+				end #if
+
             else
                 my_df[1, ind, mind] = 1.0
                 my_df[2, ind, mind] = 1.0

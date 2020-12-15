@@ -17,7 +17,7 @@ function ParseNexus(filename::String)
 
     while true
         line = popfirst!(content)
-        if line == "BEGIN DATA;"
+        if line == "begin data;"
             # here comes the important information, so break the loop
             break
         end #if
@@ -42,7 +42,7 @@ function extract_meta_info(content::Array{String})
     missing_representation::String = "?"
     while true
         line = popfirst!(content)
-        if line=="MATRIX"
+        if line=="matrix"
             # meta info is done, data begins now
             break
         else
@@ -57,11 +57,11 @@ function extract_meta_info(content::Array{String})
 
                     if info[1] == "ntax"
                         ntax = parse(Int64, choped)
-                    elseif info[1] == "NCHAR"
+                    elseif info[1] == "nchar"
                         nchar = parse(Int64, choped)
-                    elseif info[1] == "GAP"
+                    elseif info[1] == "gap"
                         gap = choped
-                    elseif info[1] == "MISSING"
+                    elseif info[1] == "missing"
                         missing_representation = choped
                     else
                         continue
