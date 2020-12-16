@@ -27,17 +27,31 @@ spacesums = cond_concordant_sums(data_array, ngraph)
 lingsums = cond_concordant_sums(data_array, lgraph)
 
 nvals = maximum(data_array[1,:])
-
+mdf = zeros(1, size(data_array, 2))
+mdf[1, : ] .= data_array[1, :]
 my_data = Dict{Symbol, Any}(
   :df => data_array[1,:]
 );
 
-ov_spacesum = ov_space[1]
-ov_lingsum = ov_ling[1]
+ov_spacesum = [ov_space[1]]
+ov_lingsum = [ov_ling[1]]
 ov_unisum = ov_uni[1,:]
+
+ov_unisum = zeros(1, size(ov_uni, 1))
+ov_unisum[1, : ] .= ov_uni[1,:]
+
 
 cond_space = spacesums[1,:,:]
 cond_ling = lingsums[1,:,:]
+
+_, m, n = size(spacesums)
+cond_space = zeros(1, m,n)
+cond_space[1, :, :] .= spacesums[1, :, :]
+
+_, m, n = size(lingsums)
+cond_ling = zeros(1, m,n)
+cond_ling[1, :, :] .= lingsums[1, :, :]
+
 
 nlangs = length(data_array[1,:])
 nfeat = 1
