@@ -26,25 +26,28 @@ ov_uni = universality(data_array)
 spacesums = cond_concordant_sums(data_array, ngraph)
 lingsums = cond_concordant_sums(data_array, lgraph)
 
-nvals = extract_nvals(data_array)
+nvals = maximum(data_array[1,:])
 
 my_data = Dict{Symbol, Any}(
-  :df => data_array
+  :df => data_array[1,:]
 );
 
-my_data
-spacesums
-lingsums
+ov_spacesum = ov_space[1]
+ov_lingsum = ov_ling[1]
+ov_unisum = ov_uni[1,:]
+
+cond_space = spacesums[1,:,:]
+cond_ling = lingsums[1,:,:]
 
 nlangs = length(data_array[1,:])
-nfeat = 4
+nfeat = 1
 
 # model setup
 #where is the data?
 model =  Model(
     df = Stochastic(2, (linw, spaw, uniw) ->
-        AutologisticDistr(lingsums, ov_ling, linw, spacesums, ov_space, spaw,
-		ov_uni, uniw, nvals, nlangs, nfeat), false, false),
+        AutologisticDistr(cond_ling, ov_lingsum, linw, cond_space, ov_spacesum, spaw,
+		ov_unisum, uniw, nvals, nlangs, nfeat), false, false),
 	linw = Stochastic(1, ()-> Gamma(1.0, 1.0), true),
 	spaw = Stochastic(1, ()-> Gamma(1.0, 1.0), true),
 	uniw = Stochastic(2, ()-> Normal(0, 10), true)

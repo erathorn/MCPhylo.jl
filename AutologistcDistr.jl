@@ -32,6 +32,9 @@ end
 P = exp(vertical_params[i] * vertical_sums[l,i,k] + ... + uni_params[i,k])
 """
 
+using StatsFuns
+
+
 function logcond(d::AutologisticDistr, X::Array{N, 2}, l::Int64, f::Int64) where N <: Real
 	# l -> language_index (is this being indexed in the sampler?)
 	# k -> index of feature value
