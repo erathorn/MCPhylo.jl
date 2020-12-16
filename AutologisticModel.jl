@@ -6,14 +6,14 @@ import Distributions: logpdf
 Random.seed!(42)
 
 using LightGraphs, Random
-using LinearAlgebra, Distributions, StatsBase
+using LinearAlgebra, Distributions, StatsBase, StatsFuns
 
 include("wals_features.jl")
 include("neighbour_graphs.jl")
 include("AutologistcDistr.jl")
 
-lmat = create_linguistic_nmat(langs)
-nmat = create_nmat(sample_dmat, 1000)
+lmat = create_linguistic_nmat(dc_langs)
+nmat = create_nmat(dmat, 500)
 nmat = Int64.(nmat)
 
 ngraph = SimpleGraph(nmat)
@@ -32,19 +32,23 @@ my_data = Dict{Symbol, Any}(
   :df => data_array
 );
 
+my_data
+spacesums
+lingsums
+
 nlangs = length(data_array[1,:])
 nfeat = 4
 
 # model setup
+#where is the data?
 model =  Model(
     df = Stochastic(2, (linw, spaw, uniw) ->
         AutologisticDistr(lingsums, ov_ling, linw, spacesums, ov_space, spaw,
 		ov_uni, uniw, nvals, nlangs, nfeat), false, false),
 	linw = Stochastic(1, ()-> Gamma(1.0, 1.0), true),
 	spaw = Stochastic(1, ()-> Gamma(1.0, 1.0), true),
-	uniw = Stochastic(1, ()-> Normal(0, 10), true)
+	uniw = Stochastic(2, ()-> Normal(0, 10), true)
      )
-
 
 # intial model values
 inits = [Dict{Symbol, Union{Any, Real}}(
@@ -54,19 +58,20 @@ inits = [Dict{Symbol, Union{Any, Real}}(
  :ov_ling => ov_ling,
  :ov_space => ov_space,
  :ov_uni => ov_uni,
- :linw => rand(183),
- :spaw => rand(183),
- :uniw => rand(183))
- for i in 1:10]
+ :linw => rand(4),
+ :spaw => rand(4),
+ :uniw => rand(4,9))
+ for i in 1:2
+]
 
-scheme = [MCPhylo.DMH(:linw, 250, 1.0), #m and s
- 		MCPhylo.DMH(:spaw, 250, 1.0),
-		MCPhylo.DMH(:uniw, 250, 1.0)
+scheme = [MCPhylo.DMH(:linw, 3000, 1.0), #m and s
+ 		MCPhylo.DMH(:spaw, 3000, 1.0),
+		MCPhylo.DMH(:uniw, 3000, 1.0)
            ]
 
 setsamplers!(model, scheme)
 
-sim = mcmc(model, my_data, inits, 10, #n generations
-   burnin=2,thin=1, chains=10)
+sim = mcmc(model, my_data, inits, 10000, #n generations
+   burnin=100,thin=100, chains=2)
 
-to_file(sim, "myDMH")
+to_file(sim, "newerDMH")

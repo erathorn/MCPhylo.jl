@@ -1,41 +1,22 @@
 using CSV, DataFrames, DataFramesMeta, Distances
 
 languages = DataFrame!(CSV.File("data/languages.csv"))
-languages_df = select(languages, :ID, :Name, :Latitude, :Longitude, :Glottocode, :Genus, :ISO_codes, :Samples_200)
+languages_df = select(languages, :ID, :Name, :Latitude, :Longitude, :Glottocode, :Genus, :ISO_codes)
+dropmissing!(languages_df, :Genus)
 vals = DataFrame!(CSV.File("data/values.csv"))
 vals = select(vals, :Language_ID, :Parameter_ID, :Value)
 rename!(vals, (:Language_ID => :ID))
 
 # all features
 dc = innerjoin(vals, languages_df, on=:ID)
+dc_list = unique(dc.ID)
+dc_langs = filter(x -> x.ID in dc_list, languages_df)
 
 """
 function get_wals_features: Args
     - a DataFrame of language data which must include the following column names:
      :ID, :Parameter_ID, :Value
     - the WALS IDs of the features you want to retrieve, as a vector of strings
-"""
-
-# I'm just doing this to fix a minor data inconvenience in the sample languages
-va = @where(vals, :Parameter_ID .== "81A")
-valsix = @where(va, :Value .== 6)
-kxo = @where(valsix, :ID .== "kxo")
-
-sample_languages = @where(languages_df, :Samples_200 .== true)
-kxo2 = @where(languages_df, :ID .== "kxo")
-kxo2 = select(kxo2, :ID, :Genus, :Latitude, :Longitude)
-sample_languages = select(sample_languages, :Genus, :ID, :Latitude, :Longitude)
-
-langs = outerjoin(sample_languages, kxo2, on=["ID", "Genus", "Latitude", "Longitude"])
-sort!(langs, :ID)
-dropmissing!(langs)
-
-df_with_vals = innerjoin(langs, vals, on=:ID)
-sort!(df_with_vals, :ID)
-
-unique(df_with_vals.Genus)
-
-"""
 get_wals_features sets all missing values to -10.
 """
 
@@ -46,6 +27,7 @@ function get_wals_features(data::DataFrame, features::Vector{String})
     new_arr = Array{Int64,2}(undef, nfeatures, nlang)
     for (feature_idx, feature) in enumerate(features)
         features_df = @where(data, :Parameter_ID .== feature)
+        langs = features_df.ID
         languages_to_vals = Dict(features_df.ID[i] => features_df.Value[i] for i in 1:length(features_df.ID))
         for (language_idx, language) in enumerate(all_languages)
             if haskey(languages_to_vals, language)
@@ -63,7 +45,7 @@ end
 
 feature_list = ["81A", "27A", "13A", "49A"]
 
-data_array = get_wals_features(df_with_vals, feature_list)
+data_array = get_wals_features(dc, feature_list)
 
 function create_distance_matrix(data::DataFrame, radius::Int64)
     points = hcat(data.Longitude, data.Latitude)
@@ -74,22 +56,7 @@ function create_distance_matrix(data::DataFrame, radius::Int64)
 end
 
 earthradius = 6357
-sample_dmat = create_distance_matrix(langs, earthradius)
-
-"""
-array_to_dict converts the data array from get_wals_features to a dictionary.
-"""
-
-function array_to_dict(X::Array{Int64,2}, features::Array{String,1})
-    nfeatures, nlang = size(X)
-    d = Dict{String,Array}()
-    for feature in 1:features
-        setindex!(d, X[i,:], feature)
-    end
-    return d
-end
-
-count
+dmat = create_distance_matrix(dc_langs, earthradius)
 
 function extract_nvals(X::Array{Int64,2})
     nvals = Vector{Int64}()
@@ -100,5 +67,3 @@ function extract_nvals(X::Array{Int64,2})
     end
     return nvals
 end
-
-extract_nvals(data_array)

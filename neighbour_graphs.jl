@@ -91,7 +91,7 @@ function neighbour_k_sum(X::Array{Int64,1}, g::SimpleGraph, l::Int64, k::Int64)
 	for n in neighbors(g, l)
 		val = X[n]
 		if val == -10
-			sum += 0
+			continue
 		elseif val == k
 			sum += 1
 		end
@@ -102,7 +102,7 @@ end
 """
 function cond_concordant_sums: retrieves all the neighbour sums for features
 and values and returns them as an array of (nfeatures, nlangs, nvals)
-such that the new array[i,l,k] returns the sum for the ith language and the
+such that the new array[f,l,k] returns the sum for the ith language and the
 kth feature value.
 """
 
@@ -110,11 +110,11 @@ function cond_concordant_sums(X::Array{Int64,2}, g::SimpleGraph)
 	nvals = maximum(X)
 	nfeatures, nlang = size(X)
 	sums = Array{Float64,3}(undef, nfeatures, nlang, nvals)
-	for feature_idx in 1:nfeatures
-		lang_vals = X[feature_idx,:]
-		for (lang_idx, x) in enumerate(lang_vals)
+	for f in 1:nfeatures
+		lang_vals = X[f,:]
+		for (l, x) in enumerate(lang_vals)
 			for k in 1:nvals
-				sums[feature_idx, lang_idx, k] = neighbour_k_sum(X[feature_idx,:], g, lang_idx, k,)
+				sums[f, l, k] = neighbour_k_sum(X[f,:], g, l, k,)
 			end
 		end
 	end
@@ -122,7 +122,7 @@ function cond_concordant_sums(X::Array{Int64,2}, g::SimpleGraph)
 end
 
 """
-universality: gets the universality of each feature value per feature.
+universality: gets the universality sum of each feature value per feature.
 Returns an array of dimensions nfeatures, nvals (max val).
 arr[feature, value] = the sum of all langs for that feature with that value.
 """

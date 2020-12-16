@@ -2,6 +2,8 @@
 
 #################### Types and Constructors ####################
 
+import StatsFuns: softmax
+
 mutable struct DMHTune <: SamplerTune
   logf::Union{Function, Missing}
   pseudolog::Union{Function, Missing} # AuxLog
@@ -70,7 +72,7 @@ function DMH_sample!(v::DMHVariate, tune, model)
 	lf_xtp = tune.logf(θ_prime)
 
 	# store old value for possible future reference
-	θ = v.value
+	θ = deepcopy(v.value)
 
 	# prematurely assign, to allow computations to go through properly
 	v[:] = θ_prime
@@ -108,8 +110,10 @@ function inner_sampler(v::DMHVariate, X)
 		for i in random_language_idx
 			for f in random_feature_idx
 				probs = v.tune.condlike(v, i, f)
-				probs ./= sum(probs)
-				new_x = rand(Categorical(probs))
+				if any(isnan.(probs)) || any(isinf.(probs))
+					println(probs)
+				end
+				new_x = rand(Categorical(probs)) # we have to include the values to sample from?
 				X[f, i] = new_x
 			end
 			counter += 1
@@ -119,3 +123,8 @@ function inner_sampler(v::DMHVariate, X)
 		end
 	end
 end
+
+
+rand(Categorical(0.1,0.2,0.7))
+
+[0.0, Inf, 0.0, 0.0]

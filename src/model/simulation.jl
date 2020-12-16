@@ -192,7 +192,6 @@ end
 
 
 function sample!(m::Model, block::Integer=0)
-  println("hey")
   m.iter += 1
   isoneblock = block != 0
   blocks = isoneblock ? block : 1:length(m.samplers)
