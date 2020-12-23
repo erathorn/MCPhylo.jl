@@ -466,6 +466,7 @@ function set_node_stats!(main_tree::T, trees::Vector{T}, majority::Bool, percent
     end # for
 end
 
+
 """
     majority_consensus_tree(trees::Vector{T}, percentage::Float64=0.5)::T where T<:AbstractNode
 
@@ -560,7 +561,8 @@ function loose_consensus_tree(trees::Vector{T})::T where T<:AbstractNode
         compatible_tree = one_way_compatible(trees_copy[i-1], trees_copy[i])
         merge_trees(compatible_tree, trees_copy[i])
     end
-    for tree in trees_copy
+    r_tree = trees_copy[end]
+    for tree in trees
         r_tree = one_way_compatible(r_tree, tree)
     end
     set_node_stats!(r_tree, trees, false)
