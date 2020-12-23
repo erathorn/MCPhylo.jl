@@ -1,7 +1,11 @@
 #################### Chains ####################
 
 #################### Constructors ####################
-
+"""
+    Chains(iters::Integer, params::Integer;
+    start::Integer=1, thin::Integer=1, chains::Integer=1,
+    names::Vector{T}=AbstractString[]) where {T<:AbstractString}
+"""
 function Chains(iters::Integer, params::Integer;
                start::Integer=1, thin::Integer=1, chains::Integer=1,
                names::Vector{T}=AbstractString[]) where {T<:AbstractString}
@@ -12,13 +16,25 @@ function Chains(iters::Integer, params::Integer;
   Chains(value, value2, start=start, thin=thin, names=names)
 end
 
+"""
+    Chains(value::Array{T, 3},
+    start::Integer=1, thin::Integer=1,
+    names::Vector{W}=AbstractString[], chains::Vector{V}=Int[], moves::Vector{V}=Int[0])
+    where {T<:Real, U<:AbstractString, V<:Integer, W <: AbstractString}
+"""
 function Chains(value::Array{T, 3},
                start::Integer=1, thin::Integer=1,
                names::Vector{W}=AbstractString[], chains::Vector{V}=Int[], moves::Vector{V}=Int[0]) where {T<:Real, U<:AbstractString, V<:Integer, W <: AbstractString}
    Chains(value, Array{String, 3}(undef, size(value)), start=start,
           thin=thin, names=names, chains=chains, moves=moves)
 end
-
+"""
+    Chains(value::Array{T, 3},
+    value2::Array{U,3};
+    start::Integer=1, thin::Integer=1,
+    names::Vector{W}=AbstractString[], chains::Vector{V}=Int[], moves::Vector{V}=Int[0])
+    where {T<:Real, U<:AbstractString, V<:Integer, W <: AbstractString}
+"""
 function Chains(value::Array{T, 3},
                 value2::Array{U,3};
                start::Integer=1, thin::Integer=1,
@@ -40,7 +56,12 @@ function Chains(value::Array{T, 3},
   v = convert(Array{Float64, 3}, value)
   Chains(v, range(start, step=thin, length=n), AbstractString[names...], Int[chains...], value2, moves)
 end
-
+"""
+    Chains(value::Matrix{T};
+    start::Integer=1, thin::Integer=1,
+    names::Vector{U}=AbstractString[], chains::Integer=1)
+    where {T<:Real, U<:AbstractString}
+"""
 function Chains(value::Matrix{T};
                start::Integer=1, thin::Integer=1,
                names::Vector{U}=AbstractString[], chains::Integer=1) where {T<:Real, U<:AbstractString}
@@ -49,7 +70,11 @@ function Chains(value::Matrix{T};
   Chains(cont_vals, tree_vals, start=start,
          thin=thin, names=names, chains=Int[chains])
 end
-
+"""
+    Chains(value::Vector{T};
+    start::Integer=1, thin::Integer=1,
+    names::U="Param1", chains::Integer=1) where {T<:Real, U <: AbstractString}
+"""
 function Chains(value::Vector{T};
                start::Integer=1, thin::Integer=1,
                names::U="Param1", chains::Integer=1) where {T<:Real, U <: AbstractString}
@@ -59,7 +84,10 @@ end
 
 
 #################### Indexing ####################
-
+"""
+    Base.getindex(c::Chains, window, names, chains)
+Subset MCMC sampler output. The syntax `c[i, j, k]` is converted to `getindex(c, i, j, k)`.
+"""
 function Base.getindex(c::Chains, window, names, chains)
   inds1 = window2inds(c, window)
   inds2 = names2inds(c, names)

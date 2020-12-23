@@ -18,7 +18,11 @@ end
 
 
 Sampler(param::Symbol, args...) = Sampler([param], args...)
-
+"""
+    Sampler(params::Vector{Symbol}, f::Function, tune::Any=Dict())
+Construct a `Sampler` object that defines a sampling function for a block of
+stochastic nodes. Returns a `Sampler{typeof(tune)}` type object.
+"""
 function Sampler(params::Vector{Symbol}, f::Function, tune::Any=Dict())
   Sampler(params, modelfx(samplerfxargs, f), tune, Symbol[])
 end

@@ -2,7 +2,13 @@
 
 #################### Constructors ####################
 
+"""
+    Model(; iter::Integer=0, burnin::Integer=0,
+      samplers::Vector{Sampler}=Sampler[], nodes...)
 
+Construct a `Model` object that defines a model for MCMC simulation. Returns a
+`Model` type object.
+"""
 function Model(; iter::Integer=0, burnin::Integer=0,
                samplers::Vector{Sampler}=Sampler[], nodes...)
 
@@ -251,7 +257,7 @@ end
 
 function names(m::Model, nodekey::Symbol)
   node = m[nodekey]
-  
+
   unlist(node, names(node))
 end
 
