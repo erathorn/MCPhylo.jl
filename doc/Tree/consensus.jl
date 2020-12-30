@@ -180,7 +180,7 @@ end
     trees = [tree1, tree2, tree3]
     MCPhylo.number_nodes!.(trees)
     MCPhylo.set_binary!.(trees)
-    result = newick(MCPhylo.parsing_newick_string("(A,B,C,(D,E)DE)"))
+    result = newick(MCPhylo.parsing_newick_string("(A,B,C,(D,E)no_name)"))
     @test newick(MCPhylo.loose_consensus_tree(trees)) == result
 end
 

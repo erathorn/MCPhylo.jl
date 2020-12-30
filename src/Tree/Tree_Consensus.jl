@@ -155,13 +155,13 @@ end # function one_way_compatible
 
 
 """
-    merge_trees(ref_tree::T, tree::T)::Vector{T}} where T<:AbstractNode
+    merge_trees!(ref_tree::T, tree::T)::Vector{T}} where T<:AbstractNode
 
 Merge two compatible trees, i.e. inserts all cluster of the first tree, which
 aren't already in the second tree, into the second tree. Based on section 2.4 of
 the paper.
 """
-function merge_trees(ref_tree::T, tree::T)::Vector{T} where T<:AbstractNode
+function merge_trees!(ref_tree::T, tree::T)::Vector{T} where T<:AbstractNode
     ref_nodes = post_order(ref_tree)
     cluster_start_indeces = get_cluster_start_indeces(ref_nodes, tree)
     leaves::Vector{Node} = order_tree!(tree, cluster_start_indeces)
@@ -202,7 +202,7 @@ function merge_trees(ref_tree::T, tree::T)::Vector{T} where T<:AbstractNode
                 r = p1.mother
                 depth ? d = p1 : d = p2
                 depth ? e = p2 : e = p1
-
+                
             else
                 continue
             end # if/else
@@ -237,7 +237,7 @@ function merge_trees(ref_tree::T, tree::T)::Vector{T} where T<:AbstractNode
     end # for
     set_binary!(tree)
     return inserted_nodes
-end # function merge_trees
+end # function merge_trees!
 
 
 """
@@ -408,7 +408,7 @@ end # function x_right
     depth_dicts(leaves::Vector{T})
         ::Tuple{Dict{T, Tuple{T, Dict{Int64, T}}}, Dict{T, Tuple{T, Dict{Int64, T}}}} where T<:AbstractNode
 
-Helper function for one_way_compatible and merge_trees. Creates a dictionary
+Helper function for one_way_compatible and merge_trees!. Creates a dictionary
 based on a vector of leaf nodes, and stores the depth of each node, as well as
 the left and right path leading to it. Based on section 6.1 of the paper.
 """
@@ -510,7 +510,7 @@ function majority_consensus_tree(trees::Vector{T}, percentage::Float64=0.5)::T w
         set_binary!(merged_tree)
         number_nodes!(merged_tree)
         compatible_tree = one_way_compatible(tree, merged_tree)
-        inserted_nodes = merge_trees(compatible_tree, merged_tree)
+        inserted_nodes = merge_trees!(compatible_tree, merged_tree)
         # intialize counts for the new nodes
         for node in inserted_nodes
             count_dict[node] = 1
@@ -547,21 +547,20 @@ for constructing consensustrees. J. ACM 63, 3, Article 28 (June 2016), 24 pages
 https://dl.acm.org/doi/pdf/10.1145/2925985
 """
 function loose_consensus_tree(trees::Vector{T})::T where T<:AbstractNode
-    trees_copy = deepcopy(trees)
-    r_tree = trees_copy[1]
+    r_tree = trees[1]
     leaveset = Set([n.name for n in get_leaves(r_tree)])
-    for tree in trees_copy[2:end]
+    for tree in trees[2:end]
         leaveset2 = Set([n.name for n in get_leaves(tree)])
         leaveset != leaveset2 && throw(ArgumentError("The trees do not have the same set of leaves"))
     end
     nodes = post_order(r_tree)
     # save leaf ranks to order the resulting tree in the end
     leaf_ranks = get_leaf_ranks(nodes)
-    for i in 2:length(trees_copy)
-        compatible_tree = one_way_compatible(trees_copy[i-1], trees_copy[i])
-        merge_trees(compatible_tree, trees_copy[i])
+    for i in 2:length(trees)
+        compatible_tree = one_way_compatible(r_tree, trees[i])
+        r_tree = deepcopy(trees[i])
+        merge_trees!(compatible_tree, r_tree)
     end
-    r_tree = trees_copy[end]
     for tree in trees
         r_tree = one_way_compatible(r_tree, tree)
     end
