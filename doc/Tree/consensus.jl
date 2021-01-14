@@ -14,7 +14,7 @@ using Test
                            (A.mother.num, (false, missing)), (G.mother.num, (false, missing)), (F.mother.num, (false, missing)),
                            (G.mother.mother.num, (true, 1.0)), (A.num, (true, 1.0)), (B.num, (true, 1.0)), (C.num, (true, 1.0)),
                            (D.num, (true, 1.0)), (E.num, (true, 1.0)), (F.num, (true, 1.0)), (G.num, (true, 1.0)), (H.num, (true, 1.0))])
-    @test isequal(MCPhylo.find_common_clusters(ref_tree, tree2) ,expected_dict)
+    @test isequal(MCPhylo.find_common_clusters(ref_tree, tree2) , expected_dict)
 
     tree3 = MCPhylo.parsing_newick_string("((A,(C,(D,(B,E)))),(G,(F,H)))")
     MCPhylo.number_nodes!(tree3)
@@ -221,9 +221,10 @@ end
 end
 
 """
+# Additional test with a big file of trees
 trees = MCPhylo.ParseNewick("./doc/Tree/Drav_mytrees_1.nwk")
 MCPhylo.set_binary!.(trees)
 MCPhylo.number_nodes!.(trees)
-majority_tree = MCPhylo.greedy_consensus_tree(trees)
+majority_tree = MCPhylo.majority_consensus_tree(trees)
 println(newick(majority_tree))
 """
