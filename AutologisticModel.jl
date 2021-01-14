@@ -30,14 +30,14 @@ nvals = maximum(data_array[1,:])
 mdf = zeros(1, size(data_array, 2))
 mdf[1, : ] .= data_array[1, :]
 my_data = Dict{Symbol, Any}(
-  :df => data_array[1,:]
+  :df => mdf
 );
 
 ov_spacesum = [ov_space[1]]
 ov_lingsum = [ov_ling[1]]
 ov_unisum = ov_uni[1,:]
 
-ov_unisum = zeros(1, size(ov_uni, 1))
+ov_unisum = zeros(1, size(ov_uni, 2))
 ov_unisum[1, : ] .= ov_uni[1,:]
 
 
@@ -61,7 +61,7 @@ nfeat = 1
 model =  Model(
     df = Stochastic(2, (linw, spaw, uniw) ->
         AutologisticDistr(cond_ling, ov_lingsum, linw, cond_space, ov_spacesum, spaw,
-		ov_unisum, uniw, nvals, nlangs, nfeat), false, false),
+		ov_unisum, uniw, [nvals], nlangs, nfeat), false, false),
 	linw = Stochastic(1, ()-> Gamma(1.0, 1.0), true),
 	spaw = Stochastic(1, ()-> Gamma(1.0, 1.0), true),
 	uniw = Stochastic(2, ()-> Normal(0, 10), true)
@@ -69,7 +69,7 @@ model =  Model(
 
 # intial model values
 inits = [Dict{Symbol, Union{Any, Real}}(
- :df => data_array,
+ :df => mdf,
  :lingsums => lingsums,
  :spacesums => spacesums,
  :ov_ling => ov_ling,
@@ -81,14 +81,14 @@ inits = [Dict{Symbol, Union{Any, Real}}(
  for i in 1:2
 ]
 
-scheme = [MCPhylo.DMH(:linw, 3000, 1.0), #m and s
- 		MCPhylo.DMH(:spaw, 3000, 1.0),
-		MCPhylo.DMH(:uniw, 3000, 1.0)
+scheme = [MCPhylo.DMH(:linw, 5000, 1.0), #m and s
+ 		MCPhylo.DMH(:spaw, 5000, 1.0),
+		MCPhylo.DMH(:uniw, 5000, 1.0)
            ]
 
 setsamplers!(model, scheme)
 
-sim = mcmc(model, my_data, inits, 10000, #n generations
-   burnin=100,thin=100, chains=2)
+sim = mcmc(model, my_data, inits, 5000, #n generations
+   burnin=100,thin=10, chains=2)
 
 to_file(sim, "newerDMH")

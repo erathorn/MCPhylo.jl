@@ -45,7 +45,8 @@ function logcond(d::AutologisticDistr, X::Array{N, 2}, l::Int64, f::Int64) where
 			d.ling_params[f] * d.ling_concordant[f,l,k] +
 			d.universality_params[f,k]
 		prob_kth_val[k] = p
-		end
+	end
+
 	return softmax(prob_kth_val)
 end
 

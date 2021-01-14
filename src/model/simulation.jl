@@ -74,10 +74,11 @@ function pseudologpdf(m::Model, nodekeys::Vector{Symbol},y, transform::Bool=fals
 end
 
 function conditional_likelihood(m::Model, nodekeys::Vector{Symbol}, args...)
+  #println(nodekeys)
   lp = conditional_likelihood(m[nodekeys[1]], args...)
-  for key in nodekeys[2:end]
-    lp .+= conditional_likelihood(m[key], args...)
-  end
+  #for key in nodekeys[2:end]
+  #  lp .+= conditional_likelihood(m[key], args...)
+  #end
   lp
 end
 
@@ -182,11 +183,12 @@ function conditional_likelihood!(m::Model, x::AbstractArray{T}, block::Integer=0
   targets = keys(m, :target, block)
   m[params] = relist(m, x, params)
   lp = conditional_likelihood(m, targets, args...)
-  for key in targets
-    node = m[key]
-    update!(node, m)
-    lp += conditional_likelihood(node, args...)
-  end
+  #println(targets)
+  #for key in targets
+  #  node = m[key]
+  #  update!(node, m)
+  #  lp += conditional_likelihood(node, args...)
+  #end
   lp
 end
 
