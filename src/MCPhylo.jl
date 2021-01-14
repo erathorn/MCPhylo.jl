@@ -471,6 +471,7 @@ export
   path_length,
   get_sister,
   get_leaves,
+  check_leafsets,
   neighbor_joining,
   upgma,
   prune_tree!, prune_tree,

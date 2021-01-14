@@ -662,3 +662,24 @@ function check_binary(root::Node)::Bool
     end #for
     return res
 end #function
+
+
+"""
+    check_leafset(trees::Vector{T})::Nothing where T<:AbstractNode
+
+Checks if an array of trees shares the same leafset (based on the leaf names)
+"""
+function check_leafsets(trees::Vector{T})::Nothing where T<:AbstractNode
+    leaveset = Set([n.name for n in get_leaves(trees[1])])
+    count = 0
+    for (index, tree) in enumerate(trees[2:end])
+        leaveset2 = Set([n.name for n in get_leaves(tree)])
+        if leaveset != leaveset2
+            println("Tree #$index has a different set of leaves than the first tree")
+            count += 1
+        end
+    end
+    if count != 0
+        throw(ArgumentError("$count different trees have a different set of leaves than the first tree"))
+    end
+end

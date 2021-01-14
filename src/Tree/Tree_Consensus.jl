@@ -481,11 +481,7 @@ https://dl.acm.org/doi/pdf/10.1145/2925985
 """
 function majority_consensus_tree(trees::Vector{T}, percentage::Float64=0.5)::T where T<:AbstractNode
     merged_tree = deepcopy(trees[1])
-    leaveset = Set([n.name for n in get_leaves(merged_tree)])
-    for tree in trees[2:end]
-        leaveset2 = Set([n.name for n in get_leaves(tree)])
-        leaveset != leaveset2 && throw(ArgumentError("The trees do not have the same set of leaves"))
-    end
+    check_leafsets(trees)
     nodes = post_order(merged_tree)
     # save leaf ranks to order the resulting tree in the end
     leaf_ranks = get_leaf_ranks(nodes)
@@ -547,11 +543,7 @@ https://dl.acm.org/doi/pdf/10.1145/2925985
 """
 function loose_consensus_tree(trees::Vector{T})::T where T<:AbstractNode
     r_tree = trees[1]
-    leaveset = Set([n.name for n in get_leaves(r_tree)])
-    for tree in trees[2:end]
-        leaveset2 = Set([n.name for n in get_leaves(tree)])
-        leaveset != leaveset2 && throw(ArgumentError("The trees do not have the same set of leaves"))
-    end
+    check_leafsets(trees)
     nodes = post_order(r_tree)
     # save leaf ranks to order the resulting tree in the end
     leaf_ranks = get_leaf_ranks(nodes)
@@ -592,12 +584,9 @@ for constructing consensustrees. J. ACM 63, 3, Article 28 (June 2016), 24 pages
 https://dl.acm.org/doi/pdf/10.1145/2925985
 """
 function greedy_consensus_tree(trees::Vector{T})::T where T<:AbstractNode
-    leaveset = Set([n.name for n in get_leaves(trees[1])])
-    l = length(leaveset)
-    for tree in trees[2:end]
-        leaveset2 = Set([n.name for n in get_leaves(tree)])
-        leaveset != leaveset2 && throw(ArgumentError("The trees do not have the same set of leaves"))
-    end # for
+    leafset = Set([n.name for n in get_leaves(trees[1])])
+    l = length(leafset)
+    check_leafsets(trees)
     nodes = post_order(trees[1])
     # PSEUDOCODE Step 1
     leaf_ranks = get_leaf_ranks(nodes)
