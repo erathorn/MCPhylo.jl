@@ -202,7 +202,6 @@ function merge_trees!(ref_tree::T, tree::T)::Vector{T} where T<:AbstractNode
                 r = p1.mother
                 depth ? d = p1 : d = p2
                 depth ? e = p2 : e = p1
-                
             else
                 continue
             end # if/else
@@ -312,7 +311,7 @@ end # function order_tree!
 
 """
     min_leaf_rank(leaf_ranks::Dict{String, Int64}, node::T)
-        ::Int64 where T <: AbstractNode
+        ::Int64 where T<:AbstractNode
 
 Recursive helper function to find the lowest ranked leaf descendant of a node
 """
