@@ -13,6 +13,7 @@ using Printf: @sprintf
 using LinearAlgebra
 using Plots
 using StatsPlots
+@reexport using StatsPlots
 using Zygote
 using FiniteDiff
 using Showoff: showoff
