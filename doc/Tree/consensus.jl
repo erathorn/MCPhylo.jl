@@ -220,6 +220,7 @@ end
     @test MCPhylo.count_cluster_occurences(bit_vec) == queue
 end
 
+
 """
 # Additional test with a big file of trees
 trees = MCPhylo.ParseNewick("./doc/Tree/Drav_mytrees_1.nwk")
