@@ -1,3 +1,4 @@
+
 include("./src/MCPhylo.jl")
 using .MCPhylo
 import .MCPhylo: logcond
@@ -26,42 +27,27 @@ ov_uni = universality(data_array)
 spacesums = cond_concordant_sums(data_array, ngraph)
 lingsums = cond_concordant_sums(data_array, lgraph)
 
-nvals = maximum(data_array[1,:])
-mdf = zeros(1, size(data_array, 2))
-mdf[1, : ] .= data_array[1, :]
+nvals = transpose(maximum(data_array, dims=2))[1,:]
 my_data = Dict{Symbol, Any}(
-  :df => mdf
+  :df => data_array
 );
 
-ov_spacesum = [ov_space[1]]
-ov_lingsum = [ov_ling[1]]
-ov_unisum = ov_uni[1,:]
+ov_spacesum = ov_space
+ov_lingsum = ov_ling
+ov_unisum = ov_uni
 
-ov_unisum = zeros(1, size(ov_uni, 2))
-ov_unisum[1, : ] .= ov_uni[1,:]
-
-
-cond_space = spacesums[1,:,:]
-cond_ling = lingsums[1,:,:]
-
-_, m, n = size(spacesums)
-cond_space = zeros(1, m,n)
-cond_space[1, :, :] .= spacesums[1, :, :]
-
-_, m, n = size(lingsums)
-cond_ling = zeros(1, m,n)
-cond_ling[1, :, :] .= lingsums[1, :, :]
-
+cond_space = spacesums
+cond_ling = lingsums
 
 nlangs = length(data_array[1,:])
-nfeat = 1
+nfeat = 4
 
 # model setup
 #where is the data?
 model =  Model(
     df = Stochastic(2, (linw, spaw, uniw) ->
         AutologisticDistr(cond_ling, ov_lingsum, linw, cond_space, ov_spacesum, spaw,
-		ov_unisum, uniw, [nvals], nlangs, nfeat), false, false),
+		ov_unisum, uniw, nvals, nlangs, nfeat), false, false),
 	linw = Stochastic(1, ()-> Gamma(1.0, 1.0), true),
 	spaw = Stochastic(1, ()-> Gamma(1.0, 1.0), true),
 	uniw = Stochastic(2, ()-> Normal(0, 10), true)
@@ -69,7 +55,7 @@ model =  Model(
 
 # intial model values
 inits = [Dict{Symbol, Union{Any, Real}}(
- :df => mdf,
+ :df => data_array,
  :lingsums => lingsums,
  :spacesums => spacesums,
  :ov_ling => ov_ling,
@@ -88,7 +74,6 @@ scheme = [MCPhylo.DMH(:linw, 5000, 1.0), #m and s
 
 setsamplers!(model, scheme)
 
-sim = mcmc(model, my_data, inits, 5000, #n generations
-   burnin=100,thin=10, chains=2)
+sim = mcmc(model, my_data, inits, 100000, burnin=25000,thin=1, chains=2)
 
 to_file(sim, "newerDMH")
