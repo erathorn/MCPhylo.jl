@@ -34,10 +34,12 @@ my_data = Dict{Symbol, Any}(
 
 # model setup
 model =  Model(
-    df = Stochastic(3, (mtree, pi, rates, nnodes, nbase, nsites) -> PhyloDist(mtree, pi, rates, nbase, nsites, nnodes), false, false),
-    pi = Logical( (mypi) -> mypi[1], false),
+    df = Stochastic(3, (mtree, pi1, rates, nnodes, nbase, nsites) ->
+        PhyloDist(mtree, pi1, rates, nbase, nsites, nnodes), false, false),
+    pi1 = Logical( (mypi) -> mypi[1], false),
     mypi = Stochastic(1, () -> Dirichlet(2,1)),
     mtree = Stochastic(Node(), () -> CompoundDirichlet(1.0,1.0,0.100,1.0), my_data[:nnodes]+1, true),
+    indices = Stochastic(()->Categorical(3), true),
     rates = Logical(1,(mymap, av) -> [av[convert(UInt8,i)] for i in mymap],false),
     mymap = Stochastic(1,() -> Categorical([0.25, 0.25, 0.25, 0.25]), false),
     av = Stochastic(1,() -> Dirichlet([1.0, 1.0, 1.0, 1.0]), false)
@@ -51,20 +53,22 @@ inits = [ Dict{Symbol, Union{Any, Real}}(
     :nnodes => my_data[:nnodes],
     :nbase => my_data[:nbase],
     :nsites => my_data[:nsites],
+    :indices => 1,
     :mymap=>ones(3132),
     :av => [1,1,1,1]
     ),
     ]
 
-scheme = [PNUTS(:mtree),
+scheme = [#PNUTS(:mtree),
           SliceSimplex(:mypi)
+          MCPhylo.Empirical(:indices, 1)
           ]
 
 setsamplers!(model, scheme);
 
 # do the mcmc simmulation. if trees=true the trees are stored and can later be
 # flushed ot a file output.
-sim = mcmc(model, my_data, inits, 500, burnin=100,thin=5, chains=1, trees=true)
+sim = mcmc(model, my_data, inits, 500, burnin=100,thin=5, chains=1)
 
 # request more runs
 sim = mcmc(sim, 5000, trees=true)

@@ -321,6 +321,7 @@ include("Parser/ParseCSV.jl")
 include("Parser/ParseNexus.jl")
 include("Parser/ParseNewick.jl")
 include("Sampler/PNUTS.jl")
+include("Sampler/EmpiricalMove.jl")
 
 include("Substitution/SubstitutionMat.jl")
 
@@ -432,7 +433,8 @@ export
   RWM, RWMVariate,
   Slice, SliceMultivariate, SliceUnivariate,
   SliceSimplex, SliceSimplexVariate,
-  PNUTS, PNUTSVariate
+  PNUTS, PNUTSVariate,
+  Empirical, EmpiricalVariate
 
 export
   make_tree_with_data,
