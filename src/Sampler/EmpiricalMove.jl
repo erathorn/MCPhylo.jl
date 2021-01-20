@@ -19,18 +19,6 @@ EmpiricalTune(x::Vector, width::Int64, replacement::Bool=false)=
 
 const EmpiricalVariate = SamplerVariate{EmpiricalTune}
 
-#validate(v::SamplerVariate{SliceTune{F}}) where {F<:SliceForm} =
-#  validate(v, v.tune.width)
-#
-#validate(v::SamplerVariate{SliceTune{F}}, width::Int64) = v
-#
-#function validate(v::SamplerVariate{EmpiricalTune}, width::Int64)
-#  n = length(v)
-#  length(width) == n ||
-#    throw(ArgumentError("length(width) differs from variate length $n"))
-#  v
-#end
-
 
 #################### Sampler Constructor ####################
 
@@ -50,6 +38,11 @@ sample!(v::EmpiricalVariate) = sample(v, v.tune.samplerfun)
 function sample!(v::EmpiricalVariate, sampler_func::Function)
     width = v.tune.width
     sam = sampler_func(width)
+    if width > 1 && v.tune.replacement
+        while length(Set(sam)) != width
+            sam = sampler_func(width)
+        end
+    end
     v[:] = sam
     v
 end
