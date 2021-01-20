@@ -21,7 +21,13 @@ const EmpiricalVariate = SamplerVariate{EmpiricalTune}
 
 
 #################### Sampler Constructor ####################
+"""
 
+function Empirical(params::ElementOrVector{Symbol}, width::Int64; args...)
+
+This Sampler generates Samples from a distribution by selecting a random value
+from this distribution. The move will always be accepted.
+"""
 function Empirical(params::ElementOrVector{Symbol},
                 width::Int64;
                 args...)
