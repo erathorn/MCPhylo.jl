@@ -13,6 +13,7 @@ using Printf: @sprintf
 using LinearAlgebra
 using Plots
 using StatsPlots
+@reexport using StatsPlots
 using Zygote
 using FiniteDiff
 using Showoff: showoff
@@ -67,6 +68,7 @@ using LightGraphs: DiGraph, add_edge!, outneighbors,
        topological_sort_by_dfs, vertices
 import StatsBase: autocor, autocov, countmap, counts, describe, predict,
        quantile, sample, sem, summarystats
+import DataStructures: PriorityQueue, dequeue!
 
 include("distributions/pdmats2.jl")
 using .PDMats2
@@ -469,6 +471,7 @@ export
   path_length,
   get_sister,
   get_leaves,
+  check_leafsets,
   neighbor_joining,
   upgma,
   prune_tree!, prune_tree,

@@ -63,3 +63,17 @@ end
         @test find_lca(tree, nodes) == find_by_name(tree, "G")
     end # find_lca by nodes
 end
+
+@testset "check_leafsets" begin
+    tree1 = MCPhylo.parsing_newick_string("(((A,B),C),(D,E))")
+    tree2 = MCPhylo.parsing_newick_string("((A,C),(B,D,E))")
+    tree3 = MCPhylo.parsing_newick_string("(((G,C),A),D,F)")
+    tree4 = MCPhylo.parsing_newick_string("(((B,C),A),D,E)")
+    tree5 = MCPhylo.parsing_newick_string("(((B,C),A),D,F)")
+
+    trees = [tree1, tree2, tree3, tree4, tree5]
+    MCPhylo.number_nodes!.(trees)
+    MCPhylo.set_binary!.(trees)
+
+    @test_throws ArgumentError MCPhylo.check_leafsets(trees)
+end
