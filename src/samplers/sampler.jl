@@ -105,6 +105,7 @@ end
 
 function sample!(v::SamplerVariate, density; args...)
   isa(density, Missing) && error("must specify a target density in $(typeof(v))", " constructor or sample! method")
+  throw("Who")
   sample!(v, density; args...)
 end
 
@@ -132,6 +133,11 @@ end
 function logpdf!(block::SamplingBlock, x::T) where {T<:GeneralNode}
   logpdf!(block.model, x, block.index, block.transform)
 end
+
+function rand!(block::SamplingBlock, x::Int64)
+  rand!(block.model, x, block.index)
+end
+
 
 
 function _gradlogpdf!(m::Model, x::AbstractArray, block::Integer, dtype::Symbol=:provided)

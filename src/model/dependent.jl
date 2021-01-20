@@ -303,6 +303,9 @@ function logpdf(s::AbstractStochastic, transform::Bool=false)
   logpdf(s, s.value, transform)
 end
 
+function rand(s::AbstractStochastic, x::Int64)
+  rand(s.distr, x)
+end
 
 function gradlogpdf(s::AbstractStochastic)
   gradlogpdf(s, s.value)
