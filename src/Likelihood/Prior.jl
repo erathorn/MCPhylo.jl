@@ -18,7 +18,8 @@ mutable struct CompoundDirichlet <: ContinuousUnivariateDistribution
             new(alpha, a, beta, c, constraints)
 end # struct
 
-function internal_logpdf(d::CompoundDirichlet, b_lens::Array{Float64}, int_leave_map::Vector{Int64}; rd::Bool=false)
+function internal_logpdf(d::CompoundDirichlet, b_lens::Array{Float64},
+                         int_leave_map::Vector{Int64})
     blen_int = 0.0
     blen_leave = 0.0
     blen_int_log = 0.0
@@ -61,7 +62,7 @@ end
 
 
 function _logpdf(d::CompoundDirichlet, x::T) where T <: GeneralNode
-    internal_logpdf(d, get_branchlength_vector(x), internal_external(x); rd=true)
+    internal_logpdf(d, get_branchlength_vector(x), internal_external(x))
 end # function _logpdf
 
 function insupport(d::CompoundDirichlet, x::T) where T <: GeneralNode

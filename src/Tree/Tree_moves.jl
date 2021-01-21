@@ -38,6 +38,19 @@ This function does a nearest neighbour interchange (NNI) move on the tree specif
 by `root`. The target is identified by the number of the target node.
 The function returns 1 if the move was successfull and 0 else.
 """
+function NNI!(root::T, target::Int64, lor::Bool)::Int64  where T<:GeneralNode
+   tn::T = find_num(root, target)
+   NNI!(root, tn, lor)
+end #function
+
+
+"""
+    NNI!(root::T, target::Int64)::Int64  where T<:GeneralNode
+
+This function does a nearest neighbour interchange (NNI) move on the tree specified
+by `root`. The target is identified by the number of the target node.
+The function returns 1 if the move was successfull and 0 else.
+"""
 function NNI!(root::T, target::Int64)::Int64  where T<:GeneralNode
    tn::T = find_num(root, target)
    lor::Bool = 0.5 > rand()
@@ -164,7 +177,8 @@ function randomize!(root::T, num::Int64=100)::Nothing where T <:GeneralNode
         NNI!(root, n)
         i += 1
     end
-
+    blv = rand(n_nodes)
+    set_branchlength_vector!(root, blv)
 end
 
 """

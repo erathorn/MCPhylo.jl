@@ -65,22 +65,23 @@ function calc_trans(time::Float64, pi_::Array{Float64}, mu::Float64, r::Float64)
 end
 
 function Felsenstein_grad(tree_postorder::Vector{N}, pi_::Array{Float64}, rates::Array{Float64},
-                             data::Array{Float64,4}) where {N<:GeneralNode}
+                             data::Array{Float64,4}, c_grad::Bool = true) where {N<:GeneralNode}
     Nbases, Nsites, Nrates, Nnodes = size(data)
     Q::Array{Float64,2} = ones(Nbases,Nbases)
     Q[diagind(Nbases,Nbases)] .= -1
-    Q .*= pi_
-    D, _ , U, _ = LAPACK.geev!('V', 'N',Q)
+    Q .*= reverse(pi_)
+    D, U = eigen(Q)
     Uinv = inv(U)
 
     mu::Float64 =  1.0 / (2.0 * prod(pi_))
     mutationArray::Array{Float64,4} = Array{Float64,4}(undef, Nbases, Nbases, Nrates, Nnodes-1)
-
+    grv::Vector{Float64} = Vector{Float64}(undef, Nnodes-1)
 
     Down::Array{Float64,4} = similar(data)
     ll = fels_ll(tree_postorder, data, D, U, Uinv, rates, mu, Nrates, Nsites, Down, pi_, mutationArray)
-    grv = fels_grad(tree_postorder, data, D, U, Uinv, rates, mu, Nrates, Nsites, Nnodes, Down, pi_, mutationArray)
-
+    if c_grad
+        grv = fels_grad(tree_postorder, data, D, U, Uinv, rates, mu, Nrates, Nsites, Nnodes, Down, pi_, mutationArray)
+    end
     return ll, grv
 
 end
@@ -97,6 +98,7 @@ function fels_grad(tree_postorder::Vector{N}, data::Array{Float64,4},
     gradi::Array{Float64, 2} = Array{Float64,2}(undef, 1, Nsites)
     grv::Vector{Float64} = Vector{Float64}(undef, Nnodes-1)
     ptg::Array{Float64,2} = similar(mutationArray[:, :, 1, 1])
+
     @inbounds @views for node in reverse(tree_postorder)[2:end]
            mother::N = node.mother
            @inbounds @views for r in 1:Nrates
@@ -110,6 +112,7 @@ function fels_grad(tree_postorder::Vector{N}, data::Array{Float64,4},
            tg::Float64 = 0.0
            @inbounds @views for r in 1:Nrates
                BLAS.gemm!('N', 'N', 1.0, BLAS.symm('R', 'L', (D .* (rates[r] * mu)) .* diagm(exp.(D .* (rates[r]*mu*node.inc_length))), U), Uinv, 0.0, ptg)
+               #ptg = (Q .* (rates[r] * mu)) * mutationArray[:, :, r, node.num]
                gradi = sum(pre_order_partial[:, :, r, node.num] .* BLAS.gemm('N', 'N', ptg , data[:, :, r, node.num]), dims=1)
                pre_order_partial[:, :, r, node.num] .= BLAS.gemm('T', 'N', mutationArray[:, :, r, node.num] , pre_order_partial[:, :, r, node.num])
                tg += sum(gradi ./ sum(pre_order_partial[:, :, r, node.num] .* data[:, :, r, node.num], dims=1))
@@ -136,6 +139,7 @@ function fels_ll(tree_postorder::Vector{N}, data::Array{Float64,4},
             data[:, :, :, node.num] .= 1.0
             for child in node.children
                 @inbounds @views for r in 1:Nrates
+                    #mutationArray[:, :, r, child.num] = calc_trans(child.inc_length, pi_[1], mu, rates[r])
                     BLAS.gemm!('N', 'N', 1.0, BLAS.symm('R', 'L', diagm(exp.(D .* (rates[r]*mu*child.inc_length))), U), Uinv, 0.0, mutationArray[:, :, r, child.num])
                     BLAS.gemm!('N','N', 1.0, mutationArray[:, :, r, child.num], data[:, :, r, child.num], 0.0, Down[:, :, r, child.num])
                     data[:, :, r, node.num] .*= Down[:, :, r, child.num]

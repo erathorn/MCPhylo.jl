@@ -56,12 +56,15 @@ function logpdf(m::Model, block::Integer=0, transform::Bool=false)
 end
 
 function logpdf(m::Model, nodekeys::Vector{Symbol}, transform::Bool=false)
-  lp = 0.0
-  for key in nodekeys
-    lp += logpdf(m[key], transform)
-    isfinite(lp) || break
+  lp = Base.Threads.Atomic{Float64}(0.0)
+  Threads.@threads for key in nodekeys
+    Base.Threads.atomic_add!(lp, logpdf(m[key], transform))
+    #lp += logpdf(m[key], transform)
+    isfinite(lp[]) || break
   end
-  lp
+
+  m.likelihood=lp[]
+  m.likelihood
 end
 
 
@@ -104,6 +107,7 @@ function gradlogpdf(m::Model, targets::Array{Symbol, 1})::Tuple{Float64, Array{F
     vp += v
     push!(gradp, grad)
   end
+  m.likelihood = vp
   vp, .+(gradp...)
 end
 
@@ -122,7 +126,7 @@ function gradlogpdf!(m::Model, x::N, block::Integer=0,transform::Bool=false)::Tu
 
   # get results from threads
   v, grad = fetch(lik_res)
-
+  m.likelihood = v
   vp+v, gradp.+grad
 end
 
@@ -155,7 +159,7 @@ function sample!(m::Model, block::Integer=0)
     end
   end
   m.iter -= isoneblock
-  m.likelihood = 0.0#logpdf(m)
+  m.likelihood = logpdf(m)
   m
 end
 
