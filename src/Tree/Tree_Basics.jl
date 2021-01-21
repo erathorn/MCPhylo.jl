@@ -644,7 +644,8 @@ end
 
 """
     check_binary(root::Node)::Bool
-    checks to see if given tree is binary; returns true if properly formatted and false otherwise
+
+Checks to see if given tree is binary; returns true if properly formatted and false otherwise
 """
 function check_binary(root::Node)::Bool
     if root.root
@@ -677,9 +678,9 @@ function check_leafsets(trees::Vector{T})::Nothing where T<:AbstractNode
         if leaveset != leaveset2
             println("Tree #$index has a different set of leaves than the first tree")
             count += 1
-        end
-    end
+        end # if
+    end # for
     if count != 0
         throw(ArgumentError("$count different trees have a different set of leaves than the first tree"))
-    end
-end
+    end # if
+end # function
