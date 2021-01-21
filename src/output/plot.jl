@@ -133,16 +133,16 @@ function autocorplot(c::AbstractChains, indeces::Vector{Integer};
   pos = legend ? :right : :none
   lags = 0:maxlag
   ac = autocor(c, lags=collect(lags))
-  j = 1
+  z = 1
   for i in indeces
     # new plot creation block, based on Plots with a GR backend
-    plots[j] = Plots.plot(repeat(collect(lags * step(c)), outer=[nchains]),
+    plots[z] = Plots.plot(repeat(collect(lags * step(c)), outer=[nchains]),
                           vec(ac.value[i,:,:]), seriestype=:line,
                           group=repeat(c.chains, inner=[length(lags)]),
                           xlabel="Lag", ylabel="Autocorrelation",
                           title=c.names[i], legendtitle="Chain", legend=pos,
                           xlims=(0, +Inf), grid=:dash; gridalpha=0.5)
-    j += 1
+    z += 1
   end # for
   return plots
 end # function
@@ -217,9 +217,10 @@ function densityplot(c::AbstractChains, indeces::Vector{Integer};
                      trim::Tuple{Real, Real}=(0.025, 0.975), na...)
   nrows, nvars, nchains = size(c.value)
   # new list initialization
-  plots = Array{Plots.Plot}(undef, nvars)
+  plots = Array{Plots.Plot}(undef, length(indeces))
   pos = legend ? :right : :none
-  for i in 1:nvars
+  z = 1
+  for i in indeces
     val = Array{Vector{Float64}}(undef, nchains)
     grouping = []
     for j in 1:nchains
@@ -230,11 +231,12 @@ function densityplot(c::AbstractChains, indeces::Vector{Integer};
       grouping = vcat(grouping, repeat([j], inner=sum(mask[1])))
     end # for
     # new plot creation block, based on StatsPlots with a GR backend
-    plots[i] = StatsPlots.plot([val...;], seriestype=:density,
+    plots[z] = StatsPlots.plot([val...;], seriestype=:density,
                                group = grouping, xlabel="Value",
                                ylabel="Density", title=c.names[i],
                                legendtitle="Chain", legend=pos,
                                ylims=(0.0, +Inf), grid=:dash, gridalpha=0.5)
+    z += 1
   end # for
   return plots
 end # function
@@ -243,17 +245,19 @@ end # function
 function meanplot(c::AbstractChains, indeces::Vector{Integer}; legend::Bool=false, na...)
   nrows, nvars, nchains = size(c.value)
   # new list initialization
-  plots = Array{Plots.Plot}(undef, nvars)
+  plots = Array{Plots.Plot}(undef, length(indeces))
   pos = legend ? :right : :none
   val = cummean(c.value)
-  for i in 1:nvars
+  z = 1
+  for i in indeces
     # new plot creation block, based on Plots with a GR backend
-    plots[i] = Plots.plot(repeat(collect(c.range), outer=[nchains]),
+    plots[z] = Plots.plot(repeat(collect(c.range), outer=[nchains]),
                           vec(val[:, i, :]), seriestype=:line,
                           group=repeat(c.chains, inner=[length(c.range)]),
                           xlabel="Iteration", ylabel="Mean", title=c.names[i],
                           legendtitle="Chain", legend=pos,
                           grid=:dash, gridalpha=0.5)
+    z += 1
   end # for
   return plots
 end # function
@@ -261,10 +265,10 @@ end # function
 
 function mixeddensityplot(c::AbstractChains, indeces::Vector{Integer};
                           barbounds::Tuple{Real, Real}=(0, Inf), args...)
-  plots = Array{Plots.Plot}(undef, size(c, 2))
+  plots = Array{Plots.Plot}(undef, length(indeces))
   discrete = MCPhylo.indiscretesupport(c, barbounds)
-  barplots = plot(c, :bar; args...)
-  densityplots = plot(c, :density; args...)
+  barplots = plot(c, :bar, indeces; args...)
+  densityplots = plot(c, :density, indeces; args...)
   for i in 1:length(discrete)
     if discrete[i] == true
       plots[i] = barplots[i]
@@ -281,7 +285,7 @@ function traceplot(c::AbstractChains, indeces::Vector{Integer}; legend::Bool=fal
   # new list initialization
   plots = Any[]
   pos = legend ? :right : :none
-  for i in 1:nvars
+  for i in indeces
     push!(plots, Plots.plot(repeat(collect(c.range), outer=[nchains]),
                             vec(c.value[:, i, :]), seriestype=:line,
                             group=repeat(c.chains, inner=[length(c.range)]),
