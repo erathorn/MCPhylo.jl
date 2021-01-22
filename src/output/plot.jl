@@ -72,7 +72,7 @@ function plot(c::AbstractChains, ptype::Vector{Symbol}=[:trace, :density];
   else
     indedes = [collect(1:length(c.names))]
   end # if / else
-  p = Array{Plots.Plot}(undef, n, length(var_names)
+  p = Array{Plots.Plot}(undef, n, length(var_names))
   for i in 1:n
     showlegend = legend && i == n
     p[i, :] = plot(c, ptype[i], indeces; legend=legend, args...)
