@@ -1,7 +1,20 @@
 # Tree Functionality
-Functions found in all files of Tree folder, ordered according to file of origin.
+MCPhylo offers several tree functionalities. The underlying type is that of a
+`GeneralNode`. It provides the functionality necessary to do MCMC operations with
+tree structures.
 
-## Converter.jl
+## Node_Type
+```@autodocs
+Modules = [MCPhylo]
+Pages   = ["Node_Type.jl"]
+Filter =
+```
+
+
+## Converter
+
+There are function which create new trees or convert trees into other formats.
+
 ```@docs
 Main.MCPhylo.from_df
 Main.MCPhylo.newick(::T) where T<:Main.MCPhylo.GeneralNode
@@ -11,12 +24,7 @@ Main.MCPhylo.to_df
 Main.MCPhylo.to_distance_matrix
 ```
 
-## Node_Type.jl
-```@autodocs
-Modules = [MCPhylo]
-Pages   = ["Node_Type.jl"]
-Filter =
-```
+
 ## Tree_Basics.jl
 
 This file is a bit larger, and so will be broken into (hopefully coherent) subgroups, listed here:
