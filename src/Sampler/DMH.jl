@@ -81,7 +81,6 @@ function DMH_sample!(v::DMHVariate, tune, model)
 	y = inner_sampler(v, deepcopy(obsdata))
 
 	# calculate logpdfs based on pseudo observations
-
 	lf_ytp = tune.pseudolog(v.value, y)
 	lf_yt = tune.pseudolog(θ, y)
 

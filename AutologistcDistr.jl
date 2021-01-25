@@ -3,9 +3,11 @@ mutable struct AutologisticDistr <: DiscreteMatrixDistribution
     ling_concordant::Array{Float64,3}
 	ov_ling_concordant::Array{Float64,1}
     ling_params::Vector{Float64}
+	lingmat::Array{Int64,2}
     spatial_concordant::Array{Float64,3}
 	ov_spatial_concordant::Array{Float64,1}
     spatial_params::Vector{Float64} # length?
+	spmat::Array{Int64,2}
 	ov_universality::Array{Float64,2}
     universality_params::Array{Float64,2} # should params be vectors?
 	nvals::Vector{Int64} # for each feature, the number of possible values
@@ -18,9 +20,11 @@ Base.size(d::AutologisticDistr) = (d.nfeat, d.nlangs)
 function logpdf(d::AutologisticDistr, X::Array{N,2}) where N <: Real
 	res = 0
 	maxval = maximum(d.nvals)
+	ling_cond = ov_concordant_sums(X, d.lingmat)
+	sp_cond = ov_concordant_sums(X, d.spmat)
+	#res = @. ling_cond[f] * d.ling_params[f] + sp_cond[f] * d.spatial_params[f]
 	for f in 1:d.nfeat
-		res += d.ov_ling_concordant[f] * d.ling_params[f] +
-		d.ov_spatial_concordant[f] * d.spatial_params[f]
+		res += ling_cond[f] * d.ling_params[f] + sp_cond[f] * d.spatial_params[f]
 		for k in 1:maxval
 			res += d.ov_universality[f,k] * d.universality_params[f,k]
 		end

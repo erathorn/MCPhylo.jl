@@ -1,17 +1,17 @@
 
-include("./src/MCPhylo.jl")
-using .MCPhylo
-import .MCPhylo: logcond
-using Random
-import Distributions: logpdf
-Random.seed!(42)
+@everywhere include("./src/MCPhylo.jl")
+@everywhere using .MCPhylo
+@everywhere import .MCPhylo: logcond
+@everywhere using Random
+@everywhere import Distributions: logpdf
+@everywhere Random.seed!(42)
 
-using LightGraphs, Random
-using LinearAlgebra, Distributions, StatsBase, StatsFuns
+@everywhere using LightGraphs, Random
+@everywhere using LinearAlgebra, Distributions, StatsBase, StatsFuns
 
-include("wals_features.jl")
-include("neighbour_graphs.jl")
-include("AutologistcDistr.jl")
+@everywhere include("wals_features.jl")
+@everywhere include("neighbour_graphs.jl")
+@everywhere include("AutologistcDistr.jl")
 
 lmat = create_linguistic_nmat(dc_langs)
 nmat = create_nmat(dmat, 500)
@@ -46,7 +46,7 @@ nfeat = 4
 #where is the data?
 model =  Model(
     df = Stochastic(2, (linw, spaw, uniw) ->
-        AutologisticDistr(cond_ling, ov_lingsum, linw, cond_space, ov_spacesum, spaw,
+        AutologisticDistr(cond_ling, ov_lingsum, linw, lmat, cond_space, ov_spacesum, spaw,nmat,
 		ov_unisum, uniw, nvals, nlangs, nfeat), false, false),
 	linw = Stochastic(1, ()-> Gamma(1.0, 1.0), true),
 	spaw = Stochastic(1, ()-> Gamma(1.0, 1.0), true),

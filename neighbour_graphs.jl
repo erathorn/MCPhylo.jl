@@ -51,7 +51,7 @@ an adjacency matrix. Args:
 - nmat: either linguistic or spatial adjacency matrix
 """
 
-function count_concordant_edges(X::Array{Int64,1}, nmat::Array{Int64,2})
+function count_concordant_edges(X::Array{N,1}, nmat::Array{Int64,2}) where N <: Real
 	sum = 0
 	n = length(X)
 	for i in 1:n, j in 1:n
@@ -70,7 +70,7 @@ for each feature in a graph (regardless of value). Returns an array
 of length(nfeatures) with one sum per feature.
 """
 
-function ov_concordant_sums(X::Array{Int64,2}, nmat::Array{Int64,2})
+function ov_concordant_sums(X::Array{N,2}, nmat::Array{Int64,2}) where N <: Real
 	sums = Vector{Float64}()
 	nfeatures, nlang = size(X)
 	for feat in 1:nfeatures
