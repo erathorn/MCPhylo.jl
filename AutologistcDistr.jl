@@ -23,9 +23,9 @@ function logpdf(d::AutologisticDistr, X::Array{N,2}) where N <: Real
 	ling_cond = ov_concordant_sums(X, d.lingmat)
 	sp_cond = ov_concordant_sums(X, d.spmat)
 	#res = @. ling_cond[f] * d.ling_params[f] + sp_cond[f] * d.spatial_params[f]
-	for f in 1:d.nfeat
+	@inbounds @simd for f in 1:d.nfeat
 		res += ling_cond[f] * d.ling_params[f] + sp_cond[f] * d.spatial_params[f]
-		for k in 1:maxval
+		@inbounds @simd for k in 1:maxval
 			res += d.ov_universality[f,k] * d.universality_params[f,k]
 		end
 	end
@@ -44,7 +44,7 @@ function logcond(d::AutologisticDistr, X::Array{N, 2}, l::Int64, f::Int64) where
 	# k -> index of feature value
 	nv = d.nvals[f]
 	prob_kth_val = Vector{Float64}(undef, nv)
-	for k in 1:nv
+	@inbounds @simd for k in 1:nv
 		p = d.spatial_params[f] * d.spatial_concordant[f,l,k] +
 			d.ling_params[f] * d.ling_concordant[f,l,k] +
 			d.universality_params[f,k]

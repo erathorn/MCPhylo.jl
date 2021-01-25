@@ -99,20 +99,15 @@ function DMH_sample!(v::DMHVariate, tune, model)
 end
 
 function inner_sampler(v::DMHVariate, X)
-
-
 	nfeatures, nlangs = size(X)
 	counter = 0
 	while true
 		random_language_idx = shuffle(1:nlangs)
 		random_feature_idx = shuffle(1:nfeatures)
-		for i in random_language_idx
+		@inbounds for i in random_language_idx
 			for f in random_feature_idx
 				probs = v.tune.condlike(v, i, f)
-				if any(isnan.(probs)) || any(isinf.(probs))
-					println(probs)
-				end
-				new_x = rand(Categorical(probs)) # we have to include the values to sample from?
+				new_x = sample(1:length(probs), Weights(probs)) # we have to include the values to sample from?
 				X[f, i] = new_x
 			end
 			counter += 1

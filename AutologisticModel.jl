@@ -1,4 +1,5 @@
-
+using Distributed
+addprocs(2)
 @everywhere include("./src/MCPhylo.jl")
 @everywhere using .MCPhylo
 @everywhere import .MCPhylo: logcond
@@ -64,8 +65,7 @@ inits = [Dict{Symbol, Union{Any, Real}}(
  :linw => rand(4),
  :spaw => rand(4),
  :uniw => rand(4,9))
- for i in 1:2
-]
+ for i in 1:2]
 
 scheme = [MCPhylo.DMH(:linw, 5000, 1.0), #m and s
  		MCPhylo.DMH(:spaw, 5000, 1.0),
