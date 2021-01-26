@@ -10,7 +10,7 @@ end
 #################### Conversions ####################
 
 Base.convert(::Type{Chains}, mc::ModelChains) =
-  Chains(mc.value, mc.range, mc.names, mc.chains, mc.trees, mc.moves)
+  Chains(mc.value, mc.range, mc.names, mc.chains, mc.trees, mc.moves, mc.tree_names)
 
 
 #################### Indexing ####################
