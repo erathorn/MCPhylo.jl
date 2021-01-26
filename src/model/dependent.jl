@@ -84,6 +84,14 @@ gradlogpdf(d::AbstractDependent, transform::Bool=false) = 0.0
 
 #################### Constructors ####################
 
+"""
+    function Logical(f::Function, monitor::Union{Bool, Vector{Int}}=true)
+
+Constructor for a Logical model node. This function assumes a the output of the
+logical operation to be scalar. `f` is a function specifying the deterministic
+operation performed on its arguments. These arguments are other nodes of the model.
+`monitor` indicates whether the results should be monitored, i.e.saved.
+"""
 function Logical(f::Function, monitor::Union{Bool, Vector{Int}}=true)
   value = Float64(NaN)
   fx, src = modelfxsrc(depfxargs, f)
@@ -93,6 +101,14 @@ end
 
 Logical(f::Function, d::Integer, args...) = Logical(d, f, args...)
 
+"""
+    function Logical(d::Integer, f::Function, monitor::Union{Bool, Vector{Int}}=true)
+
+Constructor for a Logical model node. The dimension of the output is specified via
+the paramter `d`. `f` is a function specifying the deterministic
+operation performed on its arguments. These arguments are other nodes of the model.
+`monitor` indicates whether the results should be monitored, i.e.saved.
+"""
 function Logical(d::Integer, f::Function,
                  monitor::Union{Bool, Vector{Int}}=true)
   value = Array{Float64}(undef, fill(0, d)...)
@@ -103,6 +119,14 @@ end
 
 Logical(f::Function, d::T, args...)  where T<:GeneralNode = Logical(d, f, args...)
 
+"""
+Logical(d::T, f::Function, monitor::Union{Bool, Vector{Int}}=true) where T<:GeneralNode
+
+Constructor for a Logical model node, which can hold a Node structure, i.e. a tree.
+`f` is a function specifying the deterministic operation performed on its arguments.
+These arguments are other nodes of the model. `monitor` indicates whether the results
+should be monitored, i.e. saved.
+"""
 function Logical(d::T, f::Function,
                  monitor::Union{Bool, Vector{Int}}=true) where T<:GeneralNode
   value = T()
@@ -165,6 +189,14 @@ end
 
 #################### Constructors ####################
 
+"""
+    Stochastic(f::Function, monitor::Union{Bool, Vector{Int}}=true)
+
+Constructor for a Stochastic model node. This function assumes a the output of the
+logical operation to be scalar. `f` specifies the distributional reslationship
+between the arguments and the node. These arguments are other nodes of the model.
+ `monitor` indicates whether the results should be monitored, i.e. saved.
+"""
 function Stochastic(f::Function, monitor::Union{Bool, Vector{Int}}=true)
   value = Float64(NaN)
   fx, src = modelfxsrc(depfxargs, f)
@@ -198,7 +230,17 @@ function Stochastic_ncu(d::Integer, f::Function,
 end
 
 
+"""
+Stochastic(d::Integer, f::Function, monitor::Union{Bool, Vector{Int}}=true, cuda::Bool=false)
 
+Constructor for a Stochastic model node. The dimension of the output is specified via
+the paramter `d`. `f` specifies the distributional reslationship
+between the arguments and the node. These arguments are other nodes of the model.
+ `monitor` indicates whether the results should be monitored, i.e. saved.
+
+`cuda` indicates whether the function supports cuda functionality and the data is
+in the respective format. THIS FEATURE IS NOT FULLY SUPPORTED.
+"""
 function Stochastic(d::Integer, f::Function,
                     monitor::Union{Bool, Vector{Int}}=true, cuda::Bool=false)
   if cuda
@@ -211,6 +253,15 @@ end
 
 Stochastic(f::Function, d::T, args...)  where T<:GeneralNode = Stochastic(d, f, args...)
 
+
+"""
+    function Stochastic(d::N, f::Function, nnodes::Int, monitor::Union{Bool, Vector{Int}}=true) where N<:GeneralNode
+
+Constructor for a Stochastic model node, which can hold a Node structure, i.e. a tree.
+`f` specifies the distributional reslationship between the arguments and the node.
+These arguments are other nodes of the model. `monitor` indicates whether the 
+results should be monitored, i.e. saved.
+"""
 function Stochastic(d::N, f::Function, nnodes::Int, monitor::Union{Bool, Vector{Int}}=true) where N<:GeneralNode
     value = Node()
     fx, src = modelfxsrc(depfxargs, f)
