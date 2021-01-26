@@ -315,6 +315,7 @@ include("Tree/Tree_Clustering.jl")
 include("Tree/Tree_Ladderizing.jl")
 include("Tree/Tree_Pruning.jl")
 include("Tree/Tree_Consensus.jl")
+include("Tree/Tree_Statistics.jl")
 
 
 include("Parser/Parser.jl")
@@ -480,7 +481,8 @@ export
   ladderize_tree!, ladderize_tree,
   majority_consensus_tree,
   discrete_gamma_rates,
-  Restriction, JC, GTR
+  Restriction, JC, GTR,
+  ASDSF
 
 
 export
