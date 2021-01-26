@@ -38,7 +38,19 @@ end
 
 
 #################### Sampler Constructor ####################
+"""
+    AMWG(params::ElementOrVector{Symbol},
 
+    sigma::ElementOrVector{T};
+
+    adapt::Symbol=:all,
+
+    args...) where {T<:Real}
+
+Construct a `Sampler` object for AMWG sampling. Parameters are assumed to be continuous, but may be constrained or unconstrained.
+Returns a `Sampler{ABCTune}` type object.
+
+"""
 function AMWG(params::ElementOrVector{Symbol},
               sigma::ElementOrVector{T}; adapt::Symbol=:all, args...) where {T<:Real}
   adapt in [:all, :burnin, :none] ||
@@ -59,7 +71,13 @@ end
 #################### Sampling Functions ####################
 
 sample!(v::AMWGVariate; args...) = sample!(v, v.tune.logf; args...)
+"""
+    sample!(v::AMWGVariate, logf::Function; adapt::Bool=true)
 
+Draw one sample from a target distribution using the AMWG sampler.
+Parameters are assumed to be continuous and unconstrained.
+Returns `v` updated with simulated values and associated tuning parameters.
+"""
 function sample!(v::AMWGVariate, logf::Function; adapt::Bool=true)
   tune = v.tune
   setadapt!(v, adapt)

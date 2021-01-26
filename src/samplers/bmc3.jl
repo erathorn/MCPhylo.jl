@@ -39,7 +39,14 @@ end
 
 
 #################### Sampler Constructor ####################
+"""
+    BMC3(params::ElementOrVector{Symbol}; k::F=1) where {F<:BMC3Form}
 
+Construct a `Sampler` object for BMC3 sampling. Parameters are assumed to have
+binary numerical values (0 or 1).
+
+Returns a `Sampler{BMC3Tune{typeof(k)}}` type object.
+"""
 function BMC3(params::ElementOrVector{Symbol}; k::F=1) where {F<:BMC3Form}
   samplerfx = function(model::Model, block::Integer)
     block = SamplingBlock(model, block)
@@ -54,7 +61,14 @@ end
 #################### Sampling Functions ####################
 
 sample!(v::SamplerVariate{BMC3Tune{F}}) where {F<:BMC3Form} = sample!(v, v.tune.logf)
+"""
+    sample!(v::SamplerVariate{BMC3Tune{F}}, logf::Function) where {F<:BMC3Form}
 
+Draw one sample from a target distribution using the BMC3 sampler. Parameters
+are assumed to have binary numerical values (0 or 1).
+
+Returns `v` updated with similar values and associated tuning parameters.
+"""
 function sample!(v::SamplerVariate{BMC3Tune{F}}, logf::Function) where {F<:BMC3Form}
   x = v[:]
   idx = randind(v)

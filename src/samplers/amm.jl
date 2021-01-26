@@ -35,7 +35,14 @@ end
 
 
 #################### Sampler Constructor ####################
+"""
+    AMM(params::ElementOrVector{Symbol}, Sigma::Matrix{T};
+        adapt::Symbol=:all, args...) where {T<:Real}
 
+Construct a `Sampler` object for AMM sampling. Parameters are assumed to be
+ continuous, but may be constrained or unconstrained.
+Returns a `Sampler{AMMTune}` type object.
+"""
 function AMM(params::ElementOrVector{Symbol}, Sigma::Matrix{T};
               adapt::Symbol=:all, args...) where {T<:Real}
   adapt in [:all, :burnin, :none] ||
@@ -57,6 +64,13 @@ end
 
 sample!(v::AMMVariate; args...) = sample!(v, v.tune.logf; args...)
 
+"""
+    sample!(v::AMMVariate, logf::Function; adapt::Bool=true)
+
+  Draw one sample from a target distribution using the AMM sampler. Parameters
+   are assumed to be continuous and unconstrained.
+Returns ``v`` updated with simulated values and associated tuning parameters.
+"""
 function sample!(v::AMMVariate, logf::Function; adapt::Bool=true)
   tune = v.tune
   n = length(v)

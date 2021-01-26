@@ -1,4 +1,7 @@
 
+
+abstract type AbstractNode end
+
 """
     Node
 
@@ -10,9 +13,6 @@ stored in the node.
 * `inc_length` specifies the length of the incomming branch.
 * `binary` specifies the path from the root to the Node. `1` and `0` represent left and right turns respectively.
 """
-
-abstract type AbstractNode end
-
 mutable struct GeneralNode{S<: AbstractString, R<:Real, A<:AbstractArray{<:Real},
                     C<:AbstractArray{<:Real}, I<:Integer, T<: AbstractString, B<:Bool} <: AbstractNode
     name::S
@@ -35,7 +35,11 @@ end # struct Node
 const Node = GeneralNode{String, Float64, Array{Float64, 2}, Array{Float64, 2}, Int64, String, Bool}
 const Node_cu = GeneralNode{String, Float64, CuArray{Float64}, CuArray{Float64}, Int64, String, Bool}
 
+"""
+    function Node()::Node
 
+This function will initialize an empty node.
+"""
 function Node()::Node
         Node("no_name", ones(3,3), missing,Node[] ,ones(1,3),0,true,1.0,"0",1,1.0,Int64[],Float64[],false,  Dict{String, Float64}())
 end
