@@ -331,6 +331,7 @@ include("Utils/FileIO.jl")
 include("Likelihood/LikelihoodCalculator_Node.jl")
 include("Likelihood/Prior.jl")
 include("Likelihood/Rates.jl")
+include("Likelihood/SubstitutionModels.jl")
 #################### Exports ####################
 
 export
@@ -478,7 +479,8 @@ export
   prune_tree!, prune_tree,
   ladderize_tree!, ladderize_tree,
   majority_consensus_tree,
-  discrete_gamma_rates
+  discrete_gamma_rates,
+  Restriction, JC, GTR
 
 
 export

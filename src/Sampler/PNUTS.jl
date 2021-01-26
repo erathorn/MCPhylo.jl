@@ -89,14 +89,10 @@ function sample!(v::PNUTSVariate, logfgrad::Function; adapt::Bool=false)
      #HT2 = invlogit(tune.targetNNI, scaler) - invlogit(avgnni, scaler)
      HT2 = -(atan((1+tune.targetNNI)*scaler) - atan(avgnni*scaler))/(π*0.5)
      HT = (Ht + HT2)/2
-     println("Ht ",Ht, " avgacc ", tune.alpha / tune.nalpha)
-     println("Ht2 ",HT2, " avgnni ", avgnni)
-     println("Ht ",HT)
      p = 1.0 / (tune.m + tune.t0)
      tune.Hbar = (1.0 - p) * tune.Hbar +
                  p * HT
      tune.epsilon = exp(tune.mu - sqrt(tune.m) * tune.Hbar / tune.gamma)
-     println("epsilon ", tune.epsilon)
      p = tune.m^-tune.kappa
      tune.epsilonbar = exp(p * log(tune.epsilon) +
                            (1.0 - p) * log(tune.epsilonbar))
@@ -172,7 +168,7 @@ function nuts_sub!(v::PNUTSVariate, epsilon::Float64, logfgrad::Function)
     v.tune.alpha, v.tune.nalpha, v.tune.nniprime = alpha, nalpha, nniprime
     nni += nni1
   end
-  println(j)
+  #println(j)
   v.tune.moves += nni
   v
 end

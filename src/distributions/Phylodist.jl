@@ -1,26 +1,27 @@
 
 mutable struct PhyloDist <: DiscreteMatrixDistribution
-    my_tree::T where T <: GeneralNode
-    mypi::Array{Float64}
+    tree::T where T <: GeneralNode
+    base_freq::Array{Float64}
+    substitution_rates::Array{Float64}
     rates::Array{Float64}
-    nbase::Int64
-    nsites::Int64
-    nnodes::Int64
-    blv::Vector{Float64}
+    substitution_model::Function
 
-    function PhyloDist(my_tree::T, mypi::Array{Float64}, rates::Vector{R}, nbase::Int64, nsites::Int64, nnodes::Int64) where {T <: GeneralNode, R<: Real}
-        new(my_tree, mypi, rates, nbase, nsites, nnodes, zeros(nnodes-1))
+    function PhyloDist(tree::T, base_freq::Array{Float64}, substitution_rates::Array{Float64}, rates::Array{Float64}, substitution_model::Function) where {T <: GeneralNode}
+        new(tree, base_freq, substitution_rates,rates, substitution_model)
     end
 
 end
 
-function PhyloDist(my_tree::T, mypi::S, rates::A, nbase::Int64, nsites::Int64, nnodes::Int64) where {T<:TreeVariate, S<:DenseArray{Float64}, A<:DenseArray{Float64}}
-    PhyloDist(my_tree.value, Array(mypi), Array(rates), nbase, nsites, nnodes)
+function PhyloDist(tree::T, base_freq::S, substitution_rates::A, rates::B, substitution_model::Function) where {T<:TreeVariate, S<:DenseArray{Float64}, A<:DenseArray{Float64}, B<:DenseArray{Float64}}
+    PhyloDist(tree.value, Array(base_freq), Array(substitution_rates), Array(rates), substitution_model)
 end
 
-function PhyloDist(my_tree::T, mypi::S, rates::R, nbase::Int64, nsites::Int64, nnodes::Int64) where {T<:TreeVariate, S<:DenseArray{Float64}, R<:Real}
-    PhyloDist(my_tree.value, Array(mypi), [rates], nbase, nsites, nnodes)
+function PhyloDist(my_tree::T, base_freq::S, substitution_rates::R, rates::R, substitution_model::Function) where {T<:TreeVariate, S<:DenseArray{Float64}, R<:Real}
+    PhyloDist(my_tree.value, Array(base_freq), [substitution_rates], [rates], substitution_model)
 end
+
+
+
 
 
 minimum(d::PhyloDist) = -Inf
@@ -29,25 +30,27 @@ maximum(d::PhyloDist) = Inf
 Base.size(d::PhyloDist) = (d.nbase, d.nsites, d.nnodes)
 
 function logpdf(d::PhyloDist, x::AbstractArray)
-    mt = post_order(d.my_tree)
-    data = Array{Float64, 4}(undef, d.nbase, d.nsites, length(d.rates), d.nnodes)
+    mt = post_order(d.tree)
+    nba, nsi, nno = size(x)
+    data = Array{Float64, 4}(undef, nba, nsi, length(d.rates), nno)
     @inbounds for i in 1:length(d.rates)
         data[:, :, i, :] .= x
     end
-
-    Felsenstein_grad(mt, d.mypi, d.rates, data, false)[1]
+    U, D, Uinv, mu = d.substitution_model(d.base_freq, d.substitution_rates)
+    FelsensteinFunction(mt, d.base_freq, d.rates, U, D, Uinv, mu, data, false)[1]
 end
 
 
 function gradlogpdf(d::PhyloDist, x::AbstractArray)
 
-    mt = post_order(d.my_tree)
-    data = Array{Float64, 4}(undef, d.nbase, d.nsites, length(d.rates), d.nnodes)
+    mt = post_order(d.tree)
+    nba, nsi, nno = size(x)
+    data = Array{Float64, 4}(undef, nba, nsi, length(d.rates), nno)
     @inbounds for i in 1:length(d.rates)
         data[:, :, i, :] .= x
     end
+    U, D, Uinv, mu = d.substitution_model(d.base_freq, d.substitution_rates)
+    resultate = FelsensteinFunction(mt, d.base_freq, d.rates, U, D, Uinv, mu, data)
 
-    resultate = Felsenstein_grad(mt, d.mypi, d.rates, data)
-    #println(resultate)
     resultate
 end
