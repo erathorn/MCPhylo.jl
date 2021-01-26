@@ -295,6 +295,7 @@ include("samplers/hmc.jl")
 include("samplers/mala.jl")
 include("samplers/miss.jl")
 include("samplers/nuts.jl")
+include("samplers/pnuts.jl")
 include("samplers/rwm.jl")
 include("samplers/rwmc.jl")
 include("samplers/slice.jl")
@@ -318,7 +319,7 @@ include("Parser/Parser.jl")
 include("Parser/ParseCSV.jl")
 include("Parser/ParseNexus.jl")
 include("Parser/ParseNewick.jl")
-include("Sampler/PNUTS.jl")
+
 
 include("Utils/FileIO.jl")
 

@@ -5,7 +5,7 @@ Functions found in all files of samplers folder, ordered according to file of or
 Pages = ["samplers.md"]
 ```
 
-## abc.jl
+## abc
 ```@docs
 Main.MCPhylo.ABC
 ```
@@ -37,7 +37,7 @@ Main.MCPhylo.ABC
 
 [Back to top.](@ref samplers)
 
-## amm.jl
+## amm
 ```@docs
 Main.MCPhylo.AMM
 ```
@@ -52,7 +52,7 @@ Main.MCPhylo.AMM
     * `:all` : adapt proposal during all iterations.
     * `:burnin` : adapt proposal during burn-in iterations.
     * `:none` : no adaptation (multivariate Metropolis sampling with fixed proposal).
-	
+
 * `args...` : additional keyword arguments to be passed to the `AMMVariate` constructor.
 
 [Back to top.](@ref samplers)
@@ -66,7 +66,7 @@ Main.MCPhylo.AMWG
 
 * `params`:  stochastic node(s) to be updated with the sampler. Constrained parameters are mapped to unconstrained space according to transformations defined by the Stochastic `unlist()` function.
 
-* `sigma`: scaling value or vector of the same length as the combined elements of nodes 
+* `sigma`: scaling value or vector of the same length as the combined elements of nodes
 
 * `params`, defining initial standard deviations for univariate normal proposal distributions. Standard deviations are relative to the unconstrained parameter space, where candidate draws are generated.
 
@@ -74,7 +74,7 @@ Main.MCPhylo.AMWG
     * `:all` : adapt proposal during all iterations.
     * `:burnin` : adapt proposal during burn-in iterations.
     * `:none` : no adaptation (Metropolis-within-Gibbs sampling with fixed proposal).
-	
+
 * `args...`: additional keyword arguments to be passed to the `AMWGVariate` constructor.
 
 [Back to top.](@ref samplers)
@@ -89,7 +89,7 @@ Main.MCPhylo.BHMC
 
 * `params`: stochastic node(s) to be updated with the sampler.
 
-* `traveltime`: length of time over which particle paths are simulated. It is recommended that supplied values be of the form ``(n + \frac{1}{2}) \pi``, where optimal choices of n ``\in \mathbb{Z}^+`` are expected to grow with the parameter space dimensionality. 
+* `traveltime`: length of time over which particle paths are simulated. It is recommended that supplied values be of the form ``(n + \frac{1}{2}) \pi``, where optimal choices of n ``\in \mathbb{Z}^+`` are expected to grow with the parameter space dimensionality.
 
 [Back to top.](@ref samplers)
 
@@ -112,7 +112,7 @@ Main.MCPhylo.BIA
 Main.MCPhylo.BMC3
 ```
 
-#### Arguments 
+#### Arguments
 
 * `params`: stochastic node(s) to be updated with the sampler.
 
@@ -152,7 +152,7 @@ Main.MCPhylo.DGS
 Main.MCPhylo.HMC
 ```
 
-#### Arguments 
+#### Arguments
 
 * `params`: stochastic node(s) to be updated with the sampler. Constrained parameters are mapped to unconstrained space according to transformations defined by the Stochastic `unlist()` function.
 
@@ -165,7 +165,7 @@ Main.MCPhylo.HMC
 * `dtype` : differentiation for gradient calculations. Options are
     * `:central` : central differencing
     * `:forward` : forward differencing.
-	
+
 [Back to top.](@ref samplers)
 
 ## mala.jl
@@ -213,25 +213,27 @@ Main.MCPhylo.NUTS
 * `dtype` : differentiation for gradient calculations. Options are
     * `:central` : central differencing
     * `:forward` : forward differencing.
-	
+
 * `args...`: additional keyword arguments to be passed to the `NUTSVariate` constructor.
 
 [Back to top.](@ref samplers)
 
-## rwm.jl
+## P-NUTS
+
+```@docs
+Main.MCPhylo.PNUTS
+```
+
+[Back to top.](@ref samplers)
+
+
+
+## rwm
 
 ```@docs
 Main.MCPhylo.RWM(::Main.MCPhylo.ElementOrVector{Symbol}, ::Main.MCPhylo.ElementOrVector{T}; args...) where {T<:Real}
+Main.MCPhylo.RWM(::Main.MCPhylo.ElementOrVector{Symbol}, ::Main.MCPhylo.ElementOrVector{Symbol}; args...)
 ```
-
-#### Arguments
-
-* `params`: stochastic node(s) to be updated with the sampler. Constrained parameters are mapped to unconstrained space according to transformations defined by the Stochastic `unlist()` function.
-
-* `scale`: scaling value or vector of the same length as the combined elements of nodes `params` for the `proposal` distribution. Values are relative to the unconstrained parameter space, where candidate draws are generated.
-
-* `args...`: additional keyword arguments to be passed to the `RWMVariate` constructor.
-
 [Back to top.](@ref samplers)
 
 ## slice.jl
