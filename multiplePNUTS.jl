@@ -8,17 +8,28 @@ mt_ie, df_ie = make_tree_with_data("notebook/data-ie-42-208.paps.nex"); # load y
 mt_aa, df_aa = make_tree_with_data("notebook/data-aa-58-200.paps.nex"); # load your own nexus file
 mt_an, df_an = make_tree_with_data("notebook/data-an-45-210.paps.nex"); # load your own nexus file
 mt_pn, df_pn = make_tree_with_data("notebook/data-pn-67-183.paps.nex"); # load your own nexus file
-mt_st2 = randomize!(deepcopy(mt_st))
-mt_ie2 = randomize!(deepcopy(mt_ie))
-mt_an2 = randomize!(deepcopy(mt_an))
-mt_pn2 = randomize!(deepcopy(mt_pn))
-mt_aa2 = randomize!(deepcopy(mt_aa))
-mt_st3 = randomize!(deepcopy(mt_st))
-mt_ie3 = randomize!(deepcopy(mt_ie))
-mt_aa3 = randomize!(deepcopy(mt_aa))
-mt_an3 = randomize!(deepcopy(mt_an))
-mt_pn3 = randomize!(deepcopy(mt_pn))
+mt_st2 = deepcopy(mt_st)
+mt_ie2 = deepcopy(mt_ie)
+mt_an2 = deepcopy(mt_an)
+mt_pn2 = deepcopy(mt_pn)
+mt_aa2 = deepcopy(mt_aa)
+mt_st3 = deepcopy(mt_st)
+mt_ie3 = deepcopy(mt_ie)
+mt_aa3 = deepcopy(mt_aa)
+mt_an3 = deepcopy(mt_an)
+mt_pn3 = deepcopy(mt_pn)
 
+randomize!(mt_st2)
+randomize!(mt_ie2)
+randomize!(mt_aa2)
+randomize!(mt_an2)
+randomize!(mt_pn2)
+
+randomize!(mt_st3)
+randomize!(mt_ie3)
+randomize!(mt_aa3)
+randomize!(mt_an3)
+randomize!(mt_pn3)
 
 
 my_data = Dict{Symbol, Any}(
