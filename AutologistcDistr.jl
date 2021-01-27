@@ -2,9 +2,11 @@ mutable struct AutologisticDistr <: DiscreteMatrixDistribution
     ling_concordant::Array{Float64,3}
 	ov_ling_concordant::Vector{Float64}
     ling_params::Vector{Float64}
+	lingmat::Array{Int64,2}
     spatial_concordant::Array{Float64,3}
 	ov_spatial_concordant::Vector{Float64}
     spatial_params::Vector{Float64} # length?
+	spmat::Array{Int64,2}
 	ov_universality::Array{Float64,2}
     universality_params::Array{Float64,2} # should params be vectors?
 	nvals::Vector{Int64} # for each feature, the number of possible values

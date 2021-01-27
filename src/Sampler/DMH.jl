@@ -81,7 +81,6 @@ function DMH_sample!(v::DMHVariate, tune, model)
 	y = inner_sampler(v, deepcopy(obsdata))
 
 	# calculate logpdfs based on pseudo observations
-
 	lf_ytp = tune.pseudolog(v.value, y)
 	lf_yt = tune.pseudolog(θ, y)
 
@@ -99,20 +98,16 @@ function DMH_sample!(v::DMHVariate, tune, model)
 	v
 end
 
-function inner_sampler(v::DMHVariate, X) # v is theta prime
+function inner_sampler(v::DMHVariate, X)
 	nfeatures, nlangs = size(X)
 	counter = 0
 	while true
 		random_language_idx = shuffle(1:nlangs)
 		random_feature_idx = shuffle(1:nfeatures)
-		for i in random_language_idx
+		@inbounds for i in random_language_idx
 			for f in random_feature_idx
-				cond_probs = v.tune.condlike(v, i, f)
-				cond_probs = softmax(cond_probs)
-				if any(isnan.(cond_probs)) || any(isinf.(cond_probs))
-					println(cond_probs)
-				end
-				new_x = rand(Categorical(cond_probs))
+				probs = v.tune.condlike(v, i, f)
+				new_x = sample(1:length(probs), Weights(probs)) # we have to include the values to sample from?
 				X[f, i] = new_x
 			end
 			counter += 1

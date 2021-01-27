@@ -67,17 +67,17 @@ an adjacency matrix. Args:
 - nmat: either linguistic or spatial adjacency matrix
 """
 
-function count_concordant_edges(X::Array{Int64,1}, nmat::Array{Float64,2})
-	sum = 0.0
+function count_concordant_edges(X::Array{N,1}, nmat::Array{Int64,2})::Float64 where N <: Real
+	conc_sum = zero(Float64)
 	n = length(X)
-	for i in 1:n, j in 1:n
+	@inbounds for i in 1:n, j in 1:n
 	    if i < j && nmat[i,j] == 1
 			if X[i] == X[j] && X[i] ≠ -10
-				sum += 1
+				conc_sum += 1
 			end
 		end
 	end
-	return sum
+	return conc_sum
 end
 
 """
@@ -88,12 +88,14 @@ of length(nfeatures) with one sum per feature.
 function weighted_ov_sum does the same, but uses the sum of the edge weights.
 """
 
-function ov_concordant_sums(X::Array{Int64,2}, nmat::Array{Float64,2})
-	sums = Vector{Float64}()
+function ov_concordant_sums(X::Array{N,2}, nmat::Array{Int64,2})::Vector{Float64} where N <: Real
+
 	nfeatures, nlang = size(X)
-	for feat in 1:nfeatures
-		sum_feat = count_concordant_edges(X[feat,:], nmat)
-		push!(sums, sum_feat)
+	sums = Vector{Float64}(undef, nfeatures)
+	@inbounds for feat in 1:nfeatures
+		#sum_feat = count_concordant_edges(X[feat,:], nmat)
+		#push!(sums, sum_feat)
+		sums[feat] = count_concordant_edges(X[feat,:], nmat)
 	end
 	return sums
 end
