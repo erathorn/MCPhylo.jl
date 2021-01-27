@@ -12,6 +12,22 @@ dc = innerjoin(vals, languages_df, on=:ID)
 dc_list = unique(dc.ID)
 dc_langs = filter(x -> x.ID in dc_list, languages_df)
 
+phylo_glottocodes = dc_langs.Glottocode
+
+# TO DO: create a function for this df stuff
+
+wo = @where(dc, :Parameter_ID .== "81A")
+nompl = @where(dc, :Parameter_ID .== "33A")
+langs_nom = nompl.ID
+obs_wo = filter(x -> x.ID in langs_nom, wo)
+wo_langs = obs_wo.ID
+
+obs_dc = filter(x -> x.ID in wo_langs, dc)
+obsdc_langs = filter(x -> x.ID in wo_langs, languages_df)
+
+function select_feature_df(data::DataFrame, features::Vector{String})
+end
+
 """
 function get_wals_features: Args
     - a DataFrame of language data which must include the following column names:
@@ -43,8 +59,9 @@ end
 # alternative solution to missings
 #data_array[ismissing.(data_array)] .= -1
 
-feature_list = ["81A", "27A", "13A", "49A"]
+feature_list = ["81A", "33A"]
 
+obsdat = get_wals_features(obs_dc, feature_list)
 data_array = get_wals_features(dc, feature_list)
 
 function create_distance_matrix(data::DataFrame, radius::Int64)
@@ -57,6 +74,7 @@ end
 
 earthradius = 6357
 dmat = create_distance_matrix(dc_langs, earthradius)
+obs_dmat = create_distance_matrix(obsdc_langs, earthradius)
 
 function extract_nvals(X::Array{Int64,2})
     nvals = Vector{Int64}()

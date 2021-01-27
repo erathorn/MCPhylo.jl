@@ -7,7 +7,7 @@ import StatsFuns: softmax
 mutable struct DMHTune <: SamplerTune
   logf::Union{Function, Missing}
   pseudolog::Union{Function, Missing} # AuxLog
-  condlike::Union{Function, Missing} # do we still need the missing types?
+  condlike::Union{Function, Missing}
   datakeys::Vector{Symbol}
   m::Int64
   scale::Float64
@@ -55,7 +55,7 @@ sample!(v::DMHVariate, model) = DMH_sample!(v, v.tune, model)
 
 function DMH_sample!(v::DMHVariate, tune, model)
 	# 1. propose theta prime
-	# 2. Generate the auxillary variable using theta prime
+	# 2. Generate the auxiliary variable using theta prime
 
 	obsdata = unlist(model[tune.datakeys[1]])
 	obsdata = reshape(obsdata, size(getindex(model, tune.datakeys[1])))
@@ -85,13 +85,13 @@ function DMH_sample!(v::DMHVariate, tune, model)
 	lf_ytp = tune.pseudolog(v.value, y)
 	lf_yt = tune.pseudolog(θ, y)
 
-	# calculate acceptance probability
+	# calculate acceptance probability (proposal distribution?)
 	r = exp((lf_yt + lf_xtp) - (lf_xt + lf_ytp))
 
 	# RWM acceptance logic is a bit reversed here. Above the new value is
 	# prematurely assigned to allow computations in the inner sampler to go through.
 	# If the sample is accepted nothing needs to be done anymore, otherwise the
-	# old value will be reassigend.
+	# old value will be reassigned.
 	if rand() > r
 		# sample is rejected, so use the old value.
 		v[:] = θ
@@ -99,9 +99,7 @@ function DMH_sample!(v::DMHVariate, tune, model)
 	v
 end
 
-function inner_sampler(v::DMHVariate, X)
-
-
+function inner_sampler(v::DMHVariate, X) # v is theta prime
 	nfeatures, nlangs = size(X)
 	counter = 0
 	while true
@@ -109,11 +107,12 @@ function inner_sampler(v::DMHVariate, X)
 		random_feature_idx = shuffle(1:nfeatures)
 		for i in random_language_idx
 			for f in random_feature_idx
-				probs = v.tune.condlike(v, i, f)
-				if any(isnan.(probs)) || any(isinf.(probs))
-					println(probs)
+				cond_probs = v.tune.condlike(v, i, f)
+				cond_probs = softmax(cond_probs)
+				if any(isnan.(cond_probs)) || any(isinf.(cond_probs))
+					println(cond_probs)
 				end
-				new_x = rand(Categorical(probs)) # we have to include the values to sample from?
+				new_x = rand(Categorical(cond_probs))
 				X[f, i] = new_x
 			end
 			counter += 1
@@ -123,8 +122,3 @@ function inner_sampler(v::DMHVariate, X)
 		end
 	end
 end
-
-
-rand(Categorical(0.1,0.2,0.7))
-
-[0.0, Inf, 0.0, 0.0]
