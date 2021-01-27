@@ -236,7 +236,7 @@ function ref_NNI(v::T, tmpB::Vector{Float64}, r::Vector{Float64}, epsilon::Float
 
        # use thread parallelism
        res_before = @spawn logfgrad(v, sz, true, false) # still with molified branch length
-
+       #U_before_nni = logfgrad(v, sz, true, false) # still with molified branch length
        v_copy = deepcopy(v)
        tmp_NNI_made = NNI!(v_copy, ref_index)
 

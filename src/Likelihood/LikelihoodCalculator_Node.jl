@@ -77,15 +77,14 @@ function FelsensteinFunction(tree_postorder::Vector{N}, pi_::Array{Float64}, rat
                      U::Array{Float64,2}, D::Array{Float64}, Uinv::Array{Float64,2}, mu::Float64,
                      data::Array{Float64,4}, c_grad::Bool = true) where {N<:GeneralNode}
     Nbases, Nsites, Nrates, Nnodes = size(data)
-
     mutationArray::Array{Float64,4} = Array{Float64,4}(undef, Nbases, Nbases, Nrates, Nnodes-1)
     grv::Vector{Float64} = Vector{Float64}(undef, Nnodes-1)
-
     Down::Array{Float64,4} = similar(data)
     ll = fels_ll(tree_postorder, data, D, U, Uinv, rates, mu, Nrates, Nsites, Down, pi_, mutationArray)
     if c_grad
         grv = fels_grad(tree_postorder, data, D, U, Uinv, rates, mu, Nrates, Nsites, Nnodes, Down, pi_, mutationArray)
     end
+
     return ll, grv
 
 end
@@ -145,12 +144,14 @@ function fels_ll(tree_postorder::Vector{N}, data::Array{Float64,4},
                     BLAS.gemm!('N', 'N', 1.0, BLAS.symm('R', 'L', diagm(exp.(D .* (rates[r]*mu*child.inc_length))), U), Uinv, 0.0, mutationArray[:, :, r, child.num])
                     BLAS.gemm!('N','N', 1.0, mutationArray[:, :, r, child.num], data[:, :, r, child.num], 0.0, Down[:, :, r, child.num])
                     data[:, :, r, node.num] .*= Down[:, :, r, child.num]
+
                 end
+
             end
 
             if !node.root
                 @inbounds @views for r in 1:Nrates
-                    scaler = maximum(data[:, :, r, node.num], dims=1)
+                    scaler .= maximum(data[:, :, r, node.num], dims=1)
                     data[:, :, r, node.num] ./= scaler
                     ll += sum(log.(scaler))
                 end

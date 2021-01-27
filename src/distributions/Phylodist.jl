@@ -6,7 +6,8 @@ mutable struct PhyloDist <: DiscreteMatrixDistribution
     rates::Array{Float64}
     substitution_model::Function
 
-    function PhyloDist(tree::T, base_freq::Array{Float64}, substitution_rates::Array{Float64}, rates::Array{Float64}, substitution_model::Function) where {T <: GeneralNode}
+    function PhyloDist(tree::T, base_freq::Array{Float64}, substitution_rates::Array{Float64},
+                       rates::Array{Float64}, substitution_model::Function) where {T <: GeneralNode}
         new(tree, base_freq, substitution_rates,rates, substitution_model)
     end
 
