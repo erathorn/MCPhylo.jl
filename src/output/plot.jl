@@ -63,25 +63,15 @@ end # function
 
 
 function plot(c::AbstractChains, ptype::Vector{Symbol}=[:trace, :density];
-              var_names::Vector{String}=String[], filename::String="",
+              vars::Vector{String}=String[], filename::String="",
               fmt::Symbol=:svg, nrow::Integer=3, ncol::Integer=2,
               legend::Bool=false, args...)::Array{Plots.Plot}
   n = length(ptype)
-  if !isempty(var_names)
-    indeces = check_var_names(c.names, var_names)
+  if !isempty(vars)
+    indeces = check_vars(c.names, vars)
   else
     indeces = collect(1:length(c.names))
   end # if / else
-  if :contour in ptype && length(indeces) == 1
-    println("Contour Plot needs at least 2 variables.")
-    if length(ptype) == 1
-      println("Exiting function.")
-      return Plots.Plot[]
-    end # if
-    println("Plotting other plots.")
-    n = n-1
-    deleteat!(ptype, findfirst(x -> x == :contour, ptype))
-  end # if
   p = Array{Plots.Plot}(undef, n, length(indeces))
   for i in 1:n
     showlegend = legend && i == n
@@ -92,19 +82,19 @@ function plot(c::AbstractChains, ptype::Vector{Symbol}=[:trace, :density];
 end # function
 
 
-function check_var_names(sim_names::Vector{AbstractString}, var_names::Vector{String})::Vector{Int64}
+function check_vars(sim_names::Vector{AbstractString}, vars::Vector{String})::Vector{Int64}
     names = []
-    for var_name in var_names
-        if endswith(var_name, r"\[[0-9]*\]")
+    for var in vars
+        if endswith(var, r"\[[0-9]*\]")
             for sim_name in sim_names
-                if sim_name == var_name
+                if sim_name == var
                     push!(names, sim_name)
                 end # if
             end # for
         else
             for sim_name in sim_names
-                if sim_name == var_name || occursin(Regex(var_name * "\\[[0-9]+\\]"), sim_name)
-                  #(occursin(sim_name,r"\[[0-9]*\]") && sim_name[1 : findfirst("[", sim_name)[1]-1] == var_name))
+                if sim_name == var || occursin(Regex(var * "\\[[0-9]+\\]"), sim_name)
+                  #(occursin(sim_name,r"\[[0-9]*\]") && sim_name[1 : findfirst("[", sim_name)[1]-1] == var))
                     push!(names, sim_name)
                 end # if
             end # for
@@ -124,12 +114,31 @@ end # function
 function plot(c::AbstractChains, ptype::Symbol, indeces::Vector{Int64}; legend::Bool=false, args...)
   ptype == :autocor      ? autocorplot(c, indeces; legend=legend, args...) :
   ptype == :bar          ? barplot(c, indeces; legend=legend, args...) :
-  ptype == :contour      ? contourplot(c, indeces; args...) :
   ptype == :density      ? densityplot(c, indeces; legend=legend, args...) :
   ptype == :mean         ? meanplot(c, indeces; legend=legend, args...) :
   ptype == :mixeddensity ? mixeddensityplot(c, indeces; legend=legend, args...) :
   ptype == :trace        ? traceplot(c, indeces; legend=legend, args...) :
+  ptype == :contour      ? throw(ArgumentError("Use function contourplot instead")) :
     throw(ArgumentError("unsupported plot type $ptype"))
+end # function
+
+
+function contourplot(c::AbstractChains; vars::Vector{String}=String[],
+                     filename::String="", fmt::Symbol=:svg, nrow::Integer=3,
+                     ncol::Integer=2, legend::Bool=false, args...)::Vector{Plots.Plot}
+ if !isempty(vars)
+   indeces = check_vars(c.names, vars)
+ else
+   indeces = collect(1:length(c.names))
+ end # if / else
+ if length(indeces) == 1
+  throw(ArgumentError("Contourplot requires at least 2 variables."))
+ end # if
+ p = Array{Plots.Plot}(undef, 1, length(indeces))
+ showlegend = legend
+ p = contourplot_int(c, indeces; legend=legend, args...)
+ draw(p, fmt=fmt, filename=filename, nrow=nrow, ncol=ncol)
+ return p
 end # function
 
 
@@ -191,7 +200,7 @@ function barplot(c::AbstractChains, indeces::Vector{Int64};
 end # function
 
 
-function contourplot(c::AbstractChains, indeces::Vector{Int64};
+function contourplot_int(c::AbstractChains, indeces::Vector{Int64};
                      bins::Integer=100, na...)
   nrows, nvars, nchains = size(c.value)
   plots = Plots.Plot[]
