@@ -14,7 +14,8 @@ function ParseCSV(filename::String, header::Bool=true)
     dimensions = size(df)
     ntax = dimensions[1]
     nchar = dimensions[2]
-    return ntax, nchar, gap, missing_representation, df
+    symbols = get_alphabet(df)
+    return ntax, nchar, gap, missing_representation, symbols, df
 end # function ParseCSV
 
 
