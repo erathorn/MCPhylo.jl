@@ -378,6 +378,7 @@ export
 export
   autocor,
   changerate,
+  contourplot,
   cor,
   describe,
   dic,
