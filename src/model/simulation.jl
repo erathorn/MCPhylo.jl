@@ -56,12 +56,15 @@ function logpdf(m::Model, block::Integer=0, transform::Bool=false)
 end
 
 function logpdf(m::Model, nodekeys::Vector{Symbol}, transform::Bool=false)
-  lp = 0.0
-  for key in nodekeys
-    lp += logpdf(m[key], transform)
-    isfinite(lp) || break
+  lp = Base.Threads.Atomic{Float64}(0.0)
+  Threads.@threads for key in nodekeys
+    Base.Threads.atomic_add!(lp, logpdf(m[key], transform))
+    #lp += logpdf(m[key], transform)
+    isfinite(lp[]) || break
   end
-  lp
+
+  m.likelihood=lp[]
+  m.likelihood
 end
 
 function rand(m::Model, nodekeys::Vector{Symbol}, x::Int64)
@@ -109,6 +112,7 @@ function gradlogpdf(m::Model, targets::Array{Symbol, 1})::Tuple{Float64, Array{F
     vp += v
     push!(gradp, grad)
   end
+  m.likelihood = vp
   vp, .+(gradp...)
 end
 
@@ -121,13 +125,12 @@ function gradlogpdf!(m::Model, x::N, block::Integer=0,transform::Bool=false)::Tu
   # use thread parallelism
   # likelihood
   lik_res = @spawn gradlogpdf(m, targets)
-
+  
   # prior
   vp, gradp =  gradlogpdf(m[params[1]], x)
 
   # get results from threads
   v, grad = fetch(lik_res)
-
   vp+v, gradp.+grad
 end
 
@@ -253,7 +256,6 @@ end
 function relist!(m::Model, x::AbstractArray{T}, block::Integer=0,
                  transform::Bool=false) where {T<:Any}
   nodekeys = keys(m, :block, block)
-
   values = relist(m, x, nodekeys, transform)
   for key in nodekeys
     assign!(m, key, values[key])
@@ -270,8 +272,13 @@ function assign!(m::Model, key::Symbol, value::T) where T <:GeneralNode
 end
 
 function assign!(m::Model, key::Symbol, value::T) where T <: Array
-  @assert size(m[key].value) == size(value)
-  d = similar(m[key].value)
+  if isa(m[key], TreeVariate)
+    @assert (2,) == size(value)
+    d = Array{Float64, 1}(undef, 2)
+  else
+    @assert size(m[key].value) == size(value)
+    d = similar(m[key].value)
+  end
   for (ind, elem) in enumerate(value)
     d[ind] = elem
   end

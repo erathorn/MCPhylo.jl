@@ -18,14 +18,17 @@ mutable struct PNUTSTune <: SamplerTune
   delta::Float64
   target::Float64
   moves::Int
+  tree_depth::Int
+  nniprime::Int
+  targetNNI::Int
 
 
   PNUTSTune() = new()
 
   function PNUTSTune(x::Vector{T}, epsilon::Float64, logfgrad::Union{Function, Missing};
-                    target::Real=0.6) where T<:Node
+                    target::Real=0.6, tree_depth::Int=10, targetNNI::Int=10) where T<:Node
     new(logfgrad, false, 0.0, epsilon, 1.0, 0.05, 0.0, 0.75, 0, NaN, 0, 10.0,0.003,
-        target,0)
+        target,0, tree_depth,0, targetNNI)
   end
 end
 
@@ -35,6 +38,8 @@ PNUTSTune(x::Vector{T}, logfgrad::Function, ::NullFunction, delta::Float64=0.003
 PNUTSTune(x::Vector{T}, logfgrad::Function, delta::Float64; args...) where T<:Node =
   PNUTSTune(x, nutsepsilon(x[1], logfgrad, delta), logfgrad; args...)
 
+PNUTSTune(x::Vector; epsilon::Real, args...) =
+    NUTSTune(x, epsilon, missing, args...)
 
 const PNUTSVariate = SamplerVariate{PNUTSTune}
 
@@ -75,19 +80,26 @@ function sample!(v::PNUTSVariate, logfgrad::Function; adapt::Bool=false)
   tune = v.tune
   setadapt!(v, adapt)
   if tune.adapt
-    tune.m += 1
-    nuts_sub!(v, tune.epsilon, logfgrad)
-    p = 1.0 / (tune.m + tune.t0)
-    tune.Hbar = (1.0 - p) * tune.Hbar +
-                p * (tune.target - tune.alpha / tune.nalpha)
-    tune.epsilon = exp(tune.mu - sqrt(tune.m) * tune.Hbar / tune.gamma)
-    p = tune.m^-tune.kappa
-    tune.epsilonbar = exp(p * log(tune.epsilon) +
-                          (1.0 - p) * log(tune.epsilonbar))
+     tune.m += 1
+     tune.nniprime = 0
+     nuts_sub!(v, tune.epsilon, logfgrad)
+     Ht = (tune.target - tune.alpha / tune.nalpha)
+     avgnni = (1+tune.nniprime)/tune.nalpha
+     scaler = 0.1
+     #HT2 = invlogit(tune.targetNNI, scaler) - invlogit(avgnni, scaler)
+     HT2 = -(atan((1+tune.targetNNI)*scaler) - atan(avgnni*scaler))/(π*0.5)
+     HT = (Ht + HT2)/2
+     p = 1.0 / (tune.m + tune.t0)
+     tune.Hbar = (1.0 - p) * tune.Hbar +
+                 p * HT
+     tune.epsilon = exp(tune.mu - sqrt(tune.m) * tune.Hbar / tune.gamma)
+     p = tune.m^-tune.kappa
+     tune.epsilonbar = exp(p * log(tune.epsilon) +
+                           (1.0 - p) * log(tune.epsilonbar))
   else
-    if (tune.m > 0) tune.epsilon = tune.epsilonbar end
+     if (tune.m > 0) tune.epsilon = tune.epsilonbar end
 
-    nuts_sub!(v, tune.epsilon, logfgrad)
+     nuts_sub!(v, tune.epsilon, logfgrad)
   end
   v
 end
@@ -129,19 +141,19 @@ function nuts_sub!(v::PNUTSVariate, epsilon::Float64, logfgrad::Function)
   n = 1
   s = true
 
-  while s
+  while s && j < v.tune.tree_depth
 
     pm =2 * (rand() > 0.5) - 1
 
     if pm == -1
 
       xminus, rminus, gradminus, _, _, _, xprime, nprime, sprime, alpha,
-        nalpha, nni1, lpp = buildtree(xminus, rminus, gradminus, pm, j, epsilon, logfgrad,
+        nalpha, nni1, lpp, nniprime = buildtree(xminus, rminus, gradminus, pm, j, epsilon, logfgrad,
                            logp0, logu0, delta, nl,lu)
 
     else
 
-      _, _, _, xplus, rplus, gradplus, xprime, nprime, sprime, alpha, nalpha, nni1, lpp =
+      _, _, _, xplus, rplus, gradplus, xprime, nprime, sprime, alpha, nalpha, nni1, lpp, nniprime =
         buildtree(xplus, rplus, gradplus, pm, j, epsilon, logfgrad, logp0,
                   logu0, delta, nl, lu)
 
@@ -153,9 +165,10 @@ function nuts_sub!(v::PNUTSVariate, epsilon::Float64, logfgrad::Function)
     j += 1
     n += nprime
     s = sprime && nouturn(xminus, xplus, rminus, rplus, gradminus, gradplus, epsilon, logfgrad, delta, nl, j)
-    v.tune.alpha, v.tune.nalpha = alpha, nalpha
+    v.tune.alpha, v.tune.nalpha, v.tune.nniprime = alpha, nalpha, nniprime
     nni += nni1
   end
+  #println(j)
   v.tune.moves += nni
   v
 end
@@ -223,7 +236,7 @@ function ref_NNI(v::T, tmpB::Vector{Float64}, r::Vector{Float64}, epsilon::Float
 
        # use thread parallelism
        res_before = @spawn logfgrad(v, sz, true, false) # still with molified branch length
-
+       #U_before_nni = logfgrad(v, sz, true, false) # still with molified branch length
        v_copy = deepcopy(v)
        tmp_NNI_made = NNI!(v_copy, ref_index)
 
@@ -275,23 +288,24 @@ function buildtree(x::T, r::Vector{Float64},
     rminus = rplus = rprime
     gradminus = gradplus = gradprime
     alphaprime = min(1.0, exp(logpprime - logp0))
+    nniprime = nni
     nalphaprime = 1
 
   else
     xminus, rminus, gradminus, xplus, rplus, gradplus, xprime, nprime, sprime,
-      alphaprime, nalphaprime, nni, logpprime = buildtree(x, r, grad, pm, j - 1, epsilon,
+      alphaprime, nalphaprime, nni, logpprime, nniprime = buildtree(x, r, grad, pm, j - 1, epsilon,
                                           logfgrad, logp0, logu0, delta,  sz, lu)
     if sprime
 
       if pm == -1
 
         xminus, rminus, gradminus, _, _, _, xprime2, nprime2, sprime2,
-          alphaprime2, nalphaprime2 , nni, logpprime= buildtree(xminus, rminus, gradminus, pm,
+          alphaprime2, nalphaprime2 , nni, logpprime, nniprime2 = buildtree(xminus, rminus, gradminus, pm,
                                                 j - 1, epsilon, logfgrad, logp0,
                                                 logu0, delta,  sz, lu)
       else
         _, _, _, xplus, rplus, gradplus, xprime2, nprime2, sprime2,
-          alphaprime2, nalphaprime2, nni, logpprime = buildtree(xplus, rplus, gradplus, pm,
+          alphaprime2, nalphaprime2, nni, logpprime, nniprime2 = buildtree(xplus, rplus, gradplus, pm,
                                                 j - 1, epsilon, logfgrad, logp0,
                                                 logu0, delta, sz,lu)
       end # if pm
@@ -303,11 +317,12 @@ function buildtree(x::T, r::Vector{Float64},
       sprime = sprime2 && nouturn(xminus, xplus, rminus, rplus, gradminus, gradplus, epsilon, logfgrad, delta, sz, j)
       alphaprime += alphaprime2
       nalphaprime += nalphaprime2
+      nniprime += nniprime2
     end #if sprime
   end #if j
 
   xminus, rminus, gradminus, xplus, rplus, gradplus, xprime, nprime, sprime,
-    alphaprime, nalphaprime, nni, logpprime
+    alphaprime, nalphaprime, nni, logpprime, nniprime
 end
 
 

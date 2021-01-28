@@ -33,15 +33,15 @@ function setmonitor!(d::AbstractDependent, monitor::Vector{Int})
   d
 end
 #
-function setmonitor!(d::AbstractTreeStochastic, size::Int, monitor::Bool)
+function setmonitor!(d::AbstractTreeStochastic, monitor::Bool)
   value = monitor ? Int[0] : Int[]
-  setmonitor!(d, size, value)
+  setmonitor!(d, value)
 end
 
-function setmonitor!(d::AbstractTreeStochastic, size::Int, monitor::Vector{Int})
+function setmonitor!(d::AbstractTreeStochastic, monitor::Vector{Int})
   values = monitor
   if !isempty(monitor)
-    n = size#length(unlist(d))
+    n = length(unlist_tree(d))
     if n > 0
       if monitor[1] == 0
         values = collect(1:n)
@@ -211,12 +211,12 @@ end
 
 Stochastic(f::Function, d::T, args...)  where T<:GeneralNode = Stochastic(d, f, args...)
 
-function Stochastic(d::N, f::Function, nnodes::Int, monitor::Union{Bool, Vector{Int}}=true) where N<:GeneralNode
+function Stochastic(d::N, f::Function, monitor::Union{Bool, Vector{Int}}=true) where N<:GeneralNode
     value = Node()
     fx, src = modelfxsrc(depfxargs, f)
     s = TreeStochastic(value, :nothing, Int[], fx, src, Symbol[],
                       NullUnivariateDistribution())
-    setmonitor!(s, nnodes, monitor)
+    setmonitor!(s, monitor)
 end
 
 ScalarStochastic(x::T) where T <: Real = x
@@ -233,8 +233,11 @@ end
 function setinits!(s::ArrayStochastic, m::Model, x::DenseArray)
   s.value = convert(typeof(s.value), copy(x))
   s.distr = s.eval(m)
-  if !isa(s.distr, UnivariateDistribution) && dims(s) != dims(s.distr)
-
+  if isa(s.distr, PhyloDist)
+    i,_,k = dims(s)
+    i1,_,k1 = dims(s)
+    i1 != i && k1 != k && throw(DimensionMismatch("incompatible distribution for stochastic node"))
+  elseif !isa(s.distr, UnivariateDistribution) && dims(s) != dims(s.distr)
     throw(DimensionMismatch("incompatible distribution for stochastic node"))
   end
   setmonitor!(s, s.monitor)
@@ -286,9 +289,9 @@ end
 
 
 function relistlength(s::AbstractTreeStochastic, x::AbstractArray,
-                      transform::Bool=false)# where N<:GeneralNode
-
-  relistlength(s, x[1], transform)
+                      transform::Bool=false)
+  value, n = relistlength_sub(s.distr, s, x)
+  (transform ? invlink_sub(s.distr, value) : value, n)
 end
 
 

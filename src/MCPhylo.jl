@@ -22,6 +22,7 @@ using DataFrames
 using Random
 using CSV
 using ChainRules
+using ChainRulesCore
 
 
 using CUDA
@@ -230,20 +231,22 @@ abstract type AbstractChains end
 struct Chains <: AbstractChains
   value::Array{Float64, 3}
   range::StepRange{Int, Int}
-  names::Vector{S} where S <: AbstractString
+  names::Vector{AbstractString}
   chains::Vector{Int}
-  trees::Array{S, 3} where S <: AbstractString
+  trees::Array{AbstractString, 3}
   moves::Array{Int, 1}
+  tree_names::Vector{AbstractString}
 end
 
 struct ModelChains <: AbstractChains
   value::Array{Float64, 3}
   range::StepRange{Int, Int}
-  names::Vector{S} where S <: AbstractString
+  names::Vector{AbstractString}
   chains::Vector{Int}
   model::Model
-  trees::Array{S, 3} where S <: AbstractString
+  trees::Array{AbstractString, 3}
   moves::Array{Int, 1}
+  tree_names::Vector{AbstractString}
 end
 
 
@@ -314,6 +317,7 @@ include("Tree/Tree_Clustering.jl")
 include("Tree/Tree_Ladderizing.jl")
 include("Tree/Tree_Pruning.jl")
 include("Tree/Tree_Consensus.jl")
+include("Tree/Tree_Statistics.jl")
 
 
 include("Parser/Parser.jl")
@@ -330,6 +334,8 @@ include("Utils/FileIO.jl")
 
 include("Likelihood/LikelihoodCalculator_Node.jl")
 include("Likelihood/Prior.jl")
+include("Likelihood/Rates.jl")
+include("Likelihood/SubstitutionModels.jl")
 #################### Exports ####################
 
 export
@@ -479,7 +485,9 @@ export
   prune_tree!, prune_tree,
   ladderize_tree!, ladderize_tree,
   majority_consensus_tree,
-  loose_consensus_tree
+  discrete_gamma_rates,
+  Restriction, JC, GTR,
+  ASDSF
 
 
 export

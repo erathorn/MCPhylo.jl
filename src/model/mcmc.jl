@@ -24,38 +24,24 @@ function mcmc(m::Model, inputs::Dict{Symbol},
     throw(ArgumentError("burnin is greater than or equal to iters"))
   length(inits) >= chains ||
     throw(ArgumentError("fewer initial values than chains"))
-  if trees == true
-    nt = 0
-    for n in values(m.nodes)
-      if isa(n, TreeStochastic)
-        nt += 1
-      end
-    end
-    if nt == 0
-      throw(ArgumentError("no tree obejct to write"))
-    elseif nt > 1
-      throw(ArgumentError("to many tree obejcts to write"))
-    end
-  end
 
-  mm = deepcopy(m)
+  mm::Model = deepcopy(m)
   setinputs!(mm, inputs)
   setinits!(mm, inits[1:chains])
   mm.burnin = burnin
-
   mcmc_master!(mm, 1:iters, burnin, thin, 1:chains, verbose, trees)
 end
 
 
 function mcmc_master!(m::Model, window::UnitRange{Int}, burnin::Integer,
                       thin::Integer, chains::AbstractArray{Int}, verbose::Bool, trees::Bool)
-  states = m.states
+  states::Vector{ModelState} = m.states
   m.states = ModelState[]
 
   N = length(window)
   K = length(chains)
 
-  frame = ChainProgressFrame(
+  frame::ChainProgressFrame = ChainProgressFrame(
     "MCMC Simulation of $N Iterations x $K Chain" * "s"^(K > 1), verbose
   )
 
@@ -63,49 +49,49 @@ function mcmc_master!(m::Model, window::UnitRange{Int}, burnin::Integer,
     Any[m, states[k], window, burnin, thin, ChainProgress(frame, k, N), trees]
     for k in chains
   ]
-  results = pmap2(mcmc_worker!, lsts)
+  results::Vector{Tuple{Chains, Model, ModelState}} = pmap2(mcmc_worker!, lsts)
 
-  sims  = Chains[results[k][1] for k in 1:K]
-  model = results[1][2]
+  sims::Array{Chains}  = Chains[results[k][1] for k in 1:K]
+  model::Model = results[1][2]
   model.states = ModelState[results[k][3] for k in sortperm(chains)]
 
   ModelChains(cat(sims..., dims=3), model)
 end
 
 
-function mcmc_worker!(args::Vector)
+function mcmc_worker!(args::Vector)::Tuple{Chains, Model, ModelState}
   m::Model, state::ModelState, window::UnitRange{Int}, burnin::Integer, thin::Integer, meter::ChainProgress, store_trees::Bool = args
   llname::AbstractString = "likelihood"
   treeind = 1
   simind = 1
   m.iter = first(window) - 1
+
   relist!(m, state.value)
+
   settune!(m, state.tune)
-
   pnames = vcat(names(m, true), llname)
-
-  sim = Chains(last(window), length(pnames), start=burnin + thin, thin=thin,
-               names=pnames)
-  #sim = Chains(last(window), length(pnames), start=thin, thin=thin,
-  #            names=pnames)
-  treenode = :tn
+  treenodes = Symbol[]
   for i in m.nodes
     if isa(i[2], TreeStochastic)
-      treenode = i[1]
-      break
+      push!(treenodes ,i[1])
     end
   end
+
+  sim = Chains(last(window), length(pnames), start=burnin + thin, thin=thin,
+               names=pnames, ntrees=length(treenodes), tree_names=treenodes)
 
   reset!(meter)
   for i in window
 
     sample!(m)
     if i > burnin && (i - burnin) % thin == 0
-      
+
       sim[i, :, 1] = unlist(m, true)
 
       if store_trees
-       sim.trees[treeind, 1, 1] = newick(m[treenode].value)
+       for (ind, tree_node) in enumerate(treenodes)
+         sim.trees[treeind, ind, 1] = newick(m[tree_node].value)
+       end
        treeind +=1
      end
     end

@@ -73,7 +73,7 @@ function Base.keys(m::Model, ntype::Symbol, at...)
     throw(ArgumentError("unsupported node type $ntype"))
 end
 
-function keys_all(m::Model)
+function keys_all(m::Model)::Array{Symbol}
   values = Symbol[]
   for key in keys(m)
     node = m[key]
@@ -85,7 +85,7 @@ function keys_all(m::Model)
   unique(values)
 end
 
-function keys_assigned(m::Model)
+function keys_assigned(m::Model)::Array{Symbol}
   if m.hasinits
     values = keys(m)
   else
@@ -99,11 +99,11 @@ function keys_assigned(m::Model)
   values
 end
 
-function keys_block(m::Model, block::Integer=0)
+function keys_block(m::Model, block::Integer=0)::Array{Symbol}
   block == 0 ? keys_block0(m) : m.samplers[block].params
 end
 
-function keys_block0(m::Model)
+function keys_block0(m::Model)::Array{Symbol}
   values = Symbol[]
   for sampler in m.samplers
     append!(values, sampler.params)
@@ -111,7 +111,7 @@ function keys_block0(m::Model)
   unique(values)
 end
 
-function keys_dependent(m::Model)
+function keys_dependent(m::Model)::Array{Symbol}
   values = Symbol[]
   for key in keys(m)
     if isa(m[key], AbstractDependent)
@@ -121,7 +121,7 @@ function keys_dependent(m::Model)
   intersect(tsort(m), values)
 end
 
-function keys_independent(m::Model)
+function keys_independent(m::Model)::Array{Symbol}
   deps = Symbol[]
   for key in keys(m)
     if isa(m[key], AbstractDependent)
@@ -131,7 +131,7 @@ function keys_independent(m::Model)
   setdiff(keys(m, :all), deps)
 end
 
-function keys_logical(m::Model)
+function keys_logical(m::Model)::Array{Symbol}
   values = Symbol[]
   for key in keys(m)
     if isa(m[key], AbstractLogical)
@@ -141,7 +141,7 @@ function keys_logical(m::Model)
   values
 end
 
-function keys_monitor(m::Model)
+function keys_monitor(m::Model)::Array{Symbol}
   values = Symbol[]
   for key in keys(m)
     node = m[key]
@@ -152,7 +152,7 @@ function keys_monitor(m::Model)
   values
 end
 
-function keys_output(m::Model)
+function keys_output(m::Model)::Array{Symbol}
   values = Symbol[]
   dag = ModelGraph(m)
   for v in vertices(dag.graph)
@@ -164,9 +164,9 @@ function keys_output(m::Model)
   values
 end
 
-keys_source(m::Model, nodekey::Symbol) = m[nodekey].sources
+keys_source(m::Model, nodekey::Symbol)::Array{Symbol} = m[nodekey].sources
 
-function keys_source(m::Model, nodekeys::Vector{Symbol})
+function keys_source(m::Model, nodekeys::Vector{Symbol})::Array{Symbol}
   values = Symbol[]
   for key in nodekeys
     append!(values, m[key].sources)
@@ -174,7 +174,7 @@ function keys_source(m::Model, nodekeys::Vector{Symbol})
   unique(values)
 end
 
-function keys_stochastic(m::Model)
+function keys_stochastic(m::Model)::Array{Symbol}
   values = Symbol[]
   for key in keys(m)
     if isa(m[key], AbstractStochastic)
@@ -184,11 +184,11 @@ function keys_stochastic(m::Model)
   values
 end
 
-function keys_target(m::Model, block::Integer=0)
+function keys_target(m::Model, block::Integer=0)::Array{Symbol}
   block == 0 ? keys_target0(m) : m.samplers[block].targets
 end
 
-function keys_target0(m::Model)
+function keys_target0(m::Model)::Array{Symbol}
   values = Symbol[]
   for sampler in m.samplers
     append!(values, sampler.targets)
@@ -196,9 +196,9 @@ function keys_target0(m::Model)
   intersect(keys(m, :dependent), values)
 end
 
-keys_target(m::Model, nodekey::Symbol) = m[nodekey].targets
+keys_target(m::Model, nodekey::Symbol)::Array{Symbol} = m[nodekey].targets
 
-function keys_target(m::Model, nodekeys::Vector{Symbol})
+function keys_target(m::Model, nodekeys::Vector{Symbol})::Array{Symbol}
   values = Symbol[]
   for key in nodekeys
     append!(values, m[key].targets)
@@ -251,7 +251,7 @@ end
 
 function names(m::Model, nodekey::Symbol)
   node = m[nodekey]
-  
+
   unlist(node, names(node))
 end
 

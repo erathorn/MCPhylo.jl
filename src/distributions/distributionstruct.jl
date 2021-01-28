@@ -31,7 +31,6 @@ function unlist_sub(D::Array{MultivariateDistribution}, X::AbstractArray)
   resize!(y, offset)
 end
 
-
 function relistlength(d::UnivariateDistribution, x::AbstractArray)
   (x[1], 1)
 end
@@ -51,8 +50,13 @@ end
 relistlength_sub(d::Distribution, s::AbstractStochastic, x::AbstractArray) =
   relistlength(d, x)
 
-relistlength_sub(d::Distribution, s::AbstractTreeStochastic, x::T) where T<:GeneralNode =
+function relistlength_sub(d::Distribution, s::AbstractTreeStochastic, x::T) where T<:GeneralNode
   relistlength(d, x)
+end
+
+function relistlength_sub(d::Distribution, s::AbstractTreeStochastic, x::AbstractArray) where T<:GeneralNode
+  relistlength(d, x[1])
+end
 
 relistlength(d::UnivariateDistribution, x::T) where T<:GeneralNode = (x, 1)
 
