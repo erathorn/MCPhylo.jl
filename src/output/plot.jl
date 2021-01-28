@@ -1,7 +1,14 @@
 #################### Posterior Plots ####################
 
 #################### Generic Methods ####################
+"""
+    draw(p::Array{T}; fmt::Symbol=:svg, filename::String="", nrow::Integer=3,
+         ncol::Integer=2, byrow::Bool=false, ask::Bool=true) where T<:Plots.Plot
 
+--- INTERNAL ---
+Helper function for the plot functions. Displays plots and - if wanted - saves
+them to a file.
+"""
 function draw(p::Array{T}; fmt::Symbol=:svg, filename::String="",
               nrow::Integer=3, ncol::Integer=2, byrow::Bool=false,
               ask::Bool=true) where T<:Plots.Plot
@@ -52,6 +59,24 @@ function draw(p::Array{T}; fmt::Symbol=:svg, filename::String="",
 end # function
 
 
+"""
+  plot(c::AbstractChains, ptype::Vector{Symbol}=[:trace, :density];
+       <keyword arguments>)::Array{Plots.Plot}
+
+Function that takes a MCMC chain and creates various different plots (trace &
+density by default).
+
+# Arguments
+- 'vars::Vector{String}': specifies the variables of the chain that are plotted
+. 'filename::String'="": when given, the plots will be saved to a file
+- 'fmt::Symbol': specifies the format of the output file
+- 'nrow::Integer' / 'ncol::Integer': Define layout of the plot window(s), i.e.
+                                     how many plots on each page
+- 'legend::Bool=false': Turn plot legend on / off
+- 'args': Plottype specific arguments, like the number of bins for the contour
+          plot or if the barplots bars should be stacked or not. Check the
+          specific plot functions below to use these arguments.
+"""
 function plot(c::AbstractChains, ptype::Vector{Symbol}=[:trace, :density];
               vars::Vector{String}=String[], filename::String="",
               fmt::Symbol=:svg, nrow::Integer=3, ncol::Integer=2,
@@ -72,6 +97,14 @@ function plot(c::AbstractChains, ptype::Vector{Symbol}=[:trace, :density];
 end # function
 
 
+"""
+  check_vars(sim_names::Vector{AbstractString},
+             vars::Vector{String})::Vector{Int64}
+
+--- INTERNAL ---
+Helper function that returns a list of indeces that correspond to specific
+variables. Only those variables get plotted in later steps.
+"""
 function check_vars(sim_names::Vector{AbstractString}, vars::Vector{String})::Vector{Int64}
     names = []
     for var in vars
@@ -101,6 +134,14 @@ function check_vars(sim_names::Vector{AbstractString}, vars::Vector{String})::Ve
 end # function
 
 
+"""
+  plot(c::AbstractChains, ptype::Symbol, indeces::Vector{Int64};
+       legend::Bool=false, args...)
+
+--- INTERNAL ---
+Helper function to the actual plot function. Calls the specific plotting
+functions that are needed.
+"""
 function plot(c::AbstractChains, ptype::Symbol, indeces::Vector{Int64}; legend::Bool=false, args...)
   ptype == :autocor      ? autocorplot(c, indeces; legend=legend, args...) :
   ptype == :bar          ? barplot(c, indeces; legend=legend, args...) :
@@ -113,6 +154,21 @@ function plot(c::AbstractChains, ptype::Symbol, indeces::Vector{Int64}; legend::
 end # function
 
 
+"""
+    contourplot(c::AbstractChains; <keyword arguments>)::Vector{Plots.Plot}
+
+Function that takes a MCMC chain and creates contourplots. If variables are
+limited with 'vars' keyword argument, at least 2 variables have to be specified,
+or no contourplot can be drawn.
+
+# Arguments
+- 'vars::Vector{String}': specifies the variables of the chain that are plotted
+. 'filename::String'="": when given, the plots will be saved to a file
+- 'fmt::Symbol': specifies the format of the output file
+- 'nrow::Integer' / 'ncol::Integer': Define layout of the plot window(s), i.e.
+                                     how many plots on each page
+- 'legend::Bool=false': Turn plot legend on / off
+"""
 function contourplot(c::AbstractChains; vars::Vector{String}=String[],
                      filename::String="", fmt::Symbol=:svg, nrow::Integer=3,
                      ncol::Integer=2, legend::Bool=false, args...)::Vector{Plots.Plot}
@@ -133,7 +189,15 @@ end # function
 
 
 #################### Plot Engines ####################
+"""
+   autocorplot(c::AbstractChains, indeces::Vector{Int64};
+               maxlag::Integer=round(Int, 10 * log10(length(c.range))),
+               legend::Bool=false, na...)
 
+--- INTERNAL ---
+Helper function called by the plot function when a autocorrelation
+plot is needed.
+"""
 function autocorplot(c::AbstractChains, indeces::Vector{Int64};
                      maxlag::Integer=round(Int, 10 * log10(length(c.range))),
                      legend::Bool=false, na...)
@@ -157,6 +221,13 @@ function autocorplot(c::AbstractChains, indeces::Vector{Int64};
 end # function
 
 
+"""
+    barplot(c::AbstractChains, indeces::Vector{Int64};
+            legend::Bool=false, position::Symbol=:stack, na...)
+
+--- INTERNAL ---
+Helper function called by the plot function when a barplot is needed.
+"""
 function barplot(c::AbstractChains, indeces::Vector{Int64};
                  legend::Bool=false, position::Symbol=:stack, na...)
   nrows, nvars, nchains = size(c.value)
@@ -190,6 +261,13 @@ function barplot(c::AbstractChains, indeces::Vector{Int64};
 end # function
 
 
+"""
+  contourplot_int(c::AbstractChains, indeces::Vector{Int64};
+                  bins::Integer=100, na...)
+
+--- INTERNAL ---
+Helper function called by the contourplot function.
+"""
 function contourplot_int(c::AbstractChains, indeces::Vector{Int64};
                      bins::Integer=100, na...)
   nrows, nvars, nchains = size(c.value)
@@ -221,6 +299,13 @@ function contourplot_int(c::AbstractChains, indeces::Vector{Int64};
 end  # function
 
 
+"""
+  densityplot(c::AbstractChains, indeces::Vector{Int64}; legend::Bool=false,
+              trim::Tuple{Real, Real}=(0.025, 0.975), na...)
+
+--- INTERNAL ---
+Helper function called by the plot function when a densityplot is needed.
+"""
 function densityplot(c::AbstractChains, indeces::Vector{Int64};
                      legend::Bool=false,
                      trim::Tuple{Real, Real}=(0.025, 0.975), na...)
@@ -251,6 +336,13 @@ function densityplot(c::AbstractChains, indeces::Vector{Int64};
 end # function
 
 
+"""
+    meanplot(c::AbstractChains, indeces::Vector{Int64};
+             legend::Bool=false, na...)
+
+--- INTERNAL ---
+Helper function called by the plot function when a meanplot is needed.
+"""
 function meanplot(c::AbstractChains, indeces::Vector{Int64}; legend::Bool=false, na...)
   nrows, nvars, nchains = size(c.value)
   # new list initialization
@@ -272,6 +364,15 @@ function meanplot(c::AbstractChains, indeces::Vector{Int64}; legend::Bool=false,
 end # function
 
 
+"""
+    mixeddensityplot(c::AbstractChains, indeces::Vector{Int64};
+                     barbounds::Tuple{Real, Real}=(0, Inf), args...)
+
+--- INTERNAL ---
+Helper function called by the plot function. Checks for each variable if it is
+discrete or not and plots a barplot for discrete variables and a densityplot for
+indiscrete variables.
+"""
 function mixeddensityplot(c::AbstractChains, indeces::Vector{Int64};
                           barbounds::Tuple{Real, Real}=(0, Inf), args...)
   plots = Array{Plots.Plot}(undef, length(indeces))
@@ -296,6 +397,13 @@ function mixeddensityplot(c::AbstractChains, indeces::Vector{Int64};
 end # function
 
 
+"""
+    traceplot(c::AbstractChains, indeces::Vector{Int64};
+              legend::Bool=false, na...)
+
+--- INTERNAL ---
+Helper function called by the plot function when a traceplot is needed.
+"""
 function traceplot(c::AbstractChains, indeces::Vector{Int64}; legend::Bool=false, na...)
   nrows, nvars, nchains = size(c.value)
   # new list initialization
