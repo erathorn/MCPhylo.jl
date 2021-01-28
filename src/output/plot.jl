@@ -48,7 +48,7 @@ function draw(p::Array{T}; fmt::Symbol=:svg, filename::String="",
 
       else
         # invisible empty plot
-        mat[j] = Plots.plot(showaxis=:false, grid=:false)
+        mat[j] = Plots.plot(showaxis=:false, grid=:false, axis=nothing, border=nothing)
       end # if else
     end # for
     result = byrow ? permutedims(reshape(mat, ncol, nrow), [2, 1]) :
@@ -63,16 +63,26 @@ end # function
 
 
 function plot(c::AbstractChains, ptype::Vector{Symbol}=[:trace, :density];
-              indeces::Vector{Integer}=[], filename::String="",
+              var_names::Vector{String}=String[], filename::String="",
               fmt::Symbol=:svg, nrow::Integer=3, ncol::Integer=2,
               legend::Bool=false, args...)::Array{Plots.Plot}
   n = length(ptype)
   if !isempty(var_names)
     indeces = check_var_names(c.names, var_names)
   else
-    indedes = [collect(1:length(c.names))]
+    indeces = collect(1:length(c.names))
   end # if / else
-  p = Array{Plots.Plot}(undef, n, length(var_names))
+  if :contour in ptype && length(indeces) == 1
+    println("Contour Plot needs at least 2 variables.")
+    if length(ptype) == 1
+      println("Exiting function.")
+      return Plots.Plot[]
+    end # if
+    println("Plotting other plots.")
+    n = n-1
+    deleteat!(ptype, findfirst(x -> x == :contour, ptype))
+  end # if
+  p = Array{Plots.Plot}(undef, n, length(indeces))
   for i in 1:n
     showlegend = legend && i == n
     p[i, :] = plot(c, ptype[i], indeces; legend=legend, args...)
@@ -82,7 +92,7 @@ function plot(c::AbstractChains, ptype::Vector{Symbol}=[:trace, :density];
 end # function
 
 
-function check_var_names(sim_names::Vector{String}, var_names::Vector{String})::Vector{Integer}
+function check_var_names(sim_names::Vector{AbstractString}, var_names::Vector{String})::Vector{Int64}
     names = []
     for var_name in var_names
         if endswith(var_name, r"\[[0-9]*\]")
@@ -111,7 +121,7 @@ function check_var_names(sim_names::Vector{String}, var_names::Vector{String})::
 end # function
 
 
-function plot(c::AbstractChains, ptype::Symbol, indeces::Vector{Integer}; legend::Bool=false, args...)
+function plot(c::AbstractChains, ptype::Symbol, indeces::Vector{Int64}; legend::Bool=false, args...)
   ptype == :autocor      ? autocorplot(c, indeces; legend=legend, args...) :
   ptype == :bar          ? barplot(c, indeces; legend=legend, args...) :
   ptype == :contour      ? contourplot(c, indeces; args...) :
@@ -125,7 +135,7 @@ end # function
 
 #################### Plot Engines ####################
 
-function autocorplot(c::AbstractChains, indeces::Vector{Integer};
+function autocorplot(c::AbstractChains, indeces::Vector{Int64};
                      maxlag::Integer=round(Int, 10 * log10(length(c.range))),
                      legend::Bool=false, na...)
   nrows, nvars, nchains = size(c.value)
@@ -148,7 +158,7 @@ function autocorplot(c::AbstractChains, indeces::Vector{Integer};
 end # function
 
 
-function barplot(c::AbstractChains, indeces::Vector{Integer};
+function barplot(c::AbstractChains, indeces::Vector{Int64};
                  legend::Bool=false, position::Symbol=:stack, na...)
   nrows, nvars, nchains = size(c.value)
   plots = Array{Plots.Plot}(undef, length(indeces))
@@ -181,13 +191,13 @@ function barplot(c::AbstractChains, indeces::Vector{Integer};
 end # function
 
 
-function contourplot(c::AbstractChains, indeces::Vector{Integer};
+function contourplot(c::AbstractChains, indeces::Vector{Int64};
                      bins::Integer=100, na...)
   nrows, nvars, nchains = size(c.value)
   plots = Plots.Plot[]
-  offset = 1e4 * eps()        [1, [4, 5]]
+  offset = 1e4 * eps()
   n = nrows * nchains
-  for index, i in enumerate(indeces[1:end-1])
+  for (index, i) in enumerate(indeces[1:end-1])
     X = c.value[:, i, :]
     qx = range(minimum(X) - offset, stop=maximum(X) + offset, length=bins + 1)
     mx = map(k -> mean([qx[k], qx[k + 1]]), 1:bins)
@@ -209,10 +219,10 @@ function contourplot(c::AbstractChains, indeces::Vector{Integer};
     end # for
   end # for
   return plots
-end  ##  function
+end  # function
 
 
-function densityplot(c::AbstractChains, indeces::Vector{Integer};
+function densityplot(c::AbstractChains, indeces::Vector{Int64};
                      legend::Bool=false,
                      trim::Tuple{Real, Real}=(0.025, 0.975), na...)
   nrows, nvars, nchains = size(c.value)
@@ -242,7 +252,7 @@ function densityplot(c::AbstractChains, indeces::Vector{Integer};
 end # function
 
 
-function meanplot(c::AbstractChains, indeces::Vector{Integer}; legend::Bool=false, na...)
+function meanplot(c::AbstractChains, indeces::Vector{Int64}; legend::Bool=false, na...)
   nrows, nvars, nchains = size(c.value)
   # new list initialization
   plots = Array{Plots.Plot}(undef, length(indeces))
@@ -263,10 +273,17 @@ function meanplot(c::AbstractChains, indeces::Vector{Integer}; legend::Bool=fals
 end # function
 
 
-function mixeddensityplot(c::AbstractChains, indeces::Vector{Integer};
+function mixeddensityplot(c::AbstractChains, indeces::Vector{Int64};
                           barbounds::Tuple{Real, Real}=(0, Inf), args...)
   plots = Array{Plots.Plot}(undef, length(indeces))
-  discrete = MCPhylo.indiscretesupport(c, barbounds)
+  discrete_temp = MCPhylo.indiscretesupport(c, barbounds)
+  discrete = Bool[]
+  for index in indeces
+    try
+      push!(discrete, discrete_temp[index])
+    catch BoundsError
+    end # try / catch
+  end
   barplots = plot(c, :bar, indeces; args...)
   densityplots = plot(c, :density, indeces; args...)
   for i in 1:length(discrete)
@@ -280,7 +297,7 @@ function mixeddensityplot(c::AbstractChains, indeces::Vector{Integer};
 end # function
 
 
-function traceplot(c::AbstractChains, indeces::Vector{Integer}; legend::Bool=false, na...)
+function traceplot(c::AbstractChains, indeces::Vector{Int64}; legend::Bool=false, na...)
   nrows, nvars, nchains = size(c.value)
   # new list initialization
   plots = Any[]

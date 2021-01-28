@@ -34,7 +34,7 @@ setsamplers!(model, samplers)
 
 sim = mcmc(model, my_data, inits, 5000, burnin=500, thin=5, chains=2)
 
-plot(sim, [:bar, :autocor]; fmt=:pdf, nrow=2, ncol=1)
+plot(sim, [:contour], var_names=["σ", "likelihood", "μ"], fmt=:pdf, nrow=3, ncol=2)
 
 gelmandiag(sim)
 
