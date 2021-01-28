@@ -146,13 +146,13 @@ scheme = [PNUTS(:tree_ie, target=0.8, targetNNI=7),
           SliceSimplex(:pi_st),
           SliceSimplex(:pi_aa),
           SliceSimplex(:pi_pn),
-          NUTS([:αs, :a, :b, :c, :d]),
+          Slice([:αs, :a, :b, :c, :d], 1.0),
           ]
 
 setsamplers!(model, scheme);
 
 # do the mcmc simmulation. if trees=true the trees are stored and can later be
 # flushed ot a file output.
-sim = mcmc(model, my_data, inits, 50, burnin=20,thin=1, chains=3, trees=true)
+sim = mcmc(model, my_data, inits, 250000, burnin=25000,thin=1, chains=3, trees=true)
 sim = mcmc(sim, 10, trees=true)
 to_file(sim, "testMult_")

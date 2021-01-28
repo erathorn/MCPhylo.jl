@@ -43,7 +43,7 @@ function internal_logpdf(d::CompoundDirichlet, b_lens::Array{Float64},
 
     first = (d.alpha*log(d.beta))-log(gamma(d.alpha)) - (t_l*d.beta)
     second = -log(gamma(d.a))-log(gamma(d.c))+log(gamma(d.a+d.c))
-    third = blen_leave_log*(d.a-1) + blen_int_log*(d.a*d.c-1.0)
+    third = blen_leave_log*(d.a-1.0) + blen_int_log*(d.a*d.c-1.0)
     fourth = (d.alpha-d.a*nterm-d.a*d.c*n_int)*log(t_l)
 
     r2 = first + second +third+fourth
