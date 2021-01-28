@@ -67,6 +67,11 @@ function logpdf(m::Model, nodekeys::Vector{Symbol}, transform::Bool=false)
   m.likelihood
 end
 
+function rand(m::Model, nodekeys::Vector{Symbol}, x::Int64)
+  rand(m[nodekeys[1]], x)
+end
+
+
 
 function logpdf(m::Model, x::AbstractArray{T}, block::Integer=0,
                 transform::Bool=false) where {T<:Real}
@@ -142,6 +147,12 @@ function logpdf!(m::Model, x::AbstractArray{T}, block::Integer=0,
     lp += key in params ? logpdf(node, transform) : logpdf(node)
   end
   lp
+end
+
+function rand!(m::Model, x::Int64, block::Integer=0)
+  params = keys(m, :block, block)
+  res = rand(m, params, x)
+  res
 end
 
 

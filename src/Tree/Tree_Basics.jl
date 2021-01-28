@@ -353,6 +353,14 @@ function node_height_vec(root::T)::Vector{Float64} where T<:GeneralNode
     t
 end # function node_height
 
+"""
+    node_depth(node::T)::Int64 where T<:GeneralNode
+
+Calculate the depth of a node.
+"""
+function node_depth(node::T)::Int64 where T<:GeneralNode
+    return length(split(node.binary, ",")) - 1
+end
 
 function node_distance(tree::T, node1::T, node2::T)::Float64 where T<:GeneralNode
     lca = find_lca(tree, node1, node2)
@@ -427,7 +435,6 @@ function set_binary!(root::T)  where T<:GeneralNode
             node.binary = string(root.binary,",", ind)
             set_binary!(node)
         end
-
     end # if
 end # function set_binary
 
@@ -655,3 +662,24 @@ function check_binary(root::Node)::Bool
     end #for
     return res
 end #function
+
+
+"""
+    check_leafset(trees::Vector{T})::Nothing where T<:AbstractNode
+
+Checks if an array of trees shares the same leafset (based on the leaf names)
+"""
+function check_leafsets(trees::Vector{T})::Nothing where T<:AbstractNode
+    leaveset = Set([n.name for n in get_leaves(trees[1])])
+    count = 0
+    for (index, tree) in enumerate(trees[2:end])
+        leaveset2 = Set([n.name for n in get_leaves(tree)])
+        if leaveset != leaveset2
+            println("Tree #$index has a different set of leaves than the first tree")
+            count += 1
+        end
+    end
+    if count != 0
+        throw(ArgumentError("$count different trees have a different set of leaves than the first tree"))
+    end
+end

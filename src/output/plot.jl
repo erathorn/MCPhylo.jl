@@ -1,5 +1,15 @@
 #################### Posterior Plots ####################
 
+"""
+
+plot(sim) ==> draw(plot(sim))
+plot(sim, varnames) ==> plot selected variables
+draw ==> nur für output
+"""
+
+
+
+
 #################### Generic Methods ####################
 
 function draw(p::Array{T}; fmt::Symbol=:svg, filename::AbstractString="",

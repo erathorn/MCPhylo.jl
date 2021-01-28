@@ -14,7 +14,7 @@ using Test
                            (A.mother.num, (false, missing)), (G.mother.num, (false, missing)), (F.mother.num, (false, missing)),
                            (G.mother.mother.num, (true, 1.0)), (A.num, (true, 1.0)), (B.num, (true, 1.0)), (C.num, (true, 1.0)),
                            (D.num, (true, 1.0)), (E.num, (true, 1.0)), (F.num, (true, 1.0)), (G.num, (true, 1.0)), (H.num, (true, 1.0))])
-    @test isequal(MCPhylo.find_common_clusters(ref_tree, tree2) ,expected_dict)
+    @test isequal(MCPhylo.find_common_clusters(ref_tree, tree2) , expected_dict)
 
     tree3 = MCPhylo.parsing_newick_string("((A,(C,(D,(B,E)))),(G,(F,H)))")
     MCPhylo.number_nodes!(tree3)
@@ -60,6 +60,14 @@ end
     MCPhylo.number_nodes!.([tree, tree2, expected_tree])
     MCPhylo.set_binary!.([tree, tree2, expected_tree])
     @test MCPhylo.newick(MCPhylo.one_way_compatible(tree, tree2)) == MCPhylo.newick(expected_tree)
+end
+
+@testset "get_leaf_ranks" begin
+    ref_tree = MCPhylo.parsing_newick_string("((A,(B,(C,(D,E)))),(F,(G,H)))")
+    nodes = post_order(ref_tree)
+    @test MCPhylo.get_leaf_ranks(nodes) == Dict([("A", 1), ("B", 2), ("C", 3),
+                                                 ("D", 4), ("E", 5), ("F", 6),
+                                                 ("G", 7), ("H", 8)])
 end
 
 @testset "order_tree!" begin
@@ -141,4 +149,83 @@ end
     tree4 = MCPhylo.parsing_newick_string("(((B,C),A),D,F)")
     push!(trees, tree4)
     @test_throws ArgumentError MCPhylo.majority_consensus_tree(trees)
+
+    tree1 = MCPhylo.parsing_newick_string("(((A,B)AB,C)ABC,(D,E)DE)no_name;")
+    tree2 = MCPhylo.parsing_newick_string("((A,C)AC,(B,D,E)BDE)no_name;")
+    tree3 = MCPhylo.parsing_newick_string("(((B,C)BC,A)BCA,D,E)no_name;")
+    trees = [tree1, tree2, tree3]
+    MCPhylo.number_nodes!.(trees)
+    MCPhylo.set_binary!.(trees)
+    result = newick(MCPhylo.parsing_newick_string("((A,B,C),D,E)"))
+    @test newick(MCPhylo.majority_consensus_tree(trees)) == result
 end
+
+@testset "loose_consensus_tree" begin
+    tree1 = MCPhylo.parsing_newick_string("(((A,B),C),(D,E))")
+    tree2 = MCPhylo.parsing_newick_string("((A,C),(B,D,E))")
+    tree3 = MCPhylo.parsing_newick_string("(((B,C),A),D,E)")
+    trees = [tree1, tree2, tree3]
+    MCPhylo.number_nodes!.(trees)
+    MCPhylo.set_binary!.(trees)
+    result = newick(MCPhylo.parsing_newick_string("(A,B,C,(D,E))"))
+    @test newick(MCPhylo.loose_consensus_tree(trees)) == result
+
+    tree4 = MCPhylo.parsing_newick_string("(((B,C),A),D,F)")
+    push!(trees, tree4)
+    @test_throws ArgumentError MCPhylo.loose_consensus_tree(trees)
+
+    tree1 = MCPhylo.parsing_newick_string("(((A,B)AB,C)ABC,(D,E)DE)no_name;")
+    tree2 = MCPhylo.parsing_newick_string("((A,C)AC,(B,D,E)BDE)no_name;")
+    tree3 = MCPhylo.parsing_newick_string("(((B,C)BC,A)BCA,D,E)no_name;")
+    trees = [tree1, tree2, tree3]
+    MCPhylo.number_nodes!.(trees)
+    MCPhylo.set_binary!.(trees)
+    result = newick(MCPhylo.parsing_newick_string("(A,B,C,(D,E)no_name)"))
+    @test newick(MCPhylo.loose_consensus_tree(trees)) == result
+end
+
+@testset "greedy_consensus_tree" begin
+    tree1 = MCPhylo.parsing_newick_string("(((A,B),C),(D,E))")
+    tree2 = MCPhylo.parsing_newick_string("((A,C),(B,D,E))")
+    tree3 = MCPhylo.parsing_newick_string("(((B,C),A),D,E)")
+    trees = [tree1, tree2, tree3]
+    MCPhylo.number_nodes!.(trees)
+    MCPhylo.set_binary!.(trees)
+    result = newick(MCPhylo.parsing_newick_string("(((A,B),C),(D,E))"))
+    # result = newick(MCPhylo.parsing_newick_string("(((A,C),B),(D,E))"))
+    # result = newick(MCPhylo.parsing_newick_string("(((B,C),A),(D,E))"))
+    @test newick(MCPhylo.greedy_consensus_tree(trees)) == result
+end
+
+@testset "count_cluster_occurences" begin
+    bit_vec = BitArray.([[1,0,0,0,0], [0,1,0,0,0], [0,0,1,0,0], [0,0,0,1,0],
+              [0,0,0,0,1], [1,1,0,0,0], [1,1,1,0,0], [0,0,0,1,1], [1,0,0,0,0],
+              [0,1,0,0,0], [0,0,1,0,0], [0,0,0,1,0], [0,0,0,0,1], [1,0,1,0,0],
+              [0,1,0,1,1], [0,1,1,0,0], [1,1,1,0,0], [0,0,0,1,1], [1,0,0,0,0],
+              [0,1,0,0,0], [0,0,1,0,0], [0,0,0,1,0], [0,0,0,0,1]])
+    sort!(bit_vec, alg=QuickSort)
+    queue = MCPhylo.PriorityQueue{BitVector, Int64}()
+    queue[BitArray([0,0,0,0,1])] = -3
+    queue[BitArray([0,0,0,1,0])] = -3
+    queue[BitArray([0,1,0,0,0])] = -3
+    queue[BitArray([0,0,1,0,0])] = -3
+    queue[BitArray([1,0,0,0,0])] = -3
+    queue[BitArray([0,0,0,1,1])] = -2
+    queue[BitArray([1,1,0,0,0])] = -1
+    queue[BitArray([1,0,1,0,0])] = -1
+    queue[BitArray([0,1,0,1,1])] = -1
+    queue[BitArray([0,1,1,0,0])] = -1
+    queue[BitArray([1,1,1,0,0])] = -2
+
+    @test MCPhylo.count_cluster_occurences(bit_vec) == queue
+end
+
+
+"""
+# Additional test with a big file of trees
+trees = MCPhylo.ParseNewick("./doc/Tree/Drav_mytrees_1.nwk")
+MCPhylo.set_binary!.(trees)
+MCPhylo.number_nodes!.(trees)
+majority_tree = MCPhylo.majority_consensus_tree(trees)
+println(newick(majority_tree))
+"""
