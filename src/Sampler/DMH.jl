@@ -2,8 +2,6 @@
 
 #################### Types and Constructors ####################
 
-import StatsFuns: softmax
-
 mutable struct DMHTune <: SamplerTune
   logf::Union{Function, Missing}
   pseudolog::Union{Function, Missing} # AuxLog
@@ -53,7 +51,7 @@ end
 
 sample!(v::DMHVariate, model) = DMH_sample!(v, v.tune, model)
 
-function DMH_sample!(v::DMHVariate, tune, model)
+function DMH_sample!(v::DMHVariate, tune::DMHTune, model::Model)
 	# 1. propose theta prime
 	# 2. Generate the auxiliary variable using theta prime
 
@@ -98,7 +96,7 @@ function DMH_sample!(v::DMHVariate, tune, model)
 	v
 end
 
-function inner_sampler(v::DMHVariate, X)
+function inner_sampler(v::DMHVariate, X::Array{N, x})::Array{N, 2} where N <: Real
 	nfeatures, nlangs = size(X)
 	counter = 0
 	while true

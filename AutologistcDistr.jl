@@ -23,8 +23,8 @@ function logpdf(d::AutologisticDistr, X::Array{N,2}) where N <: Real
 	sp_cond = ov_concordant_sums(X, d.spmat)
 	#res = @. ling_cond[f] * d.ling_params[f] + sp_cond[f] * d.spatial_params[f]
 	for f in 1:d.nfeat
-		res += d.ov_ling_concordant[f] * d.ling_params[f] +
-		d.ov_spatial_concordant[f] * d.spatial_params[f]
+		#res += d.ov_ling_concordant[f] * d.ling_params[f] +
+		#d.ov_spatial_concordant[f] * d.spatial_params[f]
 		res += ling_cond[f] * d.ling_params[f] + sp_cond[f] * d.spatial_params[f]
 		for k in 1:maxval
 			res += d.ov_universality[f,k] * d.universality_params[f,k]
@@ -48,5 +48,5 @@ function logcond(d::AutologisticDistr, X::Array{N, 2}, l::Int64, f::Int64) where
 			d.universality_params[f,k]
 		probs[k] = p
 	end
-	return probs
+	return softmax(probs)
 end
