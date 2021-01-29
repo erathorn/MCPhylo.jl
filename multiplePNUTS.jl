@@ -1,7 +1,7 @@
-include("./src/MCPhylo.jl")
-using .MCPhylo
-using Random
-Random.seed!(42)
+using Distributed
+addprocs(3);
+@everywhere include("./src/MCPhylo.jl")
+@everywhere using .MCPhylo
 
 mt_st, df_st = make_tree_with_data("notebook/data-st-64-110.paps.nex"); # load your own nexus file
 mt_ie, df_ie = make_tree_with_data("notebook/data-ie-42-208.paps.nex"); # load your own nexus file
@@ -146,13 +146,13 @@ scheme = [PNUTS(:tree_ie, target=0.8, targetNNI=7),
           SliceSimplex(:pi_st),
           SliceSimplex(:pi_aa),
           SliceSimplex(:pi_pn),
-          Slice([:αs, :a, :b, :c, :d], 1.0),
+          Slice([:αs, :a, :b, :c, :d], 1.0, Multivariate),
           ]
 
 setsamplers!(model, scheme);
 
 # do the mcmc simmulation. if trees=true the trees are stored and can later be
 # flushed ot a file output.
-sim = mcmc(model, my_data, inits, 250000, burnin=25000,thin=1, chains=3, trees=true)
+sim = mcmc(model, my_data, inits, 25, burnin=5,thin=1, chains=1, trees=true)
 sim = mcmc(sim, 10, trees=true)
 to_file(sim, "testMult_")

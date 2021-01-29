@@ -26,7 +26,7 @@ function ParseNexus(filename::String)
     ntax, nchar, gap, missing_representation, symbols = extract_meta_info(content)
     df = create_nexusdf(content)
 
-    out_symbols = symbols == "NOSYMBOLS" ? get_alphabet(df, gap, missing_representation) : [s for s in symbols]
+    out_symbols = symbols == "NOSYMBOLS" ? get_alphabet(df, gap, missing_representation) : [string(s) for s in symbols]
 
     return ntax, nchar, gap, missing_representation, out_symbols, df
 end # function ParseNexus
@@ -57,7 +57,7 @@ function extract_meta_info(content::Array{String})
     ntax::Int64 = 0
     nchar::Int64 = 0
     gap::String = "-"
-    symbols::String="NOSYMBOLS"
+    symbols::String= "NOSYMBOLS"
     missing_representation::String = "?"
     while true
         line = popfirst!(content)

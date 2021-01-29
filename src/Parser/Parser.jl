@@ -18,7 +18,7 @@ function make_tree_with_data(filename::String, dialect::AbstractString="nexus",
 							 binary::Bool=true)
     # get all the information from the input file
 	if lowercase(dialect) == "nexus"
-		n_tax, n_sites, gap, miss, df, symbols = ParseNexus(filename)
+		n_tax, n_sites, gap, miss, symbols, df = ParseNexus(filename)
 	elseif lowercase(dialect) == "csv"
 		ismissing(gap) || throw("Please specify the gap symbol for a CSV file")
 		ismissing(miss) || throw("Please specify the missing symbol for a CSV file")
@@ -38,12 +38,15 @@ function make_tree_with_data(filename::String, dialect::AbstractString="nexus",
 		mn = find_by_name(new_tree, row.Language)
 		mind = mn.num
 		for (ind, i) in enumerate(row.Data)
-			index = findfirst(x->x==i, symbols)
+			ent = string(i)
+			index = findfirst(x->x==ent, symbols)
 			if index == nothing
-				if i == gap || i == miss
+				if ent == gap || ent == miss
 					my_df[:, ind, mind] .= 1.0
 				else
-					throw("unknown symbol $i")
+					println(typeof(ent))
+					println(typeof.(symbols))
+					throw("unknown symbol $ent, $symbols")
 				end
 			else
 				my_df[:,ind,mind] .= 0.0
