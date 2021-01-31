@@ -23,6 +23,7 @@ using Random
 using CSV
 using ChainRules
 using ChainRulesCore
+using Phylo
 
 
 using CUDA
@@ -33,7 +34,7 @@ else
          Computation is performed without CUDA functionality."
 end
 
-
+import Phylo
 import Base: Matrix, names, summary, iterate
 import Base.Threads.@spawn
 import Compose: Context, context, cm, gridstack, inch, MeasureOrNumber, mm, pt, px
