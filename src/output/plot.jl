@@ -1,3 +1,71 @@
+####################    Tree Plots   ####################
+"""
+plot(tree::T, treetype::Symbol=:dendrogram; <keyword arguments>)
+  ::Plots.Plot where T<:AbstractNode
+
+Function that takes a tree and plots it either as a fan diagram or a dendrogram.
+Returns the plot.
+
+# Arguments
+- 'showtips::Bool'=true : decides whether the leaf names are shown in the plot
+- 'tipfont'=(7,) : specifies the font size and colour of the leaf names, if shown
+- 'binary::Bool'=false : specifies whether the tree(s) are binary
+- 'msc::Symbol'=:white : controls colour of the marker borders
+- 'args...': Additional arguments to change plotting
+"""
+function plot(tree::T, treetype::Symbol=:dendrogram; showtips::Bool=true,
+              tipfont=(7,), binary::Bool=false, msc::Symbol=:white
+              )::Plots.Plot where T<:AbstractNode
+  treetype in [:dendrogram, :fan] ||
+    throw(ArgumentError("unsupported diagram format $treetype"))
+  newick_tree = newick(tree)
+  if binary
+    tree = Phylo.parsenewick(newick_tree, NamedBinaryTree)
+  else
+    tree = Phylo.parsenewick(newick_tree, NamedPolytomousTree)
+  end # if/else
+  p = Plots.plot(tree, treetype=treetype, showtips=showtips, tipfont=tipfont,
+                 msc=msc)
+  return p
+end # plot
+
+
+"""
+plot(file::String, treetype::Symbol=:dendrogram;<keyword arguments>)
+  ::Vector{Plots.Plot}
+
+Function that takes a newick file and plots the trees it reads from the file,
+either in fan diagrams or dendrogras. Returns the trees in an array.
+
+# Arguments
+- 'showtips::Bool'=true : decides whether the leaf names are shown in the plot
+- 'tipfont'=(7,) : specifies the font size and colour of the leaf names, if shown
+- 'binary::Bool'=false : specifies whether the tree(s) are binary
+- 'ask::Bool'=true : Decide if you want to confirm before drawing next plot
+- 'msc::Symbol'=:white : controls colour of the marker borders
+"""
+function plot(file::String, treetype::Symbol=:dendrogram; showtips::Bool=true,
+              tipfont=(7,), binary::Bool=false, ask::Bool=true, msc=:white
+              )::Vector{Plots.Plot}
+  treetype in [:dendrogram, :fan] ||
+    throw(ArgumentError("unsupported diagram format $treetype"))
+  trees = ParseNewick(file)
+  plots = Plots.Plot[]
+  for (index, tree) in enumerate(trees)
+    p = plot(tree, treetype, showtips=showtips, tipfont=tipfont, binary=binary,
+             msc=msc)
+    push!(plots, p)
+    if ask
+      index == length(trees) && break
+      display(p)
+      println("Press ENTER to draw next plot")
+      readline(stdin)
+    end # if
+  end # for
+  return plots
+end # plot
+
+
 #################### Posterior Plots ####################
 
 #################### Generic Methods ####################
@@ -56,7 +124,7 @@ function draw(p::Array{T}; fmt::Symbol=:svg, filename::String="",
     !isexternalfile && display(plots)
     isexternalfile && savefig(fname)
   end # for
-end # function
+end # draw
 
 
 """
@@ -67,15 +135,16 @@ Function that takes a MCMC chain and creates various different plots (trace &
 density by default).
 
 # Arguments
-- 'vars::Vector{String}': specifies the variables of the chain that are plotted
-. 'filename::String'="": when given, the plots will be saved to a file
-- 'fmt::Symbol': specifies the format of the output file
-- 'nrow::Integer' / 'ncol::Integer': Define layout of the plot window(s), i.e.
-                                     how many plots on each page
+- 'vars::Vector{String}=String[]' : specifies the variables of the chain that
+                                    are plotted
+. 'filename::String'="" : when given, the plots will be saved to a file
+- 'fmt::Symbol'=:svg : specifies the format of the output file
+- 'nrow::Integer=3' / 'ncol::Integer'=2 : Define layout of the plot window(s),
+                                          i.e. how many plots on each page
 - 'legend::Bool=false': Turn plot legend on / off
-- 'args': Plottype specific arguments, like the number of bins for the contour
-          plot or if the barplots bars should be stacked or not. Check the
-          specific plot functions below to use these arguments.
+- 'args...': Plottype specific arguments, like the number of bins for the
+             contourplot or if the barplots bars should be stacked or not.
+            Check the specific plot functions below to use these arguments.
 """
 function plot(c::AbstractChains, ptype::Vector{Symbol}=[:trace, :density];
               vars::Vector{String}=String[], filename::String="",
@@ -94,7 +163,7 @@ function plot(c::AbstractChains, ptype::Vector{Symbol}=[:trace, :density];
   end # for
   draw(p, fmt=fmt, filename=filename, nrow=nrow, ncol=ncol)
   return p
-end # function
+end # plot
 
 
 """
@@ -131,7 +200,7 @@ function check_vars(sim_names::Vector{AbstractString}, vars::Vector{String})::Ve
     end # for
     sort!(indeces)
     return indeces
-end # function
+end # check_vars
 
 
 """
@@ -151,7 +220,7 @@ function plot(c::AbstractChains, ptype::Symbol, indeces::Vector{Int64}; legend::
   ptype == :trace        ? traceplot(c, indeces; legend=legend, args...) :
   ptype == :contour      ? throw(ArgumentError("Use function contourplot instead")) :
     throw(ArgumentError("unsupported plot type $ptype"))
-end # function
+end # plot
 
 
 """
@@ -162,11 +231,11 @@ limited with 'vars' keyword argument, at least 2 variables have to be specified,
 or no contourplot can be drawn.
 
 # Arguments
-- 'vars::Vector{String}': specifies the variables of the chain that are plotted
-. 'filename::String'="": when given, the plots will be saved to a file
-- 'fmt::Symbol': specifies the format of the output file
-- 'nrow::Integer' / 'ncol::Integer': Define layout of the plot window(s), i.e.
-                                     how many plots on each page
+- 'vars::Vector{String}'=String[] : specifies the variables of the chain that are plotted
+. 'filename::String'="" : when given, the plots will be saved to a file
+- 'fmt::Symbol'=:svg : specifies the format of the output file
+- 'nrow::Integer'=3 / 'ncol::Integer'=2 : Define layout of the plot window(s),
+                                          i.e. how many plots on each page
 - 'legend::Bool=false': Turn plot legend on / off
 """
 function contourplot(c::AbstractChains; vars::Vector{String}=String[],
@@ -185,7 +254,7 @@ function contourplot(c::AbstractChains; vars::Vector{String}=String[],
  p = contourplot_int(c, indeces; legend=legend, args...)
  draw(p, fmt=fmt, filename=filename, nrow=nrow, ncol=ncol)
  return p
-end # function
+end # contourplot
 
 
 #################### Plot Engines ####################
@@ -218,7 +287,7 @@ function autocorplot(c::AbstractChains, indeces::Vector{Int64};
     z += 1
   end # for
   return plots
-end # function
+end # autocorplot
 
 
 """
@@ -258,7 +327,7 @@ function barplot(c::AbstractChains, indeces::Vector{Int64};
     z += 1
   end # for
   return plots
-end # function
+end # barplot
 
 
 """
@@ -296,7 +365,7 @@ function contourplot_int(c::AbstractChains, indeces::Vector{Int64};
     end # for
   end # for
   return plots
-end  # function
+end  # contourplot_int
 
 
 """
@@ -333,7 +402,7 @@ function densityplot(c::AbstractChains, indeces::Vector{Int64};
     z += 1
   end # for
   return plots
-end # function
+end # densityplot
 
 
 """
@@ -394,7 +463,7 @@ function mixeddensityplot(c::AbstractChains, indeces::Vector{Int64};
     end # if / else
   end # for
   return plots
-end # function
+end # mixeddensityplot
 
 
 """
@@ -418,4 +487,4 @@ function traceplot(c::AbstractChains, indeces::Vector{Int64}; legend::Bool=false
                             widen=false, grid=:dash, gridalpha=0.5))
   end  # for
   return plots
-end # function
+end # traceplot
