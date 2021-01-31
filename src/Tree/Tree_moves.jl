@@ -205,13 +205,31 @@ end # function slide!
 
 
 function reroot(root::T, new_root::String)::T where T<:GeneralNode
+    number_nodes!(root)
 
     new_tree = deepcopy(root)
     root_node = find_by_name(new_tree, new_root)
 
     mother = root_node.mother
+    # println("AMOUNT OF CHILDREN: ", length(mother.children))
+    # println("NUMS OF OLD ROOT CHILDREN \n")
+    # for x in mother.children
+    #     println(x.num)
+    #     println(x.name)
+    # end
 
     recursive_invert(mother, root_node)
+#     println("AMOUNT OF CHILDREN: ", length(root_node.children))
+#     println("NUMS OF NEW ROOT CHILDREN \n")
+#     for x in root_node.children
+#         println(x.num)
+#         println(x.name)
+#         println("HERE IS ",x.name,"'S CHILDREN")
+#         for y in x.children
+#             println(y.num)
+#             println(y.name)
+#     end
+# end
 
     root_node.root = true
     new_tree.root = false

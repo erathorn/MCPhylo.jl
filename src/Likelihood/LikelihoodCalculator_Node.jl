@@ -24,7 +24,6 @@ function FelsensteinFunction(tree_postorder::Vector{N}, pi_::T, rates::Vector{Fl
                 rns = rns + log.(scaler)
                 node.data = node.data ./ scaler
             end #if
-
         end #if
     end # for
 

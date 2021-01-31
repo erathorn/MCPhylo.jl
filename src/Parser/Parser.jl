@@ -121,3 +121,146 @@ function make_tree_with_data(filename::String, dialect::AbstractString="nexus",
 
     return new_tree, my_df
 end # function make_tree_with_data
+
+function fill_in_the_blanks(filename::String, tree::String="")
+
+	ntax,nchar,_,_,df = ParseNexus(filename)
+
+	langnames = df[1]
+	numbers = df[2]
+
+	if tree == ""
+		tree, _= make_tree_with_data(filename, replace_missing=false)
+	else
+		tree = parsing_newick_string(tree)
+	end #ifelse
+	number_nodes!(tree)
+	for node_to_edit in post_order(tree)
+		node_to_edit.data = Array{Float64}(undef,2,nchar)
+	end #for
+
+	for x in eachindex(numbers)
+		try
+			global cur_node = find_by_name(tree,langnames[x])
+		catch
+			continue
+		end #try
+		for y in eachindex(numbers[1])
+			if numbers[x][y] != '?'
+				cur_node.data[1,y] = Float64(Bool(parse(Int,numbers[x][y])))
+				cur_node.data[2,y] = Float64(!Bool(parse(Int,numbers[x][y])))
+			else
+				cur_node.data[1,y] = 3.0
+				cur_node.data[2,y] = 3.0
+			end #ifelse
+		end #for
+	end #for
+
+
+	for x in post_order(tree)
+		for y in eachindex(x.data[1,:])
+			if x.data[1,y] == 3.0
+				retval = assign_value(x.name,tree,y,ntax,nchar)
+				x.data[1,y] = Float64(retval)
+				x.data[2,y] = Float64(!retval)
+				# println(x.data[1,y])
+				# println("\n\n\n")
+			end #if
+		end #for
+	end #for
+	return tree,retdf
+end #function fill_in_the_blanks
+
+function assign_value(langname::String,tree::Node,IoI::Int64,ntax::Int64,nchar::Int64)
+	global uncopied_leaves = get_leaves(tree)
+	for x in uncopied_leaves
+		if x.name == "no_name"
+			throw("MEST UP")
+		end
+	end
+	treecopy = deepcopy(tree)
+	global copied_leaves = get_leaves(treecopy)
+	for x in copied_leaves
+		if x.name == "no_name"
+			throw("MEST UP")
+		end
+	end
+
+	#global nodes2prune = Node[]
+	treecopy = reroot(treecopy,langname)
+	global rerooted_leaves = get_leaves(treecopy)
+	for x in rerooted_leaves
+		if x.name == "no_name"
+			throw("MEST UP")
+		end
+	end
+
+	for node in post_order(treecopy)
+		if node.data[1,IoI]  == 3.0 && !node.root && node.name != langname && isempty(node.children)
+			while true
+				mom = node.mother
+				remove_child!(node.mother,node)
+				if isempty(mom.children)
+					node = mom
+				else
+					break
+				end #ifelse
+			end #while
+			#push!(nodes2prune,node)
+		end #if
+	end #for
+	global pruned_tree = get_leaves(treecopy)
+	for x in pruned_tree
+		if x.name == "no_name"
+			throw("MEST UP")
+		end
+	end
+
+	# if !isempty(nodes2prune)
+	# 	for removeme in nodes2prune
+	# 		remove_child!(removeme.mother,removeme)
+	# 	end #for
+	# end #if
+	number_nodes!(treecopy)
+	blv = get_branchlength_vector(treecopy)
+	dataplaceholder = Array{Float64}(undef,1,1,1)
+	thing = treecopy.data[1,:]
+	 lengthodata = treecopy.data[1,:]
+
+
+	 pi_= (count(i->(i==1.0),thing))/nchar
+	try
+		FelsensteinFunction(post_order(treecopy), pi_, [1.0], dataplaceholder, nchar, blv)
+	catch
+		println("log error")
+	end
+	# println(treecopy.data[1,IoI])
+	if treecopy.data[1,IoI] >= 0.5
+		return true
+	else
+		return false
+	end #ifelse
+	return false
+
+
+
+
+
+	# rerooted_tree = reroot(tree,lang_of_interest
+	# )
+	# blv = get_branchlength_vector(rerooted_tree)
+	# println("do i get here?")
+	# println("rerooted_tree: ", "\t", typeof(post_order(rerooted_tree)))
+	# println("pi_: ", "\t", typeof(1))
+	# println("rates: ", "\t", typeof([1.0]))
+	# data = [1.0,1.0,1.0]
+	# println("data: ", "\t", typeof(data))
+	# println("n_char: ", "\t", typeof(n_char))
+	# println("blv: ", "\t", typeof(blv))
+	# likelihood = FelsensteinFunction(post_order(rerooted_tree), 1, [1.0], data, n_char, blv)
+	# if likelihood > 0.5
+	# 	dataframe[dim1,dim2,dim3] = 1.0
+	# else
+	# 	dataframe[dim1,dim2,dim3] = 0.0
+	# end # if
+end #assign_value

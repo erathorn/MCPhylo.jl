@@ -482,19 +482,69 @@ export
 
 #################### Deprecated ####################
 println("test")
-bla = make_tree_with_data("C:/Users/Adham/Desktop/shorterdata.paps.nex";replace_missing=false)
-da_dataframe = bla[2]
-da_tree = bla[1]
+
+# bemp = parsing_newick_string("(((alak1253,cuaa1241,((((gola1254,kont1244,bahn1262)),(reng1252,seda1262)),(hala1252,jehh1245)),((east2333,bulo1242),sree1244),(nyah1249,lave1249,lave1248)),(paco1243,(ngeq1245,(lowe1395,ongg1239)),east1236,((east2332,kata1264),sooo1254)),((warj1242,(khas1269,pnar1238)),((manm1238,(west2396,para1301)),((ruch1235,shwe1236),rian1261))),(cent1989,nort2684),(((yuan1241,khmu1256)),mall1246),(mang1378,buga1247),(monn1252,nyah1250),((khar1287,(pare1266,sora1254)),sant1410),(carn1240,cent1990),((male1282,rucc1239),viet1252)),idum1241);")
+#
+# bendo = find_by_name(bemp,"idum1241")
+# demp = reroot(bemp,"idum1241")
 
 
-missingcounter = 0
-for thing in da_dataframe
-  if thing == 3.0
-    global missingcounter +=1
-  end #if
-end #for
-println(missingcounter)
-println(da_dataframe)
+# tree,df = fill_in_the_blanks("C:/Users/Adham/Desktop/testdata.paps.nex", "(((alak1253,cuaa1241,((((gola1254,kont1244,bahn1262)),(reng1252,seda1262)),(hala1252,jehh1245)),((east2333,bulo1242),sree1244),(nyah1249,lave1249,lave1248)),(paco1243,(ngeq1245,(lowe1395,ongg1239)),east1236,((east2332,kata1264),sooo1254)),((warj1242,(khas1269,pnar1238)),((manm1238,(west2396,para1301)),((ruch1235,shwe1236),rian1261))),(cent1989,nort2684),(((yuan1241,khmu1256)),mall1246),(mang1378,buga1247),(monn1252,nyah1250),((khar1287,(pare1266,sora1254)),sant1410),(carn1240,cent1990),((male1282,rucc1239),viet1252)),idum1241);")
+# node = find_by_name(tree,"khmu1256")
+# println(newick(tree))
+#
+# println(df)
+
+
+for file in cd(readdir, "C:/Users/Adham/Desktop/thesis_data")
+  if occursin("con.tre", file)
+
+
+# open("C:/Users/Adham/Desktop/shorterdata.paps.nex", "r") do file
+#       global content = readlines(file)
+#     end
+#
+#
+# while true
+#   line = popfirst!(content)
+#   if line == "matrix"
+#     break
+#   end
+# end
+# tempdf = create_nexusdf(content)
+# println(tempdf[1][1], "\t", tempdf[2][1])
+
+# bla = make_tree_with_data("C:/Users/Adham/Desktop/shorterdata.paps.nex";replace_missing=false)
+# da_dataframe = bla[2]
+# da_tree = parsing_newick_string("(((alak1253,cuaa1241,((((gola1254,kont1244,bahn1262)),(reng1252,seda1262)),(hala1252,jehh1245)),((east2333,bulo1242),sree1244),(nyah1249,lave1249,lave1248)),(paco1243,(ngeq1245,(lowe1395,ongg1239)),east1236,((east2332,kata1264),sooo1254)),((warj1242,(khas1269,pnar1238)),((manm1238,(west2396,para1301)),((ruch1235,shwe1236),rian1261))),(cent1989,nort2684),(((yuan1241,khmu1256)),mall1246),(mang1378,buga1247),(monn1252,nyah1250),((khar1287,(pare1266,sora1254)),sant1410),(carn1240,cent1990),((male1282,rucc1239),viet1252)),idum1241);")
+#
+#
+# for x in eachindex(da_dataframe[2,1,:])
+#   # println("THIS IS NODE NUMBER ",x)
+#   # println("\n\n")
+#   for val in eachindex(da_dataframe[2,:,x])
+#     if da_dataframe[2,val,x] == 3.0
+#       # println("UNKNOWN VALUE DETECTED")
+#       # println("index of unknown value is: ",[2,val,x])
+#       global index_to_change = [2,val,x]
+#     end #if
+#   end #for
+#   # println("NEW NODE \n \n STARTS NOW")
+# end #for
+# n_char = length(da_dataframe[2,:,1])
+# dim1,dim2,dim3 = index_to_change
+# global df_copy = []
+# for node in eachindex(da_dataframe[2,1,:])
+#   if da_dataframe[2,dim2,node] == da_dataframe[dim1,dim2,dim3] && [2,dim2,node] != [dim1,dim2,dim3]
+#     # print("NODE NUMBER ")
+#     # print(node)
+#     # print(" HAS ? IN SAME PLACE AS NODE NUMBER ")
+#     # println(dim3)
+#   else
+#     # push!(df_copy,da_dataframe[:,:,node])
+#   end #if
+# end #for
+# # println(da_dataframe)
 include("deprecated.jl")
 
 end # module

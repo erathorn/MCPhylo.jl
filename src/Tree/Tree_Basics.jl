@@ -465,7 +465,7 @@ Get the vector of branch lengths of the tree.
 """
 function get_branchlength_vector(root::N)::Vector{Float64}  where {N <:GeneralNode}
     if length(root.blv) == 0
-        root.blv = zeros(length(post_order(root))-1)
+        root.blv = zeros(length(post_order(root)))
     end
     get_branchlength_vector(root, root.blv)
     return root.blv
