@@ -8,6 +8,10 @@ This function returns a matrix representation of the tree structure. The matirx
 is returned as a DataFrame so that the names of the columns are the names of the
 tips in the tree. The entry `df[i,j]` is the length of the edge connecting node
 `i` with node `j`.
+
+Returns a Dataframe.
+
+* `root` : root of tree used to create matrix represenation.
 """
 function to_df(root::Node)::DataFrame
 
@@ -37,6 +41,10 @@ end # end function to_df
 
 This function takes a DataFrame and turns it into a tree. It assumes a rooted
 binary tree is stored in the matrix. No checks are performed.
+
+Returns the root node of the tree.
+
+* `df` : Dataframe used to create a tree.
 """
 function from_df(df::DataFrame)::Node
 
@@ -68,8 +76,11 @@ end # function from_df
 
 """
     newick(node::Node)::String
+Creates a newick representation of the tree.
 
-Creates a newick represnetation of the tree.
+Returns a (properly formatted newick) String.
+
+* 'node' : root node of tree used to create the newick string.
 """
 function newick(root::T)::String  where T<:GeneralNode
     # get the newickstring
@@ -122,6 +133,11 @@ end # end to_covariance
     to_covariance_ultra(tree::Node)::Array{T,2} where T<: Real
 
 Get the covariance matrix of the ultrametric version of `tree` with height 1.
+
+Returns an Array of Real numbers.
+
+* `tree` : root of tree used to perform calculation.
+
 """
 function to_covariance_ultra(tree::N)::Array{T,2} where {T<: Real, N <:GeneralNode}
     # scale the branchlength between 0 and 1
@@ -144,6 +160,10 @@ end # end function to_covariance_ultra
     to_distance_matrix(tree::T)::Array{Float64,2} where T <:GeneralNode
 
 Calculate the distance matrix over the set of leaves.
+
+Returns an Array of Floats.
+
+* `tree` : root node of tree used to perform caclulcation.
 """
 function to_distance_matrix(tree::T)::Array{Float64,2} where T <:GeneralNode
     leaves::Vector{T} = get_leaves(tree)
@@ -167,6 +187,9 @@ end # function to_distance_matrix
 Calcualte the variance-covariance matrix from `tree`. An entry (i,j) of the matrix
 is defined as the length of the path connecting the latest common ancestor
 of i and j with the root of the tree.
+
+Returns an Array of Real numbers.
+
 """
 function to_covariance(tree::N, blv::Vector{T})::Array{T,2} where {N<:GeneralNode,T<: Real}
     leaves::Vector{N} = get_leaves(tree)

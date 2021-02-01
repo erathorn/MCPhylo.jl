@@ -38,7 +38,13 @@ end
 Find a node by its number. The function assumes that the node is present in the
 tree.
 
-Do not use this function if you are unsure wheter the node is in the tree at all.
+Do not use this function if you are unsure whether the node is in the tree at all.
+
+Returns reference to Node.
+
+`root` : root Node of tree to be searched.
+
+`num` : number of desired Node.
 """
 function find_num(root::T, num::I)::T  where {T<:GeneralNode, I<:Integer}
     po = post_order(root)
@@ -56,6 +62,14 @@ end
     find_num(root::T, num::Int64, rn::Vector{T})::Bool  where T<:GeneralNode
 
 Do a post order traversal to find the node corresponding to the `num`.
+
+Returns true if node is found, false otherwise. Desired Node is pushed to rn.
+
+`root` : root Node of tree to be searched.
+
+`num` : number of desired Node.
+
+`rn` : Vector of Nodes; desired Node is pushed to this vector when found.
 """
 function find_num(root::T, num::I, rn::Vector{T})::Bool  where {T<:GeneralNode, I<:Integer}
     # if the current node is the correct one store it in rn
@@ -81,7 +95,13 @@ end
 Find a node by its binary representation. The function assumes that the node is
 present in the tree.
 
-Do not use this function if you are unsure wheter the node is in the tree at all.
+Do not use this function if you are unsure whether the node is in the tree at all.
+
+Returns a reference to the desired Node.
+
+`root` : root Node of tree to search.
+
+`bin` : binary representation of desired Node as a String.
 """
 function find_binary(root::T, bin::String)::T where T<:GeneralNode
     rv = root
@@ -94,7 +114,9 @@ end
 """
     find_root(node::Node)::Node
 
-Takes a node in a tree and finds the root of that tree
+Takes a node in a tree and finds the root of that tree.
+
+Returns reference to root Node of the tree.
 """
 function find_root(node::Node)::Node
     while node.root == false

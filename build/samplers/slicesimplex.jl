@@ -24,7 +24,15 @@ end
 
 
 #################### Sampler Constructor ####################
+"""
+    SliceSimplex(params::ElementOrVector{Symbol}; args...)
 
+Construct a `Sampler` object for which SliceSimplex sampling is to be applied
+separately to each of the supplied parameters. Parameters are assumed to be
+continuous and constrained to a simplex.
+
+Returns a `Sampler{SliceSimplexTune}` type object.
+"""
 function SliceSimplex(params::ElementOrVector{Symbol}; args...)
   params = asvec(params)
   samplerfx = function(model::Model, block::Integer)
@@ -79,10 +87,17 @@ end
 #################### Sampling Functions ####################
 
 sample!(v::SliceSimplexVariate) = sample!(v, v.tune.logf)
+"""
+    sample!(v::SliceSimplexVariate, logf::Function)
 
+Draw one sample from a target distribution using the SliceSimplex sampler.
+Parameters are assumed to be continuous and constrained to a simplex.
+
+Returns `v` updated with simulated values and associated tuning parameters.
+"""
 function sample!(v::SliceSimplexVariate, logf::Function)
   p0 = logf(v.value) + log(rand())
-  
+
   d = Dirichlet(fill!(similar(v), 1))
   ct = 0
   vertices = makefirstsimplex(v, v.tune.scale)

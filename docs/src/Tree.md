@@ -13,7 +13,6 @@ Filter =
 
 ## Converter
 
-There are function which create new trees or convert trees into other formats.
 
 ```@docs
 Main.MCPhylo.from_df
@@ -38,7 +37,6 @@ This file is a bit larger, and so will be broken into (hopefully coherent) subgr
 [Variable Functions] (@ref)
 
 ### Tree Editing
-These functions edit the makeup of an existing tree.
 ```@docs
 Main.MCPhylo.add_child!
 Main.MCPhylo.delete_node!
@@ -48,7 +46,6 @@ Main.MCPhylo.create_tree_from_leaves
 
 ```
 ### Return Functions
-These functions return the values of a given variable of a tree.
 ```@docs
 Main.MCPhylo.get_mother
 Main.MCPhylo.get_sister
@@ -59,7 +56,6 @@ Main.MCPhylo.random_node
 ```
 
 ### Metavariable Functions
-These functions calculate metavariables for a given tree.
 ```@docs
 Main.MCPhylo.tree_length(::T) where T<:Main.MCPhylo.GeneralNode
 Main.MCPhylo.tree_height
@@ -70,7 +66,6 @@ Main.MCPhylo.path_length
 ```
 
 ### Variable Functions
-These Functions calculate/edit variables for a given tree.
 ```@docs
 Main.MCPhylo.force_ultrametric!
 Main.MCPhylo.number_nodes!

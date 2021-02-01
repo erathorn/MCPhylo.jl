@@ -13,6 +13,12 @@ my_tree:
 This function adds a child to the mother node.
 The arity of the mother node is increased by `1` and the root
 status of the child is set to `False`.
+
+* `mother_node` : Node to add a child to.
+
+* `child` : Node to add to mother_node.children.
+
+* `child_position` : index at which to add the new child node; optional.
 """
 function add_child!(mother_node::Node, child::Node, child_position::Union{Int64, Missing}=missing)
     if ismissing(child_position)
@@ -30,7 +36,14 @@ end # function add_child
     remove_child!(mother_node::Node, left::Bool)::Node
 
 This function removes a child from the list of nodes which are daughters of this
-node. The removed node is returned.
+node. An input of "True" removes the left child,
+while "False" removes the right child.
+
+Returns the removed node.
+
+* `mother_node` : Node from which to remove a child.
+
+* `left` : boolean value determining which child of mother_node to remove.
 """
 function remove_child!(mother_node::N, left::Bool)::N where N<:GeneralNode
     if left
@@ -48,7 +61,13 @@ end # function
     remove_child!(mother_node::Node, child::Node)::Node
 
 This function removes a child from the list of nodes which are daughters of this
-node. The removed node is returned.
+node.
+
+The removed node is returned.
+
+* `mother_node` : Node from which to remove a child.
+
+* `child` : specific Node to remove.
 """
 function remove_child!(mother_node::N, child::N)::N where N<:GeneralNode
     ind = findfirst(x->x==child, mother_node.children)
@@ -64,6 +83,8 @@ end # function
 
 This functions deletes node from a tree and assigns all its children to its
 mother node.
+
+* `node` : Node to be deleted.
 """
 function delete_node!(node::T)::Nothing where T<:AbstractNode
     if node.root == true
@@ -81,7 +102,13 @@ end
     insert_node!(mother::Node, children::Vector{T})::T where T<:AbstractNode
 
 This function inserts a node into a tree after a mother node and gains
-a subset of the mother's children as its children. Returns the inserted node.
+a subset of the mother's children as its children.
+
+Returns the inserted node.
+
+* `mother` : Node under which to add the newly-inserted node.
+
+* `children` : Children of node referenced by "mother" to reassign as children of the newly-inserted node.
 """
 function insert_node!(mother::T, children::Vector{T})::T where T<:AbstractNode
     @assert length(children) >= 1
@@ -139,7 +166,10 @@ end
     create_tree_from_leaves(leaf_nodes::Vector{T})::Node
 
 This function creates a  random binary tree from a list of leaf nodes.
+
 The root node as access point for the tree is returned.
+
+* `leaf_nodes` : vector of leaf nodes.
 """
 function create_tree_from_leaves_bin(leaf_nodes::Vector{String}, node_size::Int)::Node
 
@@ -505,7 +535,7 @@ function set_branchlength_vector!(t::TreeStochastic, blenvec::Array{T}) where T 
 end # function
 
 """
-    set_branchlength_vector!(t::TreeStochastic, blenvec::Array{T}) where T <: Real
+    set_branchlength_vector!(t::TreeStochastic, blenvec::ArrayStochastic)
 
 Get the vector of branch lengths of the tree.
 """
@@ -537,7 +567,7 @@ end # function set_branchlength_vector!
 
 
 """
-    get_sum_seperate_length!(root::Node)::Vector{Float64}
+    get_sum_seperate_length!(root::T)::Vector{Float64}  where T<:GeneralNode
 
 This function gets the sum of the branch lengths of the internal branches and the
 branches leading to the leave nodes.
@@ -548,7 +578,7 @@ end # function get_sum_seperate_length!
 
 
 """
-    get_sum_seperate_length!(root::Node)::Vector{Float64}
+    get_sum_seperate_length!(post_order::Vector{T})::Vector{Float64}  where T<:GeneralNode
 
 This function gets the sum of the branch lengths of the internal branches and the
 branches leading to the leave nodes.
@@ -637,7 +667,8 @@ end
 
 """
     check_binary(root::Node)::Bool
-    checks to see if given tree is binary; returns true if properly formatted and false otherwise
+
+checks to see if given tree is binary; returns true if properly formatted and false otherwise
 """
 function check_binary(root::Node)::Bool
     if root.root

@@ -140,9 +140,12 @@ end #function
 
 
 """
-    ParseNewick(filename::String)
+    ParseNewick(filename::String)::Array{AbstractNode, 1}
 
-This is the main function, which parses a file, containing Newick strings.
+This function takes a filename as a String, and returns an array of trees(represented as Node objects).
+The file should solely consist of newick tree representations, separated by line.
+The function checks for proper newick formatting, and will return an error if the file is
+incorrectly formatted.
 """
 function ParseNewick(filename::String)::Array{AbstractNode, 1}
 

@@ -6,6 +6,12 @@
 This function performs a post order traversal through the tree. It is assumed that `root` is the
 root of the tree. Thus, if `root` is not the root, the subtree defined by the root `root` is
 used for the post order traversal.
+
+Returns vector of Nodes.
+
+`root` : root Node of tree.
+
+`traversal` : vector of Nodes; nodes are pushed to this vector as the tree is traversed.
 """
 function post_order(root::T, traversal::Vector{T}) where T<:GeneralNode
    if root.nchild != 0
@@ -22,6 +28,10 @@ end # function post_order_trav
     post_order(root::T)::Vector{T} where T<:GeneralNode
 
 This function does post order traversal. Only the root node needs to be supplied.
+
+Returns vector of Nodes.
+
+`root` : root Node of tree.
 """
 function post_order(root::T)::Vector{T} where T<:GeneralNode
     t::Vector{T} = []
@@ -30,11 +40,18 @@ function post_order(root::T)::Vector{T} where T<:GeneralNode
 end # function post_order
 
 """
-    post_order(root::T, traversal::Vector{T})::Vector{T} where T<:GeneralNode
+    get_leaves(root::T, traversal::Vector{T})::Vector{T} where T<:GeneralNode
 
-This function performs a post order traversal through the tree. It is assumed that `root` is the
+This function returns leaf nodes of a tree. It is assumed that `root` is the
 root of the tree. Thus, if `root` is not the root, the subtree defined by the root `root` is
-used for the post order traversal.
+used.
+
+Returns a vector of leaf Nodes.
+
+`root` : root Node of tree to traverse.
+
+`traversal` : vector of Nodes; leaf Nodes, once found, are pushed to this vector.
+
 """
 function get_leaves(root::T, traversal::Vector{T})::Vector{T} where T<:GeneralNode
    if root.nchild != 0
@@ -50,9 +67,13 @@ end # function post_order_trav
 
 
 """
-    post_order(root::T)::Vector{T} where T<:GeneralNode
+    get_leaves(root::T)::Vector{T} where T<:GeneralNode
 
-This function does post order traversal. Only the root node needs to be supplied.
+This function returns the leaves of a tree. Only the root node needs to be supplied.
+
+Returns vector of leaf Nodes.
+
+`root` : root Node of tree.
 """
 function get_leaves(root::T)::Vector{T} where T<:GeneralNode
     t::Vector{T} = []
@@ -71,6 +92,12 @@ end # function post_order
 This function performs a pre order traversal through the tree. It is assumed that `root` is the
 root of the tree. Thus, if `root` is not the root, the subtree defined by the root `root` is
 used for the pre order traversal.
+
+Returns vector of Nodes.
+
+`root` : root Node of tree.
+
+`traversal` : vector of Nodes; nodes are pushed to this vector as the tree is traversed.
 """
 function pre_order(root::T, traversal::Vector{T})::Vector{T} where T<:GeneralNode
     push!(traversal, root)
@@ -87,6 +114,10 @@ end # function pre_order!
     pre_order(root::T)::Vector{T} where T<:GeneralNode
 
 This function does pre order traversal. Only the root node needs to be supplied.
+
+Returns vector of Nodes.
+
+`root` : root Node of tree.
 """
 function pre_order(root::T)::Vector{T} where T<:GeneralNode
     t::Vector{T} = []
@@ -100,6 +131,10 @@ end # function pre_order
     level_order(node::T)::Array{T} where T<:GeneralNode
 
 This function does level order traversal. Only the root node needs to be supplied.
+
+Returns Array of Nodes.
+
+`node` : root Node of tree.
 """
 function level_order(node::T)::Array{T} where T<:GeneralNode
     level = 1

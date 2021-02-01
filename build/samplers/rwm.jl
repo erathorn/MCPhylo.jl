@@ -40,7 +40,21 @@ end
 
 
 #################### Sampler Constructor ####################
+"""
+    RWM(params::ElementOrVector{Symbol},
+                  scale::ElementOrVector{T}; args...) where {T<:Real})
 
+Construct a `Sampler` object for RWM sampling. Parameters are assumed to be
+continuous, but may be constrained or unconstrained.
+
+Returns a `Sampler{RWMTune}` type object.
+
+* `params`: stochastic node(s) to be updated with the sampler. Constrained parameters are mapped to unconstrained space according to transformations defined by the Stochastic `unlist()` function.
+
+* `scale`: scaling value or vector of the same length as the combined elements of nodes `params` for the `proposal` distribution. Values are relative to the unconstrained parameter space, where candidate draws are generated.
+
+* `args...`: additional keyword arguments to be passed to the `RWMVariate` constructor.
+"""
 function RWM(params::ElementOrVector{Symbol},
               scale::ElementOrVector{T}; args...) where {T<:Real}
 
@@ -54,15 +68,16 @@ function RWM(params::ElementOrVector{Symbol},
 end
 
 """
-  RWM(params::ElementOrVector{Symbol}, moves::Array{Symbol}; args...)
+    RWM(params::ElementOrVector{Symbol}, moves::Array{Symbol}; args...)
 
 Construct the RWM sampler for Trees. If you set moves to :all it will use all
 eligible moves to change the tree. These are currently:
-NNI, Slide, Swing, :EdgeLength
+NNI, SPR, Slide, Swing, :EdgeLength
+
+Returns a `Sampler{RWMTune}` type object.
 """
-function RWM(params::ElementOrVector{Symbol}, moves::ElementOrVector{Symbol}; args...) where {T<:Real}
-  #eligible = [:NNI, :SPR, :Slide, :Swing, :EdgeLength] # use after SPR branch is merged
-  eligible = [:NNI, :Slide, :Swing, :EdgeLength]
+function RWM(params::ElementOrVector{Symbol}, moves::ElementOrVector{Symbol}; args...)
+  eligible = [:NNI, :SPR, :Slide, :Swing, :EdgeLength]
   to_use = Symbol[]
   if moves == :all
     to_use = eligible
@@ -90,7 +105,13 @@ end
 sample!(v::RWMVariate) = sample!(v, v.tune.logf)
 
 
+"""
+    sample!(v::RWMVariate, logf::Function, moves::Array{Symbol})
 
+Propose a new tree by randomly performing a move from the ones specified in `moves`.
+
+Returns `v` updated with simulated values and associated tuning parameters.
+"""
 function sample!(v::RWMVariate, logf::Function, moves::Array{Symbol})
   tree = v[1]
   tc = deepcopy(tree)
@@ -116,6 +137,14 @@ function sample!(v::RWMVariate, logf::Function, moves::Array{Symbol})
   v
 end
 
+"""
+    sample!(v::RWMVariate, logf::Function)
+
+Draw one sample from a target distribution using the RWM sampler. Parameters
+are assumed to be continuous and unconstrained.
+
+Returns `v` updated with simulated values and associated tuning parameters.
+"""
 function sample!(v::RWMVariate, logf::Function)
   x = v + v.tune.scale .* rand(v.tune.proposal(0.0, 1.0), length(v))
   if rand() < exp(logf(x) - logf(v.value))

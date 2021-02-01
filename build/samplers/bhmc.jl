@@ -11,7 +11,13 @@ mutable struct BHMCTune <: SamplerTune
   wallcrosses::Int
 
   BHMCTune() = new()
-
+"""
+    BHMCTune(x::Vector, traveltime::Real, logf::Union{Function, Missing})
+Construct a `BHMCVariate` object that stores simulated values and tuning
+ parameters for BHMC sampling.
+Returns a BHMCVariate type object with fields set to the supplied
+ x and tuning parameter values.
+"""
   function BHMCTune(x::Vector, traveltime::Real, logf::Union{Function, Missing})
     n = length(x)
     new(logf, traveltime, randn(n), randn(n), 0, 0)
@@ -27,7 +33,14 @@ validate(v::BHMCVariate) = validatebinary(v)
 
 
 #################### Sampler Constructor ####################
+"""
+    BHMC(params::ElementOrVector{Symbol}, traveltime::Real)
+Construct a `Sampler` object for BHMC sampling. Parameters are assumed to
+  have binary numerical values (0 or 1).
 
+Returns a `Sampler{BHMCTune}` type object.
+
+"""
 function BHMC(params::ElementOrVector{Symbol}, traveltime::Real)
   samplerfx = function(model::Model, block::Integer)
     block = SamplingBlock(model, block)
@@ -42,7 +55,12 @@ end
 #################### Sampling Functions ####################
 
 sample!(v::BHMCVariate) = sample!(v, v.tune.logf)
-
+"""
+    sample!(v::BHMCVariate, logf::Function)
+Draw one sample from a target distribution using the BHMC sampler.
+Parameters are assumed to have binary numerical values (0 or 1).
+Returns `v` updated with simulated values and associated tuning parameters.
+"""
 function sample!(v::BHMCVariate, logf::Function)
   tune = v.tune
   flag = false

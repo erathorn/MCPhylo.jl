@@ -23,7 +23,14 @@
         ::Dict{Int64, Tuple{Bool, Union{Float64, Missing}}}
 
 Use Day's algorithm to create a dictionary, that tells us for each node of the
-second input tree, if its corresponding cluster is a common cluster of the trees
+second input tree, if its corresponding cluster is a common cluster of the trees.
+
+Returns dictionary.
+
+* `ref_tree` : Tree used to create dictionary.
+
+* `tree` : Tree used to create dictionary.
+
 """
 function find_common_clusters(ref_tree::T, tree::T)::Dict{Int64, Tuple{Bool, Union{Float64, Missing}}} where T<:AbstractNode
     ref_nodes = post_order(ref_tree)
@@ -97,6 +104,12 @@ end # function find_common_clusters
 
 Takes two trees and returns a copy of the first one, where all the clusters that
 are not compatible with the second tree are removed.
+
+Returns root node of edited tree.
+
+`ref_tree` : tree used to determine clusters.
+
+`tree` : tree used to determine clusters.
 """
 function one_way_compatible(ref_tree::T, tree::T)::T where T<:AbstractNode
     # First Phase -> move to own function since it is equivalent to first phase of merge_trees
@@ -186,7 +199,13 @@ end # function one_way_compatible
     merge_trees!(ref_tree::T, tree::T)::Tuple{T, Vector{T}} where T<:AbstractNode
 
 Merge two compatible trees, i.e. inserts all cluster of the first tree, which
-aren't already in the second tree, into the secon tree
+aren't already in the second tree, into the second tree
+
+Returns a Tuple containing the root node of the merged tree, as well as a vector of nodes that were added.
+
+`ref_tree` : tree used to determine common clusters.
+
+`tree` : tree used to determine common clusters.
 """
 function merge_trees!(ref_tree::T, tree::T)::Tuple{T, Vector{T}} where T<:AbstractNode
     ref_nodes = post_order(ref_tree)

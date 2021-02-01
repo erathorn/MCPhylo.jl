@@ -38,7 +38,18 @@ end
 
 
 #################### Sampler Constructor ####################
+"""
+Slice(params::ElementOrVector{Symbol},
+                width::ElementOrVector{T},
+                ::Type{F}=Multivariate;
+                transform::Bool=false) where {T<:Real, F<:SliceForm}
 
+Construct a `Sampler` object for Slice sampling. Parameters are assumed to be
+continuous, but may be constrained or unconstrained.
+
+Returns a `Sampler{SliceTune{Univariate}}` or `Sampler{SliceTune{Multivariate}}`
+type object if sampling univariately or multivariately, respectively.
+"""
 function Slice(params::ElementOrVector{Symbol},
                 width::ElementOrVector{T},
                 ::Type{F}=Multivariate;
@@ -56,7 +67,15 @@ end
 #################### Sampling Functions ####################
 
 sample!(v::Union{SliceUnivariate, SliceMultivariate}) = sample!(v, v.tune.logf)
+"""
+    sample!(v::Union{SliceUnivariate, SliceMultivariate}, logf::Function)
 
+Draw one sample from a target distribution using the Slice univariate or
+multivariate sampler. Parameters are assumed to be continuous, but may be
+constrained or unconstrained.
+
+Returns `v` updated with simulated values and associated tuning parameters.
+"""
 function sample!(v::Union{SliceUnivariate, SliceMultivariate}, logf::Function)
     typeof(v.value[1]) <:GeneralNode ? sample_node!(v, logf) : sample_number!(v, logf)
 end

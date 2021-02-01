@@ -1,8 +1,11 @@
 """
     prune_tree(root::T, node_names::Vector{String})::T where T<:AbstractNode
 
-This function returns a copy of a tree with specific nodes including their
-descendants removed
+This function removes specific nodes, including their descendants, from a tree.
+
+`root` : root Node of tree to prune.
+
+`node_names` : vector of strings, used to specify nodes to remove.
 """
 function prune_tree(root::T, node_names::Vector{String})::T where T<:AbstractNode
     # copy the tree and call the inplace version of the function on the copy
@@ -18,7 +21,11 @@ end
 """
     prune_tree!(root::T, node_names::Vector{String})::Nothing where T<:AbstractNode
 
-In-place version of prune_tree
+In-place version of prune_tree.
+
+`root` : root Node of tree to prune.
+
+`node_names` : vector of strings, used to specify nodes to remove.
 """
 function prune_tree!(root::T, node_names::Vector{String})::Nothing where T<:AbstractNode
     nodes = post_order(root)
@@ -44,7 +51,11 @@ end
 """
     prune_tree!(root::T, node_names::Vector{T})::Nothing where T<:AbstractNode
 
-In-place version of prune_tree
+In-place version of prune_tree.
+
+`root` : root node of tree to prune.
+
+`node_names`: vector of Node objects to be removed from tree.
 """
 function prune_tree!(root::T, nodes::Vector{T})::Nothing where T<:AbstractNode
     if root in nodes
