@@ -333,6 +333,7 @@ include("Utils/SIMD_Mat.jl")
 include("Utils/FileIO.jl")
 
 include("Likelihood/LikelihoodCalculator_Node.jl")
+include("Likelihood/Parsimony.jl")
 include("Likelihood/Prior.jl")
 include("Likelihood/Rates.jl")
 include("Likelihood/SubstitutionModels.jl")
@@ -488,7 +489,7 @@ export
   majority_consensus_tree,
   discrete_gamma_rates,
   Restriction, JC, GTR,
-  ASDSF
+  ASDSF, parsimony
 
 
 export

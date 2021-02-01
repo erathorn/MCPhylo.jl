@@ -80,22 +80,23 @@ function FelsensteinFunction(tree_postorder::Vector{N}, pi_::Array{Float64}, rat
     mutationArray::Array{Float64,4} = Array{Float64,4}(undef, Nbases, Nbases, Nrates, Nnodes-1)
     grv::Vector{Float64} = Vector{Float64}(undef, Nnodes-1)
     Down::Array{Float64,4} = similar(data)
+    pre_order_partial::Array{Float64,4} = similar(data)
     ll = fels_ll(tree_postorder, data, D, U, Uinv, rates, mu, Nrates, Nsites, Down, pi_, mutationArray)
     if c_grad
-        grv = fels_grad(tree_postorder, data, D, U, Uinv, rates, mu, Nrates, Nsites, Nnodes, Down, pi_, mutationArray)
+        grv = fels_grad(tree_postorder, data, D, U, Uinv, rates, mu, Nrates,
+                        Nsites, Nnodes, Down, pi_, mutationArray, pre_order_partial)
     end
 
-    return ll, grv
+    return ll, grv, data, Down, pre_order_partial
 
 end
 
 function fels_grad(tree_postorder::Vector{N}, data::Array{Float64,4},
          D::Array{Float64,1}, U::Array{Float64,2}, Uinv::Array{Float64,2},
          rates::Array{Float64,1}, mu::Float64, Nrates::Int64, Nsites::Int64, Nnodes::Int64, Down::Array{Float64,4},
-         pi_::Array{Float64}, mutationArray::Array{Float64,4})::Vector{Float64} where {N <: GeneralNode}
+         pi_::Array{Float64}, mutationArray::Array{Float64,4}, pre_order_partial::Array{Float64,4})::Vector{Float64} where {N <: GeneralNode}
 
     root_node::N = last(tree_postorder)
-    pre_order_partial::Array{Float64,4} = similar(data)
     pre_order_partial[:, :, :, root_node.num] .= pi_
     scaler::Array{Float64, 2} = Array{Float64,2}(undef, 1, Nsites)
     gradi::Array{Float64, 2} = Array{Float64,2}(undef, 1, Nsites)
