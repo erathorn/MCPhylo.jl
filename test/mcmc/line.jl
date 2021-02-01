@@ -62,8 +62,8 @@ setsamplers!(model, scheme1)
 
 
 ## Graph Representation of Nodes
-draw(model)
-draw(model, filename="lineDAG.dot")
+# draw(model)
+# draw(model, filename="lineDAG.dot")
 
 
 ## Data
