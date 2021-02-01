@@ -26,8 +26,5 @@ for i in 1:t
 end
 describe(sim)
 
-p = plot(sim)
-draw(p, filename = "slicesimplexplot")
-
 #mark that we got to the end of the test file succesfully
 @test true

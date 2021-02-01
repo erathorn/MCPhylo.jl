@@ -33,8 +33,5 @@ end
 describe(sim1)
 describe(sim2)
 
-p = plot(sim1, [:trace, :mixeddensity])
-draw(p, filename = "bmc3plot")
-
 #mark that we got to the end of the test file succesfully
 @test true
