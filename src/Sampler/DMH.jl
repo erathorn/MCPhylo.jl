@@ -107,7 +107,7 @@ function inner_sampler(v::DMHVariate, X)
 		@inbounds for i in random_language_idx
 			for f in random_feature_idx
 				probs = v.tune.condlike(v, i, f)
-				new_x = sample(1:length(probs), Weights(probs)) # we have to include the values to sample from?
+				new_x = sample(1:length(probs), Weights(probs))
 				X[f, i] = new_x
 			end
 			counter += 1

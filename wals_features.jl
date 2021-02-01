@@ -1,32 +1,55 @@
 using CSV, DataFrames, DataFramesMeta, Distances
 
-languages = DataFrame!(CSV.File("data/languages.csv"))
-languages_df = select(languages, :ID, :Name, :Latitude, :Longitude, :Glottocode, :Genus, :ISO_codes)
-dropmissing!(languages_df, :Genus)
+languages = DataFrame!(CSV.File("data/murawaki_data.csv"))
+cols = names(languages)
+
+function delete_pidgins_sl!(d::DataFrame)
+    sl = @where(d, :genus .== "Sign Languages")
+    pc = @where(d, :genus .== "Pidgins and Creoles")
+    sl_and_pc = vcat(sl.wals_code, pc.wals_code)
+    df = filter(x -> x ∉ sl_and_pc, d)
+    return df
+end
+
+d = delete_pidgins_sl!(languages)
+
+""" do this only if using direct-from-WALS data (not murawaki_data)
+
 vals = DataFrame!(CSV.File("data/values.csv"))
 vals = select(vals, :Language_ID, :Parameter_ID, :Value)
 rename!(vals, (:Language_ID => :ID))
 
-# all features
 dc = innerjoin(vals, languages_df, on=:ID)
 dc_list = unique(dc.ID)
 dc_langs = filter(x -> x.ID in dc_list, languages_df)
+"""
+# use this for Murawaki's data
 
-phylo_glottocodes = dc_langs.Glottocode
+word_order = ["81A Order of Subject, Object and Verb"]
 
-# TO DO: create a function for this df stuff
-
-wo = @where(dc, :Parameter_ID .== "81A")
-nompl = @where(dc, :Parameter_ID .== "33A")
-langs_nom = nompl.ID
-obs_wo = filter(x -> x.ID in langs_nom, wo)
-wo_langs = obs_wo.ID
-
-obs_dc = filter(x -> x.ID in wo_langs, dc)
-obsdc_langs = filter(x -> x.ID in wo_langs, languages_df)
-
-function select_feature_df(data::DataFrame, features::Vector{String})
+function get_feat_array(d::DataFrame, features::Vector{String})
+    nlang = length(d.wals_code)
+    langs = d.wals_code
+    nfeat = length(features)
+    arr = Array{Int64,2}(undef, nfeat, nlang)
+    for (feature_idx, feature) in enumerate(features)
+        val_list = d[!,feature]
+        vals = unique(skipmissing(val_list))
+        vals = sort!(vals)
+        val_idx = Vector(1:length(vals))
+        dict = Dict(vals[i] => val_idx[i] for i in 1:length(vals))
+        for (lang_idx, lang) in enumerate(d.wals_code)
+            if ismissing(val_list[lang_idx])
+                arr[feature_idx, lang_idx] = -10
+            else
+                arr[feature_idx, lang_idx] = dict[val_list[lang_idx]]
+            end
+        end
+    end
+    return arr
 end
+
+data_array = get_feat_array(d, word_order)
 
 """
 function get_wals_features: Args
@@ -56,25 +79,16 @@ function get_wals_features(data::DataFrame, features::Vector{String})
     return new_arr
 end
 
-# alternative solution to missings
-#data_array[ismissing.(data_array)] .= -1
-
-feature_list = ["81A", "33A"]
-
-obsdat = get_wals_features(obs_dc, feature_list)
-data_array = get_wals_features(dc, feature_list)
-
 function create_distance_matrix(data::DataFrame, radius::Int64)
-    points = hcat(data.Longitude, data.Latitude)
-    nlang = length(data.ID)
+    points = hcat(data.longitude, data.latitude)
+    nlang = length(data.wals_code)
     mpty = Matrix{Float64}(undef, nlang, nlang)
     distance_matrix = pairwise!(mpty, Haversine(earthradius), points, dims=1)
     return distance_matrix
 end
 
 earthradius = 6357
-dmat = create_distance_matrix(dc_langs, earthradius)
-obs_dmat = create_distance_matrix(obsdc_langs, earthradius)
+dmat = create_distance_matrix(d, earthradius)
 
 function extract_nvals(X::Array{Int64,2})
     nvals = Vector{Int64}()

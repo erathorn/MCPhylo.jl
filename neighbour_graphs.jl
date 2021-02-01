@@ -39,7 +39,7 @@ function replace_diagonal!(nmat::Matrix)
 end
 
 function create_linguistic_nmat(d::DataFrame)
-    nmat = [Int(g1==g2) for g1 in d.Genus, g2 in d.Genus]
+    nmat = [Int(g1==g2) for g1 in d.genus, g2 in d.genus]
     replace_diagonal!(nmat)
     return nmat
 end
@@ -67,7 +67,7 @@ an adjacency matrix. Args:
 - nmat: either linguistic or spatial adjacency matrix
 """
 
-function count_concordant_edges(X::Array{N,1}, nmat::Array{Int64,2})::Float64 where N <: Real
+function count_concordant_edges(X::Array{N,1}, nmat::Array{Float64,2})::Float64 where N <: Real
 	conc_sum = zero(Float64)
 	n = length(X)
 	@inbounds for i in 1:n, j in 1:n
@@ -88,7 +88,7 @@ of length(nfeatures) with one sum per feature.
 function weighted_ov_sum does the same, but uses the sum of the edge weights.
 """
 
-function ov_concordant_sums(X::Array{N,2}, nmat::Array{Int64,2})::Vector{Float64} where N <: Real
+function ov_concordant_sums(X::Array{N,2}, nmat::Array{Float64,2})::Vector{Float64} where N <: Real
 
 	nfeatures, nlang = size(X)
 	sums = Vector{Float64}(undef, nfeatures)
