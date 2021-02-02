@@ -40,7 +40,6 @@ function JC(base_freq::Vector{Float64}, SubstitutionRates::Vector{Float64})::Tup
     diag = off_diag * (Nbases-1)
     Q .= off_diag
     Q[diagind(Nbases,Nbases)] .= -diag
-    println(Q)
     D, U = eigen(Q)
     Uinv = inv(U)
     mu = off_diag[1]
@@ -69,6 +68,35 @@ function GTR(base_freq::Vector{Float64}, SubstitutionRates::Vector{Float64})::Tu
 end
 
 
+"""
+    function freeK(base_freq::Vector{Float64},SubstitutionRates::AbstractArray)::Tuple{Array{N,2}, Array{N,1}, Array{N,2}, M} where {N <: Number, M <: Number}
+
+FreeK model of substitution.
+
+"""
+function freeK(
+      base_freq::Vector{Float64},
+      SubstitutionRates::AbstractArray,
+      )::Tuple{Array, Array, Array, Float64}# where {N <: Number, M <: Number}
+      Nrates = length(SubstitutionRates)
+      Nbases = Int(ceil(sqrt(Nrates)))
+      Q = zeros(Nbases, Nbases)
+      counter = 1
+      for i in 1:Nbases, j in 1:Nbases
+            if i!=j
+                  Q[j,i] = SubstitutionRates[counter]
+                  counter += 1
+            end
+      end
+      dia = sum(Q, dims = 2)
+      Q[diagind(Nbases, Nbases)] = -dia
+      D, U = eigen(Q)
+      Uinv = inv(U)
+      return U, D, Uinv, 1 / sum(dia)
+end
+
+
+## Helper Functions ##
 function setmatrix(vec_vals::Array{T,1})::Array{T,2} where T
     n = length(vec_vals)
     s = round((sqrt(8n+1)+1)/2)

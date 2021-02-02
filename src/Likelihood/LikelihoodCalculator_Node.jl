@@ -74,10 +74,11 @@ Felsensteins pruning algorithm. If `c_grad` equals `true` (default) the analytic
 regarding the branch lengths of the tree gets computed as well.
 """
 function FelsensteinFunction(tree_postorder::Vector{N}, pi_::Array{Float64}, rates::Array{Float64},
-                     U::Array{Float64,2}, D::Array{Float64}, Uinv::Array{Float64,2}, mu::Float64,
-                     data::Array{Float64,4}, c_grad::Bool = true) where {N<:GeneralNode}
+                     U::Array{M,2}, D::Array{M}, Uinv::Array{M,2}, mu::Float64,
+                     data::Array{Float64,4}, c_grad::Bool = true) where {N<:GeneralNode, M<:Number}
     Nbases, Nsites, Nrates, Nnodes = size(data)
     mutationArray::Array{Float64,4} = Array{Float64,4}(undef, Nbases, Nbases, Nrates, Nnodes-1)
+    mutationArray .= 0.0
     grv::Vector{Float64} = Vector{Float64}(undef, Nnodes-1)
     Down::Array{Float64,4} = similar(data)
     pre_order_partial::Array{Float64,4} = similar(data)
@@ -92,9 +93,9 @@ function FelsensteinFunction(tree_postorder::Vector{N}, pi_::Array{Float64}, rat
 end
 
 function fels_grad(tree_postorder::Vector{N}, data::Array{Float64,4},
-         D::Array{Float64,1}, U::Array{Float64,2}, Uinv::Array{Float64,2},
+         D::Array{M,1}, U::Array{M,2}, Uinv::Array{M,2},
          rates::Array{Float64,1}, mu::Float64, Nrates::Int64, Nsites::Int64, Nnodes::Int64, Down::Array{Float64,4},
-         pi_::Array{Float64}, mutationArray::Array{Float64,4}, pre_order_partial::Array{Float64,4})::Vector{Float64} where {N <: GeneralNode}
+         pi_::Array{Float64}, mutationArray::Array{Float64,4}, pre_order_partial::Array{Float64,4})::Vector{Float64} where {N <: GeneralNode, M <: Number}
 
     root_node::N = last(tree_postorder)
     pre_order_partial[:, :, :, root_node.num] .= pi_
@@ -143,6 +144,45 @@ function fels_ll(tree_postorder::Vector{N}, data::Array{Float64,4},
             for child in node.children
                 @inbounds @views for r in 1:Nrates
                     BLAS.gemm!('N', 'N', 1.0, BLAS.symm('R', 'L', diagm(exp.(D .* (rates[r]*mu*child.inc_length))), U), Uinv, 0.0, mutationArray[:, :, r, child.num])
+                    BLAS.gemm!('N','N', 1.0, mutationArray[:, :, r, child.num], data[:, :, r, child.num], 0.0, Down[:, :, r, child.num])
+                    data[:, :, r, node.num] .*= Down[:, :, r, child.num]
+
+                end
+
+            end
+
+            if !node.root
+                @inbounds @views for r in 1:Nrates
+                    scaler .= maximum(data[:, :, r, node.num], dims=1)
+                    data[:, :, r, node.num] ./= scaler
+                    ll += sum(log.(scaler))
+                end
+            end
+        end #if
+    end # for
+
+    @inbounds @views @simd for r in 1:Nrates
+        ll += sum(log.(sum(data[:, :, r, root_node.num] .* pi_, dims=1)))
+    end
+    ll
+end
+
+
+
+function fels_ll(tree_postorder::Vector{N}, data::Array{Float64,4},
+         D::Array{ComplexF64,1}, U::Array{ComplexF64,2}, Uinv::Array{ComplexF64,2},
+         rates::Array{Float64,1}, mu::Float64, Nrates::Int64, Nsites::Int64, Down::Array{Float64,4},
+         pi_::Array{Float64}, mutationArray::Array{Float64,4})::Float64 where {N <: GeneralNode}
+
+    scaler::Array{Float64, 2} = Array{Float64,2}(undef, 1, Nsites)
+    ll::Float64 = 0.0
+    root_node::N = last(tree_postorder)
+    @inbounds @views for node in tree_postorder
+        if node.nchild > 0
+            data[:, :, :, node.num] .= 1.0
+            for child in node.children
+                @inbounds @views for r in 1:Nrates
+                    mutationArray[:, :, r, child.num] .= abs.(BLAS.gemm('N', 'N', one(ComplexF64), BLAS.symm('R', 'L', diagm(exp.(D .* (rates[r]*mu*child.inc_length))), U), Uinv))
                     BLAS.gemm!('N','N', 1.0, mutationArray[:, :, r, child.num], data[:, :, r, child.num], 0.0, Down[:, :, r, child.num])
                     data[:, :, r, node.num] .*= Down[:, :, r, child.num]
 
