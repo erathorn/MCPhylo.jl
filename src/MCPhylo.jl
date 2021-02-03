@@ -23,7 +23,6 @@ using Random
 using CSV
 using ChainRules
 using ChainRulesCore
-using Phylo
 
 
 using CUDA
@@ -34,7 +33,6 @@ else
          Computation is performed without CUDA functionality."
 end
 
-import Phylo
 import Base: Matrix, names, summary, iterate
 import Base.Threads.@spawn
 import Compose: Context, context, cm, gridstack, inch, MeasureOrNumber, mm, pt, px
@@ -287,6 +285,7 @@ include("output/modelstats.jl")
 include("output/rafterydiag.jl")
 include("output/stats.jl")
 include("output/plot.jl")
+include("output/tree_plot.jl")
 
 include("samplers/sampler.jl")
 
