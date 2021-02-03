@@ -27,7 +27,7 @@ using RecipesBase
         end
     end
 
-    marker_x, marker_y = _handlemarkers(plotattributes, mg, tree, d, h)
+    marker_x, marker_y = _handlemarkers(plotattributes, mg, root, d, h)
 
     if treetype == :dendrogram
         Dendrogram(x, y, tipannotations, marker_x, marker_y, showtips, tipfont, mg, lg)
@@ -197,7 +197,7 @@ end
 """
 
 
-function _findxy(node::T)::Tuple{Dict{Node, Float64}, Dict{Int64, Float64}, Vector{String}} where T<:AbstractNode
+function _findxy(root::T)::Tuple{Dict{Node, Float64}, Dict{Node, Float64}, Vector{String}} where T<:AbstractNode
 
     # two convenience recursive functions using captured variables
     function findheights!(node::T) where T<:AbstractNode
