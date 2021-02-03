@@ -1,5 +1,6 @@
 using RecipesBase
 
+
 @recipe function f(root::T; treetype = :dendrogram, marker_group = nothing, line_group = nothing, showtips = true, tipfont = (7,)) where T<:AbstractNode
 
     linecolor --> :black
@@ -40,6 +41,7 @@ end
 
 struct Dendrogram; x; y; tipannotations; marker_x; marker_y; showtips; tipfont; marker_group; line_group; end
 struct Fan; x; y; tipannotations; marker_x; marker_y; showtips; tipfont; marker_group; line_group; end
+
 
 @recipe function f(dend::Dendrogram)
     ex = extrema(filter(isfinite, dend.x))
@@ -89,6 +91,7 @@ struct Fan; x; y; tipannotations; marker_x; marker_y; showtips; tipfont; marker_
     label = ""
     nothing
 end
+
 
 @recipe function f(fan::Fan)
     adjust(y) = 2pi*y / (length(fan.tipannotations) + 1)
@@ -147,18 +150,21 @@ _handlez(x, root) = x
 # _handlez(x::Union{String, Symbol}, tree) = getnodedata.(tree, traversal(tree, preorder), x)
 _mylength(x) = 1
 _mylength(x::AbstractVector) = length(x)
-function _handlemarkers(plotattributes, marker_group, node, d, h)
+
+
+function _handlemarkers(plotattributes, marker_group, root, d, h)
     marker_x, marker_y = Float64[], Float64[]
     markerfields = filter(x->occursin(r"marker", String(x)), keys(plotattributes))
     isempty(markerfields) && isnothing(marker_group) && return(marker_x, marker_y)
     maxlengthfields = isempty(markerfields) ? 1 : maximum([_mylength(plotattributes[k]) for k in markerfields])
     maxlengthgroup = isnothing(marker_group) ? 1 : length(marker_group)
     maxlength = max(maxlengthfields, maxlengthgroup)
-    f = maxlength ∈ (1, count(x-> node.nchild != 0, pre_order(tree))) ? filter(x -> x.nchild != 0, pre_order(node)) : pre_order(node)
+    f = maxlength ∈ (1, count(x-> root.nchild != 0, pre_order(root))) ? filter(x -> x.nchild != 0, pre_order(root)) : pre_order(root)
     append!(marker_x, getindex.(Ref(d), f))
     append!(marker_y, getindex.(Ref(h), f))
     marker_x, marker_y
 end
+
 
 function _extend(tmp, x)
     tmp isa AbstractVector && abs(length(tmp) - count(isnan, x)) < 2 || return nothing
@@ -170,31 +176,6 @@ function _extend(tmp, x)
     end
     return ret
 end
-
-
-"""
-    sort!(::AbstractTree)
-
-Sorts the branches descending from each node by total number of
-descendants. This creates a clearer tree for plotting. The
-process is also called "ladderizing" the tree
-
-function Base.sort!(tree::AbstractTree)
-    function loc!(clade::String)
-        if isleaf(tree, clade)
-            return 1
-        end
-
-        sizes = map(loc!, getchildren(tree, clade))
-        node = getnode(tree, clade)
-        node.other .= node.other[sortperm(sizes)]
-        sum(sizes) + 1
-    end
-
-    loc!(first(nodenamefilter(isroot, tree)))
-    tree
-end
-"""
 
 
 function _findxy(root::T)::Tuple{Dict{Node, Float64}, Dict{Node, Float64}, Vector{String}} where T<:AbstractNode
@@ -239,6 +220,7 @@ function _findxy(root::T)::Tuple{Dict{Node, Float64}, Dict{Node, Float64}, Vecto
     depth, height, names
 end
 
+
 function _find_tips(depth, height, tree)
     x, y, l = Float64[], Float64[], String[]
     for k in keys(depth)
@@ -251,6 +233,7 @@ function _find_tips(depth, height, tree)
     x, y, l
 end
 
+
 function _p_circ(start_θ, end_θ, r=1)
     steps = range(start_θ, stop=end_θ, length = 1+ceil(Int, 60abs(end_θ - start_θ)))
     retx = Array{Float64}(undef, length(steps))
@@ -262,9 +245,11 @@ function _p_circ(start_θ, end_θ, r=1)
     retx, rety
 end
 
+
 _xcirc(x, r) = r*cos(x)
 _ycirc(y, r) = r*sin(y)
 _tocirc(x, y) = _xcirc(y, x), _ycirc(y, x)
+
 
 function _circle_transform_segments(xs, ys)
     retx, rety = Float64[], Float64[]
@@ -283,6 +268,7 @@ function _circle_transform_segments(xs, ys)
     end
     retx, rety
 end
+
 
 """
 # a function to update a value successively from the root to the tips
