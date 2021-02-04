@@ -491,7 +491,7 @@ export
   majority_consensus_tree,
   discrete_gamma_rates,
   Restriction, JC, GTR, freeK,
-  ASDSF, parsimony
+  ASDSF, parsimony, ParseNewick
 
 
 export
