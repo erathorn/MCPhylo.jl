@@ -233,10 +233,13 @@ end
 function setinits!(s::ArrayStochastic, m::Model, x::DenseArray)
   s.value = convert(typeof(s.value), copy(x))
   s.distr = s.eval(m)
-  if isa(s.distr, PhyloDist)
-    i,_,k = dims(s)
-    i1,_,k1 = dims(s)
-    i1 != i && k1 != k && throw(DimensionMismatch("incompatible distribution for stochastic node"))
+  if isa(s.distr, PhylogeneticDistribution)
+    distrdims = dims(s.distr)
+    for (ind, di) in dims(s)
+      if ind != 2
+        di != distrdims[ind] && throw(DimensionMismatch("incompatible distribution for stochastic node"))
+      end
+    end
   elseif !isa(s.distr, UnivariateDistribution) && dims(s) != dims(s.distr)
     throw(DimensionMismatch("incompatible distribution for stochastic node"))
   end
