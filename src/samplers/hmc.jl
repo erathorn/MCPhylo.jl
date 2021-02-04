@@ -50,6 +50,18 @@ Construct a `Sampler` object for HMC sampling. Parameters are assumed to be
 continuous, but may be constrained or unconstrained.
 
 Returns a `Sampler{HMCTune}` type object.
+
+* `params`: stochastic node(s) to be updated with the sampler. Constrained parameters are mapped to unconstrained space according to transformations defined by the Stochastic `unlist()` function.
+
+* `epsilon`: step size.
+
+* `L`: number of steps to take in the Leapfrog algorithm.
+
+* `Sigma`: covariance matrix for the multivariate normal proposal distribution. The covariance matrix is relative to the unconstrained parameter space, where candidate draws are generated. If omitted, the identity matrix is assumed.
+
+* `dtype` : differentiation for gradient calculations. Options are
+    * `:central` : central differencing
+    * `:forward` : forward differencing.
 """
 function HMC(params::ElementOrVector{Symbol}, epsilon::Real, L::Integer;
              args...)

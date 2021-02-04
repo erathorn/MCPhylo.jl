@@ -41,7 +41,19 @@ end
 
 Construct a `Sampler` object for AMM sampling. Parameters are assumed to be
  continuous, but may be constrained or unconstrained.
+
 Returns a `Sampler{AMMTune}` type object.
+
+* `params` : stochastic node(s) to be updated with the sampler.  Constrained parameters are mapped to unconstrained space according to transformations defined by the Stochastic `unlist()` function.
+
+* `Sigma` : covariance matrix for the non-adaptive multivariate normal proposal distribution.  The covariance matrix is relative to the unconstrained parameter space, where candidate draws are generated.
+
+* `adapt` : type of adaptation phase.  Options are
+    * `:all` : adapt proposal during all iterations.
+    * `:burnin` : adapt proposal during burn-in iterations.
+    * `:none` : no adaptation (multivariate Metropolis sampling with fixed proposal).
+
+* `args...` : additional keyword arguments to be passed to the `AMMVariate` constructor.
 """
 function AMM(params::ElementOrVector{Symbol}, Sigma::Matrix{T};
               adapt::Symbol=:all, args...) where {T<:Real}

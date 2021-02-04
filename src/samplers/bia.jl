@@ -53,6 +53,10 @@ Construct a `Sampler` object for BIA sampling. Parameters are assumed to have
    binary numerical values (0 or 1).
 
 Returns a `Sampler{BIATune}` type object.
+
+* `params`: stochastic node(s) to be updated with the sampler.
+
+* `args...`: additional keyword arguments to be passed to the `BIAVariate` constructor.
 """
 function BIA(params::ElementOrVector{Symbol}; args...)
   samplerfx = function(model::Model, block::Integer)

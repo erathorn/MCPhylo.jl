@@ -59,6 +59,9 @@ to each of the supplied parameters. Parameters are assumed to have discrete
 univariate distributions with finite supports.
 
 Returns a `Sampler{DSTune{Function}}` type object.
+
+* `params`: stochastic node(s) to be updated with the sampler.
+
 """
 function DGS(params::ElementOrVector{Symbol})
   params = asvec(params)

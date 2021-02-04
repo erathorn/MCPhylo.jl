@@ -46,6 +46,10 @@ Construct a `Sampler` object for BMG sampling. Parameters are assumed to have
  binary numerical values (0 or 1).
 
 Returns a `Sampler{BMGTune{typeof(k)}}` type object.
+
+* `params`: stochastic node(s) to be updated with the sampler.
+
+* `k`:  number of parameters or vector of parameter indices to select at random for simultaneous updating in each call of the sampler.
 """
 function BMG(params::ElementOrVector{Symbol}; k::F=1) where {F<:BMGForm}
   samplerfx = function(model::Model, block::Integer)

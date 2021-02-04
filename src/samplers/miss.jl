@@ -49,6 +49,8 @@ beginning of the vector. This ensures that missing output values are updated
 before any other samplers are executed.
 
 Returns a `Sampler{Dict{Symbol, MISSTune}}` type object.
+
+* `params`: stochastic node(s) that contain missing values (`NaN`) to be updated with the sampler.
 """
 function MISS(params::ElementOrVector{Symbol})
   params = asvec(params)

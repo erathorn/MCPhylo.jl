@@ -40,6 +40,10 @@ Construct a `Sampler` object for BHMC sampling. Parameters are assumed to
 
 Returns a `Sampler{BHMCTune}` type object.
 
+* `params`: stochastic node(s) to be updated with the sampler.
+
+* `traveltime`: length of time over which particle paths are simulated. It is recommended that supplied values be of the form ``(n + \\frac{1}{2}) \\pi``, where optimal choices of n ``\\in \\mathbb{Z}^+`` are expected to grow with the parameter space dimensionality.
+
 """
 function BHMC(params::ElementOrVector{Symbol}, traveltime::Real)
   samplerfx = function(model::Model, block::Integer)

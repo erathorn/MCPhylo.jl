@@ -32,6 +32,10 @@ separately to each of the supplied parameters. Parameters are assumed to be
 continuous and constrained to a simplex.
 
 Returns a `Sampler{SliceSimplexTune}` type object.
+
+* `params`: stochastic node(s) to be updated with the sampler.
+
+* `args...`: additional keyword arguments to be passed to the `SliceSimplexVariate` constructor.
 """
 function SliceSimplex(params::ElementOrVector{Symbol}; args...)
   params = asvec(params)
