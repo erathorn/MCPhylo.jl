@@ -121,22 +121,22 @@ function MultiplePhyloDist(tree_array::Array{T},
     base_freq_l = Array{Float64, 2}(undef, size(base_freq,1), n_t)
     substitution_rates_l = Array{Float64, 2}(undef, size(substitution_rates,1), n_t)
     rates_l = Array{Float64, 2}(undef, size(rates,1), n_t)
-    if size(base_freq, 2) == 1
+    if size(base_freq, 2) == n_t
+        base_freq_l .= base_freq
+    elseif size(base_freq, 2) == 1
         for i in 1:n_t
             base_freq_l[:, n_t] .= base_freq
         end
-    elseif size(base_freq, 2) == n_t
-        base_freq_l .= base_freq
     else
         throw("size of base_freq and tree_array are incompatible")
     end
 
-    if size(substitution_rates, 2) == 1
+    if size(substitution_rates, 2) == n_t
+        substitution_rates_l .= substitution_rates
+    elseif size(substitution_rates, 2) == 1
         for i in 1:n_t
             substitution_rates_l[:, i] .= substitution_rates
         end
-    elseif size(substitution_rates, 2) == n_t
-        substitution_rates_l .= substitution_rates
     else
         throw("size of substitution_rates and tree_array are incompatible")
     end
@@ -180,11 +180,11 @@ function MultiplePhyloDist(tree_array::Array{T},
         end
     elseif size(substitution_rates, 2) == n_t
         for i in 1:n_t
-            U, D, Uinv, _ = freeK(Float64[], Array(substitution_rates[i,:]))
+            U, D, Uinv, _ = freeK(Float64[], Array(substitution_rates[:, i]))
             D[:] .= 0
             D[end] = 1
             eq = real.((U*diagm(D)*Uinv)[1,:])
-            substitution_rates_l[:, i] .= substitution_rates[i, :]
+            substitution_rates_l[:, i] .= substitution_rates[:, i]
             base_freq_l[:, i] .= eq
         end
     else
