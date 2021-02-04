@@ -260,9 +260,9 @@ include("distributions/constructors.jl")
 include("distributions/distributionstruct.jl")
 include("distributions/extensions.jl")
 include("distributions/pdmatdistribution.jl")
-include("distributions/transformdistribution.jl")
 include("distributions/Phylodist.jl")
 include("distributions/TreeConstraints.jl")
+include("distributions/transformdistribution.jl")
 
 include("model/dependent.jl")
 include("model/dependent_tree.jl")
@@ -374,6 +374,7 @@ export
   SymUniform,
   CompoundDirichlet,
   PhyloDist,
+  MultiplePhyloDist,
   exponentialBL
 
 export
