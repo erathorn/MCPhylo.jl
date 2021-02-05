@@ -27,7 +27,7 @@ dc_langs = filter(x -> x.ID in dc_list, languages_df)
 
 word_order = ["81A Order of Subject, Object and Verb"]
 
-function get_feat_array(d::DataFrame, features::Vector{String})
+function get_feat_array(d::DataFrame, features::Vector{String})::Array{Int64,2}
     nlang = length(d.wals_code)
     langs = d.wals_code
     nfeat = length(features)

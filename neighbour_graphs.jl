@@ -1,19 +1,26 @@
-using Distances, DataFrames, LinearAlgebra, LightGraphs, SimpleWeightedGraphs
+using Distances, DataFrames, LinearAlgebra
 
-include("wals_features.jl")
-
-function create_nmat(dm::Array{Float64,2}, threshold::Int64)
-    n, m = size(dm)
+function create_nmat(dmat::Array{Float64,2}, threshold::Int64; weighted=false)
+    n, m = size(dmat)
     nmat = zeros(n, m)
     idx_list = Vector(1:n)
     for (i, l1) in enumerate(idx_list)
         for (j, l2) in enumerate(idx_list)
-            if (dm[i,j] <= threshold) && (dm[i,j] != 0)
-                nmat[i,j] = 1
+            if (dmat[i,j] <= threshold) && (dmat[i,j] != 0)
+				if weighted == true
+                	nmat[i,j] = 1.0-dmat[i,j]/threshold + 1.0e-6
+				else
+					nmat[i,j] = 1.0
+				end
             end
 		end
-    end
+	end
     return nmat
+end
+
+# to do
+
+function disallow_isolates(dmat, threshold)
 end
 
 function standardize_rows!(nmat::Array{Float64,2})
@@ -93,8 +100,6 @@ function ov_concordant_sums(X::Array{N,2}, nmat::Array{Float64,2})::Vector{Float
 	nfeatures, nlang = size(X)
 	sums = Vector{Float64}(undef, nfeatures)
 	@inbounds for feat in 1:nfeatures
-		#sum_feat = count_concordant_edges(X[feat,:], nmat)
-		#push!(sums, sum_feat)
 		sums[feat] = count_concordant_edges(X[feat,:], nmat)
 	end
 	return sums
@@ -131,10 +136,20 @@ find_neighbours retrieves the indices of all the neighbours for each point (lang
 
 """
 
-function find_neighbours(X::Array{Int64,1}, nmat::Array{Float64,2}, lang::Int64; weighted=false)
+function find_neighbours(X::Array{Int64,1}, nmat::Array{Float64,2}, lang::Int64)
 	neighbours = Vector{Int64}()
 	for (i,n) in enumerate(nmat[lang,:,:])
 		if n ≠ 0
+			push!(neighbours, i)
+		end
+	end
+	return neighbours
+end
+
+function find_weighted_neighbours(X, dmat, lang, threshold)
+	neighbours = Vector{Int64}()
+	for (i, n) in enumerate(dmat[lang,:,:])
+		if dmat[i,lang] <= threshold && dmat[i,lang] ≠ 0
 			push!(neighbours, i)
 		end
 	end
@@ -146,6 +161,18 @@ function neighbour_k_sum(X::Array{Int64,1}, nmat::Array{Float64,2}, lang::Int64,
 	neighbours = find_neighbours(X,nmat,lang)
 	for j in neighbours
 		w = nmat[lang,j]
+		if X[lang] == k
+			sum += w
+		end
+	end
+	return sum
+end
+
+function weighted_k_sum(X, wmat, dmat, lang, k; threshold=1000)
+	sum = 0.0
+	neighbours = find_weighted_neighbours(X, dmat, lang, threshold)
+	for n in neighbours
+		w = nmat[lang,n]
 		if X[lang] == k
 			sum += w
 		end
@@ -176,28 +203,37 @@ function cond_concordant_sums(X::Array{Int64,2}, nmat::Array{Float64,2})
 	return sums
 end
 
-"""
-universality: gets the universality sum of each feature value per feature.
-Returns an array of dimensions nfeatures, nvals (max val).
-arr[feature, value] = the sum of all langs for that feature with that value.
-"""
+function cond_weighted_sums(X, wmat, dmat)
+	nvals = maximum(X)
+	nfeat, nlang = size(X)
+	sums = zeros(nfeat, nlang, nvals)
+	for f in 1:nfeat
+		xvals = X[f,:]
+		for (l,x) in enumerate(xvals)
+			for k in 1:nvals
+				sums[f,l,k] += weighted_k_sum(xvals,wmat,dmat,l,k)
+			end
+		end
+	end
+	return sums
+end
 
-function universality_sum(X::Array{Int64,2})
+function universality_sum(X::Array{N,2})::Array{Float64,2} where N <: Real
 	nfeatures, nlangs = size(X)
 	nvals = maximum(X)
-	sums = zeros(nfeatures, nvals)
-	for i in 1:nfeatures
+	sums = zeros(nfeatures, Int64(nvals))
+	for (i,f) in enumerate(nfeatures)
 		feat_values = X[i,:]
-		nvals_x = maximum(feat_values)
-		for k in 1:nvals_x
-			sum_k = count(x -> x == k, feat_values)
+		nvals_x = Int64(maximum(feat_values))
+		for (k,v) in enumerate(1:nvals_x)
+			sum_k = count(x -> x == v, feat_values)
 			sums[i, k] = sum_k
 		end
 	end
 	return sums
 end
 
-function uni_logprob(X::Array{Int64,2}) # for initial values of uni params
+function uni_probs(X::Array{Int64,2}) # for initial values of uni params
 	nfeat, nlang = size(X)
 	nvals = maximum(X)
 	probs = zeros(nfeat, nvals)
