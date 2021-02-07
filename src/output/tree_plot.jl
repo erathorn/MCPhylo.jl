@@ -1,7 +1,22 @@
 using RecipesBase
 
+"""
+    f(root::T; <keyword arguments>) where T<:AbstractNode
 
-@recipe function f(root::T; treetype = :dendrogram, marker_group = nothing, line_group = nothing, showtips = true, tipfont = (7,)) where T<:AbstractNode
+Recipe that handles plotting of MCPhylo Trees. Takes the root node as input.
+
+# Arguments
+- 'treetype::Symbol=:dendrogram' :  specifies how the tree is visualized.
+                                    Options :fan and :dendrogram
+- 'showtips::Bool=:true' : controls if leaf labels are shown or not
+- 'tipfont::Union{Tuple{Int64}, Tuple{Int64,Symbol}}=(7,)' :
+                specify the font and font colour of the annotations
+- 'marker_group=nothing' : currently not supported
+- 'line_group=nothing' : currently not supported
+"""
+@recipe function f(root::T; treetype=:dendrogram, marker_group=nothing,
+                   line_group=nothing, showtips=true, tipfont=(7,)
+                   ) where T<:AbstractNode
 
     linecolor --> :black
     grid --> false
@@ -39,6 +54,7 @@ using RecipesBase
     end
 end
 
+
 struct Dendrogram; x; y; tipannotations; marker_x; marker_y; showtips; tipfont; marker_group; line_group; end
 struct Fan; x; y; tipannotations; marker_x; marker_y; showtips; tipfont; marker_group; line_group; end
 
@@ -48,6 +64,7 @@ struct Fan; x; y; tipannotations; marker_x; marker_y; showtips; tipfont; marker_
     xlims --> (ex[1] - 0.05 * ex[2], ex[2] * 1.15)
 
     sa = get(plotattributes, :series_annotations, nothing)
+    dend.showtips && (annotations := map(x -> (x[1], x[2], (x[3], :left, dend.tipfont...)), dend.tipannotations))
     @series begin
         seriestype := :path
         markersize := 0
@@ -86,7 +103,7 @@ struct Fan; x; y; tipannotations; marker_x; marker_y; showtips; tipfont; marker_
             end
         end
     end
-    dend.showtips && (annotations := map(x -> (x[1], x[2], (x[3], :left, dend.tipfont...)), dend.tipannotations))
+    print(plotattributes)
     primary = false
     label = ""
     nothing
@@ -97,6 +114,12 @@ end
     adjust(y) = 2pi*y / (length(fan.tipannotations) + 1)
 
     sa = get(plotattributes, :series_annotations, nothing)
+    if fan.showtips
+        xlim --> (1.5 .* (-mx, mx))
+        ylim --> (1.5 .* (-mx, mx))
+        annotations := map(x -> (_tocirc(x[1], adjust(x[2]))..., (x[3], :left,
+            rad2deg(adjust(x[2])), fan.tipfont...)), fan.tipannotations)
+    end
     @series begin
         seriestype := :path
         markersize := 0
@@ -136,14 +159,9 @@ end
     end
     aspect_ratio := 1
     mx = maximum(filter(isfinite, fan.x))
-    if fan.showtips
-        xlim --> (1.5 .* (-mx, mx))
-        ylim --> (1.5 .* (-mx, mx))
-        annotations := map(x -> (_tocirc(x[1], adjust(x[2]))..., (x[3], :left,
-            rad2deg(adjust(x[2])), fan.tipfont...)), fan.tipannotations)
-    end
     nothing
 end
+
 
 _handlez(x, root) = x
 # need to add this back if i.e. gradiently coloured plots are needed
@@ -210,27 +228,14 @@ function _findxy(root::T)::Tuple{Dict{Node, Float64}, Dict{Node, Float64}, Vecto
     findheights!(root)
 
     depth = Dict{Node, Float64}()
-    ### Kann man hier node.num stattdessen verwenden, oder hängen Labels später
-    ### von dem name Array abhängen
+    ### Kann man hier node.num stattdessen verwenden, oder Labels hängen später
+    ### von dem name Array ab
     names = String[]
     sizehint!(depth, nnodes)
     sizehint!(names, nnodes)
     finddepths!(root)
 
     depth, height, names
-end
-
-
-function _find_tips(depth, height, tree)
-    x, y, l = Float64[], Float64[], String[]
-    for k in keys(depth)
-        if isleaf(tree, k)
-            push!(x, depth[k])
-            push!(y, height[k])
-            push!(l, k)
-        end
-    end
-    x, y, l
 end
 
 
@@ -268,21 +273,3 @@ function _circle_transform_segments(xs, ys)
     end
     retx, rety
 end
-
-
-"""
-# a function to update a value successively from the root to the tips
-function map_depthfirst(FUN, start, tree, eltype = nothing)
-    root = first(nodenamefilter(isroot, tree))
-    eltype === nothing && (eltype = typeof(FUN(start, root)))
-    ret = Vector{eltype}()
-    function local!(val, node)
-        push!(ret, val)
-        for ch in getchildren(tree, node)
-            local!(FUN(val, node), ch)
-        end
-    end
-    local!(start, root)
-    ret
-end
-"""

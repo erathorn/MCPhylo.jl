@@ -69,9 +69,9 @@ density by default).
 # Arguments
 - 'vars::Vector{String}=String[]' : specifies the variables of the chain that
                                     are plotted
-. 'filename::String'="" : when given, the plots will be saved to a file
-- 'fmt::Symbol'=:svg : specifies the format of the output file
-- 'nrow::Integer=3' / 'ncol::Integer'=2 : Define layout of the plot window(s),
+. 'filename::String=""' : when given, the plots will be saved to a file
+- 'fmt::Symbol'=:svg' : specifies the format of the output file
+- 'nrow::Integer=3' / 'ncol::Integer=2' : Define layout of the plot window(s),
                                           i.e. how many plots on each page
 - 'legend::Bool=false': Turn plot legend on / off
 - 'args...': Plottype specific arguments, like the number of bins for the
