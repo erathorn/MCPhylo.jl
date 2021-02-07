@@ -103,7 +103,6 @@ struct Fan; x; y; tipannotations; marker_x; marker_y; showtips; tipfont; marker_
             end
         end
     end
-    print(plotattributes)
     primary = false
     label = ""
     nothing
@@ -114,9 +113,11 @@ end
     adjust(y) = 2pi*y / (length(fan.tipannotations) + 1)
 
     sa = get(plotattributes, :series_annotations, nothing)
+    aspect_ratio := 1
+    mx = maximum(filter(isfinite, fan.x))
     if fan.showtips
-        xlim --> (1.5 .* (-mx, mx))
-        ylim --> (1.5 .* (-mx, mx))
+        xlims --> (1.5 .* (-mx, mx))
+        ylims --> (1.5 .* (-mx, mx))
         annotations := map(x -> (_tocirc(x[1], adjust(x[2]))..., (x[3], :left,
             rad2deg(adjust(x[2])), fan.tipfont...)), fan.tipannotations)
     end
@@ -157,8 +158,6 @@ end
             end
         end
     end
-    aspect_ratio := 1
-    mx = maximum(filter(isfinite, fan.x))
     nothing
 end
 
