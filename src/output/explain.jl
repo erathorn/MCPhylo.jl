@@ -3,4 +3,4 @@ using .MCPhylo
 
 trees = MCPhylo.ParseNewick("./doc/Tree/Drav_mytrees_1.nwk")
 
-Plots.plot(trees[1], treetype=:fan, msc=:black, mc=:green)
+plot1 = Plots.plot(trees[1], showtips=true, msc=:green, mc=:yellow, lc=:white, bg=:black, tipfont=(7, :white))
