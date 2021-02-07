@@ -1,3 +1,11 @@
+#=
+    The tree plotting functions are adapted from the tree plotting functionality of
+    the EcoJulia Phylo package.
+
+    Further documentation and the original functions can be found here:
+        https://github.com/EcoJulia/Phylo.jl
+=#
+
 using RecipesBase
 
 """
