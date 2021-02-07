@@ -1,13 +1,10 @@
 #=
-    The tree plotting functions are adapted from the tree plotting functionality of
-    the EcoJulia Phylo package.
+    The tree plotting functions are adapted from the tree plotting functionality
+    of the EcoJulia Phylo package.
 
     Further documentation and the original functions can be found here:
         https://github.com/EcoJulia/Phylo.jl
 =#
-
-using RecipesBase
-
 """
     f(root::T; <keyword arguments>) where T<:AbstractNode
 
