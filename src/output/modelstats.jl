@@ -41,7 +41,7 @@ function logpdf(mc::ModelChains,
   )
 
   lsts = [
-    Any[mc[:, :, k], nodekeys, relistkeys, inds, updatekeys,
+    Any[mc[:, :, [k]], nodekeys, relistkeys, inds, updatekeys,
         ChainProgress(frame, k, N)]
     for k in 1:K
   ]
