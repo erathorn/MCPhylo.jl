@@ -294,6 +294,7 @@ end
 function relistlength(s::AbstractTreeStochastic, x::AbstractArray,
                       transform::Bool=false)
   value, n = relistlength_sub(s.distr, s, x)
+
   (transform ? invlink_sub(s.distr, value) : value, n)
 end
 
