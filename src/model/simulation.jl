@@ -64,7 +64,7 @@ function logpdf(m::Model, nodekeys::Vector{Symbol}, transform::Bool=false)
   lp
 end
 
-function pseudologpdf(m::Model, nodekeys::Vector{Symbol},y, transform::Bool=false)
+function pseudologpdf(m::Model, nodekeys::Vector{Symbol}, y, transform::Bool=false)
   lp = 0.0
   for key in nodekeys
     lp += pseudologpdf(m[key],y, transform)

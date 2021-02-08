@@ -46,13 +46,13 @@ inits = [Dict{Symbol, Union{Any, Real}}(
  :uniw => uni_inits)
  for i in 1:2]
 
-scheme = [MCPhylo.DMH(:linw, 2700, 1.0),
- 		MCPhylo.DMH(:spaw, 2700, 1.0),
-		MCPhylo.DMH(:uniw, 2700, 1.0)
+scheme = [MCPhylo.DMH(:linw, 2700, 1.0, false, link=log, inverselink=exp),
+ 		MCPhylo.DMH(:spaw, 2700, 1.0, false, link=log, inverselink=exp),
+		MCPhylo.DMH(:uniw, 2700, 0.01, false)
            ]
 
 setsamplers!(model, scheme)
 
-sim = mcmc(model, my_data, inits, 10000, burnin=250,thin=1, chains=2)
+sim = mcmc(model, my_data, inits, 50000, burnin=5000,thin=1, chains=2)
 
 to_file(sim, "DMH02")

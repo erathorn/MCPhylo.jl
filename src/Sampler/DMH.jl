@@ -1,7 +1,6 @@
 #################### Double Metropolis-Hastings Sampler ####################
 
 #################### Types and Constructors ####################
-import StasFuns: softmax
 
 mutable struct DMHTune <: SamplerTune
   logf::Union{Function, Missing}
@@ -10,24 +9,29 @@ mutable struct DMHTune <: SamplerTune
   datakeys::Vector{Symbol}
   m::Int64
   scale::Float64
+  link::Function
+  invlink::Function
 
   DMHTune() = new()
 
-  function DMHTune(f::Union{Function, Missing}, ps, cl, m::Int64, s::Float64)
-    new(f, ps, cl, Vector{Symbol}(), m, s)
+  function DMHTune(f::Union{Function, Missing}, ps, cl, m::Int64, s::Float64;
+	  				link::Function=identity, inverselink::Function=identity)
+    new(f, ps, cl, Vector{Symbol}(), m, s, link, inverselink)
   end
-  function DMHTune(f::Union{Function, Missing}, ps, cl, dk::Vector{Symbol}, m::Int64, s::Float64)
-    new(f, ps, cl, dk, m, s)
+  function DMHTune(f::Union{Function, Missing}, ps, cl, dk::Vector{Symbol}, m::Int64, s::Float64;
+	  				link::Function=identity, inverselink::Function=identity)
+    new(f, ps, cl, dk, m, s, link, inverselink)
   end
 end
 
 const DMHVariate = SamplerVariate{DMHTune}
 
-DMHTune(x::Vector, f, ps, cl, dk, m, s) = DMHTune(f, ps, cl, dk, m, s)
+DMHTune(x::Vector, f, ps, cl, dk, m, s; args...) = DMHTune(f, ps, cl, dk, m, s; args...)
 
 #################### Sampler Constructor ####################
 
-function DMH(params::ElementOrVector{Symbol}, m::Int64, scale::Float64)
+function DMH(params::ElementOrVector{Symbol}, m::Int64, scale::Float64,
+			 transform::Bool=true; args...)
 
   	samplerfx = function(model::Model, block::Integer)
 
@@ -36,12 +40,12 @@ function DMH(params::ElementOrVector{Symbol}, m::Int64, scale::Float64)
 
 	targets = keys(model, :target, params)
 	tune.datakeys = targets
-    block = SamplingBlock(model, block, true)
+    block = SamplingBlock(model, block, transform)
 
     f = x -> logpdf!(block, x)
 	fp = (x, y) -> pseudologpdf!(block, x, y)
 	cl = (x, args...) -> conditional_likelihood!(block, x, args...)
-    v = SamplerVariate(block, f, fp, cl, targets, m, scale)
+    v = SamplerVariate(block, f, fp, cl, targets, m, scale; args...)
 
     sample!(v::DMHVariate, model)
 
@@ -61,17 +65,22 @@ function DMH_sample!(v::DMHVariate, tune::DMHTune, model::Model)
 	nfeatures, nlang = size(obsdata)
 	@assert v.tune.m >= nlang
 
+	# store old value for possible future reference
+	θ = deepcopy(v.value)
+
 	# this way of generating theta_prime from the current values of theta
 	# takes care of the transition probability from theta_prime to theta and vice versa
 	# the values equal and will cancel out.
-	θ_prime = v + v.tune.scale .* rand(Normal(0.0, 1.0), length(v))
+	θ_prime = tune.invlink.(tune.link.(θ) + v.tune.scale .* rand(Normal(0.0, 1.0), length(v)))
 
 	# calculate logpdf values
+	#println("θ $θ")
 	lf_xt = tune.logf(v.value)
+
+	#println("θ_prime $θ_prime")
 	lf_xtp = tune.logf(θ_prime)
 
-	# store old value for possible future reference
-	θ = deepcopy(v.value)
+
 
 	# prematurely assign, to allow computations to go through properly
 	v[:] = θ_prime
@@ -85,19 +94,22 @@ function DMH_sample!(v::DMHVariate, tune::DMHTune, model::Model)
 
 	# calculate acceptance probability (proposal distribution?)
 	r = exp((lf_yt + lf_xtp) - (lf_xt + lf_ytp))
+	#println("r $r")
 
 	# RWM acceptance logic is a bit reversed here. Above the new value is
 	# prematurely assigned to allow computations in the inner sampler to go through.
 	# If the sample is accepted nothing needs to be done anymore, otherwise the
 	# old value will be reassigned.
 	if rand() > r
+		#println("rejected")
 		# sample is rejected, so use the old value.
 		v[:] = θ
 	end
+	#println("v ", v[:])
 	v
 end
 
-function inner_sampler(v::DMHVariate, X::Array{N, x})::Array{N, 2} where N <: Real
+function inner_sampler(v::DMHVariate, X::Array{N})::Array{N, 2} where N <: Real
 	nfeatures, nlangs = size(X)
 	counter = 0
 	while true
