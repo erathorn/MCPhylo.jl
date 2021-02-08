@@ -44,8 +44,6 @@ function make_tree_with_data(filename::String, dialect::AbstractString="nexus",
 				if ent == gap || ent == miss
 					my_df[:, ind, mind] .= 1.0
 				else
-					println(typeof(ent))
-					println(typeof.(symbols))
 					throw("unknown symbol $ent, $symbols")
 				end
 			else
@@ -53,8 +51,6 @@ function make_tree_with_data(filename::String, dialect::AbstractString="nexus",
 				my_df[index,ind,mind] = 1.0
 			end # if
 		end # for
-		#node = find_by_name(new_tree, row.Language)
-		#node.data = log.(data_vec)
 	end # for
 
 
