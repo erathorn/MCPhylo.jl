@@ -136,7 +136,7 @@ find_neighbours retrieves the indices of all the neighbours for each point (lang
 
 """
 
-function find_neighbours(X::Array{Int64,1}, nmat::Array{Float64,2}, lang::Int64)
+function find_neighbours(X::Array{R,1}, nmat::Array{Float64,2}, lang::Int64) where R<:Real
 	neighbours = Vector{Int64}()
 	for (i,n) in enumerate(nmat[lang,:,:])
 		if n ≠ 0
@@ -156,7 +156,7 @@ function find_weighted_neighbours(X, dmat, lang, threshold)
 	return neighbours
 end
 
-function neighbour_k_sum(X::Array{Int64,1}, nmat::Array{Float64,2}, lang::Int64, k::Int64)
+function neighbour_k_sum(X::Array{R,1}, nmat::Array{Float64,2}, lang::Int64, k::Int64) where R<:Real
 	sum = 0.0
 	neighbours = find_neighbours(X,nmat,lang)
 	for j in neighbours
@@ -188,11 +188,11 @@ kth feature value. This can be used for either the weighted or regular
 binary neighbourhood matrix.
 """
 
-function cond_concordant_sums(X::Array{Int64,2}, nmat::Array{Float64,2})
-	nvals = maximum(X)
+function cond_concordant_sums(X::Array{R,2}, nmat::Array{N,2}) where {R<:Real, N<:Real}
+	nvals = Int(maximum(X))
 	nfeatures, nlang = size(X)
-	sums = zeros(nfeatures, nlang, nvals)
-	for f in 1:nfeatures
+	sums = zeros(nfeatures, nlang, Int(nvals))
+	@inbounds for f in 1:nfeatures
 		xvals = X[f,:]
 		for (l, x) in enumerate(xvals)
 			for k in 1:nvals

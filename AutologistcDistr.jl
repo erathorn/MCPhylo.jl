@@ -25,10 +25,13 @@ function logpdf(d::AutologisticDistr, X::Array{N,2}) where N <: Real
 	#println("ling: ", d.ling_params)
 	for f in 1:d.nfeat
 		res += ling_cond[f] * d.ling_params[f] + sp_cond[f] * d.spatial_params[f]
+		#println("---")
 		for k in 1:maxval
-			#uni_cond = count(x -> x == k, X[f,:])
-			res += d.ov_universality[f, k] * d.universality_params[f,k]
+			uni_cond = count(x -> x == k, X[f,:])
+			#println(uni_cond, " ", d.universality_params[f,k])
+			res += uni_cond * d.universality_params[f,k]
 		end
+		#println("---")
 	end
 	#println("res $res")
 	return res
@@ -41,11 +44,16 @@ P = exp(vertical_params[i] * vertical_sums[l,i,k] + ... + uni_params[i,k])
 function logcond(d::AutologisticDistr, X::Array{N, 2}, l::Int64, f::Int64) where N <: Real
 	nv = d.nvals[f]
 	probs = Vector{Float64}(undef, nv)
+	spacesums = cond_concordant_sums(X, d.spmat)
+	lingsums = cond_concordant_sums(X, d.lingmat)
+
+	#println("language $l, feature $f")
 	for k in 1:nv
-		p = d.spatial_params[f] * d.cond_space[f,l,k] +
-			d.ling_params[f] * d.cond_ling[f,l,k] +
+		p = d.spatial_params[f] * spacesums[f,l,k] +
+			d.ling_params[f] * lingsums[f,l,k] +
 			d.universality_params[f,k]
 		probs[k] = p
 	end
+	#println("raw $probs")
 	return softmax(probs)
 end

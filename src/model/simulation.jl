@@ -166,7 +166,7 @@ function pseudologpdf!(m::Model, x::AbstractArray{T}, y::AbstractArray, block::I
   params = keys(m, :block, block)
   targets = keys(m, :target, block)
   m[params] = relist(m, x, params, transform)
-  lp = pseudologpdf(m, setdiff(params, targets),y, transform)
+  lp = 0.0
   for key in targets
     isfinite(lp) || break
     node = m[key]
@@ -182,13 +182,9 @@ function conditional_likelihood!(m::Model, x::AbstractArray{T}, block::Integer=0
   params = keys(m, :block, block)
   targets = keys(m, :target, block)
   m[params] = relist(m, x, params)
+
   lp = conditional_likelihood(m, targets, args...)
-  #println(targets)
-  #for key in targets
-  #  node = m[key]
-  #  update!(node, m)
-  #  lp += conditional_likelihood(node, args...)
-  #end
+
   lp
 end
 

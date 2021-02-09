@@ -67,20 +67,17 @@ function DMH_sample!(v::DMHVariate, tune::DMHTune, model::Model)
 
 	# store old value for possible future reference
 	θ = deepcopy(v.value)
-
 	# this way of generating theta_prime from the current values of theta
 	# takes care of the transition probability from theta_prime to theta and vice versa
 	# the values equal and will cancel out.
-	θ_prime = tune.invlink.(tune.link.(θ) + v.tune.scale .* rand(Normal(0.0, 1.0), length(v)))
+	θ_prime = θ + v.tune.scale .* rand(Normal(0.0, 1.0), length(v))
 
+	#println("real")
 	# calculate logpdf values
-	#println("θ $θ")
 	lf_xt = tune.logf(v.value)
 
 	#println("θ_prime $θ_prime")
 	lf_xtp = tune.logf(θ_prime)
-
-
 
 	# prematurely assign, to allow computations to go through properly
 	v[:] = θ_prime
@@ -89,7 +86,8 @@ function DMH_sample!(v::DMHVariate, tune::DMHTune, model::Model)
 	y = inner_sampler(v, deepcopy(obsdata))
 
 	# calculate logpdfs based on pseudo observations
-	lf_ytp = tune.pseudolog(v.value, y)
+	#println("pseudo")
+	lf_ytp = tune.pseudolog(v.value, y) # -> Do I calculate the prior here??? This should not happen!!!
 	lf_yt = tune.pseudolog(θ, y)
 
 	# calculate acceptance probability (proposal distribution?)
@@ -100,6 +98,7 @@ function DMH_sample!(v::DMHVariate, tune::DMHTune, model::Model)
 	# prematurely assigned to allow computations in the inner sampler to go through.
 	# If the sample is accepted nothing needs to be done anymore, otherwise the
 	# old value will be reassigned.
+
 	if rand() > r
 		#println("rejected")
 		# sample is rejected, so use the old value.
@@ -117,12 +116,17 @@ function inner_sampler(v::DMHVariate, X::Array{N})::Array{N, 2} where N <: Real
 		random_feature_idx = shuffle(1:nfeatures)
 		@inbounds for i in random_language_idx
 			for f in random_feature_idx
-				probs = v.tune.condlike(v, i, f)
+				#println("language $i")
+				#println("feature $f")
+				probs = v.tune.condlike(v, X, i, f)
+				#println("probs ", probs)
 				new_x = sample(1:length(probs), Weights(probs))
+				#println("new $new_x, org: ",  X[f, i])
 				X[f, i] = new_x
 			end
 			counter += 1
-			if counter > v.tune.m
+			println(counter)
+			if counter > 10#v.tune.m
 				return X
 			end
 		end

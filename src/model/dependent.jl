@@ -303,7 +303,7 @@ function conditional_likelihood(s::AbstractStochastic, args...)
 end
 
 function conditional_likelihood(s::AbstractStochastic, x::AbstractArray, args...)
-  logcond(s.distr, s.value, args...)
+  logcond(s.distr, x, args...)
 end
 
 

@@ -1,16 +1,28 @@
 
-@everywhere include("./src/MCPhylo.jl")
-@everywhere using .MCPhylo
-@everywhere import .MCPhylo: logcond
-@everywhere using Random
-@everywhere import Distributions: logpdf
-@everywhere Random.seed!(42)
+#@everywhere
+include("./src/MCPhylo.jl")
+#@everywhere
+using .MCPhylo
+#@everywhere
+import MCPhylo: logcond
+#@everywhere
+using Random
 
-@everywhere using LinearAlgebra, Distributions, StatsBase, StatsFuns
+#@everywhere
+import Distributions: logpdf
+include("./MyGamma.jl")
+#@everywhere
+Random.seed!(42)
 
-@everywhere include("wals_features.jl")
-@everywhere include("neighbour_graphs.jl")
-@everywhere include("AutologistcDistr.jl")
+#@everywhere
+using LinearAlgebra, Distributions, StatsBase, StatsFuns
+
+#@everywhere
+include("wals_features.jl")
+#@everywhere
+include("neighbour_graphs.jl")
+#@everywhere
+include("AutologistcDistr.jl")
 
 lmat = Float64.(create_linguistic_nmat(d))
 nmat = create_nmat(dmat, 1000)
@@ -47,11 +59,12 @@ inits = [Dict{Symbol, Union{Any, Real}}(
  for i in 1:2]
 
 scheme = [MCPhylo.DMH(:linw, 2700, 1.0, true),
- 		MCPhylo.DMH(:spaw, 2700, 1.0, true),
-		MCPhylo.DMH(:uniw, 2700, 0.01, false)]
+ 		  MCPhylo.DMH(:spaw, 2700, 1.0, true),
+		  MCPhylo.DMH(:uniw, 2700, 0.01, false)
+		]
 
 setsamplers!(model, scheme)
 
-sim = mcmc(model, my_data, inits, 50, burnin=5,thin=1, chains=1)
+sim = mcmc(model, my_data, inits, 20, burnin=1,thin=1, chains=1)
 
 to_file(sim, "DMH02")
