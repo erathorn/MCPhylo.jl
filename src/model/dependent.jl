@@ -344,7 +344,7 @@ end
 
 
 
-function logpdf(s::AbstractStochastic, x::N, transform::Bool=false) where N<:GeneralNode
+function logpdf(s::AbstractTreeStochastic, x::N, transform::Bool=false) where N<:GeneralNode
   logpdf_sub(s.distr, x, transform)
 end
 
