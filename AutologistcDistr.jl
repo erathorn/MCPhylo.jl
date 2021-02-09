@@ -7,7 +7,7 @@ mutable struct AutologisticDistr <: DiscreteMatrixDistribution
 #	ov_spatial_concordant::Vector{Float64}
     spatial_params::Vector{Float64}
 	spmat::Array{Float64,2}
-#	ov_universality::Array{Float64,2}
+	ov_universality::Array{Float64,2}
     universality_params::Array{Float64,2}
 	nvals::Vector{Int64} # for each feature, the number of possible values
 	nlangs::Int64
@@ -26,8 +26,8 @@ function logpdf(d::AutologisticDistr, X::Array{N,2}) where N <: Real
 	for f in 1:d.nfeat
 		res += ling_cond[f] * d.ling_params[f] + sp_cond[f] * d.spatial_params[f]
 		for k in 1:maxval
-			uni_cond = count(x -> x == k, X[f,:])
-			res += uni_cond * d.universality_params[f,k]
+			#uni_cond = count(x -> x == k, X[f,:])
+			res += d.ov_universality[f, k] * d.universality_params[f,k]
 		end
 	end
 	#println("res $res")
