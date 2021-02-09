@@ -80,8 +80,8 @@ density by default).
 """
 function plot(c::AbstractChains, ptype::Vector{Symbol}=[:trace, :density];
               vars::Vector{String}=String[], filename::String="",
-              fmt::Symbol=:svg, nrow::Integer=3, ncol::Integer=2,
-              legend::Bool=false, args...)::Array{Plots.Plot}
+              fmt::Symbol=:svg, nrow::Integer=3, ncol::Integer=2, args...
+              )::Array{Plots.Plot}
   n = length(ptype)
   if !isempty(vars)
     indeces = check_vars(c.names, vars)
@@ -90,8 +90,8 @@ function plot(c::AbstractChains, ptype::Vector{Symbol}=[:trace, :density];
   end # if / else
   p = Array{Plots.Plot}(undef, n, length(indeces))
   for i in 1:n
-    showlegend = legend && i == n
-    p[i, :] = plot(c, ptype[i], indeces; legend=legend, args...)
+    # showlegend = legend && i == n
+    p[i, :] = Plots.plot(c, indeces, type=ptype[i], args...)
   end # for
   draw(p, fmt=fmt, filename=filename, nrow=nrow, ncol=ncol)
   return p
@@ -133,26 +133,6 @@ function check_vars(sim_names::Vector{AbstractString}, vars::Vector{String})::Ve
     sort!(indeces)
     return indeces
 end # check_vars
-
-
-"""
-  plot(c::AbstractChains, ptype::Symbol, indeces::Vector{Int64};
-       legend::Bool=false, args...)
-
---- INTERNAL ---
-Helper function to the actual plot function. Calls the specific plotting
-functions that are needed.
-"""
-function plot(c::AbstractChains, ptype::Symbol, indeces::Vector{Int64}; legend::Bool=false, args...)
-  ptype == :autocor      ? autocorplot(c, indeces; legend=legend, args...) :
-  ptype == :bar          ? barplot(c, indeces; legend=legend, args...) :
-  ptype == :density      ? densityplot(c, indeces; legend=legend, args...) :
-  ptype == :mean         ? meanplot(c, indeces; legend=legend, args...) :
-  ptype == :mixeddensity ? mixeddensityplot(c, indeces; legend=legend, args...) :
-  ptype == :trace        ? traceplot(c, indeces; legend=legend, args...) :
-  ptype == :contour      ? throw(ArgumentError("Use function contourplot instead")) :
-    throw(ArgumentError("unsupported plot type $ptype"))
-end # plot
 
 
 """
@@ -199,12 +179,47 @@ end # contourplot
 Helper function called by the plot function when a autocorrelation
 plot is needed.
 """
+@recipe function f(c::AbstractChains, indeces::Vector{Int64}; type=:autocor)
+  linecolor --> :black
+  grid --> :dash
+  gridalpha --> 0.5
+  legend --> false
+  legendtitle --> "Chain"
+
+  nrows, nvars, nchains = size(c.value)
+  if type == :autocor
+    xlabel="Lag"
+    ylabel="Autocorrelation"
+    xlims=(0, +Inf)
+
+    @isdefined(maxlag) ? lags = (0:maxlag) : lags = (0:round(Int, 10 * log10(length(c.range))))
+    ac = autocor(c, lags=collect(lags))
+    for i in indeces
+      Autocor(c, indeces, lags, ac, i, nchains)
+    end # for
+  end #if
+end #f
+
+struct Autocor; c; indeces; lags; ac; i; nchains; end
+
+@recipe function f(autocor::Autocor)
+  @series begin
+    seriestype := line
+    group=repeat(c.chains, inner=[length(lags)])
+    title=c.names[i]
+    x = repeat(collect(lags * step(c)), outer=[nchains])
+    y = vec(ac.value[i,:,:])
+    autocor.x, autocor.y
+  end
+end
+
+
+#=
 function autocorplot(c::AbstractChains, indeces::Vector{Int64};
                      maxlag::Integer=round(Int, 10 * log10(length(c.range))),
-                     legend::Bool=false, na...)
+                     na...)
   nrows, nvars, nchains = size(c.value)
   plots = Array{Plots.Plot}(undef, length(indeces))
-  pos = legend ? :right : :none
   lags = 0:maxlag
   ac = autocor(c, lags=collect(lags))
   z = 1
@@ -214,15 +229,15 @@ function autocorplot(c::AbstractChains, indeces::Vector{Int64};
                           vec(ac.value[i,:,:]), seriestype=:line,
                           group=repeat(c.chains, inner=[length(lags)]),
                           xlabel="Lag", ylabel="Autocorrelation",
-                          title=c.names[i], legendtitle="Chain", legend=pos,
-                          xlims=(0, +Inf), grid=:dash; gridalpha=0.5)
+                          title=c.names[i], xlims=(0, +Inf))
     z += 1
   end # for
   return plots
 end # autocorplot
-
+=#
 
 """
+
     barplot(c::AbstractChains, indeces::Vector{Int64};
             legend::Bool=false, position::Symbol=:stack, na...)
 
