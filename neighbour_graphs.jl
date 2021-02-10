@@ -72,9 +72,13 @@ an adjacency matrix. Args:
 function count_concordant_edges(X::Array{R,1}, nmat::Array{Float64,2})::Float64 where R <: Real
 	conc_sum = zero(Float64)
 	n = length(X)
-	@inbounds for i in 1:n, j in 1:i
-	    if i > j && nmat[i,j] == 1 && X[i] == X[j] && X[i] ≠ -10
-			conc_sum += 1
+	@inbounds for i in 1:n
+		if X[i] ≠ -10
+			for  j in 1:i-1
+			    if X[i] == X[j] && nmat[i,j] == 1 
+						conc_sum += 1
+				end
+			end
 		end
 	end
 	return conc_sum

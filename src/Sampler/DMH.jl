@@ -108,14 +108,14 @@ function DMH_sample!(v::DMHVariate, tune::DMHTune, model::Model)
 	v
 end
 
-function inner_sampler(v::DMHVariate, X::Array{N})::Array{N, 2} where N <: Real
+function inner_sampler(v::DMHVariate, X::Array{N,2})::Array{N, 2} where N <: Real
 	nfeatures, nlangs = size(X)
-	counter = 0
+	counter = zero(Int64)
 	while true
 		random_language_idx = shuffle(1:nlangs)
 		random_feature_idx = shuffle(1:nfeatures)
 		@inbounds for i in random_language_idx
-			for f in random_feature_idx
+			@inbounds for f in random_feature_idx
 				#println("language $i")
 				#println("feature $f")
 				probs = v.tune.condlike(v, X, i, f)
@@ -125,7 +125,7 @@ function inner_sampler(v::DMHVariate, X::Array{N})::Array{N, 2} where N <: Real
 				X[f, i] = new_x
 			end
 			counter += 1
-			if counter > v.tune.m # 10
+			if counter > v.tune.m
 				return X
 			end
 		end

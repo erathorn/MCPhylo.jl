@@ -2,7 +2,7 @@
 #@everywhere
 include("./src/MCPhylo.jl")
 #@everywhere
-using .MCPhylo
+using MCPhylo
 #@everywhere
 import MCPhylo: logcond
 #@everywhere
@@ -65,6 +65,6 @@ scheme = [MCPhylo.DMH(:linw, 2700, 1.0, true),
 
 setsamplers!(model, scheme)
 
-sim = mcmc(model, my_data, inits, 20, burnin=2,thin=1, chains=1)
+sim = mcmc(model, my_data, inits, 200, burnin=20,thin=1, chains=1)
 
 to_file(sim, "DMH02")

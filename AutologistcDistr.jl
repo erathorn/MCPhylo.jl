@@ -17,7 +17,7 @@ end
 Base.size(d::AutologisticDistr) = (d.nfeat, d.nlangs)
 
 function logpdf(d::AutologisticDistr, X::Array{N,2}) where N <: Real
-	res = 0
+	res = zero(Float64)
 	maxval = maximum(d.nvals)
 	ling_cond = ov_concordant_sums(X, d.lingmat)
 	sp_cond = ov_concordant_sums(X, d.spmat)
@@ -26,8 +26,9 @@ function logpdf(d::AutologisticDistr, X::Array{N,2}) where N <: Real
 	@inbounds for f in 1:d.nfeat
 		res += ling_cond[f] * d.ling_params[f] + sp_cond[f] * d.spatial_params[f]
 		#println("---")
+		Xf = X[f,:]
 		@inbounds for k in 1:maxval
-			uni_cond = count(x -> x == k, X[f,:])
+			uni_cond = count(x -> x == k, Xf)
 			#println(uni_cond, " ", d.universality_params[f,k])
 			res += uni_cond * d.universality_params[f,k]
 		end
@@ -43,15 +44,12 @@ P = exp(vertical_params[i] * vertical_sums[l,i,k] + ... + uni_params[i,k])
 
 function logcond(d::AutologisticDistr, X::Array{N, 2}, l::Int64, f::Int64) where N <: Real
 	nv = d.nvals[f]
-	probs = Vector{Float64}(undef, nv)
+	probs = d.universality_params[f, :]
 	spsum = neighbour_sum(X, d.spmat, l, f, nv)
 	lsum = neighbour_sum(X, d.lingmat, l, f, nv)
 	@inbounds for k in 1:nv
-		p = d.spatial_params[f] * spsum[k] +
-			d.ling_params[f] * lsum[k] +
-			d.universality_params[f,k]
-		probs[k] = p
+		probs[k] += d.spatial_params[f] * spsum[k] +
+					d.ling_params[f] * lsum[k]# +
 	end
-	#println("raw $probs")
 	return softmax(probs)
 end
