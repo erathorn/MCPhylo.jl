@@ -88,12 +88,12 @@ function plot(c::AbstractChains, ptype::Vector{Symbol}=[:trace, :density];
   else
     indeces = collect(1:length(c.names))
   end # if / else
-  p = Array{Plots.Plot}(undef, n, length(indeces))
+  p = Vector{Plots.Plot}(undef, length(ptype))
   for i in 1:n
     # showlegend = legend && i == n
-    p[i, :] = Plots.plot(c, indeces, type=ptype[i], args...)
+    p[i] = Plots.plot(c, indeces, type=ptype[i], args...)
   end # for
-  draw(p, fmt=fmt, filename=filename, nrow=nrow, ncol=ncol)
+  # draw(p, fmt=fmt, filename=filename, nrow=nrow, ncol=ncol)
   return p
 end # plot
 
@@ -179,39 +179,45 @@ end # contourplot
 Helper function called by the plot function when a autocorrelation
 plot is needed.
 """
-@recipe function f(c::AbstractChains, indeces::Vector{Int64}; type=:autocor)
+@recipe function f(c::AbstractChains, indeces::Vector{Int64}; type=:autocor,
+                   maxlag=round(Int, 10 * log10(length(c.range))))
   linecolor --> :black
   grid --> :dash
   gridalpha --> 0.5
   legend --> false
   legendtitle --> "Chain"
 
-  nrows, nvars, nchains = size(c.value)
   if type == :autocor
-    xlabel="Lag"
-    ylabel="Autocorrelation"
-    xlims=(0, +Inf)
+    Autocor(c, indeces, maxlag)
+  end # if
+end # recipe
 
-    @isdefined(maxlag) ? lags = (0:maxlag) : lags = (0:round(Int, 10 * log10(length(c.range))))
-    ac = autocor(c, lags=collect(lags))
-    for i in indeces
-      Autocor(c, indeces, lags, ac, i, nchains)
-    end # for
-  end #if
-end #f
 
-struct Autocor; c; indeces; lags; ac; i; nchains; end
+struct Autocor; c; indeces; maxlag; end
 
-@recipe function f(autocor::Autocor)
-  @series begin
-    seriestype := line
-    group=repeat(c.chains, inner=[length(lags)])
-    title=c.names[i]
-    x = repeat(collect(lags * step(c)), outer=[nchains])
-    y = vec(ac.value[i,:,:])
-    autocor.x, autocor.y
-  end
-end
+
+@recipe function f(autoc::Autocor)
+  xlabel --> "Lag"
+  ylabel --> "Autocorrelation"
+  xlims --> (0, +Inf)
+  layout --> length(autoc.indeces)
+
+  nrows, nvars, nchains = size(autoc.c.value)
+  lags = 0:autoc.maxlag
+  ac = autocor(autoc.c, lags=collect(lags))
+
+  for (index, i) in enumerate(autoc.indeces)
+    @series begin
+      subplot := index
+      seriestype := :line
+      group := repeat(autoc.c.chains, inner=[length(lags)])
+      title --> autoc.c.names[i]
+      x = repeat(collect(lags * step(autoc.c)), outer=[nchains])
+      y = vec(ac.value[i,:,:])
+      x, y
+    end # series
+  end # for
+end # recipe
 
 
 #=
