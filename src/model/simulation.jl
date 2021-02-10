@@ -125,7 +125,7 @@ function gradlogpdf!(m::Model, x::N, block::Integer=0,transform::Bool=false)::Tu
   # use thread parallelism
   # likelihood
   lik_res = @spawn gradlogpdf(m, targets)
-  
+
   # prior
   vp, gradp =  gradlogpdf(m[params[1]], x)
 
@@ -169,7 +169,7 @@ function sample!(m::Model, block::Integer=0)
     end
   end
   m.iter -= isoneblock
-  m.likelihood = logpdf(m)
+  m.likelihood = logpdf(m, keys(m, :target))
   m
 end
 
