@@ -197,8 +197,8 @@ struct Autocor; c; indeces; maxlag; end
 
 
 @recipe function f(autoc::Autocor)
-  xlabel --> "Lag"
-  ylabel --> "Autocorrelation"
+  xguide --> "Lag"
+  yguide --> "Autocorrelation"
   xlims --> (0, +Inf)
   layout --> length(autoc.indeces)
 
