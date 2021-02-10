@@ -125,8 +125,7 @@ function inner_sampler(v::DMHVariate, X::Array{N})::Array{N, 2} where N <: Real
 				X[f, i] = new_x
 			end
 			counter += 1
-			println(counter)
-			if counter > 10#v.tune.m
+			if counter > v.tune.m # 10
 				return X
 			end
 		end

@@ -18,12 +18,7 @@ function create_nmat(dmat::Array{Float64,2}, threshold::Int64; weighted=false)
     return nmat
 end
 
-# to do
-
-function disallow_isolates(dmat, threshold)
-end
-
-function standardize_rows!(nmat::Array{Float64,2})
+function standardize_rows!(nmat::Array{R,2}) where R <: Real
 	for i in 1:size(nmat,1) #rows
 		for j in 1:size(nmat,2) #cols
 			if nmat[i,j] == 0
@@ -74,14 +69,12 @@ an adjacency matrix. Args:
 - nmat: either linguistic or spatial adjacency matrix
 """
 
-function count_concordant_edges(X::Array{N,1}, nmat::Array{Float64,2})::Float64 where N <: Real
+function count_concordant_edges(X::Array{R,1}, nmat::Array{Float64,2})::Float64 where R <: Real
 	conc_sum = zero(Float64)
 	n = length(X)
-	@inbounds for i in 1:n, j in 1:n
-	    if i < j && nmat[i,j] == 1
-			if X[i] == X[j] && X[i] ≠ -10
-				conc_sum += 1
-			end
+	@inbounds for i in 1:n, j in 1:i
+	    if i > j && nmat[i,j] == 1 && X[i] == X[j] && X[i] ≠ -10
+			conc_sum += 1
 		end
 	end
 	return conc_sum
@@ -95,7 +88,7 @@ of length(nfeatures) with one sum per feature.
 function weighted_ov_sum does the same, but uses the sum of the edge weights.
 """
 
-function ov_concordant_sums(X::Array{N,2}, nmat::Array{Float64,2})::Vector{Float64} where N <: Real
+function ov_concordant_sums(X::Array{R,2}, nmat::Array{Float64,2})::Vector{Float64} where R <: Real
 
 	nfeatures, nlang = size(X)
 	sums = Vector{Float64}(undef, nfeatures)
@@ -105,7 +98,7 @@ function ov_concordant_sums(X::Array{N,2}, nmat::Array{Float64,2})::Vector{Float
 	return sums
 end
 
-function find_concordant_pairs(X::Array{Int64,1})
+function find_concordant_pairs(X::Array{R,1}) where R <: Real
 	nlang = length(X)
 	pairs = Vector{Vector{Int64}}()
 	for i in 2:size(X,1)
@@ -118,105 +111,44 @@ function find_concordant_pairs(X::Array{Int64,1})
 	return pairs
 end
 
-function ov_weighted_sum(X::Array{Int64,2}, wmat::Array{Float64,2})
-	nfeat, nlang = size(X)
-	sums = zeros(nfeat)
-	for f in 1:nfeat
-		xvals = X[f,:]
-		pairs = find_concordant_pairs(xvals)
-		for (i,pair) in enumerate(pairs)
-			sums[f] += wmat[pair[1], pair[2]]
-		end
-	end
-	return sums
-end
-
-"""
-find_neighbours retrieves the indices of all the neighbours for each point (lang).
-
-"""
-
-function find_neighbours(X::Array{R,1}, nmat::Array{Float64,2}, lang::Int64) where R<:Real
-	neighbours = Vector{Int64}()
-	for (i,n) in enumerate(nmat[lang,:,:])
-		if n ≠ 0
-			push!(neighbours, i)
-		end
-	end
-	return neighbours
-end
-
-function find_weighted_neighbours(X, dmat, lang, threshold)
-	neighbours = Vector{Int64}()
-	for (i, n) in enumerate(dmat[lang,:,:])
-		if dmat[i,lang] <= threshold && dmat[i,lang] ≠ 0
-			push!(neighbours, i)
-		end
-	end
-	return neighbours
-end
-
-function neighbour_k_sum(X::Array{R,1}, nmat::Array{Float64,2}, lang::Int64, k::Int64) where R<:Real
-	sum = 0.0
-	neighbours = find_neighbours(X,nmat,lang)
-	for j in neighbours
-		w = nmat[lang,j]
-		if X[lang] == k
-			sum += w
-		end
-	end
-	return sum
-end
-
-function weighted_k_sum(X, wmat, dmat, lang, k; threshold=1000)
-	sum = 0.0
-	neighbours = find_weighted_neighbours(X, dmat, lang, threshold)
-	for n in neighbours
-		w = nmat[lang,n]
-		if X[lang] == k
-			sum += w
-		end
-	end
-	return sum
-end
-
 """
 function cond_concordant_sums: retrieves all the neighbour sums for features
 and values and returns them as an array of (nfeatures, nlangs, nvals)
-such that the new array[f,l,k] returns the sum for the ith language and the
-kth feature value. This can be used for either the weighted or regular
-binary neighbourhood matrix.
+such that the new array[f,l,k] returns the sum for the lth language and the
+kth feature value.
+
+function neighbour_sum retrieves neighbour sums for a specific language
+-> a vector of length(nvals).
 """
 
-function cond_concordant_sums(X::Array{R,2}, nmat::Array{N,2}) where {R<:Real, N<:Real}
+function cond_concordant_sums(X::Array{R,2}, nmat::Array{Float64,2}) where R <: Real
 	nvals = Int(maximum(X))
 	nfeatures, nlang = size(X)
-	sums = zeros(nfeatures, nlang, Int(nvals))
-	@inbounds for f in 1:nfeatures
+	sums = zeros(nfeatures, nlang, nvals)
+	for f in 1:nfeatures
 		xvals = X[f,:]
 		for (l, x) in enumerate(xvals)
+			neighbours = Bool.(nmat[l,:])
+			indices = findall(neighbours)
+			xi = xvals[indices]
 			for k in 1:nvals
-				sums[f, l, k] += neighbour_k_sum(xvals, nmat, l, k)
+				sums[f, l, k] = count(x -> x == k, xi)
 			end
 		end
 	end
 	return sums
 end
 
-function cond_weighted_sums(X, wmat, dmat)
-	nvals = maximum(X)
-	nfeat, nlang = size(X)
-	sums = zeros(nfeat, nlang, nvals)
-	for f in 1:nfeat
-		xvals = X[f,:]
-		for (l,x) in enumerate(xvals)
-			for k in 1:nvals
-				sums[f,l,k] += weighted_k_sum(xvals,wmat,dmat,l,k)
-			end
-		end
+function neighbour_sum(X::Array{R,2}, nmat::Array{Float64,2}, l::Int64, f::Int64, nvals::Int64) where R <: Real
+	sums = zeros(nvals)
+	@inbounds neighbour_vals = X[f,:] .* nmat[l,:]
+	@inbounds for k in 1:nvals
+		sums[k] = count(x-> x == k, neighbour_vals)
 	end
 	return sums
 end
+
+# Universality sums
 
 function universality_sum(X::Array{N,2})::Array{Float64,2} where N <: Real
 	nfeatures, nlangs = size(X)
@@ -244,4 +176,60 @@ function uni_probs(X::Array{Int64,2}) # for initial values of uni params
 		probs[f,:] = p
 	end
 	return probs
+end
+
+"""
+Below: weighted neighbour sum functions.
+"""
+
+function ov_weighted_sum(X::Array{Int64,2}, wmat::Array{Float64,2})
+	nfeat, nlang = size(X)
+	sums = zeros(nfeat)
+	for f in 1:nfeat
+		xvals = X[f,:]
+		pairs = find_concordant_pairs(xvals)
+		for (i,pair) in enumerate(pairs)
+			sums[f] += wmat[pair[1], pair[2]]
+		end
+	end
+	return sums
+end
+
+function find_weighted_neighbours(X, dmat, lang, threshold)
+	neighbours = Vector{Int64}()
+	for (i, n) in enumerate(dmat[lang,:,:])
+		if dmat[i,lang] <= threshold && dmat[i,lang] ≠ 0
+			push!(neighbours, i)
+		end
+	end
+	return neighbours
+end
+
+
+
+function weighted_k_sum(X, wmat, dmat, lang, k; threshold=1000)
+	sum = 0.0
+	neighbours = find_weighted_neighbours(X, dmat, lang, threshold)
+	for n in neighbours
+		w = nmat[lang,n]
+		if X[lang] == k
+			sum += w
+		end
+	end
+	return sum
+end
+
+function cond_weighted_sums(X, wmat, dmat)
+	nvals = maximum(X)
+	nfeat, nlang = size(X)
+	sums = zeros(nfeat, nlang, nvals)
+	for f in 1:nfeat
+		xvals = X[f,:]
+		for (l,x) in enumerate(xvals)
+			for k in 1:nvals
+				sums[f,l,k] += weighted_k_sum(xvals,wmat,dmat,l,k)
+			end
+		end
+	end
+	return sums
 end
