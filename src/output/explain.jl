@@ -9,7 +9,6 @@ plot1 = Plots.plot(trees[1])
 plot2 = Plots.plot(trees[1], treetype=:fan, msc=:blue, mc=:yellow, lc=:white,
            bg=:black, tipfont=(7, :lightgreen))
 """
-
 data = rand(Normal(0,1), 5000)
 
 my_data=Dict(:data=>data)
@@ -36,3 +35,5 @@ setsamplers!(model, samplers)
 sim = mcmc(model, my_data, inits, 5000, burnin=500, thin=5, chains=2)
 
 pv = plot(sim, [:autocor], fmt=:pdf, nrow=2, ncol=1)
+
+display(pv[1])
