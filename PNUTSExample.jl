@@ -67,7 +67,7 @@ inits = [ Dict{Symbol, Union{Any, Real}}(
         )
     ]
 
-scheme = [PNUTS(:mtree, target=0.8, targetNNI=8),
+scheme = [PNUTS(:mtree, target=0.8, targetNNI=4),
            SliceSimplex(:mypi),
           ]
 
@@ -75,7 +75,7 @@ setsamplers!(model, scheme);
 
 # do the mcmc simmulation. if trees=true the trees are stored and can later be
 # flushed ot a file output.
-sim = mcmc(model, my_data, inits, 250000, burnin=25000,thin=1, chains=2, trees=true)
+sim = mcmc(model, my_data, inits, 250000, burnin=62500,thin=1, chains=2, trees=true)
 
 # request more runs
 sim = mcmc(sim, 1000, trees=true)

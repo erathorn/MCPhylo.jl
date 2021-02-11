@@ -82,12 +82,11 @@ function sample!(v::PNUTSVariate, logfgrad::Function; adapt::Bool=false)
   if tune.adapt
      tune.m += 1
      tune.nniprime = 0
+
      nuts_sub!(v, tune.epsilon, logfgrad)
      Ht = (tune.target - tune.alpha / tune.nalpha)
-     avgnni = (1+tune.nniprime)/tune.nalpha
-     scaler = 0.1
-     #HT2 = invlogit(tune.targetNNI, scaler) - invlogit(avgnni, scaler)
-     HT2 = -(atan((1+tune.targetNNI)*scaler) - atan(avgnni*scaler))/(π*0.5)
+     avgnni = tune.nniprime > 0 ? tune.nniprime/tune.nalpha : 1.0
+     HT2 = 1/tune.targetNNI - 1/avgnni
      HT = (Ht + HT2)/2
      p = 1.0 / (tune.m + tune.t0)
      tune.Hbar = (1.0 - p) * tune.Hbar +
