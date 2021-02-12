@@ -25,7 +25,7 @@ using CSV
 using ChainRules
 using ChainRulesCore
 using DataStructures
-
+using ProgressMeter
 using CUDA
 if has_cuda()
   using GPUArrays
