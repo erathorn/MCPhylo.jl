@@ -23,7 +23,7 @@ end
 
 Get a vector of all bipartions of `tree`.
 
-The resulting vector contains Tuples of sets representing the bipartions.
+Returns a vector containing Tuples of sets representing the bipartions.
 """
 function get_bipartitions(tree::T)::Vector{Tuple} where T <:GeneralNode
     po_vect= post_order(tree)[1:end-1]

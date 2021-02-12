@@ -4,8 +4,21 @@
 
 This function calculates the log-likelihood of an evolutiuonary model using the
 Felsensteins pruning algorithm.
-
 The function is written such that it is differentiable by Zygote 0.5.3.
+
+Returns log-likelihood as a Real number.
+
+* `tree_postorder` : Vector of Nodes.
+
+* `pi` : Real number used in calculation.
+
+* `rates` : Vector of Floats, used in calculation.
+
+* `data` : Array of Floats, currently a placeholder.
+
+* `n_c` : Int64, nchar value derived from tree and dataset.
+
+* `blv` : Vector of Floats, branchlength vector derived from tree.
 """
 function FelsensteinFunction(tree_postorder::Vector{N}, pi_::Array{Float64}, rates::Float64,
                              data::Array{Float64,3}, n_c::Int64, blv::Array{Float64,1})::Float64 where {N<:GeneralNode}

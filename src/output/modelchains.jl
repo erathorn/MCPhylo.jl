@@ -1,7 +1,11 @@
 #################### ModelChains ####################
 
 #################### Constructors ####################
+"""
+    ModelChains(c::Chains, m::Model)
 
+See `Chains()`.
+"""
 function ModelChains(c::Chains, m::Model)
   ModelChains(c.value, c.range, c.names, c.chains, m, c.trees, c.moves, c.tree_names)
 end

@@ -146,6 +146,10 @@ This function takes a filename as a String, and returns an array of trees(repres
 The file should solely consist of newick tree representations, separated by line.
 The function checks for proper newick formatting, and will return an error if the file is
 incorrectly formatted.
+
+Returns an Array of Nodes; each Node is the root of the tree represented by a newick string in the file.
+
+* `filename` : name of file containing newick strings to parse.
 """
 function ParseNewick(filename::String)::Array{AbstractNode, 1}
 

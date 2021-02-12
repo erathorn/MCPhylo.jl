@@ -3,7 +3,7 @@ MCPhylo offers several tree functionalities. The underlying type is that of a
 `GeneralNode`. It provides the functionality necessary to do MCMC operations with
 tree structures.
 
-## Node_Type
+## Node Type
 ```@autodocs
 Modules = [MCPhylo]
 Pages   = ["Node_Type.jl"]
@@ -24,7 +24,7 @@ Main.MCPhylo.to_distance_matrix
 ```
 
 
-## Tree_Basics.jl
+## Tree Basics
 
 This file is a bit larger, and so will be broken into (hopefully coherent) subgroups, listed here:
 
@@ -76,7 +76,7 @@ Main.MCPhylo.set_binary!
 
 
 
-## Tree_Clustering.jl
+## Tree Clustering
 
 ```@docs
 Main.MCPhylo.neighbor_joining
@@ -84,31 +84,31 @@ Main.MCPhylo.upgma
 ```
 
 
-## Tree_Consensus.jl
+## Tree Consensus
 ```@autodocs
 Modules = [MCPhylo]
 Pages   = ["Tree_Consensus.jl"]
 Filter =
 ```
-## Tree_Distance.jl
+## Tree Distance
 ```@autodocs
 Modules = [MCPhylo]
 Pages   = ["Tree_Distance.jl"]
 Filter =
 ```
-## Tree_Ladderizing.jl
+## Tree Ladderizing
 ```@autodocs
 Modules = [MCPhylo]
 Pages   = ["Tree_Ladderizing.jl"]
 Filter =
 ```
-## Tree_Legacy.jl
+## Tree Legacy
 ```@autodocs
 Modules = [MCPhylo]
 Pages   = ["Tree_Legacy.jl"]
 Filter =
 ```
-## Tree_moves.jl
+## Tree moves
 ```@docs
 Main.MCPhylo.NNI!
 Main.MCPhylo.NNI
@@ -124,20 +124,20 @@ Main.MCPhylo.swing!
 Main.MCPhylo.swing
 ```
 
-## Tree_Pruning.jl
+## Tree Pruning
 ```@docs
 Main.MCPhylo.prune_tree!
 Main.MCPhylo.prune_tree
 ```
 
-## Tree_Search.jl
+## Tree Search
 ```@docs
 Main.MCPhylo.find_binary
 Main.MCPhylo.find_num
 Main.MCPhylo.find_root
 ```
 
-## Tree_Traversal.jl
+## Tree Traversal
 ```@docs
 Main.MCPhylo.get_leaves
 Main.MCPhylo.level_order

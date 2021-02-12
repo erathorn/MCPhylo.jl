@@ -11,12 +11,33 @@ dims(d::AbstractDependent) = size(d)
 function names(d::AbstractDependent)
   names(d, d.symbol)
 end
+"""
+    setmonitor!(d::AbstractDependent, monitor::Bool)
 
+Specify node elements to be included in monitored MCMC sampler output.
+
+Returns d with its monitor field updated to reflect the specified monitoring.
+
+* `d` : node whose elements contain sampled MCMC values.
+
+* `monitor` : boolean indicating whether all elements are monitored.
+
+"""
 function setmonitor!(d::AbstractDependent, monitor::Bool)
   value = monitor ? Int[0] : Int[]
   setmonitor!(d, value)
 end
+"""
+    setmonitor!(d::AbstractDependent, monitor::Vector{Int})
 
+Specify node elements to be included in monitored MCMC sampler output.
+
+Returns d with its monitor field updated to reflect the specified monitoring.
+
+* `d` : node whose elements contain sampled MCMC values.
+
+* `monitor` : vector of element-wise indices of elements to monitor.
+"""
 function setmonitor!(d::AbstractDependent, monitor::Vector{Int})
   values = monitor
   if !isempty(monitor)
@@ -33,11 +54,33 @@ function setmonitor!(d::AbstractDependent, monitor::Vector{Int})
   d
 end
 #
+"""
+    setmonitor!(d::AbstractTreeStochastic, monitor::Bool)
+
+Specify node elements to be included in monitored MCMC sampler output.
+
+Returns `d` with its `monitor` field updated to reflect the specified monitoring.
+
+* `d` : node whose elements contain sampled MCMC values.
+
+* `monitor` : boolean indicating whether all elements are monitored.
+"""
 function setmonitor!(d::AbstractTreeStochastic, monitor::Bool)
   value = monitor ? Int[0] : Int[]
   setmonitor!(d, value)
 end
 
+"""
+    setmonitor!(d::AbstractTreeStochastic, monitor::Vector{Int})
+
+Specify node elements to be included in monitored MCMC sampler output.
+
+Returns `d` with its `monitor` field updated to reflect the specified monitoring.
+
+* `d` : node whose elements contain sampled MCMC values.
+
+* `monitor` : vector of element-wise indices of elements to monitor.
+"""
 function setmonitor!(d::AbstractTreeStochastic, monitor::Vector{Int})
   values = monitor
   if !isempty(monitor)
@@ -85,12 +128,14 @@ gradlogpdf(d::AbstractDependent, transform::Bool=false) = 0.0
 #################### Constructors ####################
 
 """
-    function Logical(f::Function, monitor::Union{Bool, Vector{Int}}=true)
+    Logical(f::Function, monitor::Union{Bool, Vector{Int}}=true)
 
 Constructor for a Logical model node. This function assumes a the output of the
-logical operation to be scalar. `f` is a function specifying the deterministic
-operation performed on its arguments. These arguments are other nodes of the model.
-`monitor` indicates whether the results should be monitored, i.e.saved.
+logical operation to be scalar.
+
+* `f`: Function specifying the deterministic operation performed on its arguments. These arguments are other nodes of the model.
+
+* `monitor` : Indicates whether the results should be monitored, i.e.saved.
 """
 function Logical(f::Function, monitor::Union{Bool, Vector{Int}}=true)
   value = Float64(NaN)
@@ -102,12 +147,15 @@ end
 Logical(f::Function, d::Integer, args...) = Logical(d, f, args...)
 
 """
-    function Logical(d::Integer, f::Function, monitor::Union{Bool, Vector{Int}}=true)
+    Logical(d::Integer, f::Function, monitor::Union{Bool, Vector{Int}}=true)
 
-Constructor for a Logical model node. The dimension of the output is specified via
-the paramter `d`. `f` is a function specifying the deterministic
-operation performed on its arguments. These arguments are other nodes of the model.
-`monitor` indicates whether the results should be monitored, i.e.saved.
+Constructor for a Logical model node.
+
+* `d` : Specifies the dimension of the output.
+
+* `f` : Specifies the deterministic operation performed on its arguments. These arguments are other nodes of the model.
+
+* `monitor` : Indicates whether the results should be monitored, i.e.saved.
 """
 function Logical(d::Integer, f::Function,
                  monitor::Union{Bool, Vector{Int}}=true)
@@ -120,12 +168,13 @@ end
 Logical(f::Function, d::T, args...)  where T<:GeneralNode = Logical(d, f, args...)
 
 """
-Logical(d::T, f::Function, monitor::Union{Bool, Vector{Int}}=true) where T<:GeneralNode
+    Logical(d::T, f::Function, monitor::Union{Bool, Vector{Int}}=true) where T<:GeneralNode
 
 Constructor for a Logical model node, which can hold a Node structure, i.e. a tree.
-`f` is a function specifying the deterministic operation performed on its arguments.
-These arguments are other nodes of the model. `monitor` indicates whether the results
-should be monitored, i.e. saved.
+
+* `f` is a function specifying the deterministic operation performed on its arguments. These arguments are other nodes of the model.
+
+* `monitor` indicates whether the results should be monitored, i.e. saved.
 """
 function Logical(d::T, f::Function,
                  monitor::Union{Bool, Vector{Int}}=true) where T<:GeneralNode
@@ -139,17 +188,48 @@ ScalarLogical(x::T) where T <: Real = x
 
 
 #################### Updating ####################
+"""
+    setinits!(l::AbstractLogical, m::Model, ::Any=nothing)
 
+Set initial values for a logical node.
+
+Returns the result of a call to setmonitor!(l, l.monitor) or setmonitor!(d, d.monitor).
+
+* `l` : logical node to which to assign initial values.
+
+* `m` : model containing the node.
+"""
 function setinits!(l::AbstractLogical, m::Model, ::Any=nothing)
   l.value = l.eval(m)
   setmonitor!(l, l.monitor)
 end
+"""
+    setinits!(d::TreeLogical, m::Model, x::T) where {T<:Node}
 
+Set initial values for a logical node.
+
+Returns the result of a call to `setmonitor!(l, l.monitor)` or `setmonitor!(d, d.monitor)`.
+
+* `l`  : logical node to which to assign initial values.
+
+* `m`  : model containing the node.
+"""
 function setinits!(d::TreeLogical, m::Model, x::T) where {T<:Node}
     d.value = d.eval(m)
     setmonitor!(d, d.monitor)
 end # function
 
+"""
+    update!(l::AbstractLogical, m::Model)
+
+Update the values of a logical node according to its relationship with others in a model.
+
+Returns the node with its values updated.
+
+* `l` : logical node to update.
+
+* `m` : model containing the node.
+"""
 function update!(l::AbstractLogical, m::Model)
   l.value = l.eval(m)
   l
@@ -193,9 +273,11 @@ end
     Stochastic(f::Function, monitor::Union{Bool, Vector{Int}}=true)
 
 Constructor for a Stochastic model node. This function assumes a the output of the
-logical operation to be scalar. `f` specifies the distributional reslationship
-between the arguments and the node. These arguments are other nodes of the model.
- `monitor` indicates whether the results should be monitored, i.e. saved.
+logical operation to be scalar.
+
+* `f` : Specifies the distributional relationship between the arguments and the node. These arguments are other nodes of the model.
+
+* `monitor` : Indicates whether the results should be monitored, i.e. saved.
 """
 function Stochastic(f::Function, monitor::Union{Bool, Vector{Int}}=true)
   value = Float64(NaN)
@@ -231,14 +313,18 @@ end
 
 
 """
-Stochastic(d::Integer, f::Function, monitor::Union{Bool, Vector{Int}}=true, cuda::Bool=false)
+    Stochastic(d::Integer, f::Function, monitor::Union{Bool,
+        Vector{Int}}=true, cuda::Bool=false)
 
-Constructor for a Stochastic model node. The dimension of the output is specified via
-the paramter `d`. `f` specifies the distributional reslationship
-between the arguments and the node. These arguments are other nodes of the model.
- `monitor` indicates whether the results should be monitored, i.e. saved.
+Constructor for a Stochastic model node.
 
-`cuda` indicates whether the function supports cuda functionality and the data is
+* `d` : Specifies dimensions of the output.
+
+* `f` : Specifies the distributional relationship between the arguments and the node. These arguments are other nodes of the model.
+
+* `monitor` : indicates whether the results should be monitored, i.e. saved.
+
+* `cuda` : indicates whether the function supports cuda functionality and the data is
 in the respective format. THIS FEATURE IS NOT FULLY SUPPORTED.
 """
 function Stochastic(d::Integer, f::Function,
@@ -255,12 +341,15 @@ Stochastic(f::Function, d::T, args...)  where T<:GeneralNode = Stochastic(d, f, 
 
 
 """
-    function Stochastic(d::N, f::Function, monitor::Union{Bool, Vector{Int}}=true) where N<:GeneralNode
+
+    Stochastic(d::N, f::Function, monitor::Union{Bool, Vector{Int}}=true) where N<:GeneralNode
 
 Constructor for a Stochastic model node, which can hold a Node structure, i.e. a tree.
-`f` specifies the distributional reslationship between the arguments and the node.
-These arguments are other nodes of the model. `monitor` indicates whether the 
-results should be monitored, i.e. saved.
+
+* `f` : Specifies the distributional reslationship between the arguments and the node.
+These arguments are other nodes of the model.
+
+* `monitor` : Indicates whether the results should be monitored, i.e. saved.
 """
 function Stochastic(d::N, f::Function, monitor::Union{Bool, Vector{Int}}=true) where N<:GeneralNode
     value = Node()
@@ -274,13 +363,37 @@ ScalarStochastic(x::T) where T <: Real = x
 
 
 #################### Updating ####################
+"""
+    setinits!(s::ScalarStochastic, m::Model, x::Real)
 
+Set initial values for a stochastic node.
+
+Returns the node with its assigned initial values.
+
+* `s` : stochastic node to which to assign initial values.
+
+* `m` : model containing the node.
+
+* `x` : values to assign to the node.
+"""
 function setinits!(s::ScalarStochastic, m::Model, x::Real)
   s.value = convert(Float64, x)
   s.distr = s.eval(m)
   setmonitor!(s, s.monitor)
 end
+"""
+    setinits!(s::ArrayStochastic, m::Model, x::DenseArray)
 
+Set initial values for a stochastic node.
+
+Returns the node with its assigned initial values.
+
+* `s` : stochastic node to which to assign initial values.
+
+* `m` : model containing the node.
+
+* `x` : values to assign to the node.
+"""
 function setinits!(s::ArrayStochastic, m::Model, x::DenseArray)
   s.value = convert(typeof(s.value), copy(x))
   s.distr = s.eval(m)
@@ -300,7 +413,19 @@ end
 function setinits!(s::AbstractStochastic, m::Model, x)
   throw(ArgumentError("incompatible initial value for node : $(s.symbol)"))
 end
+"""
+    setinits!(d::TreeStochastic, m::Model, x::T) where {T<:GeneralNode}
 
+Set initial values for a stochastic node.
+
+Returns the node with its assigned initial values.
+
+* `s` or `d` : stochastic node to which to assign initial values.
+
+* `m` : model containing the node.
+
+* `x` : values to assign to the node.
+"""
 function setinits!(d::TreeStochastic, m::Model, x::T) where {T<:GeneralNode}
     d.value = x
     d.distr = d.eval(m)
@@ -309,7 +434,17 @@ function setinits!(d::TreeStochastic, m::Model, x::T) where {T<:GeneralNode}
 end # function
 
 
+"""
+    update!(s::AbstractStochastic, m::Model)
 
+Update the values of a stochastic node according to its relationship with others in a model.
+
+Returns the node with its values updated.
+
+* `s` : stochastic node to update.
+
+* `m` : model containing the node.
+"""
 function update!(s::AbstractStochastic, m::Model)
   s.distr = s.eval(m)
   s

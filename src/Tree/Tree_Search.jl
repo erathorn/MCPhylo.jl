@@ -114,9 +114,11 @@ end
 """
     find_root(node::Node)::Node
 
-Takes a node in a tree and finds the root of that tree.
+Finds the root of tree indicated by Node.
 
 Returns reference to root Node of the tree.
+
+* `node` : Node in Tree of interest.
 """
 function find_root(node::Node)::Node
     while node.root == false

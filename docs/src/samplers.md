@@ -1,9 +1,6 @@
 # samplers
 Functions found in all files of samplers folder, ordered according to file of origin.
 
-```@index
-Pages = ["samplers.md"]
-```
 
 ## abc
 ```@docs
@@ -20,7 +17,7 @@ Main.MCPhylo.AMM
 
 [Back to top.](@ref samplers)
 
-## amwg.jl
+## amwg
 ```@docs
 Main.MCPhylo.AMWG
 ```
@@ -29,7 +26,7 @@ Main.MCPhylo.AMWG
 
 [Back to top.](@ref samplers)
 
-## bhmc.jl
+## bhmc
 
 ```@docs
 Main.MCPhylo.BHMC
@@ -38,7 +35,7 @@ Main.MCPhylo.BHMC
 
 [Back to top.](@ref samplers)
 
-## bia.jl
+## bia
 
 ```@docs
 Main.MCPhylo.BIA
@@ -47,7 +44,7 @@ Main.MCPhylo.BIA
 
 [Back to top.](@ref samplers)
 
-## bmc3.jl
+## bmc3
 
 ```@docs
 Main.MCPhylo.BMC3
@@ -57,7 +54,7 @@ Main.MCPhylo.BMC3
 
 [Back to top.](@ref samplers)
 
-## bmg.jl
+## bmg
 
 ```@docs
 Main.MCPhylo.BMG
@@ -67,7 +64,7 @@ Main.MCPhylo.BMG
 
 [Back to top.](@ref samplers)
 
-## dgs.jl
+## dgs
 
 ```@docs
 Main.MCPhylo.DGS
@@ -76,7 +73,7 @@ Main.MCPhylo.DGS
 
 [Back to top.](@ref samplers)
 
-## hmc.jl
+## hmc
 
 ```@docs
 Main.MCPhylo.HMC
@@ -86,7 +83,7 @@ Main.MCPhylo.HMC
 
 [Back to top.](@ref samplers)
 
-## mala.jl
+## mala
 
 ```@docs
 Main.MCPhylo.MALA
@@ -96,7 +93,7 @@ Main.MCPhylo.MALA
 
 [Back to top.](@ref samplers)
 
-## miss.jl
+## miss
 
 ```@docs
 Main.MCPhylo.MISS
@@ -107,7 +104,7 @@ Main.MCPhylo.MISS
 
 [Back to top.](@ref samplers)
 
-## nuts.jl
+## nuts
 
 ```@docs
 Main.MCPhylo.NUTS
@@ -135,7 +132,7 @@ Main.MCPhylo.RWM(::Main.MCPhylo.ElementOrVector{Symbol}, ::Main.MCPhylo.ElementO
 ```
 [Back to top.](@ref samplers)
 
-## slice.jl
+## slice
 
 ```@docs
 Main.MCPhylo.Slice
@@ -145,7 +142,7 @@ Main.MCPhylo.Slice
 
 [Back to top.](@ref samplers)
 
-## slicesimplex.jl
+## slicesimplex
 
 ```@docs
 Main.MCPhylo.SliceSimplex
@@ -153,7 +150,7 @@ Main.MCPhylo.SliceSimplex
 
 
 
-## sampler.jl
+## sampler
 
 ```@docs
 Main.MCPhylo.Sampler

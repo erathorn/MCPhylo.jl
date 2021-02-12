@@ -1,25 +1,25 @@
 # Parser
-Functions found in all files of Parser folder, ordered according to file of origin.
+Parser functions create DataFrame and/or Tree representations from data stored as various filetypes.
 
-## ParseCSV.jl
+## CSV
 ```@autodocs
 Modules = [MCPhylo]
 Pages   = ["Parser/ParseCSV.jl"]
 Filter = 
 ```
-## ParseNewick.jl
+## Newick
 ```@autodocs
 Modules = [MCPhylo]
 Pages   = ["ParseNewick.jl"]
 Filter = 
 ```
-## ParseNexus.jl
+## Nexus
 ```@autodocs
 Modules = [MCPhylo]
 Pages   = ["ParseNexus.jl"]
 Filter = 
 ```
-## Parser.jl
+## General Parser Functions
 ```@autodocs
 Modules = [MCPhylo]
 Pages   = ["Parser.jl"]

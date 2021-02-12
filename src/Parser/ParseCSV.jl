@@ -8,8 +8,13 @@ The file should follow the conventions used for MrBayes. For example:
     Welsh_N_0,0,0,0,0,0,0,?,0,0,0,0,?,?,0,0,?,0,0,0,1,?,?,0
     Sardinian_N_0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1,0,0,?,0,0,0,0,0
 
- Set input for "header" to false
-if no header is present in the file.
+ Set input for "header" to false if no header is present in the file.
+
+Returns ntax, nchar as Integer values, gap as a String; df is returned as a DataFrame, and stores language names and data.
+
+* `filename` : Name of CSV file to parse.
+
+* `header` : Boolean value. "true" denotes there is a header to be skipped; input "false" if the file does not contain a header. 
 """
 function ParseCSV(filename::String, header::Bool=true)
     open(filename, "r") do file

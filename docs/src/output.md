@@ -1,32 +1,93 @@
 # output
 
 
-```@index
-Pages = ["output.md"]
-```
 
 
 ## Chains
 ```@docs
 Main.MCPhylo.Chains
+Main.MCPhylo.getindex
+Main.MCPhylo.setindex!
+Main.MCPhylo.Base.cat
+Main.MCPhylo.Base.keys(::Main.MCPhylo.AbstractChains)
+Main.MCPhylo.Base.show(::IO, ::Main.MCPhylo.AbstractChains)
+Main.MCPhylo.Base.size
 ```
-Construct a `Chains` object that stores MCMC sampler output. Returns an object of type `Chains`.
 
-#### Arguments 
-* `iters`: total number of iterations in each sampler run, of which `length(start:thin:iters)` outputted iterations will be stored in the object.
+## File I/O
 
-* `params`: number of parameters to store.
+```@autodocs
+Modules = [MCPhylo]
+Pages   = ["fileio.jl"]
+Filter =
+```
 
-* `value`: array whose first, second (optional), and third (optional) dimensions index outputted iterations, parameter elements, and runs of an MCMC sampler, respectively.
+## Discrete Diagnostics
 
-* `start`: number of the first iteration to be stored.
+```@autodocs
+Modules = [MCPhylo]
+Pages   = ["discretediag.jl"]
+Filter =
+```
 
-* `thin`: number of steps between consecutive iterations to be stored.
+## Gelman Diagnostic
 
-* `chains`: number of simulation runs for which to store output, or indices to the runs (default: 1, 2, …).
+```@autodocs
+Modules = [MCPhylo]
+Pages   = ["gelmandiag.jl"]
+Filter =
+```
 
-* `names`: names to assign to the parameter elements (default: `"Param1"`, `"Param2"`, …).
+## Geweke Diagnostic
 
+```@docs
+Main.MCPhylo.gewekediag
+```
 
+## Heidel Diagnostic
 
+```@docs
+Main.MCPhylo.heideldiag
+```
 
+## Raftery and Lewis Diagnostic
+
+```@docs
+Main.MCPhylo.rafterydiag
+```
+
+## Monte Carlo Standard Errors
+
+```@docs
+Main.MCPhylo.mcse
+```
+
+## ModelChains
+
+```@docs
+Main.MCPhylo.ModelChains
+```
+
+## Model-Based Inference
+
+```@autodocs
+Modules = [MCPhylo]
+Pages   = ["modelstats.jl"]
+Filter =
+```
+
+## Plot
+
+```@autodocs
+Modules = [MCPhylo]
+Pages   = ["plot.jl"]
+Filter =
+```
+
+## Posterior Summary Statistics
+
+```@autodocs
+Modules = [MCPhylo]
+Pages   = ["stats.jl"]
+Filter =
+```
