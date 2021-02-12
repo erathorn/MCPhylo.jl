@@ -13,6 +13,7 @@ using Printf: @sprintf
 using LinearAlgebra
 using Plots
 using StatsPlots
+import RecipesBase: plot
 @reexport using StatsPlots
 using Zygote
 using FiniteDiff
@@ -23,7 +24,7 @@ using Random
 using CSV
 using ChainRules
 using ChainRulesCore
-
+using DataStructures
 
 using CUDA
 if has_cuda()
@@ -69,7 +70,7 @@ using LightGraphs: DiGraph, add_edge!, outneighbors,
        topological_sort_by_dfs, vertices
 import StatsBase: autocor, autocov, countmap, counts, describe, predict,
        quantile, sample, sem, summarystats
-import DataStructures: PriorityQueue, dequeue!
+
 
 include("distributions/pdmats2.jl")
 using .PDMats2
