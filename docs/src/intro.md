@@ -50,15 +50,15 @@ You can flush the model parameters and the sampled trees to a file, using the `t
 
 `PNUTS ` is a sampler which does *Phylogenetic No-U-Turn sampling* (Wahle (forthcomming)). It samples tree stochastic nodes.
 
-`RWM` Random walk metroplis hastings sampling can work with trees now. For numerical nodes the sampler and the function signature is as in the original Mamba package. For tree structures the signature is slightly different: `RWM(:tree, :all)` or `RWM(:tree, [:NNI, :Swing])` The first variant uses all available tree manipulation moves (see [Tree Manipulation](Tree.md#Tree Manipulation)), the second variant only makes use of a user defined subset of these moves. Ladderization of the tree is not an eligible tree manipulation move
+`RWM` Random walk metroplis hastings sampling can work with trees now. For numerical nodes the sampler and the function signature is as in the original Mamba package. For tree structures the signature is slightly different: `RWM(:tree, :all)` or `RWM(:tree, [:NNI, :Swing])` The first variant uses all available tree manipulation moves (see [Tree Manipulation](tree.md#Tree Manipulation)), the second variant only makes use of a user defined subset of these moves. Ladderization of the tree is not an eligible tree manipulation move
 
 `NUTS` can take the argument `dtype=:Zygote` to use Zygote for the calculation of the gradient. The default is finite differencing.
 
 `Slice` can also sample trees. It does a slice sampling operation on the branch lengths of the tree.
 ## Tree Functionalities
 
-For the available tree functionalities see: [Tree Functionalities](Tree.md), and for exact documentation of the functions involved, see the [Tree Functionality page] (Tree.md) linked along the left-hand side of the page.
+For the available tree functionalities see: [Tree Functionalities](tree.md), and for exact documentation of the functions involved, see the [Tree Functionality page] (tree.md) linked along the left-hand side of the page.
 
 ```@contents
-Pages = ["Tree.md", "Likelihood.md", "Parser.md", "distributions.md", "model.md", "output.md", "Sampler.md", "samplers.md", "Substitution.md", "Utils.md"]
+Pages = ["tree.md", "likelihood.md", "parser.md", "distributions.md", "model.md", "output.md", "sampler.md", "samplers.md", "substitution.md", "utils.md"]
 ```
