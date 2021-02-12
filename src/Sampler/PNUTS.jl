@@ -19,14 +19,16 @@ mutable struct PNUTSTune <: SamplerTune
   target::Float64
   moves::Int
   tree_depth::Int
+  targetNNI::Int
+  nni::Int
 
 
   PNUTSTune() = new()
 
   function PNUTSTune(x::Vector{T}, epsilon::Float64, logfgrad::Union{Function, Missing};
-                    target::Real=0.6, tree_depth::Int=10) where T<:Node
+                    target::Real=0.6, tree_depth::Int=10, targetNNI::Int=5) where T<:Node
     new(logfgrad, false, 0.0, epsilon, 1.0, 0.05, 0.0, 0.75, 0, NaN, 0, 10.0,0.003,
-        target,0, tree_depth)
+        target,0, tree_depth,targetNNI,0)
   end
 end
 
@@ -81,10 +83,12 @@ function sample!(v::PNUTSVariate, logfgrad::Function; adapt::Bool=false)
      tune.m += 1
 
      nuts_sub!(v, tune.epsilon, logfgrad)
-     HT = (tune.target - tune.alpha / tune.nalpha)
-     #avgnni = tune.nniprime > 0 ? tune.nniprime/tune.nalpha : 1.0
-     #HT2 = 1/tune.targetNNI - 1/avgnni
-     #HT = (Ht + HT2)/2
+     HTACC = (tune.target - tune.alpha / tune.nalpha)
+     avg = (tune.nni+1)/tune.nalpha
+     HTNNI = (1/tune.targetNNI - 1/avg)
+
+     HT = (HTACC + HTNNI) / 2
+
      p = 1.0 / (tune.m + tune.t0)
      tune.Hbar = (1.0 - p) * tune.Hbar +
                  p * HT
@@ -94,7 +98,6 @@ function sample!(v::PNUTSVariate, logfgrad::Function; adapt::Bool=false)
                            (1.0 - p) * log(tune.epsilonbar))
   else
      if (tune.m > 0) tune.epsilon = tune.epsilonbar end
-
      nuts_sub!(v, tune.epsilon, logfgrad)
   end
   v
@@ -142,12 +145,12 @@ function nuts_sub!(v::P, epsilon::Float64, logfgrad::Function)::P where P<:PNUTS
     if pm == -1
 
       xminus, rminus, gradminus, _, _, _, xprime, nprime, sprime, alpha,
-        nalpha, nni1, lpp = buildtree(xminus, rminus, gradminus, pm, j, epsilon, logfgrad,
+        nalpha, nni1, lpp, nnip = buildtree(xminus, rminus, gradminus, pm, j, epsilon, logfgrad,
                            logp0, logu0, delta, nl,lu)
 
     else
 
-      _, _, _, xplus, rplus, gradplus, xprime, nprime, sprime, alpha, nalpha, nni1, lpp =
+      _, _, _, xplus, rplus, gradplus, xprime, nprime, sprime, alpha, nalpha, nni1, lpp, nnip=
         buildtree(xplus, rplus, gradplus, pm, j, epsilon, logfgrad, logp0,
                   logu0, delta, nl, lu)
 
@@ -161,6 +164,7 @@ function nuts_sub!(v::P, epsilon::Float64, logfgrad::Function)::P where P<:PNUTS
     s = sprime && nouturn(xminus, xplus, rminus, rplus, gradminus, gradplus, epsilon, logfgrad, delta, nl, j)
     v.tune.alpha, v.tune.nalpha = alpha, nalpha
     nni += nni1
+    v.tune.nni = nnip
   end
   v.tune.moves += nni
   v
@@ -258,7 +262,7 @@ end
 function buildtree(x::T, r::V,
                    grad::V, pm::I, j::I,
                    epsilon::F, logfgrad::Function, logp0::F, logu0::F,
-                   delta::F, sz::I, lu::F)::Tuple{T, V, V, T, V, V, T, I, Bool, F, F, I, F}  where {T<:Node, V<:Vector{Float64}, I<:Integer, F<:Real}
+                   delta::F, sz::I, lu::F)::Tuple{T, V, V, T, V, V, T, I, Bool, F, F, I, F, I}  where {T<:Node, V<:Vector{Float64}, I<:Integer, F<:Real}
 
 
   if j == 0
@@ -276,22 +280,22 @@ function buildtree(x::T, r::V,
     gradminus = gradplus = gradprime
     alphaprime = min(1.0, exp(logpprime - logp0))
     nalphaprime = 1
-
+    nnip = nni
   else
     xminus, rminus, gradminus, xplus, rplus, gradplus, xprime, nprime, sprime,
-      alphaprime, nalphaprime, nni, logpprime = buildtree(x, r, grad, pm, j - 1, epsilon,
+      alphaprime, nalphaprime, nni, logpprime, nnip = buildtree(x, r, grad, pm, j - 1, epsilon,
                                           logfgrad, logp0, logu0, delta,  sz, lu)
     if sprime
 
       if pm == -1
 
         xminus, rminus, gradminus, _, _, _, xprime2, nprime2, sprime2,
-          alphaprime2, nalphaprime2 , nni, logpprime = buildtree(xminus, rminus, gradminus, pm,
+          alphaprime2, nalphaprime2 , nni, logpprimem, nnip2 = buildtree(xminus, rminus, gradminus, pm,
                                                 j - 1, epsilon, logfgrad, logp0,
                                                 logu0, delta,  sz, lu)
       else
         _, _, _, xplus, rplus, gradplus, xprime2, nprime2, sprime2,
-          alphaprime2, nalphaprime2, nni, logpprime = buildtree(xplus, rplus, gradplus, pm,
+          alphaprime2, nalphaprime2, nni, logpprime, nnip2 = buildtree(xplus, rplus, gradplus, pm,
                                                 j - 1, epsilon, logfgrad, logp0,
                                                 logu0, delta, sz,lu)
       end # if pm
@@ -303,11 +307,12 @@ function buildtree(x::T, r::V,
       sprime = sprime2 && nouturn(xminus, xplus, rminus, rplus, gradminus, gradplus, epsilon, logfgrad, delta, sz, j)
       alphaprime += alphaprime2
       nalphaprime += nalphaprime2
+      nnip += nnip2
     end #if sprime
   end #if j
 
   xminus, rminus, gradminus, xplus, rplus, gradplus, xprime, nprime, sprime,
-    alphaprime, nalphaprime, nni, logpprime
+    alphaprime, nalphaprime, nni, logpprime, nnip
 end
 
 
@@ -349,7 +354,7 @@ function nutsepsilon(x::Node, logfgrad::Function, delta::Float64)
   pm = 2 * (prob > 0.5) - 1
   while prob^pm > 0.5^pm
     epsilon *= 2.0^pm
-    #x0 = deepcopy(x)
+    x0 = deepcopy(x)
     _, rprime, logfprime, _ ,_ = refraction(x0, r0, 1, grad0, epsilon, logfgrad, delta, n)
 
     prob = exp(logfprime - logf0 - 0.5 * (dot(rprime) - dot(r0)))

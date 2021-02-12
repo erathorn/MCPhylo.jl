@@ -251,7 +251,7 @@ function setinits!(s::AbstractStochastic, m::Model, x)
 end
 
 function setinits!(d::TreeStochastic, m::Model, x::T) where {T<:GeneralNode}
-    d.value = x
+    d.value = deepcopy(x)
     d.distr = d.eval(m)
     insupport(d.distr, x) || throw(ArgumentError("The supplied tree does not match the topological tree constraints."))
     setmonitor!(d, d.monitor)

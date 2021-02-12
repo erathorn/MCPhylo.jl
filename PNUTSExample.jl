@@ -24,7 +24,7 @@ Random.seed!(42)
 
 
 #mt, df = make_tree_with_data("Example.nex", binary=true); # load your own nexus file
-mt, df = make_tree_with_data("notebook/Timor-Alor-Pantar.cc.phy.nex"); # load your own nexus file
+mt, df = make_tree_with_data("notebook/Dravidian.cc.phy.nex"); # load your own nexus file
 
 
 
@@ -41,8 +41,8 @@ my_data = Dict{Symbol, Any}(
 
 
 # model setup
-model =  Model(                                                 # substiution rate  # site rates
-    df = Stochastic(3, (mtree, mypi) ->  PhyloDist(mtree, mypi, [1.0],              [1.0], Restriction), false, false),
+model =  Model(
+    df = Stochastic(3, (mtree, mypi) ->  PhyloDist(mtree, mypi, [1.0], [1.0], Restriction), false, false),
     mypi = Stochastic(1, () -> Dirichlet(2,1)),
     mtree = Stochastic(Node(), () -> CompoundDirichlet(1.0,1.0,0.100,1.0), true)
      )
@@ -67,7 +67,7 @@ inits = [ Dict{Symbol, Union{Any, Real}}(
         )
     ]
 
-scheme = [PNUTS(:mtree, target=0.8, targetNNI=4),
+scheme = [PNUTS(:mtree, target=0.7, targetNNI=4),
            SliceSimplex(:mypi),
           ]
 
@@ -75,10 +75,10 @@ setsamplers!(model, scheme);
 
 # do the mcmc simmulation. if trees=true the trees are stored and can later be
 # flushed ot a file output.
-sim = mcmc(model, my_data, inits, 250000, burnin=62500,thin=1, chains=2, trees=true)
+sim = mcmc(model, my_data, inits, 2500, burnin=625,thin=1, chains=2, trees=true)
 
 # request more runs
-sim = mcmc(sim, 1000, trees=true)
+sim = mcmc(sim, 500, trees=true)
 
 # write the output to a path specified as the second argument
 to_file(sim, "example_run")
