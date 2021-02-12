@@ -13,8 +13,8 @@ using Printf: @sprintf
 using LinearAlgebra
 using Plots
 using StatsPlots
-import RecipesBase: plot
 @reexport using StatsPlots
+import RecipesBase: plot
 using Zygote
 using FiniteDiff
 using Showoff: showoff
