@@ -32,7 +32,7 @@ samplers = [NUTS(:μ),
 setsamplers!(model, samplers)
 
 # sim = mcmc(model, my_data, inits, 5000, burnin=500, thin=5, chains=2)
-sim = mcmc(model, my_data, inits, 5000, burnin=500, thin=5, chains=2)
+sim = mcmc(model, my_data, inits, 1000, burnin=100, thin=5, chains=2)
 
 pv = plot(sim, [:autocor], fmt=:pdf, nrow=2, ncol=1)
 

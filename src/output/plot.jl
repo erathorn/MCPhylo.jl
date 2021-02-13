@@ -181,7 +181,6 @@ plot is needed.
 """
 @recipe function f(c::AbstractChains, indeces::Vector{Int64}; type=:autocor,
                    maxlag=round(Int, 10 * log10(length(c.range))))
-  linecolor --> :black
   grid --> :dash
   gridalpha --> 0.5
   legend --> false
@@ -189,6 +188,10 @@ plot is needed.
 
   if type == :autocor
     Autocor(c, indeces, maxlag)
+  end # if
+
+  if type == :mean
+    Mean(c, indeces)
   end # if
 end # recipe
 
@@ -205,18 +208,21 @@ struct Autocor; c; indeces; maxlag; end
   nrows, nvars, nchains = size(autoc.c.value)
   lags = 0:autoc.maxlag
   ac = autocor(autoc.c, lags=collect(lags))
-
+  x = repeat(collect(lags * step(autoc.c)), outer=[nchains])
   for (index, i) in enumerate(autoc.indeces)
-    @series begin
-      subplot := index
-      seriestype := :line
-      group := repeat(autoc.c.chains, inner=[length(lags)])
-      title --> autoc.c.names[i]
-      x = repeat(collect(lags * step(autoc.c)), outer=[nchains])
-      y = vec(ac.value[i,:,:])
-      x, y
-    end # series
+    subplot := index
+    y = vec(ac.value[i,:,:])
+    ac_group = repeat(autoc.c.chains, inner=[length(lags)])
+    for chain in autoc.c.chains
+      idxs = findall(==(chain), ac_group)
+      @series begin
+        title --> autoc.c.names[i]
+        seriestype := :line
+        x[idxs], y[idxs]
+      end # series
+    end # for
   end # for
+  primary := false
 end # recipe
 
 
