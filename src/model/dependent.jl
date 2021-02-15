@@ -305,6 +305,10 @@ function relistlength(s::AbstractTreeStochastic, x::N,
   (transform ? invlink_sub(s.distr, value) : value, n)
 end
 
+function logpdf(s::AbstractTreeStochastic, transform::Bool=false)
+  logpdf(s, s.value, transform)
+end
+
 
 function logpdf(s::AbstractStochastic, transform::Bool=false)
   logpdf(s, s.value, transform)
