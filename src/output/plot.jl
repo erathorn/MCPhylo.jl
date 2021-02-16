@@ -170,17 +170,9 @@ end # contourplot
 
 
 #################### Plot Engines ####################
-"""
-   autocorplot(c::AbstractChains, indeces::Vector{Int64};
-               maxlag::Integer=round(Int, 10 * log10(length(c.range))),
-               legend::Bool=false, na...)
-
---- INTERNAL ---
-Helper function called by the plot function when a autocorrelation
-plot is needed.
-"""
 @recipe function f(c::AbstractChains, indeces::Vector{Int64}; type=:autocor,
-                   maxlag=round(Int, 10 * log10(length(c.range))))
+                   maxlag=round(Int, 10 * log10(length(c.range))),
+                   position=:stack)
   grid --> :dash
   gridalpha --> 0.5
   legend --> false
@@ -190,6 +182,10 @@ plot is needed.
     Autocor(c, indeces, maxlag)
   end # if
 
+  if type == :bar
+    Bar(c, indeces, position)
+  end # if
+
   if type == :mean
     Mean(c, indeces)
   end # if
@@ -197,6 +193,10 @@ end # recipe
 
 
 struct Autocor; c; indeces; maxlag; end
+struct Bar; c; indeces; position; end
+struct Density; c; indeces; trim; end
+struct Mean; c; indeces; end
+struct Trace; c; indeces; end
 
 
 @recipe function f(autoc::Autocor)
@@ -226,47 +226,19 @@ struct Autocor; c; indeces; maxlag; end
 end # recipe
 
 
-#=
-function autocorplot(c::AbstractChains, indeces::Vector{Int64};
-                     maxlag::Integer=round(Int, 10 * log10(length(c.range))),
-                     na...)
-  nrows, nvars, nchains = size(c.value)
-  plots = Array{Plots.Plot}(undef, length(indeces))
-  lags = 0:maxlag
-  ac = autocor(c, lags=collect(lags))
-  z = 1
-  for i in indeces
-    # new plot creation block, based on Plots with a GR backend
-    plots[z] = Plots.plot(repeat(collect(lags * step(c)), outer=[nchains]),
-                          vec(ac.value[i,:,:]), seriestype=:line,
-                          group=repeat(c.chains, inner=[length(lags)]),
-                          xlabel="Lag", ylabel="Autocorrelation",
-                          title=c.names[i], xlims=(0, +Inf))
-    z += 1
-  end # for
-  return plots
-end # autocorplot
-=#
+@recipe function f(bar::Bar)
+  xguide --> "Value"
+  yguide --> "Density"
+  layout --> length(bar.indeces)
 
-"""
-
-    barplot(c::AbstractChains, indeces::Vector{Int64};
-            legend::Bool=false, position::Symbol=:stack, na...)
-
---- INTERNAL ---
-Helper function called by the plot function when a barplot is needed.
-"""
-function barplot(c::AbstractChains, indeces::Vector{Int64};
-                 legend::Bool=false, position::Symbol=:stack, na...)
-  nrows, nvars, nchains = size(c.value)
-  plots = Array{Plots.Plot}(undef, length(indeces))
-  pos = legend ? :right : :none
-  z = 1
-  for i in indeces
-    S = unique(c.value[:, i, :])
+  nrows, nvars, nchains = size(bar.c.value)
+  for (index, i) in enumerate(bar.indeces)
+    subplot := index
+    S = unique(bar.c.value[:, i, :])
     n = length(S)
     x = repeat(S, 1, nchains)
     y = zeros(n, nchains)
+    ymax = maximum(position == :stack ? mapslices(sum, y, dims=2) : y)
     for j in 1:nchains
       m = countmap(c.value[:, i, j])
       for k in 1:n
@@ -275,175 +247,11 @@ function barplot(c::AbstractChains, indeces::Vector{Int64};
         end # if
       end # for
     end # for
-    ymax = maximum(position == :stack ? mapslices(sum, y, dims=2) : y)
-    # new plot creation block, based on StatsPlots with a GR backend
-    plots[z] = StatsPlots.groupedbar(vec(x), vec(y), bar_position=position,
-                                     group=repeat(c.chains, inner=[n]),
-                                     xlabel="Value", ylabel="Density",
-                                     title=c.names[i], legendtitle="Chain",
-                                     legend=pos, ylims=(0.0, ymax),
-                                     grid=:dash, gridalpha=0.5)
-    z += 1
+    group := repeat(bar.c.chains, inner=[n])
+    title --> bar.c.names[i]
+    ylims --> (0.0, ymax)
+    bar_position := position
+    StatsPlots.GroupedBar((vec(x), vec(y)))
   end # for
-  return plots
-end # barplot
-
-
-"""
-  contourplot_int(c::AbstractChains, indeces::Vector{Int64};
-                  bins::Integer=100, na...)
-
---- INTERNAL ---
-Helper function called by the contourplot function.
-"""
-function contourplot_int(c::AbstractChains, indeces::Vector{Int64};
-                     bins::Integer=100, na...)
-  nrows, nvars, nchains = size(c.value)
-  plots = Plots.Plot[]
-  offset = 1e4 * eps()
-  n = nrows * nchains
-  for (index, i) in enumerate(indeces[1:end-1])
-    X = c.value[:, i, :]
-    qx = range(minimum(X) - offset, stop=maximum(X) + offset, length=bins + 1)
-    mx = map(k -> mean([qx[k], qx[k + 1]]), 1:bins)
-    idx = Int[findfirst(k -> qx[k] <= x < qx[k + 1], 1:bins) for x in X]
-    for j in indeces[index+1:end]
-      Y = c.value[:, j, :]
-      qy = range(minimum(Y) - offset, stop=maximum(Y) + offset, length=bins + 1)
-      my = map(k -> mean([qy[k], qy[k + 1]]), 1:bins)
-      idy = Int[findfirst(k -> qy[k] <= y < qy[k + 1], 1:bins) for y in Y]
-      density = zeros(bins, bins)
-      for k in 1:n
-        density[idx[k], idy[k]] += 1.0 / n
-      end
-      # new plot creation block, based on Plots with a GR backend
-      p = Plots.plot(mx, my, density, seriestype=:contour,
-                     colorbar_title="Density", xlabel=c.names[i],
-                     ylabel=c.names[j])
-      push!(plots, p)
-    end # for
-  end # for
-  return plots
-end  # contourplot_int
-
-
-"""
-  densityplot(c::AbstractChains, indeces::Vector{Int64}; legend::Bool=false,
-              trim::Tuple{Real, Real}=(0.025, 0.975), na...)
-
---- INTERNAL ---
-Helper function called by the plot function when a densityplot is needed.
-"""
-function densityplot(c::AbstractChains, indeces::Vector{Int64};
-                     legend::Bool=false,
-                     trim::Tuple{Real, Real}=(0.025, 0.975), na...)
-  nrows, nvars, nchains = size(c.value)
-  # new list initialization
-  plots = Array{Plots.Plot}(undef, length(indeces))
-  pos = legend ? :right : :none
-  z = 1
-  for i in indeces
-    val = Array{Vector{Float64}}(undef, nchains)
-    grouping = []
-    for j in 1:nchains
-      qs = quantile(c.value[:, i, j], [trim[1], trim[2]])
-      # keep all values between qs[1] and qs[2]
-      mask = [qs[1] .<= c.value[:, i, j] .<= qs[2]]
-      val[j] = c.value[mask[1], i, j]
-      grouping = vcat(grouping, repeat([j], inner=sum(mask[1])))
-    end # for
-    # new plot creation block, based on StatsPlots with a GR backend
-    plots[z] = StatsPlots.plot([val...;], seriestype=:density,
-                               group = grouping, xlabel="Value",
-                               ylabel="Density", title=c.names[i],
-                               legendtitle="Chain", legend=pos,
-                               ylims=(0.0, +Inf), grid=:dash, gridalpha=0.5)
-    z += 1
-  end # for
-  return plots
-end # densityplot
-
-
-"""
-    meanplot(c::AbstractChains, indeces::Vector{Int64};
-             legend::Bool=false, na...)
-
---- INTERNAL ---
-Helper function called by the plot function when a meanplot is needed.
-"""
-function meanplot(c::AbstractChains, indeces::Vector{Int64}; legend::Bool=false, na...)
-  nrows, nvars, nchains = size(c.value)
-  # new list initialization
-  plots = Array{Plots.Plot}(undef, length(indeces))
-  pos = legend ? :right : :none
-  val = cummean(c.value)
-  z = 1
-  for i in indeces
-    # new plot creation block, based on Plots with a GR backend
-    plots[z] = Plots.plot(repeat(collect(c.range), outer=[nchains]),
-                          vec(val[:, i, :]), seriestype=:line,
-                          group=repeat(c.chains, inner=[length(c.range)]),
-                          xlabel="Iteration", ylabel="Mean", title=c.names[i],
-                          legendtitle="Chain", legend=pos,
-                          grid=:dash, gridalpha=0.5)
-    z += 1
-  end # for
-  return plots
-end # function
-
-
-"""
-    mixeddensityplot(c::AbstractChains, indeces::Vector{Int64};
-                     barbounds::Tuple{Real, Real}=(0, Inf), args...)
-
---- INTERNAL ---
-Helper function called by the plot function. Checks for each variable if it is
-discrete or not and plots a barplot for discrete variables and a densityplot for
-indiscrete variables.
-"""
-function mixeddensityplot(c::AbstractChains, indeces::Vector{Int64};
-                          barbounds::Tuple{Real, Real}=(0, Inf), args...)
-  plots = Array{Plots.Plot}(undef, length(indeces))
-  discrete_temp = MCPhylo.indiscretesupport(c, barbounds)
-  discrete = Bool[]
-  for index in indeces
-    try
-      push!(discrete, discrete_temp[index])
-    catch BoundsError
-    end # try / catch
-  end
-  barplots = plot(c, :bar, indeces; args...)
-  densityplots = plot(c, :density, indeces; args...)
-  for i in 1:length(discrete)
-    if discrete[i] == true
-      plots[i] = barplots[i]
-    else
-      plots[i] = densityplots[i]
-    end # if / else
-  end # for
-  return plots
-end # mixeddensityplot
-
-
-"""
-    traceplot(c::AbstractChains, indeces::Vector{Int64};
-              legend::Bool=false, na...)
-
---- INTERNAL ---
-Helper function called by the plot function when a traceplot is needed.
-"""
-function traceplot(c::AbstractChains, indeces::Vector{Int64}; legend::Bool=false, na...)
-  nrows, nvars, nchains = size(c.value)
-  # new list initialization
-  plots = Any[]
-  pos = legend ? :right : :none
-  for i in indeces
-    push!(plots, Plots.plot(repeat(collect(c.range), outer=[nchains]),
-                            vec(c.value[:, i, :]), seriestype=:line,
-                            group=repeat(c.chains, inner=[length(c.range)]),
-                            xlabel="Iteration", ylabel="Value",
-                            title=c.names[i], legendtitle="Chain", legend=pos,
-                            widen=false, grid=:dash, gridalpha=0.5))
-  end  # for
-  return plots
-end # traceplot
+  primary := false
+end # recipe
