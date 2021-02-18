@@ -4,8 +4,8 @@
 
 #################### Dirichlet ####################
 
-Dirichlet(alpha::AbstractVector{T}) where {T<:Real} =
-  Dirichlet(convert(Vector{Float64}, alpha))
+#Dirichlet(alpha::AbstractVector{T}) where {T<:Real} =
+#  Dirichlet(convert(Vector{Float64}, alpha))
 
 
 #################### Multinomial ####################
