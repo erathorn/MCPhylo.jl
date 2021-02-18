@@ -82,7 +82,7 @@ function sample!(v::PNUTSVariate, logfgrad::Function; adapt::Bool=false)
   if tune.adapt
      tune.m += 1
      tune.nni = 0
-     
+
      nuts_sub!(v, tune.epsilon, logfgrad)
      av = tune.alpha / tune.nalpha
      HTACC = (tune.target - tune.alpha / tune.nalpha)
@@ -172,7 +172,7 @@ function nuts_sub!(v::P, epsilon::Float64, logfgrad::Function)::P where P<:PNUTS
     nni += nni1
     v.tune.nni = nnip
   end
-  v.tune.moves += j
+  v.tune.emp_tree_depth += j
   v.tune.moves += nni
   v
 end
@@ -375,11 +375,11 @@ function buildtree(
                 sz
             )
             if tv
-                if pm == -1
-                    xminus, rminus, gradminus = xm, rm, gm
-                else
-                    xplus, rplus, gradplus = xp, rp, gp
-                end
+
+                xminus, rminus, gradminus = xm, rm, gm
+        
+                xplus, rplus, gradplus = xp, rp, gp
+
             end
             sprime = sprime2 && tv
             alphaprime += alphaprime2
