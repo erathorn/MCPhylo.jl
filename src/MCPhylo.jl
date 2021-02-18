@@ -334,7 +334,6 @@ include("Likelihood/LikelihoodCalculator_Node.jl")
 include("Likelihood/Parsimony.jl")
 include("Likelihood/Prior.jl")
 include("Likelihood/Rates.jl")
-include("Likelihood/SubstitutionModels.jl")
 #################### Exports ####################
 
 export
