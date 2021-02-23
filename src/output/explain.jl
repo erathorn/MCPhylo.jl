@@ -34,15 +34,16 @@ samplers = [NUTS(:μ),
 
 setsamplers!(model, samplers)
 
-# sim = mcmc(model, my_data, inits, 5000, burnin=500, thin=5, chains=2)
-sim = mcmc(model, my_data, inits, 1000, burnin=100, thin=5, chains=2)
+sim = mcmc(model, my_data, inits, 5000, burnin=500, thin=5, chains=2)
+# sim = mcmc(model, my_data, inits, 1000, burnin=100, thin=5, chains=2)
 
-pv = plot2(sim, [:autocor, :mean, :density, :trace])
+pv = plot2(sim, [:mean, :density, :trace])
 
-pv[4]
-display(pv[4])
+pv[1]
+pv[2]
+pv[3]
 
-plot(pv..., layout=(4, 1), size=(1200, 800))
+plot(pv..., layout=(3, 1), size=(1200, 800))
 # savefig("test.pdf")
 
 
@@ -84,8 +85,11 @@ function plot2(c::AbstractChains, ptype::Vector{Symbol}=[:trace, :density];
   else
     indeces = collect(1:length(c.names))
   end # if / else
-  p = Plots.plot(c, indeces, ptype, args...)
-  # draw(p, fmt=fmt, filename=filename, nrow=nrow, ncol=ncol)
+  p = Array{Plots.Plot}(undef, length(ptype))
+  for i in 1:n
+    # showlegend = legend && i == n
+    p[i] = plot(c, indeces; type=ptype[i], args...)
+  end # for
   return p
 end # plot
 
@@ -162,7 +166,7 @@ end # contourplot
 
 
 #################### Plot Engines ####################
-@recipe function f(c::AbstractChains, indeces::Vector{Int64}; ptype=[],
+@recipe function f(c::AbstractChains, indeces::Vector{Int64}; type=:autocor,
                    maxlag=round(Int, 10 * log10(length(c.range))),
                    position=:stack, trim=(0.025, 0.975))
   grid --> :dash
@@ -171,28 +175,25 @@ end # contourplot
   legendtitle --> "Chain"
 
   arr = []
-  for type in ptype
+  if type == :autocor
+    push!(arr, Autocor(c, indeces, maxlag))
+  end # if
 
-    if type == :autocor
-      push!(arr, Autocor(c, indeces, maxlag))
-    end # if
+  if type == :bar
+    push!(arr, Bar(c, indeces, position))
+  end # if
 
-    if type == :bar
-      push!(arr, Bar(c, indeces, position))
-    end # if
+  if type == :density
+    push!(arr, Density(c, indeces, trim))
+  end # if
 
-    if type == :density
-      push!(arr, Density(c, indeces, trim))
-    end # if
+  if type == :mean
+    push!(arr, Mean(c, indeces))
+  end # if
 
-    if type == :mean
-      push!(arr, Mean(c, indeces))
-    end # if
-
-    if type == :trace
-      push!(arr, Trace(c, indeces))
-    end # if
-  end # for
+  if type == :trace
+    push!(arr, Trace(c, indeces))
+  end # if
   return Tuple(arr)
 end # recipe
 
