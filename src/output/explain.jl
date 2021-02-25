@@ -1,8 +1,5 @@
 include("../MCPhylo.jl")
-using StatsBase
-using StatsPlots
 using .MCPhylo
-using Serialization
 
 trees = MCPhylo.ParseNewick("./doc/Tree/Drav_mytrees_1.nwk")
 
@@ -34,17 +31,24 @@ samplers = [NUTS(:μ),
 
 setsamplers!(model, samplers)
 
-sim = mcmc(model, my_data, inits, 5000, burnin=500, thin=5, chains=2)
-# sim = mcmc(model, my_data, inits, 1000, burnin=100, thin=5, chains=2)
+sim = mcmc(model, my_data, inits, 1000, burnin=100, thin=5, chains=2)
 
-pv = plot2(sim, [:mean, :density, :trace])
-
-pv[1]
-pv[2]
-pv[3]
-
-plot(pv..., layout=(3, 1), size=(1200, 800))
-# savefig("test.pdf")
+# default "inner" layout puts plots in a row
+pv = plot(sim, [:mean])
+# "inner" layout can be manipulated, but usually size has to be adjusted as well
+pv = plot(sim, [:mean], layout=(3, 1), size=(800,1500))
+# throws an error, as it should for contour (when only one variable is selected)
+pv = plot(sim, [:contour], vars=["likelihood"])
+# gives a warning for contourplot but shows the other ptypes
+pv = plot(sim, [:contour, :density, :mean], vars=["likelihood"], fuse=true)
+# specific plot variables are passed successfully
+pv = plot(sim, [:autocor, :contour, :density, :mean, :trace],
+           maxlag=10, bins=250, trim=(0.1, 0.9), legend=true)
+# demonstrate the customizable "outer" layout
+pv = plot(sim, [:autocor, :contour, :density, :mean, :trace],
+           fuse=true, fLayout=(2,2), fsize=(2750, 2500))
+# use savefig to save as file; no draw function needed
+savefig("test.pdf")
 
 
 
@@ -76,20 +80,42 @@ density by default).
             Check the specific plot functions below to use these arguments.
 """
 function plot2(c::AbstractChains, ptype::Vector{Symbol}=[:trace, :density];
-              vars::Vector{String}=String[], filename::String="",
-              fmt::Symbol=:svg, nrow::Integer=3, ncol::Integer=2, args...
-              )::Array{Plots.Plot}
-  n = length(ptype)
+              vars::Vector{String}=String[], fuse::Bool=false, f_layout=nothing,
+              fsize::Tuple{Number, Number}=(0, 0), args...
+              )::Union{Vector{Plots.Plot}, Tuple{Vector{Plots.Plot}, Plots.Plot}}
   if !isempty(vars)
     indeces = check_vars(c.names, vars)
   else
     indeces = collect(1:length(c.names))
   end # if / else
+  ilength = length(indeces)
+  if :contour in ptype && ilength == 1
+    filter!(e -> e ≠ :contour, ptype)
+    if isempty(ptype)
+      throw(ArgumentError("Drawing a contourplot requires at least 2 variables."))
+    else
+      @warn "Drawing a contourplot requires at least 2 variables. Only drawing other plots"
+    end # if/else
+  end # if
+  n = length(ptype)
   p = Array{Plots.Plot}(undef, length(ptype))
   for i in 1:n
-    # showlegend = legend && i == n
-    p[i] = plot(c, indeces; type=ptype[i], args...)
+    p[i] = plot(c, indeces; ptype=ptype[i], size=(ilength * 500, 300), args...)
+    if !fuse
+      if n != 1
+        println("Press ENTER to draw next plot")
+        readline(stdin)
+      end # if
+      display(p[i])
+    end # if
   end # for
+  if fuse
+    isnothing(f_layout) && (f_layout = (length(ptype), 1))
+    fsize == (0, 0) && (fsize = (ilength * 500, length(ptype) * 300))
+    allplots = plot(p..., layout=f_layout, size=fsize)
+    display(allplots)
+    return (p, allplots)
+  end # if
   return p
 end # plot
 
@@ -131,74 +157,30 @@ function check_vars(sim_names::Vector{AbstractString}, vars::Vector{String})::Ve
 end # check_vars
 
 
-"""
-    contourplot(c::AbstractChains; <keyword arguments>)::Vector{Plots.Plot}
-
-Function that takes a MCMC chain and creates contourplots. If variables are
-limited with 'vars' keyword argument, at least 2 variables have to be specified,
-or no contourplot can be drawn.
-
-# Arguments
-- 'vars::Vector{String}'=String[] : specifies the variables of the chain that are plotted
-. 'filename::String'="" : when given, the plots will be saved to a file
-- 'fmt::Symbol'=:svg : specifies the format of the output file
-- 'nrow::Integer'=3 / 'ncol::Integer'=2 : Define layout of the plot window(s),
-                                          i.e. how many plots on each page
-- 'legend::Bool=false': Turn plot legend on / off
-"""
-function contourplot(c::AbstractChains; vars::Vector{String}=String[],
-                     filename::String="", fmt::Symbol=:svg, nrow::Integer=3,
-                     ncol::Integer=2, legend::Bool=false, args...)::Vector{Plots.Plot}
- if !isempty(vars)
-   indeces = check_vars(c.names, vars)
- else
-   indeces = collect(1:length(c.names))
- end # if / else
- if length(indeces) == 1
-  throw(ArgumentError("Contourplot requires at least 2 variables."))
- end # if
- p = Array{Plots.Plot}(undef, 1, length(indeces))
- showlegend = legend
- p = contourplot_int(c, indeces; legend=legend, args...)
- draw(p, fmt=fmt, filename=filename, nrow=nrow, ncol=ncol)
- return p
-end # contourplot
-
-
 #################### Plot Engines ####################
-@recipe function f(c::AbstractChains, indeces::Vector{Int64}; type=:autocor,
+@recipe function f(c::AbstractChains, indeces::Vector{Int64}; ptype=:autocor,
                    maxlag=round(Int, 10 * log10(length(c.range))),
-                   position=:stack, trim=(0.025, 0.975))
+                   position=:stack, bins=100, trim=(0.025, 0.975))
   grid --> :dash
   gridalpha --> 0.5
   legend --> false
   legendtitle --> "Chain"
+  margin --> 7mm
 
   arr = []
-  if type == :autocor
-    push!(arr, Autocor(c, indeces, maxlag))
-  end # if
-
-  if type == :bar
-    push!(arr, Bar(c, indeces, position))
-  end # if
-
-  if type == :density
-    push!(arr, Density(c, indeces, trim))
-  end # if
-
-  if type == :mean
-    push!(arr, Mean(c, indeces))
-  end # if
-
-  if type == :trace
-    push!(arr, Trace(c, indeces))
-  end # if
+  ptype == :autocor ? push!(arr, Autocor(c, indeces, maxlag)) :
+  ptype == :bar     ? push!(arr, Bar(c, indeces, position)) :
+  ptype == :contour ? push!(arr, Contour(c, indeces, bins)) :
+  ptype == :density ? push!(arr, Density(c, indeces, trim)) :
+  ptype == :mean    ? push!(arr, Mean(c, indeces)) :
+  ptype == :trace   ? push!(arr, Trace(c, indeces)) :
+    throw(ArgumentError("unsupported plot type $ptype"))
   return Tuple(arr)
 end # recipe
 
 struct Autocor; c; indeces; maxlag; end
 struct Bar; c; indeces; position; end
+struct Contour; c; indeces; bins; end
 struct Density; c; indeces; trim; end
 struct Mean; c; indeces; end
 struct Trace; c; indeces; end
@@ -218,9 +200,10 @@ struct Trace; c; indeces; end
     subplot := index
     y = vec(ac.value[i,:,:])
     ac_group = repeat(acor.c.chains, inner=[length(lags)])
-    for chain in acor.c.chains
+    for (index, chain) in enumerate(acor.c.chains)
       idxs = findall(==(chain), ac_group)
       @series begin
+        label --> string(index)
         title --> acor.c.names[i]
         seriestype := :line
         x[idxs], y[idxs]
@@ -262,30 +245,67 @@ end # recipe
 end # recipe
 
 
+@recipe function f(cont::Contour)
+  layout --> (1, sum(collect(1:length(cont.indeces) - 1)))
+
+  subplot_index = 0
+  nrows, nvars, nchains = size(cont.c.value)
+  offset = 1e4 * eps()
+  n = nrows * nchains
+  for (index, i) in enumerate(cont.indeces[1:end-1])
+    X = cont.c.value[:, i, :]
+    qx = range(minimum(X) - offset, stop=maximum(X) + offset, length=cont.bins + 1)
+    mx = map(k -> mean([qx[k], qx[k + 1]]), 1:cont.bins)
+    idx = Int[findfirst(k -> qx[k] <= x < qx[k + 1], 1:cont.bins) for x in X]
+    for j in cont.indeces[index+1:end]
+      subplot_index += 1
+      Y = cont.c.value[:, j, :]
+      qy = range(minimum(Y) - offset, stop=maximum(Y) + offset, length=cont.bins + 1)
+      my = map(k -> mean([qy[k], qy[k + 1]]), 1:cont.bins)
+      idy = Int[findfirst(k -> qy[k] <= y < qy[k + 1], 1:cont.bins) for y in Y]
+      density = zeros(cont.bins, cont.bins)
+      for k in 1:n
+        density[idx[k], idy[k]] += 1.0 / n
+      end
+      @series begin
+        subplot := subplot_index
+        xguide --> cont.c.names[i],
+        yguide --> cont.c.names[j]
+        colorbar_title --> "Density"
+        title --> cont.c.names[i]
+        seriestype := :contour
+        mx, my, density
+      end # series
+    end # for
+  end # for
+  primary := false
+end # recipe
+
+
 @recipe function f(dens::Density)
   xguide --> "Value"
   yguide --> "Density"
   ylims --> (0.0, +Inf)
   layout --> (1, length(dens.indeces))
 
-  trim = (0.025, 0.975)
   nrows, nvars, nchains = size(dens.c.value)
   for (index, i) in enumerate(dens.indeces)
     subplot := index
     val = Array{Vector{Float64}}(undef, nchains)
     dens_group = []
     for j in 1:nchains
-      qs = quantile(dens.c.value[:, i, j], [trim[1], trim[2]])
+      qs = quantile(dens.c.value[:, i, j], [dens.trim[1], dens.trim[2]])
       mask = [qs[1] .<= dens.c.value[:, i, j] .<= qs[2]]
       val[j] = dens.c.value[mask[1], i, j]
       dens_group = vcat(dens_group, repeat([j], inner=sum(mask[1])))
     end # for
-    for chain in dens.c.chains
+    for (index, chain) in enumerate(dens.c.chains)
       idxs = findall(==(chain), dens_group)
       @series begin
+        label --> string(index)
         title --> dens.c.names[i]
         seriestype := :density
-        [val...;]
+        [val...;][idxs]
       end # series
     end # for
   end # for
@@ -305,9 +325,10 @@ end # recipe
     subplot := index
     y = vec(val[:, i, :])
     mean_group = repeat(mean.c.chains, inner=[length(mean.c.range)])
-    for chain in mean.c.chains
+    for (index, chain) in enumerate(mean.c.chains)
       idxs = findall(==(chain), mean_group)
       @series begin
+        label --> string(index)
         title --> mean.c.names[i]
         seriestype := :line
         x[idxs], y[idxs]
@@ -331,9 +352,10 @@ end # recipe
     subplot := index
     y = vec(trace.c.value[:, i, :])
     trace_group = repeat(trace.c.chains, inner=[length(trace.c.range)])
-    for chain in trace.c.chains
+    for (index, chain) in enumerate(trace.c.chains)
       idxs = findall(==(chain), trace_group)
       @series begin
+        label --> string(index)
         title --> trace.c.names[i]
         seriestype := :line
         x[idxs], y[idxs]
