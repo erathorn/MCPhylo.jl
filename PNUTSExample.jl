@@ -7,19 +7,19 @@ tester:
 OPENBLAS_NUM_THREADS=5 JULIA_NUM_THREADS=5 /home/jo/Julia14/julia-1.4.2/bin/julia -O3
 =#
 using Distributed
-addprocs(3)
+addprocs(2)
 @everywhere include("./src/MCPhylo.jl")
 @everywhere using .MCPhylo
 @everywhere using Random
 
-@everywhere Random.seed!(42)
+#@everywhere Random.seed!(42)
 #
-@everywhere using LinearAlgebra
-@everywhere BLAS.set_num_threads(10)
-include("./src/MCPhylo.jl")
-using .MCPhylo
-using Random
-Random.seed!(42)
+#@everywhere using LinearAlgebra
+#@everywhere BLAS.set_num_threads(10)
+#include("./src/MCPhylo.jl")
+#using .MCPhylo
+#using Random
+#Random.seed!(42)
 
 
 
@@ -75,10 +75,10 @@ setsamplers!(model, scheme);
 
 # do the mcmc simmulation. if trees=true the trees are stored and can later be
 # flushed ot a file output.
-sim = mcmc(model, my_data, inits, 2500, burnin=625,thin=1, chains=2, trees=true)
+sim = mcmc(model, my_data, inits, 500000, burnin=250000,thin=50, chains=2, trees=true)
 
 # request more runs
-sim = mcmc(sim, 500, trees=true)
+sim = mcmc(sim, 2500, trees=true)
 
 # write the output to a path specified as the second argument
 to_file(sim, "example_run")

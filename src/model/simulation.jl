@@ -133,7 +133,7 @@ function gradlogpdf!(m::Model, x::N, block::Integer=0,transform::Bool=false)::Tu
 
   # get results from threads
   v, grad = fetch(lik_res)
-  
+
   vp+v, gradp.+grad
 end
 
@@ -172,13 +172,13 @@ function sample!(m::Model, block::Integer=0)
     end
   end
   m.iter -= isoneblock
-  m.likelihood = logpdf(m)
+  m.likelihood = final_likelihood(m)
   m
 end
 
 
 function final_likelihood(model::Model)::Float64
-  logpdf(model[keys_output(model)[1]])
+  logpdf(model, keys_output(model))
 end
 
 function unlist(m::Model, block::Integer=0, transform::Bool=false)
