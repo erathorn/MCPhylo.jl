@@ -441,13 +441,23 @@ end # function set_binary
 """
     number_nodes!(root::T)::Nothing  where T<:GeneralNode
 
-This function assigns a unique, sequential number to each node.
+This function assigns a unique, sequential number to each node. Leaves are numbered first
+in alphabetical order.
 """
 function number_nodes!(root::T)::Nothing  where T<:GeneralNode
-    for (index, value) in enumerate(post_order(root))
-        value.num = index
+    tips = [n.name for n in get_leaves(root)]
+    sort!(tips)
+    running = length(tips)
+    for node in post_order(root)
+        if node.nchild == 0
+            node.num = findfirst(x-> x==node.name, tips)
+        else
+            node.num = running + 1
+            running += 1
+        end
     end # for
 end # fuction number_nodes
+
 
 
 """

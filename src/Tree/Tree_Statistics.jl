@@ -75,7 +75,7 @@ function ASDSF(filename1::S, filename2::S, freq::Int64=1)::Vector{Float64} where
             end
             ASDF_vals[run] = outer / length(splitsQueue)
             run += 1
-            next!(p)
+            ProgressMeter.next!(p)
         end
     end
     ASDF_vals

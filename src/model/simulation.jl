@@ -56,6 +56,7 @@ function logpdf(m::Model, block::Integer=0, transform::Bool=false)
 end
 
 function logpdf(m::Model, nodekeys::Vector{Symbol}, transform::Bool=false)
+
   lp = Base.Threads.Atomic{Float64}(0.0)
   Threads.@threads for key in nodekeys
     Base.Threads.atomic_add!(lp, logpdf(m[key], transform))
@@ -120,17 +121,19 @@ function gradlogpdf!(m::Model, x::N, block::Integer=0,transform::Bool=false)::Tu
   params = keys(m, :block, block)
   targets = keys(m, :target, block)
   m[params] = relist(m, x, params, transform)
+  lp = logpdf(m, setdiff(params, targets), transform)
 
 
   # use thread parallelism
   # likelihood
   lik_res = @spawn gradlogpdf(m, targets)
-  
+
   # prior
   vp, gradp =  gradlogpdf(m[params[1]], x)
 
   # get results from threads
   v, grad = fetch(lik_res)
+
   vp+v, gradp.+grad
 end
 
@@ -169,13 +172,13 @@ function sample!(m::Model, block::Integer=0)
     end
   end
   m.iter -= isoneblock
-  m.likelihood = logpdf(m)
+  m.likelihood = final_likelihood(m)
   m
 end
 
 
 function final_likelihood(model::Model)::Float64
-  logpdf(model[keys_output(model)[1]])
+  logpdf(model, keys_output(model))
 end
 
 function unlist(m::Model, block::Integer=0, transform::Bool=false)
