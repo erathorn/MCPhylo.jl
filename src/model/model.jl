@@ -181,7 +181,7 @@ end
 function keys_logical(m::Model)::Array{Symbol}
   values = Symbol[]
   for key in keys(m)
-    if isa(m[key], AbstractLogical)
+    if isa(m[key], AbstractLogical) || isa(m[key], TreeLogical)
       push!(values, key)
     end
   end
@@ -224,7 +224,7 @@ end
 function keys_stochastic(m::Model)::Array{Symbol}
   values = Symbol[]
   for key in keys(m)
-    if isa(m[key], AbstractStochastic)
+    if isa(m[key], AbstractStochastic) || isa(m[key], TreeStochastic)
       push!(values, key)
     end
   end

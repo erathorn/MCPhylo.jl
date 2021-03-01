@@ -104,6 +104,7 @@ Returns the resulting numeric value of summed log-densities.
 * `transform` : whether to evaluate evaluate log-densities of block parameters on the link–transformed scale.
 """
 function logpdf(m::Model, nodekeys::Vector{Symbol}, transform::Bool=false)
+
   lp = Base.Threads.Atomic{Float64}(0.0)
   Threads.@threads for key in nodekeys
     Base.Threads.atomic_add!(lp, logpdf(m[key], transform))
@@ -203,6 +204,7 @@ function gradlogpdf!(m::Model, x::N, block::Integer=0,transform::Bool=false)::Tu
   params = keys(m, :block, block)
   targets = keys(m, :target, block)
   m[params] = relist(m, x, params, transform)
+  lp = logpdf(m, setdiff(params, targets), transform)
 
 
   # use thread parallelism
@@ -214,6 +216,7 @@ function gradlogpdf!(m::Model, x::N, block::Integer=0,transform::Bool=false)::Tu
 
   # get results from threads
   v, grad = fetch(lik_res)
+
   vp+v, gradp.+grad
 end
 """
@@ -271,13 +274,13 @@ function sample!(m::Model, block::Integer=0)
     end
   end
   m.iter -= isoneblock
-  m.likelihood = logpdf(m)
+  m.likelihood = final_likelihood(m)
   m
 end
 
 
 function final_likelihood(model::Model)::Float64
-  logpdf(model[keys_output(model)[1]])
+  logpdf(model, keys_output(model))
 end
 """
     unlist(m::Model, block::Integer=0, transform::Bool=false)

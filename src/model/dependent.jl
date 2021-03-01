@@ -427,7 +427,7 @@ Returns the node with its assigned initial values.
 * `x` : values to assign to the node.
 """
 function setinits!(d::TreeStochastic, m::Model, x::T) where {T<:GeneralNode}
-    d.value = x
+    d.value = deepcopy(x)
     d.distr = d.eval(m)
     insupport(d.distr, x) || throw(ArgumentError("The supplied tree does not match the topological tree constraints."))
     setmonitor!(d, d.monitor)
@@ -480,6 +480,7 @@ end
 function relistlength(s::AbstractTreeStochastic, x::AbstractArray,
                       transform::Bool=false)
   value, n = relistlength_sub(s.distr, s, x)
+
   (transform ? invlink_sub(s.distr, value) : value, n)
 end
 
@@ -488,6 +489,10 @@ function relistlength(s::AbstractTreeStochastic, x::N,
                       transform::Bool=false) where N<:GeneralNode
   value, n = relistlength_sub(s.distr, s, x)
   (transform ? invlink_sub(s.distr, value) : value, n)
+end
+
+function logpdf(s::AbstractTreeStochastic, transform::Bool=false)
+  logpdf(s, s.value, transform)
 end
 
 
@@ -529,7 +534,7 @@ end
 
 
 
-function logpdf(s::AbstractStochastic, x::N, transform::Bool=false) where N<:GeneralNode
+function logpdf(s::AbstractTreeStochastic, x::N, transform::Bool=false) where N<:GeneralNode
   logpdf_sub(s.distr, x, transform)
 end
 

@@ -110,7 +110,7 @@ end
 ## instead to avoid the error handling issue.  In multi-processor mode, pmap is
 ## called and will apply its error processing.
 
-function pmap2(f::Function, lsts::AbstractArray)::Vector{Tuple{Chains, Model, ModelState}}
+function pmap2(f::Function, lsts::AbstractArray)
   if (nprocs() > 1)
     pmap(f, lsts)
   else

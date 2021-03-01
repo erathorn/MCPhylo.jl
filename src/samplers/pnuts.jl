@@ -26,7 +26,7 @@ mutable struct PNUTSTune <: SamplerTune
   PNUTSTune() = new()
 
   function PNUTSTune(x::Vector{T}, epsilon::Float64, logfgrad::Union{Function, Missing};
-                    target::Real=0.6, tree_depth::Int=10, targetNNI::Int=10) where T<:Node
+                    target::Real=0.6, tree_depth::Int=10, targetNNI::Int=5) where T<:Node
     new(logfgrad, false, 0.0, epsilon, 1.0, 0.05, 0.0, 0.75, 0, NaN, 0, 10.0,0.003,
         target,0, tree_depth,0, targetNNI)
   end
@@ -95,12 +95,11 @@ function sample!(v::PNUTSVariate, logfgrad::Function; adapt::Bool=false)
   if tune.adapt
      tune.m += 1
      tune.nniprime = 0
+
      nuts_sub!(v, tune.epsilon, logfgrad)
      Ht = (tune.target - tune.alpha / tune.nalpha)
-     avgnni = (1+tune.nniprime)/tune.nalpha
-     scaler = 0.1
-     #HT2 = invlogit(tune.targetNNI, scaler) - invlogit(avgnni, scaler)
-     HT2 = -(atan((1+tune.targetNNI)*scaler) - atan(avgnni*scaler))/(π*0.5)
+     avgnni = tune.targetNNI - tune.nniprime/tune.nalpha
+     HT2 = - avgnni / (1 + abs(avgnni))
      HT = (Ht + HT2)/2
      p = 1.0 / (tune.m + tune.t0)
      tune.Hbar = (1.0 - p) * tune.Hbar +

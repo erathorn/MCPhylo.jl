@@ -14,6 +14,7 @@ using LinearAlgebra
 using Plots
 using StatsPlots
 @reexport using StatsPlots
+import RecipesBase: plot
 using Zygote
 using FiniteDiff
 using Showoff: showoff
@@ -23,8 +24,8 @@ using Random
 using CSV
 using ChainRules
 using ChainRulesCore
-
-
+using DataStructures
+using ProgressMeter
 using CUDA
 if has_cuda()
   using GPUArrays
@@ -69,7 +70,7 @@ using LightGraphs: DiGraph, add_edge!, outneighbors,
        topological_sort_by_dfs, vertices
 import StatsBase: autocor, autocov, countmap, counts, describe, predict,
        quantile, sample, sem, summarystats
-import DataStructures: PriorityQueue, dequeue!
+
 
 include("distributions/pdmats2.jl")
 using .PDMats2

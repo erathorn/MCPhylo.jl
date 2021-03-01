@@ -60,7 +60,7 @@ function gradlogpdf(d::CompoundDirichlet, x::T) where T <: GeneralNode
 end
 
 
-function _logpdf(d::CompoundDirichlet, x::T) where T <: GeneralNode
+function logpdf(d::CompoundDirichlet, x::T) where T <: GeneralNode
     internal_logpdf(d, get_branchlength_vector(x), internal_external(x))
 end # function _logpdf
 
@@ -70,8 +70,8 @@ function insupport(d::CompoundDirichlet, x::T) where T <: GeneralNode
 end # function insupport
 
 
-function logpdf_sub(d::ContinuousUnivariateDistribution, x::T, transform::Bool) where T <: GeneralNode
-    insupport(d, x) ? _logpdf(d, x) : -Inf
+function logpdf_sub(d::CompoundDirichlet, x::T, transform::Bool) where T <: GeneralNode
+    insupport(d, x) ? logpdf(d, x) : -Inf
 end
 
 function relistlength(d::CompoundDirichlet, x::AbstractArray)
