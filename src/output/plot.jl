@@ -1,3 +1,4 @@
+#=
 """
   plot(c::AbstractChains, ptype::Vector{Symbol}=[:trace, :density];
        <keyword arguments>)::Array{Plots.Plot}
@@ -302,3 +303,4 @@ end # recipe
   end # for
   primary := false
 end # recipe
+=#
