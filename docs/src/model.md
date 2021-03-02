@@ -1,6 +1,6 @@
 # Model
 
-The Model type is designed to store the set of all model nodes, including parameter set \Theta as denoted in the Mamba Gibbs sampling scheme. In particular, it stores Dependent type objects in its nodes dictionary field. Valid models are ones whose nodes form directed acyclic graphs (DAGs). Sampling functions ``\{f_j\}_{j=1}^{B}`` are saved as Sampler objects in the vector of field samplers. Vector elements j=1,\ldots,B correspond to sampling blocks ``\{\Theta_j\}_{j=1}^{B}``.
+The Model type is designed to store the set of all model nodes, including parameter set \Theta. In particular, it stores Dependent type objects in its nodes dictionary field. Valid models are ones whose nodes form directed acyclic graphs (DAGs). Sampling functions ``\{f_j\}_{j=1}^{B}`` are saved as Sampler objects in the vector of field samplers. Vector elements j=1,\ldots,B correspond to sampling blocks ``\{\Theta_j\}_{j=1}^{B}``.
 
 ## Dependent
 

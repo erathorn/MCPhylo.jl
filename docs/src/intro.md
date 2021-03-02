@@ -55,10 +55,11 @@ You can flush the model parameters and the sampled trees to a file, using the `t
 `NUTS` can take the argument `dtype=:Zygote` to use Zygote for the calculation of the gradient. The default is finite differencing.
 
 `Slice` can also sample trees. It does a slice sampling operation on the branch lengths of the tree.
+
 ## Tree Functionalities
 
 For the available tree functionalities see: [Tree Functionalities](tree.md), and for exact documentation of the functions involved, see the [Tree Functionality page] (tree.md) linked along the left-hand side of the page.
 
-```@contents
+<!-- ```@contents
 Pages = ["tree.md", "likelihood.md", "parser.md", "distributions.md", "model.md", "output.md", "sampler.md", "samplers.md", "substitution.md", "utils.md"]
-```
+``` -->
