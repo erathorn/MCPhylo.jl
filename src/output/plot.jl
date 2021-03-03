@@ -1,4 +1,3 @@
-#=
 """
   plot(c::AbstractChains, ptype::Vector{Symbol}=[:trace, :density];
        <keyword arguments>)::Array{Plots.Plot}
@@ -37,8 +36,10 @@ function plot(c::AbstractChains, ptype::Vector{Symbol}=[:trace, :density];
     end # if/else
   end # if
   n = length(ptype)
-  p = Array{Plots.Plot}(undef, length(ptype))
+  p = Array{Plots.Plot}(undef, n)
   for i in 1:n
+    ptype[i] == :bar ? p[i] = bar_int(c, indeces; args...) :
+    ptype[i] == :mixeddensity ? p[i] = mixeddensityplot(c, indeces; args...) :
     p[i] = Plots.plot(c, indeces; ptype=ptype[i], size=(ilength * 500, 300), args...)
     if !fuse
       if n != 1
@@ -49,8 +50,8 @@ function plot(c::AbstractChains, ptype::Vector{Symbol}=[:trace, :density];
     end # if
   end # for
   if fuse
-    isnothing(f_layout) && (f_layout = (length(ptype), 1))
-    fsize == (0, 0) && (fsize = (ilength * 500, length(ptype) * 300))
+    isnothing(f_layout) && (f_layout = (n, 1))
+    fsize == (0, 0) && (fsize = (ilength * 500, n * 300))
     allplots = Plots.plot(p..., layout=f_layout, size=fsize)
     display(allplots)
     return (p, allplots)
@@ -98,17 +99,17 @@ end # check_vars
 
 #################### Plot Engines ####################
 @recipe function f(c::AbstractChains, indeces::Vector{Int64}; ptype=:autocor,
-                   maxlag=round(Int, 10 * log10(length(c.range))),
-                   position=:stack, bins=100, trim=(0.025, 0.975))
+                   maxlag=round(Int, 10 * log10(length(c.range))), bins=100,
+                   trim=(0.025, 0.975))
   grid --> :dash
   gridalpha --> 0.5
   legend --> false
   legendtitle --> "Chain"
+  legendtitlefonthalign := :left
   margin --> 7mm
 
   arr = []
   ptype == :autocor ? push!(arr, Autocor(c, indeces, maxlag)) :
-  ptype == :bar     ? push!(arr, Bar(c, indeces, position)) :
   ptype == :contour ? push!(arr, Contour(c, indeces, bins)) :
   ptype == :density ? push!(arr, Density(c, indeces, trim)) :
   ptype == :mean    ? push!(arr, Mean(c, indeces)) :
@@ -118,7 +119,6 @@ end # check_vars
 end # recipe
 
 struct Autocor; c; indeces; maxlag; end
-struct Bar; c; indeces; position; end
 struct Contour; c; indeces; bins; end
 struct Density; c; indeces; trim; end
 struct Mean; c; indeces; end
@@ -153,40 +153,38 @@ struct Trace; c; indeces; end
 end # recipe
 
 
-@recipe function f(bar::Bar)
-  xguide --> "Value"
-  yguide --> "Density"
-  layout --> (1, length(bar.indeces))
-
-  nrows, nvars, nchains = size(bar.c.value)
-  for (index, i) in enumerate(bar.indeces)
-    subplot := index
-    S = unique(bar.c.value[:, i, :])
+function bar_int(c::AbstractChains, indeces::Vector{Int64};
+                 position::Symbol=:stack, args...)
+  nrows, nvars, nchains = size(c.value)
+  ilength = length(indeces)
+  bar_plots = Array{Plots.Plot}(undef, ilength)
+  for (index, i) in enumerate(indeces)
+    S = unique(c.value[:, i, :])
     n = length(S)
     x = repeat(S, 1, nchains)
     y = zeros(n, nchains)
-    ymax = maximum(position == :stack ? mapslices(sum, y, dims=2) : y)
     for j in 1:nchains
-      m = StatsBase.countmap(bar.c.value[:, i, j])
+      m = StatsBase.countmap(c.value[:, i, j])
       for k in 1:n
         if S[k] in keys(m)
           y[k, j] = m[S[k]] / nrows
         end # if
       end # for
     end # for
-    primary := false
-    group := repeat(bar.c.chains, inner=[n])
-    title --> bar.c.names[i]
-    ylims --> (0.0, ymax)
-    bar_position := position
-    return StatsPlots.GroupedBar((vec(x), vec(y)))
+    ymax = maximum(position == :stack ? mapslices(sum, y, dims=2) : y)
+    bar_plots[index] = groupbar(vec(x), vec(y);
+                                group=repeat(c.chains, inner=[n]),
+                                title=c.names[i], ylims=(0.0, ymax), args...)
   end # for
-end # recipe
+  p = Plots.plot(bar_plots..., layout=(1, ilength), size=(ilength * 500, 300))
+  return p
+end # function
 
 
 @recipe function f(cont::Contour)
   layout --> (1, sum(collect(1:length(cont.indeces) - 1)))
-
+  legend := false
+  colorbar --> :best
   subplot_index = 0
   nrows, nvars, nchains = size(cont.c.value)
   offset = 1e4 * eps()
@@ -208,7 +206,7 @@ end # recipe
       end
       @series begin
         subplot := subplot_index
-        xguide --> cont.c.names[i],
+        xguide --> cont.c.names[i]
         yguide --> cont.c.names[j]
         colorbar_title --> "Density"
         title --> cont.c.names[i]
@@ -278,6 +276,29 @@ end # recipe
 end # recipe
 
 
+function mixeddensityplot(c::AbstractChains, indeces::Vector{Int64};
+                          barbounds::Tuple{Real, Real}=(0, Inf), args...)
+  plots = Array{Plots.Plot}(undef, length(indeces))
+  ilength = length(indeces)
+  discrete_temp = MCPhylo.indiscretesupport(c, barbounds)
+  discrete = Bool[]
+  for index in indeces
+    try
+      push!(discrete, discrete_temp[index])
+    catch BoundsError
+    end # try / catch
+  end
+  for i in 1:length(discrete)
+    if discrete[i] == true
+      plots[i] = bar_int(c, [indeces[i]]; args...)
+    else
+      plots[i] = Plots.plot(c, [indeces[i]]; ptype=:density, size=(500, 300), args...)
+    end # if / else
+  end # for
+  p = Plots.plot(plots..., layout=(1, ilength), size=(ilength * 500, 300))
+  return p
+end # function
+
 @recipe function f(trace::Trace)
   xguide --> "Iteration"
   yguide --> "Value"
@@ -303,4 +324,108 @@ end # recipe
   end # for
   primary := false
 end # recipe
-=#
+
+
+@userplot GroupBar
+
+recipetype(::Val{:groupbar}, args...) = GroupBar(args)
+
+Plots.group_as_matrix(g::GroupBar) = true
+
+grouped_xy(x::AbstractVector, y::AbstractArray) = x, y
+grouped_xy(y::AbstractArray) = 1:size(y,1), y
+
+@recipe function f(g::GroupBar; spacing = 0)
+    xguide --> "Value"
+    yguide --> "Density"
+    grid --> :dash
+    gridalpha --> 0.5
+    legend --> false
+    legendtitle --> "Chain"
+    legendtitlefonthalign := :left
+    margin --> 7mm
+    x, y = grouped_xy(g.args...)
+
+    nr, nc = size(y)
+    isstack = pop!(plotattributes, :bar_position, :dodge) == :stack
+    isylog = pop!(plotattributes, :yscale, :identity) ∈ (:log10, :log)
+    # the_ylims = pop!(plotattributes, :ylims, (-Inf, Inf))
+
+    # extract xnums and set default bar width.
+    # might need to set xticks as well
+    xnums = if eltype(x) <: Number
+        xdiff = length(x) > 1 ? mean(diff(x)) : 1
+        bar_width --> 0.8 * xdiff
+        x
+    else
+        bar_width --> 0.8
+        ux = unique(x)
+        xnums = (1:length(ux)) .- 0.5
+        xticks --> (xnums, ux)
+        xnums
+    end
+    @assert length(xnums) == nr
+
+    # compute the x centers.  for dodge, make a matrix for each column
+    x = if isstack
+        x
+    else
+        bws = plotattributes[:bar_width] / nc
+        bar_width := bws * clamp(1 - spacing, 0, 1)
+        xmat = zeros(nr,nc)
+        for r=1:nr
+            bw = Plots._cycle(bws, r)
+            farleft = xnums[r] - 0.5 * (bw * nc)
+            for c=1:nc
+                xmat[r,c] = farleft + 0.5bw + (c-1)*bw
+            end
+        end
+        xmat
+    end
+
+    fill_bottom = if isylog
+        if isfinite(the_ylims[1])
+            min(minimum(y) / 100, the_ylims[1])
+        else
+            minimum(y) / 100
+        end
+    else
+        0
+    end
+    # compute fillrange
+    y, fr = isstack ? groupedbar_fillrange(y) : (y, get(plotattributes, :fillrange, [fill_bottom]))
+    if isylog
+        replace!( fr, 0 => fill_bottom )
+    end
+    fillrange := fr
+
+    seriestype := :bar
+    x, y
+end
+
+function groupedbar_fillrange(y)
+    nr, nc = size(y)
+    # bar series fills from y[nr, nc] to fr[nr, nc], y .>= fr
+    fr = zeros(nr, nc)
+    y = copy(y)
+    y[.!isfinite.(y)] .= 0
+    for r = 1:nr
+        y_neg = 0
+        # upper & lower bounds for positive bar
+        y_pos = sum([e for e in y[r, :] if e > 0])
+        # division subtract towards 0
+        for c = 1:nc
+            el = y[r, c]
+            if el >= 0
+                y[r, c] = y_pos
+                y_pos -= el
+                fr[r, c] = y_pos
+            else
+                fr[r, c] = y_neg
+                y_neg += el
+                y[r, c] = y_neg
+            end
+        end
+    end
+    y, fr
+end

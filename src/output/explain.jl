@@ -31,24 +31,24 @@ samplers = [NUTS(:μ),
 
 setsamplers!(model, samplers)
 
-sim = mcmc(model, my_data, inits, 5000, burnin=500, thin=5, chains=2)
+sim = mcmc(model, my_data, inits, 1000, burnin=100, thin=5, chains=2)
 
 # default "inner" layout puts plots in a row
-pv = plot2(sim, [:mean])
+pv = plot(sim, [:mean])
 # "inner" layout can be manipulated, but usually size has to be adjusted as well
-pv = plot2(sim, [:mean], layout=(3, 1), size=(800,1500))
+pv = plot(sim, [:mean], layout=(3, 1), size=(800,1500))
 # throws an error, as it should for contour (when only one variable is selected)
-pv = plot2(sim, [:contour], vars=["likelihood"])
+pv = plot(sim, [:contour], vars=["likelihood"])
 # gives a warning for contourplot but shows the other ptypes
-pv = plot2(sim, [:contour, :density, :mean], vars=["likelihood"], fuse=true)
+pv = plot(sim, [:contour, :density, :mean], vars=["likelihood"], fuse=true)
 # specific plot variables are passed successfully
-pv = plot2(sim, [:autocor, :contour, :density, :mean, :trace],
+pv = plot(sim, [:autocor, :contour, :density, :mean, :trace],
            maxlag=10, bins=20, trim=(0.1, 0.9), legend=true)
 # demonstrate the customizable "outer" layout
-pv = plot2(sim, [:autocor, :bar, :contour, :density, :mean, :trace],
+pv = plot(sim, [:autocor, :bar, :contour, :mixeddensity, :mean, :trace],
            fuse=true, fLayout=(2,2), fsize=(2750, 2500), linecolor=:match)
 # barplot works
-pv = plot2(sim, [:bar], linecolor=:match, legend=:true)
+pv = plot(sim, [:bar], linecolor=:match, legend=:true)
 # use savefig to save as file; no draw function needed
 savefig("test.pdf")
 
@@ -101,11 +101,9 @@ function plot2(c::AbstractChains, ptype::Vector{Symbol}=[:trace, :density];
   n = length(ptype)
   p = Array{Plots.Plot}(undef, n)
   for i in 1:n
-    if ptype[i] == :bar
-      p[i] = bar_int(c, indeces; args...)
-    else
-      p[i] = plot(c, indeces; ptype=ptype[i], size=(ilength * 500, 300), args...)
-    end # if / else
+    ptype[i] == :bar ? p[i] = bar_int(c, indeces; args...) :
+    ptype[i] == :mixeddensity ? p[i] = mixeddensityplot(c, indeces; args...) :
+    p[i] = plot(c, indeces; ptype=ptype[i], size=(ilength * 500, 300), args...)
     if !fuse
       if n != 1
         println("Press ENTER to draw next plot")
@@ -184,7 +182,6 @@ end # check_vars
 end # recipe
 
 struct Autocor; c; indeces; maxlag; end
-struct Bar; c; indeces; position; end
 struct Contour; c; indeces; bins; end
 struct Density; c; indeces; trim; end
 struct Mean; c; indeces; end
@@ -341,6 +338,29 @@ end # recipe
   primary := false
 end # recipe
 
+
+function mixeddensityplot(c::AbstractChains, indeces::Vector{Int64};
+                          barbounds::Tuple{Real, Real}=(0, Inf), args...)
+  plots = Array{Plots.Plot}(undef, length(indeces))
+  ilength = length(indeces)
+  discrete_temp = MCPhylo.indiscretesupport(c, barbounds)
+  discrete = Bool[]
+  for index in indeces
+    try
+      push!(discrete, discrete_temp[index])
+    catch BoundsError
+    end # try / catch
+  end
+  for i in 1:length(discrete)
+    if discrete[i] == true
+      plots[i] = bar_int(c, [indeces[i]]; args...)
+    else
+      plots[i] = plot(c, [indeces[i]]; ptype=:density, size=(500, 300), args...)
+    end # if / else
+  end # for
+  p = plot(plots..., layout=(1, ilength), size=(ilength * 500, 300))
+  return p
+end # function
 
 @recipe function f(trace::Trace)
   xguide --> "Iteration"
