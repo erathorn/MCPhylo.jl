@@ -48,7 +48,7 @@ pv = plot(sim, [:autocor, :contour, :density, :mean, :trace],
 pv = plot(sim, [:autocor, :bar, :contour, :mixeddensity, :mean, :trace],
            fuse=true, fLayout=(2,2), fsize=(2750, 2500), linecolor=:match)
 # barplot works
-pv = plot(sim, [:bar], linecolor=:match, legend=:true)
+pv = plot(sim, [:bar], linecolor=:match, legend=:true, filename="blub.pdf")
 # use savefig to save as file; no draw function needed
 savefig("test.pdf")
 

@@ -9,6 +9,7 @@ density by default).
 - 'vars::Vector{String}=String[]' : specifies the variables of the chain that
                                     are plotted
 - 'filename::String=""' : when given, the plots will be saved to a file
+- 'fmt::Symbol=:pdf' : Format of the output file
 - 'args...': This includes specific arguments for the different plot types
              , like the number of bins for the contourplot or if the barplots
              bars should be stacked or not. Check the specific plot functions
@@ -26,7 +27,7 @@ density by default).
 """
 function plot(c::AbstractChains, ptype::Vector{Symbol}=[:trace, :density];
               vars::Vector{String}=String[], filename::String="",
-              fuse::Bool=false, f_layout=nothing,
+              fmt::Symbol=:pdf, fuse::Bool=false, f_layout=nothing,
               fsize::Tuple{Number, Number}=(0, 0), args...
               )::Union{Vector{Plots.Plot}, Tuple{Vector{Plots.Plot}, Plots.Plot}}
   if !isempty(vars)
@@ -62,10 +63,10 @@ function plot(c::AbstractChains, ptype::Vector{Symbol}=[:trace, :density];
     fsize == (0, 0) && (fsize = (ilength * 500, n * 300))
     allplots = Plots.plot(p..., layout=f_layout, size=fsize)
     display(allplots)
-    filename != "" && check_filename(filename, allplots)
+    filename != "" && check_filename(filename, fmt, allplots)
     return (p, allplots)
   end # if
-  filename != "" && check_filename(filename, p)
+  filename != "" && check_filename(filename, fmt, [p])
   return p
 end # plot
 
@@ -108,16 +109,21 @@ end # check_vars
 
 
 """
-    check_filename(filename, plots)
+    check_filename(filename, fmt, plots)
 
 --- INTERNAL ---
 Helper function that checks if a user-given filename is valid, and saves the
 created plots to that file.
 """
-function check_filename(filename, plots)
-  endswith(filename, r"(pdf)|(png)|(ps)|(svg)") ?
-  savefig(plots, filename) :
-  @warn "The given filename doesn't end with pdf, png, ps, or svg. No plot file created"
+function check_filename(filename, fmt, plots)
+  if !(fmt in [:pdf, :png, :ps, :svg])
+      @warn "The given format is not supported. Use :pdf, :png, :ps, or :svg. Defaulting to pdf."
+      fmt = :pdf
+  end # if
+  for (i, plot) in enumerate(plots)
+      i == 1 ? savefig(plot[i], "$filename.$fmt") :
+               savefig(plot[i], "$filename_$i.$fmt")
+  end # for
 end # check_filename
 
 
@@ -382,7 +388,7 @@ grouped_xy(y::AbstractArray) = 1:size(y,1), y
     isstack = pop!(plotattributes, :bar_position, :dodge) == :stack
     isylog = pop!(plotattributes, :yscale, :identity) ∈ (:log10, :log)
     ymax = maximum(isstack ? mapslices(sum, y, dims=2) : y)
-    ylims = (0.0, ymax)
+    ylims --> (0.0, ymax)
 
     # extract xnums and set default bar width.
     # might need to set xticks as well
