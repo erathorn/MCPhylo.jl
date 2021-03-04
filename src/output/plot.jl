@@ -1,5 +1,5 @@
 """
-  plot(c::AbstractChains, ptype::Vector{Symbol}=[:trace, :density];
+    plot(c::AbstractChains, ptype::Vector{Symbol}=[:trace, :density];
        <keyword arguments>)::Array{Plots.Plot}
 
 Function that takes a MCMC chain and creates various different plots (trace &
@@ -8,17 +8,25 @@ density by default).
 # Arguments
 - 'vars::Vector{String}=String[]' : specifies the variables of the chain that
                                     are plotted
-. 'filename::String=""' : when given, the plots will be saved to a file
-- 'fmt::Symbol'=:svg' : specifies the format of the output file
-- 'nrow::Integer=3' / 'ncol::Integer=2' : Define layout of the plot window(s),
-                                          i.e. how many plots on each page
-- 'legend::Bool=false': Turn plot legend on / off
-- 'args...': Plottype specific arguments, like the number of bins for the
-             contourplot or if the barplots bars should be stacked or not.
-            Check the specific plot functions below to use these arguments.
+- 'filename::String=""' : when given, the plots will be saved to a file
+- 'args...': This includes specific arguments for the different plot types
+             , like the number of bins for the contourplot or if the barplots
+             bars should be stacked or not. Check the specific plot functions
+             to use these arguments.
+
+            Plot attributes from the Plots.jl package can also be passed here:
+            I.e. try passing background_color=:black for a black background on
+            your plots. List of attributes here,
+            https://docs.juliaplots.org/latest/generated/attributes_series/
+            https://docs.juliaplots.org/latest/generated/attributes_plot/
+            https://docs.juliaplots.org/latest/generated/attributes_subplot/
+            https://docs.juliaplots.org/latest/generated/attributes_axis/
+            though not all are supported:
+            https://docs.juliaplots.org/latest/generated/supported/
 """
 function plot(c::AbstractChains, ptype::Vector{Symbol}=[:trace, :density];
-              vars::Vector{String}=String[], fuse::Bool=false, f_layout=nothing,
+              vars::Vector{String}=String[], filename::String="",
+              fuse::Bool=false, f_layout=nothing,
               fsize::Tuple{Number, Number}=(0, 0), args...
               )::Union{Vector{Plots.Plot}, Tuple{Vector{Plots.Plot}, Plots.Plot}}
   if !isempty(vars)
@@ -54,8 +62,10 @@ function plot(c::AbstractChains, ptype::Vector{Symbol}=[:trace, :density];
     fsize == (0, 0) && (fsize = (ilength * 500, n * 300))
     allplots = Plots.plot(p..., layout=f_layout, size=fsize)
     display(allplots)
+    filename != "" && check_filename(filename, allplots)
     return (p, allplots)
   end # if
+  filename != "" && check_filename(filename, p)
   return p
 end # plot
 
@@ -66,7 +76,7 @@ end # plot
 
 --- INTERNAL ---
 Helper function that returns a list of indeces that correspond to specific
-variables. Only those variables get plotted in later steps.
+variables. Only those variables are then plotted in the following steps.
 """
 function check_vars(sim_names::Vector{AbstractString}, vars::Vector{String})::Vector{Int64}
     names = []
@@ -97,6 +107,20 @@ function check_vars(sim_names::Vector{AbstractString}, vars::Vector{String})::Ve
 end # check_vars
 
 
+"""
+    check_filename(filename, plots)
+
+--- INTERNAL ---
+Helper function that checks if a user-given filename is valid, and saves the
+created plots to that file.
+"""
+function check_filename(filename, plots)
+  endswith(filename, r"(pdf)|(png)|(ps)|(svg)") ?
+  savefig(plots, filename) :
+  @warn "The given filename doesn't end with pdf, png, ps, or svg. No plot file created"
+end # check_filename
+
+
 #################### Plot Engines ####################
 @recipe function f(c::AbstractChains, indeces::Vector{Int64}; ptype=:autocor,
                    maxlag=round(Int, 10 * log10(length(c.range))), bins=100,
@@ -117,6 +141,7 @@ end # check_vars
     throw(ArgumentError("unsupported plot type $ptype"))
   return Tuple(arr)
 end # recipe
+
 
 struct Autocor; c; indeces; maxlag; end
 struct Contour; c; indeces; bins; end
@@ -153,8 +178,13 @@ struct Trace; c; indeces; end
 end # recipe
 
 
-function bar_int(c::AbstractChains, indeces::Vector{Int64};
-                 position::Symbol=:stack, args...)
+"""
+    bar_int(c::AbstractChains, indeces::Vector{Int64}; args...)::Plots.Plot
+
+--- INTERNAL ---
+Helper function for creating barplots.
+"""
+function bar_int(c::AbstractChains, indeces::Vector{Int64}; args...)::Plots.Plot
   nrows, nvars, nchains = size(c.value)
   ilength = length(indeces)
   bar_plots = Array{Plots.Plot}(undef, ilength)
@@ -171,10 +201,9 @@ function bar_int(c::AbstractChains, indeces::Vector{Int64};
         end # if
       end # for
     end # for
-    ymax = maximum(position == :stack ? mapslices(sum, y, dims=2) : y)
     bar_plots[index] = groupbar(vec(x), vec(y);
                                 group=repeat(c.chains, inner=[n]),
-                                title=c.names[i], ylims=(0.0, ymax), args...)
+                                title=c.names[i], args...)
   end # for
   p = Plots.plot(bar_plots..., layout=(1, ilength), size=(ilength * 500, 300))
   return p
@@ -326,12 +355,15 @@ end # function
 end # recipe
 
 
+#=
+This is a slightly modified version of the GroupedBar recipe found in the
+StatsPlots package:
+  https://github.com/JuliaPlots/StatsPlots.jl/blob/master/src/bar.jl
+=#
 @userplot GroupBar
 
 recipetype(::Val{:groupbar}, args...) = GroupBar(args)
-
 Plots.group_as_matrix(g::GroupBar) = true
-
 grouped_xy(x::AbstractVector, y::AbstractArray) = x, y
 grouped_xy(y::AbstractArray) = 1:size(y,1), y
 
@@ -349,7 +381,8 @@ grouped_xy(y::AbstractArray) = 1:size(y,1), y
     nr, nc = size(y)
     isstack = pop!(plotattributes, :bar_position, :dodge) == :stack
     isylog = pop!(plotattributes, :yscale, :identity) ∈ (:log10, :log)
-    # the_ylims = pop!(plotattributes, :ylims, (-Inf, Inf))
+    ymax = maximum(isstack ? mapslices(sum, y, dims=2) : y)
+    ylims = (0.0, ymax)
 
     # extract xnums and set default bar width.
     # might need to set xticks as well
@@ -402,6 +435,7 @@ grouped_xy(y::AbstractArray) = 1:size(y,1), y
     seriestype := :bar
     x, y
 end
+
 
 function groupedbar_fillrange(y)
     nr, nc = size(y)
