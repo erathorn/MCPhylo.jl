@@ -127,7 +127,7 @@ function check_filename(filename, fmt, plots)
 end # check_filename
 
 
-#################### Plot Engines ####################
+#################### Internal Plot Function ####################
 @recipe function f(c::AbstractChains, indeces::Vector{Int64}; ptype=:autocor,
                    maxlag=round(Int, 10 * log10(length(c.range))), bins=100,
                    trim=(0.025, 0.975))
@@ -148,7 +148,7 @@ end # check_filename
   return Tuple(arr)
 end # recipe
 
-
+# structs that are used for the recipes
 struct Autocor; c; indeces; maxlag; end
 struct Contour; c; indeces; bins; end
 struct Density; c; indeces; trim; end
@@ -156,6 +156,12 @@ struct Mean; c; indeces; end
 struct Trace; c; indeces; end
 
 
+"""
+    f(acor::Autocor)
+
+--- INTERNAL ---
+Recipe for Autocor plots
+"""
 @recipe function f(acor::Autocor)
   xguide --> "Lag"
   yguide --> "Autocorrelation"
@@ -216,6 +222,12 @@ function bar_int(c::AbstractChains, indeces::Vector{Int64}; args...)::Plots.Plot
 end # function
 
 
+"""
+    f(cont::Contour)
+
+--- INTERNAL ---
+Recipe for contour plots
+"""
 @recipe function f(cont::Contour)
   layout --> (1, sum(collect(1:length(cont.indeces) - 1)))
   legend := false
@@ -254,6 +266,12 @@ end # function
 end # recipe
 
 
+"""
+    f(dens::Density)
+
+--- INTERNAL ---
+Recipe for density plots
+"""
 @recipe function f(dens::Density)
   xguide --> "Value"
   yguide --> "Density"
@@ -285,6 +303,12 @@ end # recipe
 end # recipe
 
 
+"""
+    f(mean::Mean)
+
+--- INTERNAL ---
+Recipe for mean plots
+"""
 @recipe function f(mean::Mean)
   xguide --> "Iteration"
   yguide --> "Mean"
@@ -311,6 +335,14 @@ end # recipe
 end # recipe
 
 
+"""
+    mixeddensityplot(c::AbstractChains,, indeces::Vector{Int64};
+                     barbounds::Tuple{Real, Real}=(0, Inf), args...):Plots.Plot
+
+--- INTERNAL ---
+Helper function that creates a barplot for each discrete and a density for each
+continuous variable.
+"""
 function mixeddensityplot(c::AbstractChains, indeces::Vector{Int64};
                           barbounds::Tuple{Real, Real}=(0, Inf), args...)
   plots = Array{Plots.Plot}(undef, length(indeces))
@@ -334,6 +366,13 @@ function mixeddensityplot(c::AbstractChains, indeces::Vector{Int64};
   return p
 end # function
 
+
+"""
+    f(trace::Trace)
+
+--- INTERNAL ---
+Recipe for trace plots
+"""
 @recipe function f(trace::Trace)
   xguide --> "Iteration"
   yguide --> "Value"
@@ -367,13 +406,17 @@ StatsPlots package:
   https://github.com/JuliaPlots/StatsPlots.jl/blob/master/src/bar.jl
 =#
 @userplot GroupBar
-
 recipetype(::Val{:groupbar}, args...) = GroupBar(args)
 Plots.group_as_matrix(g::GroupBar) = true
 grouped_xy(x::AbstractVector, y::AbstractArray) = x, y
 grouped_xy(y::AbstractArray) = 1:size(y,1), y
+"""
+    f(g::GroupBar; spacing=0)
 
-@recipe function f(g::GroupBar; spacing = 0)
+--- INTERNAL ---
+Recipe for a grouped bar plot.
+"""
+@recipe function f(g::GroupBar; spacing=0)
     xguide --> "Value"
     yguide --> "Density"
     grid --> :dash
@@ -443,6 +486,12 @@ grouped_xy(y::AbstractArray) = 1:size(y,1), y
 end
 
 
+"""
+    groupedbar_fillrange(y)
+
+--- INTERNAL ---
+Helper function for the groupbar plot
+"""
 function groupedbar_fillrange(y)
     nr, nc = size(y)
     # bar series fills from y[nr, nc] to fr[nr, nc], y .>= fr
