@@ -7,11 +7,11 @@ Felsensteins pruning algorithm.
 
 The function is written such that it is differentiable by Zygote 0.5.3.
 """
-function FelsensteinFunction(tree_postorder::Vector{N}, pi_::T, rates::Vector{Float64},
+function FelsensteinFunction(tree_postorder::Vector{N}, pi_::T, rates::Float64,
                              data::Array{Float64,3}, n_c::Int64, blv::Vector{Float64}) where {T<:Real, N<:GeneralNode}
-    r::Float64 = 1.0
+
     mu =  1.0 / (2.0 * pi_ * (1-pi_))
-    mml = calc_trans.(blv, pi_, mu, r)
+    mml = calc_trans.(blv, pi_, mu, rates)
 
     root_node = last(tree_postorder)
     rns = zeros(Float64, 1, n_c)
@@ -24,7 +24,6 @@ function FelsensteinFunction(tree_postorder::Vector{N}, pi_::T, rates::Vector{Fl
                 rns = rns + log.(scaler)
                 node.data = node.data ./ scaler
             end #if
-
         end #if
     end # for
 
