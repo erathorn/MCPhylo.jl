@@ -185,7 +185,7 @@ function fill_in_the_blanks_test(filename::String,ratesfile::String, tree::Strin
     global pairwise_results = []
 	global already_tested = []
 
-	for trial in range(1,stop=10000)
+	for trial in range(1,stop=1000)
 		#selects random language/index in node.data that isn't unknown OR already used
 		while true
 			global randlang = rand(collect(range(1,ntax)))
