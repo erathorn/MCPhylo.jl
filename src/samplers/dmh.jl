@@ -3,17 +3,14 @@
 #################### Types and Constructors ####################
 
 mutable struct DMHTune <: SamplerTune
-  outer<:SamplerVariate
-  inner<:SamplerVariate
-  seed_data<:AbstractArray
-  m<:Int64
+  seed_data::AbstractArray
+  m::Int64
+
 
   DMHTune() = new()
-  function DMHTune(outer::S, inner::T, seed_data::A, m::Int64) where {S<:SamplerVariate, T<:SamplerVariate}
-    typeof(outer) == DMHVariate && throw(ArgumentError($outer " cannot be of type " $typeof(outer)))
-    typeof(inner) == DMHVariate && throw(ArgumentError($inner " cannot be of type " $typeof(inner)))
+  function DMHTune(seed_data::A, m::Int64) where A<:AbstractArray
 	@assert m >= length(seed_data)
-    new(outer, inner, seed_data, m)
+    new(seed_data, m)
   end
 end
 
@@ -107,7 +104,6 @@ function inner_sampler(v::DMHTune, cond_prob::Function)
 				probs ./= sum(probs)
 				new_x = sample(feature_vals, StatsBase.weights(probs))
 				samples[i] = new_x
-			end
 			counter += 1
 			if counter > m
 				return samples
