@@ -2,8 +2,13 @@
     upgma(dm::Array{Float64,2}, Array{String,1})
 
 This function returns a phylogenetic tree by using UPGMA based on a
-given distance matrix and an array of leaf names. Returns a node of the
-resulting tree, from which it can be traversed.
+given distance matrix and an array of leaf names.
+
+Returns a node of the resulting tree, from which it can be traversed.
+
+* `dm` : Matrix from which to create the tree.
+
+* `leaf_names` : array of strings containing names of leaf nodes.
 """
 function upgma(dm::Array{Float64,2}, leaf_names::Array{String,1})
     n = size(dm)[1]
@@ -23,8 +28,11 @@ end
     upgma(dm::Array{Float64,2})
 
 This function returns a phylogenetic tree by using UPGMA based on a
-given distance matrix. Creates an array of nodes to be used as leaves. Returns
-a node of the resulting tree, from which it can be traversed.
+given distance matrix. Creates an array of nodes to be used as leaves.
+
+Returns a node of the resulting tree, from which it can be traversed.
+
+* `dm` : Matrix from which to create the tree.
 """
 function upgma(dm::Array{Float64,2})
     n = size(dm)[1]
@@ -118,8 +126,13 @@ end # end function upgma
     neighbor_joining(dm::Array{Float64,2}, Array{String,1})
 
 This function returns a phylogenetic tree by using neighbor-joining based on a
-given distance matrix and an array of leaf names. Returns a node of the
-resulting tree, from which it can be traversed.
+given distance matrix and an array of leaf names.
+
+Returns a node of the resulting tree, from which it can be traversed.
+
+* `dm` : Matrix used to create Tree.
+
+* `leaf_names` : Array containing names of leaf nodes.
 """
 function neighbor_joining(dm::Array{Float64,2}, leaf_names::Array{String,1})
     n = size(dm)[1]
@@ -139,8 +152,11 @@ end
     neighbor_joining(dm::Array{Float64,2})
 
 This function returns a phylogenetic tree by using neighbor-joining based on a
-given distance matrix. Creates an array of nodes to be used as leaves. Returns
-a node of the resulting tree, from which it can be traversed.
+given distance matrix. Creates an array of nodes to be used as leaves.
+
+Returns a node of the resulting tree, from which it can be traversed.
+
+* `dm` : Matrix from which to create tree.
 """
 function neighbor_joining(dm::Array{Float64,2})
     n = size(dm)[1]

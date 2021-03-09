@@ -1,7 +1,11 @@
 #################### Chains ####################
 
 #################### Constructors ####################
-
+"""
+    Chains(iters::Integer, params::Integer;
+    start::Integer=1, thin::Integer=1, chains::Integer=1,
+    names::Vector{T}=AbstractString[]) where {T<:AbstractString}
+"""
 function Chains(iters::Integer, params::Integer;
                start::Integer=1, thin::Integer=1, chains::Integer=1,
                names::Vector{T}=AbstractString[], ntrees::Integer=1, tree_names::Vector{Symbol}=Symbol[]) where {T<:AbstractString}
@@ -12,13 +16,25 @@ function Chains(iters::Integer, params::Integer;
   Chains(value, value2, start=start, thin=thin, names=names, tree_names=string.(tree_names))
 end
 
+"""
+    Chains(value::Array{T, 3},
+    start::Integer=1, thin::Integer=1,
+    names::Vector{W}=AbstractString[], chains::Vector{V}=Int[], moves::Vector{V}=Int[0])
+    where {T<:Real, U<:AbstractString, V<:Integer, W <: AbstractString}
+"""
 function Chains(value::Array{T, 3},
                start::Integer=1, thin::Integer=1,
                names::Vector{W}=AbstractString[], chains::Vector{V}=Int[], moves::Vector{V}=Int[0]) where {T<:Real, U<:AbstractString, V<:Integer, W <: AbstractString}
    Chains(value, Array{String, 3}(undef, size(value)), start=start,
           thin=thin, names=names, chains=chains, moves=moves)
 end
-
+"""
+    Chains(value::Array{T, 3},
+    value2::Array{U,3};
+    start::Integer=1, thin::Integer=1,
+    names::Vector{W}=AbstractString[], chains::Vector{V}=Int[], moves::Vector{V}=Int[0])
+    where {T<:Real, U<:AbstractString, V<:Integer, W <: AbstractString}
+"""
 function Chains(value::Array{T, 3},
                 value2::Array{U,3};
                start::Integer=1, thin::Integer=1,
@@ -41,7 +57,12 @@ function Chains(value::Array{T, 3},
   v = convert(Array{Float64, 3}, value)
   Chains(v, range(start, step=thin, length=n), AbstractString[names...], Int[chains...], value2, moves, tree_names)
 end
-
+"""
+    Chains(value::Matrix{T};
+    start::Integer=1, thin::Integer=1,
+    names::Vector{U}=AbstractString[], chains::Integer=1)
+    where {T<:Real, U<:AbstractString}
+"""
 function Chains(value::Matrix{T};
                start::Integer=1, thin::Integer=1,
                names::Vector{U}=AbstractString[], chains::Integer=1) where {T<:Real, U<:AbstractString}
@@ -50,7 +71,29 @@ function Chains(value::Matrix{T};
   Chains(cont_vals, tree_vals, start=start,
          thin=thin, names=names, chains=Int[chains])
 end
+"""
+    Chains(value::Vector{T};
+    start::Integer=1, thin::Integer=1,
+    names::U="Param1", chains::Integer=1) where {T<:Real, U <: AbstractString}
 
+Construct a `Chains` object that stores MCMC sampler output.
+
+Returns an object of type `Chains`.
+
+* `iters`: total number of iterations in each sampler run, of which `length(start:thin:iters)` outputted iterations will be stored in the object.
+
+* `params`: number of parameters to store.
+
+* `value`: array whose first, second (optional), and third (optional) dimensions index outputted iterations, parameter elements, and runs of an MCMC sampler, respectively.
+
+* `start`: number of the first iteration to be stored.
+
+* `thin`: number of steps between consecutive iterations to be stored.
+
+* `chains`: number of simulation runs for which to store output, or indices to the runs (default: 1, 2, …).
+
+* `names`: names to assign to the parameter elements (default: `"Param1"`, `"Param2"`, …).
+"""
 function Chains(value::Vector{T};
                start::Integer=1, thin::Integer=1,
                names::U="Param1", chains::Integer=1) where {T<:Real, U <: AbstractString}
@@ -60,7 +103,22 @@ end
 
 
 #################### Indexing ####################
+"""
+    Base.getindex(c::Chains, window, names, chains)
+Subset MCMC sampler output. The syntax `c[i, j, k]` is converted to `getindex(c, i, j, k)`.
 
+Subsetted sampler output stored in the same type of object as that supplied in the call.
+
+* `c` : sampler output to subset.
+
+* `window` : indices of the form `start:stop` or `start:thin:stop` can be used to subset iterations, where `start` and `stop` define a range for the subset and `thin` will apply additional thinning to existing sampler output.
+
+* `names` : indices for subsetting of parameters that can be specified as strings, integers, or booleans identifying parameters to be kept. `ModelChains` may additionally be indexed by model node symbols.
+
+* `chains` : indices for chains can be integers or booleans.
+
+A value of `:` can be specified for any of the dimensions to indicate no subsetting.
+"""
 function Base.getindex(c::Chains, window, names, chains)
   inds1 = window2inds(c, window)
   inds2 = names2inds(c, names)
@@ -79,7 +137,25 @@ function Base.getindex(c::Chains, window, names, chains)
 end
 
 Base.lastindex(c::AbstractChains, i) = size(c, i)
+"""
+    Base.setindex!(c::AbstractChains, value, iters, names, chains)
 
+Store MCMC sampler output at a given index. The syntax `c[i, j, k] = value` is converted to `setindex!(c, value, i, j, k)`.
+
+Returns an object of the same type as c with the sampler output stored in the specified indices.
+
+* `c` : object within which to store sampler output.
+
+* `value` : sampler output.
+
+* `iters` : iterations can be indexed as a `start:stop` or `start:thin:stop` range, a single numeric index, or a vector of indices; and are taken to be relative to the index range store in the `c.range` field.
+
+* `names` : indices for subsetting of parameters can be specified as strings, integers, or booleans.
+
+* `chains` : indices for chains can be integers or booleans.
+
+A value of `:` can be specified for any of the dimensions to indicate no subsetting.
+"""
 function Base.setindex!(c::AbstractChains, value, iters, names, chains)
   setindex!(c.value, value, iters2inds(c, iters), names2inds(c, names), chains)
 end
@@ -119,8 +195,19 @@ names2inds(c::AbstractChains, names::Vector{T}) where {T<:AbstractString} =
 
 
 #################### Concatenation ####################
+"""
+    Base.cat(c1::AbstractChains, args::AbstractChains...; dims::Integer)
 
-function Base.cat(c1::A, args::A...; dims::Integer) where A <: AbstractChains
+Concatenate input MCMC chains along a specified dimension. For dimensions other than the specified one, all input chains must have the same sizes, which will also be the sizes of the output chain. The size of the output chain along the specified dimension will be the sum of the sizes of the input chains in that dimension. vcat concatenates vertically along dimension 1, and has the alternative syntax [chain1; chain2; ...]. hcat concatenates horizontally along dimension 2, and has the alternative syntax [chain1 chain2 ...].
+
+Returns a `Chains` object containing the concatenated input.
+
+* `dim` : dimension (1, 2, or 3) along which to concatenate the input chains.
+
+* `c1`, `args...` : Chains to concatenate.
+
+"""
+function Base.cat(c1::AbstractChains, args::AbstractChains...; dims::Integer)
   dims == 1 ? cat1(c1, args...) :
   dims == 2 ? cat2(c1, args...) :
   dims == 3 ? cat3(c1, args...) :
@@ -221,22 +308,52 @@ Base.vcat(c1::AbstractChains, args::AbstractChains...) = cat(c1, args..., dims=1
 
 
 #################### Base Methods ####################
+"""
+    Base.keys(c::AbstractChains)
 
+Returns names of parameter elements.
+
+* `c` : Chain to return names of.
+
+"""
 function Base.keys(c::AbstractChains)
   c.names
 end
+"""
+    Base.show(io::IO, c::AbstractChains)
 
+Prints header and values of Chain.
+
+* `io` : IO stream on which to print.
+
+* `AbstractChains` : Chain to print.
+"""
 function Base.show(io::IO, c::AbstractChains)
   print(io, "Object of type \"$(summary(c))\"\n\n")
   println(io, header(c))
   show(io, c.value)
 end
+"""
+    Base.size(c::AbstractChains)
 
+Returns Tuple containing last iteration of MCMC sampler output and dimensions of Chain dimensions of c.value.
+
+* `c` : Chain object of interest.
+
+"""
 function Base.size(c::AbstractChains)
   dim = size(c.value)
   last(c), dim[2], dim[3]
 end
+"""
+    Base.size(c::AbstractChains, ind)
 
+Returns last iteration of MCMC sampler output, or dimension derived from C, according to value of ind.
+
+* `c` : Chain object of interest.
+
+* `ind` : index of tuple to return; 1 returns last iteration of MCMC sampler output, 2 and 3 return dimensions of c.value.
+"""
 function Base.size(c::AbstractChains, ind)
   size(c)[ind]
 end

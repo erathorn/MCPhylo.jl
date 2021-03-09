@@ -38,7 +38,28 @@ end
 
 
 #################### Sampler Constructor ####################
+"""
+Slice(params::ElementOrVector{Symbol},
+                width::ElementOrVector{T},
+                ::Type{F}=Multivariate;
+                transform::Bool=false) where {T<:Real, F<:SliceForm}
 
+Construct a `Sampler` object for Slice sampling. Parameters are assumed to be
+continuous, but may be constrained or unconstrained.
+
+Returns a `Sampler{SliceTune{Univariate}}` or `Sampler{SliceTune{Multivariate}}`
+type object if sampling univariately or multivariately, respectively.
+
+  * `params`: stochastic node(s) to be updated with the sampler.
+
+  * `width`: scaling value or vector of the same length as the combined elements of nodes `params`, defining initial widths of a hyperrectangle from which to simulate values.
+
+  * `F` : sampler type. Options are
+      * `:Univariate` : sequential univariate sampling of parameters.
+      * `:Multivariate` : joint multivariate sampling.
+
+  * `transform`: whether to sample parameters on the link-transformed scale (unconstrained parameter space). If `true`, then constrained parameters are mapped to unconstrained space according to transformations defined by the Stochastic `unlist()` function, and `width` is interpreted as being relative to the unconstrained parameter space. Otherwise, sampling is relative to the untransformed space.
+"""
 function Slice(params::ElementOrVector{Symbol},
                 width::ElementOrVector{T},
                 ::Type{F}=Multivariate;
@@ -56,7 +77,15 @@ end
 #################### Sampling Functions ####################
 
 sample!(v::Union{SliceUnivariate, SliceMultivariate}) = sample!(v, v.tune.logf)
+"""
+    sample!(v::Union{SliceUnivariate, SliceMultivariate}, logf::Function)
 
+Draw one sample from a target distribution using the Slice univariate or
+multivariate sampler. Parameters are assumed to be continuous, but may be
+constrained or unconstrained.
+
+Returns `v` updated with simulated values and associated tuning parameters.
+"""
 function sample!(v::Union{SliceUnivariate, SliceMultivariate}, logf::Function)
     typeof(v.value[1]) <:GeneralNode ? sample_node!(v, logf) : sample_number!(v, logf)
 end

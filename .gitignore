@@ -7,5 +7,5 @@ Manifest.toml
 *.jls
 *.nex
 *params*.log
-docs/build/
 untracked_files/
+Manifest.toml

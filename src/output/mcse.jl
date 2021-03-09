@@ -1,5 +1,22 @@
 #################### Monte Carlo Standard Errors ####################
+"""
+    mcse(x::Vector{T}, method::Symbol=:imse; args...) where {T<:Real}
 
+Compute Monte Carlo standard errors.
+
+Returns the numeric standard error value.
+
+* `x` : time series of values on which to perform calculations.
+
+* `method` : method used for the calculations. Options are
+  * `:bm` : batch means, with optional argument `size::Integer=100` determining the number of sequential values to include in each batch. This method requires that the number of values in `x` is at least 2 times the batch size.
+
+  * `:imse` : initial monotone sequence estimator.
+
+  * `:ipse` : initial positive sequence estimator.
+
+* `args...` : additional arguments for the calculation method.
+"""
 function mcse(x::Vector{T}, method::Symbol=:imse; args...) where {T<:Real}
   method == :bm ? mcse_bm(x; args...) :
   method == :imse ? mcse_imse(x) :

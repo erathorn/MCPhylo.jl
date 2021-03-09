@@ -1,5 +1,9 @@
 #################### Raftery and Lewis Diagnostic ####################
-
+"""
+    rafterydiag(x::Vector{T}; q::Real=0.025, r::Real=0.005,
+                      s::Real=0.95, eps::Real=0.001,
+                      range::AbstractRange=1:1:length(x)) where {T<:Real}
+"""
 function rafterydiag(x::Vector{T}; q::Real=0.025, r::Real=0.005,
                       s::Real=0.95, eps::Real=0.001,
                       range::AbstractRange=1:1:length(x)) where {T<:Real}
@@ -45,7 +49,28 @@ function rafterydiag(x::Vector{T}; q::Real=0.025, r::Real=0.005,
   end
   [kthin, burnin, total, nmin, total / nmin]
 end
+"""
+    rafterydiag(c::AbstractChains; q::Real=0.025, r::Real=0.005,
+                     s::Real=0.95, eps::Real=0.001)
 
+Compute the convergence diagnostic of Raftery and Lewis for MCMC sampler output. The diagnostic is designed to determine the number of autocorrelated samples required to estimate a specified quantile ``\\theta_q``, such that ``\\Pr(\\theta \\le \\theta_q) = q``, within a desired degree of accuracy. In particular, if ``\\hat{\\theta}_q`` is the estimand and ``\\Pr(\\theta \\le \\hat{\\theta}_q) = \\hat{P}_q`` the estimated cumulative probability, then accuracy is specified in terms of r and s, where ``\\Pr(q - r < \\hat{P}_q < q + r) = s``. Thinning may be employed in the calculation of the diagnostic to satisfy its underlying assumptions. However, users may not want to apply the same (or any) thinning when estimating posterior summary statistics because doing so results in a loss of information. Accordingly, sample sizes estimated by the diagnostic tend to be conservative (too large).
+
+Returns a `ChainSummary` type object with parameters contained in the rows of the value field, and thinning intervals employed, numbers of samples to discard as burn-in sequences, total numbers ``(N)`` to burn-in and retain, numbers of independent samples that would be needed ``(Nmin)``, and dependence factors ``(N / Nmin)`` in the columns. Results are chain-specific.
+
+* `c` : sampler output on which to perform calculations.
+
+* `q` : posterior quantile of interest.
+
+* `r` : margin of error for estimated cumulative probabilities.
+
+* `s` : probability for the margin of error.
+
+* `eps` : tolerance within which the probabilities of transitioning from initial to retained iterations are within the equilibrium probabilities for the chain. This argument determines the number of samples to discard as a burn-in sequence and is typically left at its default value.
+
+* `x` : vector on which to perform calculations.
+
+* `range` : ??
+"""
 function rafterydiag(c::AbstractChains; q::Real=0.025, r::Real=0.005,
                      s::Real=0.95, eps::Real=0.001)
   _, p, m = size(c.value)

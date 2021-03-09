@@ -39,11 +39,35 @@ end
 
 
 #################### Sampler Constructor ####################
+"""
+    MALA(params::ElementOrVector{Symbol}, epsilon::Real; args...)
 
+Construct a `Sampler` object for MALA sampling. Parameters are assumed to be
+continuous, but may be constrained or unconstrained.
+
+Returns a `Sampler{MALATune}`` type object.
+
+* `params`: stochastic node(s) to be updated with the sampler. Constrained parameters are mapped to unconstrained space according to transformations defined by the Stochastic `unlist()` function.
+
+* `epsilon`: factor by which the drift and covariance matrix of the proposal distribution are scaled.
+
+* `Sigma`: covariance matrix for the multivariate normal proposal distribution. The covariance matrix is relative to the unconstrained parameter space, where candidate draws are generated. If omitted, the identity matrix is assumed.
+
+* `dtype` : differentiation for gradient calculations. Options are
+    * `:central` : central differencing
+    * `:forward` : forward differencing.
+"""
 function MALA(params::ElementOrVector{Symbol}, epsilon::Real; args...)
   MALASampler(params, epsilon; args...)
 end
+"""
+    MALA(params::ElementOrVector{Symbol}, epsilon::Real, Sigma::Matrix{T}; args...)
 
+Construct a `Sampler` object for MALA sampling. Parameters are assumed to be
+continuous, but may be constrained or unconstrained.
+
+Returns a `Sampler{MALATune}`` type object.
+"""
 function MALA(params::ElementOrVector{Symbol}, epsilon::Real,
                Sigma::Matrix{T}; args...) where {T<:Real}
   MALASampler(params, epsilon, Sigma; args...)
@@ -63,7 +87,14 @@ end
 #################### Sampling Functions ####################
 
 sample!(v::MALAVariate) = sample!(v, v.tune.logfgrad)
+"""
+    sample!(v::MALAVariate, logfgrad::Function)
 
+Draw one sample from a target distribution using the MALA sampler. Parameters
+are assumed to be continuous and unconstrained.
+
+Returns `v` updated with simulated values and associated tuning parameters.
+"""
 function sample!(v::MALAVariate, logfgrad::Function)
   tune = v.tune
 
