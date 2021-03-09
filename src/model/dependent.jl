@@ -519,7 +519,8 @@ end
 
 function rand(s::AbstractStochastic, x::Int64)
   rand(s.distr, x)
-  
+end
+
 function gradlogpdf(s::AbstractStochastic)
   gradlogpdf(s, s.value)
 end
