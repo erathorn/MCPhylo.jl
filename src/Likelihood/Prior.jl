@@ -4,7 +4,6 @@
 This structure implememts the CompoundDirichlet distribution described
 in Zhang, Rannala and Yang 2012. (DOI:10.1093/sysbio/sys030)
 """
-## Type declaration
 mutable struct CompoundDirichlet <: ContinuousUnivariateDistribution
     alpha::Float64
     a::Float64
@@ -61,7 +60,7 @@ function gradlogpdf(d::CompoundDirichlet, x::T) where T <: GeneralNode
 end
 
 
-function _logpdf(d::CompoundDirichlet, x::T) where T <: GeneralNode
+function logpdf(d::CompoundDirichlet, x::T) where T <: GeneralNode
     internal_logpdf(d, get_branchlength_vector(x), internal_external(x))
 end # function _logpdf
 
@@ -71,10 +70,9 @@ function insupport(d::CompoundDirichlet, x::T) where T <: GeneralNode
 end # function insupport
 
 
-function logpdf_sub(d::ContinuousUnivariateDistribution, x::T, transform::Bool) where T <: GeneralNode
-    insupport(d, x) ? _logpdf(d, x) : -Inf
+function logpdf_sub(d::CompoundDirichlet, x::T, transform::Bool) where T <: GeneralNode
+    insupport(d, x) ? logpdf(d, x) : -Inf
 end
-
 
 function relistlength(d::CompoundDirichlet, x::AbstractArray)
   n = length(x)
@@ -82,7 +80,10 @@ function relistlength(d::CompoundDirichlet, x::AbstractArray)
   (Array(x), n)
 end
 
-
+"""
+    exponentialBL(scale::Float64) <: ContinuousUnivariateDistribution
+This structure implememts an exponential prior on the branch lengths of a tree.
+"""
 mutable struct exponentialBL <: ContinuousUnivariateDistribution
     scale::Float64
     constraints::Union{Dict, Missing}

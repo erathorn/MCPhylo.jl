@@ -37,7 +37,21 @@ end
 
 
 #################### Sampler Constructor ####################
+"""
+    MISS(params::ElementOrVector{Symbol})
 
+Construct a `Sampler` object to sampling missing output values. The constructor
+should only be used to sample stochastic nodes upon which no other stochastic
+node depends. So-called ‘output nodes’ can be identified with the `keys()`
+function. Moreover, when the `MISS` constructor is included in a vector of
+`Sampler` objects to define a sampling scheme, it should be positioned at the
+beginning of the vector. This ensures that missing output values are updated
+before any other samplers are executed.
+
+Returns a `Sampler{Dict{Symbol, MISSTune}}` type object.
+
+* `params`: stochastic node(s) that contain missing values (`NaN`) to be updated with the sampler.
+"""
 function MISS(params::ElementOrVector{Symbol})
   params = asvec(params)
   samplerfx = function(model::Model, block::Integer)

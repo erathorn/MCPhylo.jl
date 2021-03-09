@@ -1,10 +1,11 @@
 doc/_build/
 doc/make.bat
+Manifest.toml
 *params.csv
 *params.log
 *.nwk
 *.jls
 *.nex
 *params*.log
-docs/build/
 untracked_files/
+Manifest.toml

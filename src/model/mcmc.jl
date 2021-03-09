@@ -1,5 +1,19 @@
 #################### MCMC Simulation Engine ####################
 
+
+"""
+    mcmc(mc::ModelChains, iters::Integer; verbose::Bool=true, trees::Bool=false)
+
+This function simulates additional draws from a model.
+
+* `mc` is the results of a previous call to the mcmc function.
+
+* `iters` indicates the number of draws to simulate.
+
+* `verbose` controls whether to print porgress statements to the console.
+
+* `trees` indicates if the states of the model nodes describing tree structures should be stored as well.
+"""
 function mcmc(mc::ModelChains, iters::Integer; verbose::Bool=true, trees::Bool=false)
   thin = step(mc)
   last(mc) == div(mc.model.iter, thin) * thin ||
@@ -16,6 +30,30 @@ function mcmc(mc::ModelChains, iters::Integer; verbose::Bool=true, trees::Bool=f
 end
 
 
+"""
+    mcmc(m::Model, inputs::Dict{Symbol},
+              inits::Vector{V} where V<:Dict{Symbol},
+              iters::Integer; burnin::Integer=0, thin::Integer=1,
+              chains::Integer=1, verbose::Bool=true, trees::Bool=false)
+
+Simulate MCMC draws from the model `m`.
+
+* `inputs` is a dictionary storing the values for input model nodes. Dictionary keys and values should be given for each input node.
+
+* `inits` contains dictionaries with initial values for stochastic model nodes. Dictionary keys and values should be given for each stochastic node. Consecutive runs of the simulator will iterate through the vector’s dictionary elements.
+
+* `iter` Specifies the number of draws to generate for each simulation run
+
+* `burnin` specifies the number of initial draws to discard as a burn-in sequence to allow for convergence.
+
+* `thin` is the step-size between draws to store in the output.
+
+* `chains` specifies the number of simulation runs to perform.
+
+* `verbose` indicates whether the sampler progress should be printed at the console.
+
+* `trees` indicates if the states of the model nodes describing tree structures should be stored as well.
+"""
 function mcmc(m::Model, inputs::Dict{Symbol},
               inits::Vector{V} where V<:Dict{Symbol},
               iters::Integer; burnin::Integer=0, thin::Integer=1,

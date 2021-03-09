@@ -12,6 +12,7 @@ using Distributed
 using Printf: @sprintf
 using LinearAlgebra
 using Plots
+@reexport using Plots
 using StatsPlots
 @reexport using StatsPlots
 using RecipesBase
@@ -25,8 +26,8 @@ using Random
 using CSV
 using ChainRules
 using ChainRulesCore
-
-
+using DataStructures
+using ProgressMeter
 using CUDA
 if has_cuda()
   using GPUArrays
@@ -70,7 +71,7 @@ using LightGraphs: DiGraph, add_edge!, outneighbors,
        topological_sort_by_dfs, vertices
 import StatsBase: autocor, autocov, countmap, counts, describe, predict,
        quantile, sample, sem, summarystats
-import DataStructures: PriorityQueue, dequeue!
+
 
 include("distributions/pdmats2.jl")
 using .PDMats2
@@ -303,6 +304,7 @@ include("samplers/hmc.jl")
 include("samplers/mala.jl")
 include("samplers/miss.jl")
 include("samplers/nuts.jl")
+include("samplers/pnuts.jl")
 include("samplers/rwm.jl")
 include("samplers/rwmc.jl")
 include("samplers/slice.jl")
@@ -327,19 +329,14 @@ include("Parser/Parser.jl")
 include("Parser/ParseCSV.jl")
 include("Parser/ParseNexus.jl")
 include("Parser/ParseNewick.jl")
-include("Sampler/PNUTS.jl")
-include("Sampler/EmpiricalMove.jl")
 
-include("Substitution/SubstitutionMat.jl")
 
-include("Utils/SIMD_Mat.jl")
 include("Utils/FileIO.jl")
 
 include("Likelihood/LikelihoodCalculator_Node.jl")
 include("Likelihood/Parsimony.jl")
 include("Likelihood/Prior.jl")
 include("Likelihood/Rates.jl")
-include("Likelihood/SubstitutionModels.jl")
 #################### Exports ####################
 
 export

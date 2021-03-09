@@ -17,7 +17,17 @@ end
 
 
 #################### Display ####################
+"""
+    draw(m::Model; filename::AbstractString="")
 
+Draw a GraphViz DOT-formatted graph representation of model nodes and their relationships.
+
+The model drawn to an external file or standard output. Stochastic, logical, and input nodes will be represented by ellipses, diamonds, and rectangles, respectively. Nodes that are unmonitored in MCMC simulations will be gray-colored.
+
+* `m` : model for which to construct a graph.
+
+* `filename` : external file to which to save the resulting graph, or an empty string to draw to standard output (default). If a supplied external file name does not include a dot (`.`), the file extension `.dot` will be appended automatically.
+"""
 function draw(m::Model; filename::AbstractString="")
   dot = graph2dot(m)
   if length(filename) == 0
@@ -33,7 +43,15 @@ function draw(m::Model; filename::AbstractString="")
 end
 
 graph(m::Model) = ModelGraph(m)
+"""
+    graph2dot(m::Model)
 
+Draw a GraphViz DOT-formatted graph representation of model nodes and their relationships.
+
+A character string representation of the graph suitable for in-line processing. Stochastic, logical, and input nodes will be represented by ellipses, diamonds, and rectangles, respectively. Nodes that are unmonitored in MCMC simulations will be gray-colored.
+
+* `m` : model for which to construct a graph.
+"""
 function graph2dot(m::Model)
   dag = ModelGraph(m)
   io = IOBuffer()
