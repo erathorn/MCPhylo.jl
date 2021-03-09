@@ -1,238 +1,520 @@
-#################### Posterior Plots ####################
+"""
+    plot(c::AbstractChains, ptype::Vector{Symbol}=[:trace, :density];
+       <keyword arguments>)::Array{Plots.Plot}
 
-#################### Generic Methods ####################
+Function that takes a MCMC chain and creates various different plots (trace &
+density by default).
 
-function draw(p::Array{T}; fmt::Symbol=:svg, filename::AbstractString="",
-              nrow::Integer=3, ncol::Integer=2, byrow::Bool=false,
-              ask::Bool=true) where T<:Plots.Plot
+# Arguments
+- 'vars::Vector{String}=String[]' : specifies the variables of the chain that
+                                    are plotted
+- 'filename::String=""' : when given, the plots will be saved to a file
+- 'fmt::Symbol=:pdf' : Format of the output file
+- 'args...': This includes specific arguments for the different plot types
+             , like the number of bins for the contourplot or if the barplots
+             bars should be stacked or not. Check the specific plot functions
+             to use these arguments.
 
-  fmt in [:pdf, :png, :ps, :svg] ||
-    throw(ArgumentError("unsupported draw format $fmt"))
-
-  isexternalfile = length(filename) > 0
-  addextension = isexternalfile && something(findfirst(isequal('.'), filename), 0) == 0
-
-  pp = nrow * ncol               ## plots per page
-  ps = length(p)                 ## number of plots
-  np = ceil(Int, ps / pp)        ## number of pages
-  mat = Array{Plots.Plot}(undef, pp)
-
-  for page in 1:np
-    if ask && page > 1 && !addextension
-      println("Press ENTER to draw next plot")
-      readline(stdin)
-    end
-
-    if isexternalfile
-      fname = filename
-      if addextension
-        fname = string(fname, '-', page, '.', fmt)
-      end
-    end
-
-    nrem = ps - (page - 1) * pp
-    for j in 1:pp
-      if j <= nrem
-        # store all plots for the page in an array
-        mat[j] = p[(page -1) * pp + j]
-
-      else
-        # invisible empty plot
-        mat[j] = Plots.plot(showaxis=:false, grid=:false)
-      end
-    end
-    result = byrow ? permutedims(reshape(mat, ncol, nrow), [2, 1]) :
-                     reshape(mat, nrow, ncol)
-
-    # draw plot and save to file
-    plots = Plots.plot(result..., layout=(nrow,ncol), widen=false,
-               guidefontsize=8, titlefontsize=10)
-    display(plots)
-    if isexternalfile
-      savefig(fname)
-    end
-  end
-end
-
+            Plot attributes from the Plots.jl package can also be passed here:
+            I.e. try passing background_color=:black for a black background on
+            your plots. List of attributes here,
+            https://docs.juliaplots.org/latest/generated/attributes_series/
+            https://docs.juliaplots.org/latest/generated/attributes_plot/
+            https://docs.juliaplots.org/latest/generated/attributes_subplot/
+            https://docs.juliaplots.org/latest/generated/attributes_axis/
+            though not all are supported:
+            https://docs.juliaplots.org/latest/generated/supported/
+"""
 function plot(c::AbstractChains, ptype::Vector{Symbol}=[:trace, :density];
-              legend::Bool=false, args...)
+              vars::Vector{String}=String[], filename::String="",
+              fmt::Symbol=:pdf, fuse::Bool=false, f_layout=nothing,
+              fsize::Tuple{Number, Number}=(0, 0), args...
+              )::Union{Vector{Plots.Plot}, Tuple{Vector{Plots.Plot}, Plots.Plot}}
+  if !isempty(vars)
+    indeces = check_vars(c.names, vars)
+  else
+    indeces = collect(1:length(c.names))
+  end # if / else
+  ilength = length(indeces)
+  if :contour in ptype && ilength == 1
+    filter!(e -> e ≠ :contour, ptype)
+    if isempty(ptype)
+      throw(ArgumentError("Drawing a contourplot requires at least 2 variables."))
+    else
+      @warn "Drawing a contourplot requires at least 2 variables. Only drawing other plots"
+    end # if/else
+  end # if
   n = length(ptype)
-  p = Array{Plots.Plot}(undef, n, size(c, 2))
+  p = Array{Plots.Plot}(undef, n)
   for i in 1:n
-    showlegend = legend && i == n
-    p[i, :] = plot(c, ptype[i]; legend=legend, args...)
-  end
-  p
-end
+    ptype[i] == :bar ? p[i] = bar_int(c, indeces; args...) :
+    ptype[i] == :mixeddensity ? p[i] = mixeddensityplot(c, indeces; args...) :
+    p[i] = Plots.plot(c, indeces; ptype=ptype[i], size=(ilength * 500, 300), args...)
+    if !fuse
+      if n != 1
+        println("Press ENTER to draw next plot")
+        readline(stdin)
+      end # if
+      display(p[i])
+    end # if
+  end # for
+  if fuse
+    isnothing(f_layout) && (f_layout = (n, 1))
+    fsize == (0, 0) && (fsize = (ilength * 500, n * 300))
+    allplots = Plots.plot(p..., layout=f_layout, size=fsize)
+    display(allplots)
+    filename != "" && check_filename(filename, fmt, allplots)
+    return (p, allplots)
+  end # if
+  filename != "" && check_filename(filename, fmt, [p])
+  return p
+end # plot
 
-function plot(c::AbstractChains, ptype::Symbol; legend::Bool=false, args...)
-  ptype == :autocor      ? autocorplot(c; legend=legend, args...) :
-  ptype == :bar          ? barplot(c; legend=legend, args...) :
-  ptype == :contour      ? contourplot(c; args...) :
-  ptype == :density      ? densityplot(c; legend=legend, args...) :
-  ptype == :mean         ? meanplot(c; legend=legend, args...) :
-  ptype == :mixeddensity ? mixeddensityplot(c; legend=legend, args...) :
-  ptype == :trace        ? traceplot(c; legend=legend, args...) :
+
+"""
+  check_vars(sim_names::Vector{AbstractString},
+             vars::Vector{String})::Vector{Int64}
+
+--- INTERNAL ---
+Helper function that returns a list of indeces that correspond to specific
+variables. Only those variables are then plotted in the following steps.
+"""
+function check_vars(sim_names::Vector{AbstractString}, vars::Vector{String})::Vector{Int64}
+    names = []
+    for var in vars
+        if endswith(var, r"\[[0-9]*\]")
+            for sim_name in sim_names
+                if sim_name == var
+                    push!(names, sim_name)
+                end # if
+            end # for
+        else
+            for sim_name in sim_names
+                if sim_name == var || occursin(Regex(var * "\\[[0-9]+\\]"), sim_name)
+                  #(occursin(sim_name,r"\[[0-9]*\]") && sim_name[1 : findfirst("[", sim_name)[1]-1] == var))
+                    push!(names, sim_name)
+                end # if
+            end # for
+        end # if / else
+    end # for
+    unique!(names)
+    indeces = []
+    for name in names
+      index = findfirst(isequal(name), sim_names)
+      push!(indeces, index)
+    end # for
+    sort!(indeces)
+    return indeces
+end # check_vars
+
+
+"""
+    check_filename(filename, fmt, plots)
+
+--- INTERNAL ---
+Helper function that checks if a user-given filename is valid, and saves the
+created plots to that file.
+"""
+function check_filename(filename, fmt, plots)
+  if !(fmt in [:pdf, :png, :ps, :svg])
+      @warn "The given format is not supported. Use :pdf, :png, :ps, or :svg. Defaulting to pdf."
+      fmt = :pdf
+  end # if
+  for (i, plot) in enumerate(plots)
+      i == 1 ? savefig(plot[i], "$filename.$fmt") :
+               savefig(plot[i], "$filename_$i.$fmt")
+  end # for
+end # check_filename
+
+
+#################### Internal Plot Function ####################
+@recipe function f(c::AbstractChains, indeces::Vector{Int64}; ptype=:autocor,
+                   maxlag=round(Int, 10 * log10(length(c.range))), bins=100,
+                   trim=(0.025, 0.975))
+  grid --> :dash
+  gridalpha --> 0.5
+  legend --> false
+  legendtitle --> "Chain"
+  legendtitlefonthalign := :left
+  margin --> 7mm
+
+  arr = []
+  ptype == :autocor ? push!(arr, Autocor(c, indeces, maxlag)) :
+  ptype == :contour ? push!(arr, Contour(c, indeces, bins)) :
+  ptype == :density ? push!(arr, Density(c, indeces, trim)) :
+  ptype == :mean    ? push!(arr, Mean(c, indeces)) :
+  ptype == :trace   ? push!(arr, Trace(c, indeces)) :
     throw(ArgumentError("unsupported plot type $ptype"))
-end
+  return Tuple(arr)
+end # recipe
+
+# structs that are used for the recipes
+struct Autocor; c; indeces; maxlag; end
+struct Contour; c; indeces; bins; end
+struct Density; c; indeces; trim; end
+struct Mean; c; indeces; end
+struct Trace; c; indeces; end
 
 
-#################### Plot Engines ####################
+"""
+    f(acor::Autocor)
 
-function autocorplot(c::AbstractChains;
-                     maxlag::Integer=round(Int, 10 * log10(length(c.range))),
-                     legend::Bool=false, na...)
+--- INTERNAL ---
+Recipe for Autocor plots
+"""
+@recipe function f(acor::Autocor)
+  xguide --> "Lag"
+  yguide --> "Autocorrelation"
+  xlims --> (0, +Inf)
+  layout --> (1, length(acor.indeces))
+
+  nrows, nvars, nchains = size(acor.c.value)
+  lags = 0:acor.maxlag
+  ac = autocor(acor.c, lags=collect(lags))
+  x = repeat(collect(lags * step(acor.c)), outer=[nchains])
+  for (index, i) in enumerate(acor.indeces)
+    subplot := index
+    y = vec(ac.value[i,:,:])
+    ac_group = repeat(acor.c.chains, inner=[length(lags)])
+    for (index, chain) in enumerate(acor.c.chains)
+      idxs = findall(==(chain), ac_group)
+      @series begin
+        label --> string(index)
+        title --> acor.c.names[i]
+        seriestype := :line
+        x[idxs], y[idxs]
+      end # series
+    end # for
+  end # for
+  primary := false
+end # recipe
+
+
+"""
+    bar_int(c::AbstractChains, indeces::Vector{Int64}; args...)::Plots.Plot
+
+--- INTERNAL ---
+Helper function for creating barplots.
+"""
+function bar_int(c::AbstractChains, indeces::Vector{Int64}; args...)::Plots.Plot
   nrows, nvars, nchains = size(c.value)
-  plots = Array{Plots.Plot}(undef, nvars)
-  pos = legend ? :right : :none
-  lags = 0:maxlag
-  ac = autocor(c, lags=collect(lags))
-  for i in 1:nvars
-
-    # new plot creation block, based on Plots with a GR backend
-    plots[i] = Plots.plot(repeat(collect(lags * step(c)), outer=[nchains]),
-                          vec(ac.value[i,:,:]), seriestype=:line,
-                          group=repeat(c.chains, inner=[length(lags)]),
-                          xlabel="Lag", ylabel="Autocorrelation",
-                          title=c.names[i], legendtitle="Chain", legend=pos,
-                          xlims=(0, +Inf), grid=:dash; gridalpha=0.5)
-  end
-  return plots
-end
-
-function barplot(c::AbstractChains; legend::Bool=false,
-                 position::Symbol=:stack, na...)
-  nrows, nvars, nchains = size(c.value)
-  plots = Array{Plots.Plot}(undef, nvars)
-  pos = legend ? :right : :none
-  for i in 1:nvars
+  ilength = length(indeces)
+  bar_plots = Array{Plots.Plot}(undef, ilength)
+  for (index, i) in enumerate(indeces)
     S = unique(c.value[:, i, :])
     n = length(S)
     x = repeat(S, 1, nchains)
     y = zeros(n, nchains)
     for j in 1:nchains
-      m = countmap(c.value[:, i, j])
+      m = StatsBase.countmap(c.value[:, i, j])
       for k in 1:n
         if S[k] in keys(m)
           y[k, j] = m[S[k]] / nrows
-        end
-      end
-    end
-    ymax = maximum(position == :stack ? mapslices(sum, y, dims=2) : y)
-    # new plot creation block, based on StatsPlots with a GR backend
-    plots[i] = StatsPlots.groupedbar(vec(x), vec(y), bar_position=position,
-                                     group=repeat(c.chains, inner=[n]),
-                                     xlabel="Value", ylabel="Density",
-                                     title=c.names[i], legendtitle="Chain",
-                                     legend=pos, ylims=(0.0, ymax),
-                                     grid=:dash, gridalpha=0.5)
-  end
-  return plots
-end
+        end # if
+      end # for
+    end # for
+    bar_plots[index] = groupbar(vec(x), vec(y);
+                                group=repeat(c.chains, inner=[n]),
+                                title=c.names[i], args...)
+  end # for
+  p = Plots.plot(bar_plots..., layout=(1, ilength), size=(ilength * 500, 300))
+  return p
+end # function
 
-function contourplot(c::AbstractChains; bins::Integer=100, na...)
-  nrows, nvars, nchains = size(c.value)
-  plots = Plots.Plot[]
+
+"""
+    f(cont::Contour)
+
+--- INTERNAL ---
+Recipe for contour plots
+"""
+@recipe function f(cont::Contour)
+  layout --> (1, sum(collect(1:length(cont.indeces) - 1)))
+  legend := false
+  colorbar --> :best
+  subplot_index = 0
+  nrows, nvars, nchains = size(cont.c.value)
   offset = 1e4 * eps()
   n = nrows * nchains
-  for i in 1:(nvars - 1)
-    X = c.value[:, i, :]
-    qx = range(minimum(X) - offset, stop=maximum(X) + offset, length=bins + 1)
-    mx = map(k -> mean([qx[k], qx[k + 1]]), 1:bins)
-    idx = Int[findfirst(k -> qx[k] <= x < qx[k + 1], 1:bins) for x in X]
-    for j in (i + 1):nvars
-      Y = c.value[:, j, :]
-      qy = range(minimum(Y) - offset, stop=maximum(Y) + offset, length=bins + 1)
-      my = map(k -> mean([qy[k], qy[k + 1]]), 1:bins)
-      idy = Int[findfirst(k -> qy[k] <= y < qy[k + 1], 1:bins) for y in Y]
-      density = zeros(bins, bins)
+  for (index, i) in enumerate(cont.indeces[1:end-1])
+    X = cont.c.value[:, i, :]
+    qx = range(minimum(X) - offset, stop=maximum(X) + offset, length=cont.bins + 1)
+    mx = map(k -> mean([qx[k], qx[k + 1]]), 1:cont.bins)
+    idx = Int[findfirst(k -> qx[k] <= x < qx[k + 1], 1:cont.bins) for x in X]
+    for j in cont.indeces[index+1:end]
+      subplot_index += 1
+      Y = cont.c.value[:, j, :]
+      qy = range(minimum(Y) - offset, stop=maximum(Y) + offset, length=cont.bins + 1)
+      my = map(k -> mean([qy[k], qy[k + 1]]), 1:cont.bins)
+      idy = Int[findfirst(k -> qy[k] <= y < qy[k + 1], 1:cont.bins) for y in Y]
+      density = zeros(cont.bins, cont.bins)
       for k in 1:n
         density[idx[k], idy[k]] += 1.0 / n
       end
-      # new plot creation block, based on Plots with a GR backend
-      p = Plots.plot(mx, my, density, seriestype=:contour,
-                     colorbar_title="Density", xlabel=c.names[i],
-                     ylabel=c.names[j])
-      push!(plots, p)
-    end
-  end
-  return plots
-end
+      @series begin
+        subplot := subplot_index
+        xguide --> cont.c.names[i]
+        yguide --> cont.c.names[j]
+        colorbar_title --> "Density"
+        title --> cont.c.names[i]
+        seriestype := :contour
+        mx, my, density
+      end # series
+    end # for
+  end # for
+  primary := false
+end # recipe
 
-function densityplot(c::AbstractChains; legend::Bool=false,
-                     trim::Tuple{Real, Real}=(0.025, 0.975), na...)
-  nrows, nvars, nchains = size(c.value)
-  # new list initialization
-  plots = Array{Plots.Plot}(undef, nvars)
-  pos = legend ? :right : :none
-  for i in 1:nvars
+
+"""
+    f(dens::Density)
+
+--- INTERNAL ---
+Recipe for density plots
+"""
+@recipe function f(dens::Density)
+  xguide --> "Value"
+  yguide --> "Density"
+  ylims --> (0.0, +Inf)
+  layout --> (1, length(dens.indeces))
+
+  nrows, nvars, nchains = size(dens.c.value)
+  for (index, i) in enumerate(dens.indeces)
+    subplot := index
     val = Array{Vector{Float64}}(undef, nchains)
-    grouping = []
+    dens_group = []
     for j in 1:nchains
-      qs = quantile(c.value[:, i, j], [trim[1], trim[2]])
-      # keep all values between qs[1] and qs[2]
-      mask = [qs[1] .<= c.value[:, i, j] .<= qs[2]]
-      val[j] = c.value[mask[1], i, j]
-      grouping = vcat(grouping, repeat([j], inner=sum(mask[1])))
-    end
+      qs = quantile(dens.c.value[:, i, j], [dens.trim[1], dens.trim[2]])
+      mask = [qs[1] .<= dens.c.value[:, i, j] .<= qs[2]]
+      val[j] = dens.c.value[mask[1], i, j]
+      dens_group = vcat(dens_group, repeat([j], inner=sum(mask[1])))
+    end # for
+    for (index, chain) in enumerate(dens.c.chains)
+      idxs = findall(==(chain), dens_group)
+      @series begin
+        label --> string(index)
+        title --> dens.c.names[i]
+        seriestype := :density
+        [val...;][idxs]
+      end # series
+    end # for
+  end # for
+  primary := false
+end # recipe
 
-    # new plot creation block, based on StatsPlots with a GR backend
-    plots[i] = StatsPlots.plot([val...;], seriestype=:density,
-                               group = grouping, xlabel="Value",
-                               ylabel="Density", title=c.names[i],
-                               legendtitle="Chain", legend=pos,
-                               ylims=(0.0, +Inf), grid=:dash, gridalpha=0.5)
-  end
-  return plots
-end
 
-function meanplot(c::AbstractChains; legend::Bool=false, na...)
-  nrows, nvars, nchains = size(c.value)
-  # new list initialization
-  plots = Array{Plots.Plot}(undef, nvars)
-  pos = legend ? :right : :none
-  val = cummean(c.value)
-  for i in 1:nvars
+"""
+    f(mean::Mean)
 
-    # new plot creation block, based on Plots with a GR backend
-    plots[i] = Plots.plot(repeat(collect(c.range), outer=[nchains]),
-                          vec(val[:, i, :]), seriestype=:line,
-                          group=repeat(c.chains, inner=[length(c.range)]),
-                          xlabel="Iteration", ylabel="Mean", title=c.names[i],
-                          legendtitle="Chain", legend=pos,
-                          grid=:dash, gridalpha=0.5)
-  end
-  return plots
-end
+--- INTERNAL ---
+Recipe for mean plots
+"""
+@recipe function f(mean::Mean)
+  xguide --> "Iteration"
+  yguide --> "Mean"
+  layout --> (1, length(mean.indeces))
 
-function mixeddensityplot(c::AbstractChains;
+  nrows, nvars, nchains = size(mean.c.value)
+  val = cummean(mean.c.value)
+  x = repeat(collect(mean.c.range), outer=[nchains])
+  for (index, i) in enumerate(mean.indeces)
+    subplot := index
+    y = vec(val[:, i, :])
+    mean_group = repeat(mean.c.chains, inner=[length(mean.c.range)])
+    for (index, chain) in enumerate(mean.c.chains)
+      idxs = findall(==(chain), mean_group)
+      @series begin
+        label --> string(index)
+        title --> mean.c.names[i]
+        seriestype := :line
+        x[idxs], y[idxs]
+      end # series
+    end # for
+  end # for
+  primary := false
+end # recipe
+
+
+"""
+    mixeddensityplot(c::AbstractChains,, indeces::Vector{Int64};
+                     barbounds::Tuple{Real, Real}=(0, Inf), args...):Plots.Plot
+
+--- INTERNAL ---
+Helper function that creates a barplot for each discrete and a density for each
+continuous variable.
+"""
+function mixeddensityplot(c::AbstractChains, indeces::Vector{Int64};
                           barbounds::Tuple{Real, Real}=(0, Inf), args...)
-  plots = Array{Plots.Plot}(undef, size(c, 2))
-  discrete = MCPhylo.indiscretesupport(c, barbounds)
-  barplots = plot(c, :bar; args...)
-  densityplots = plot(c, :density; args...)
+  plots = Array{Plots.Plot}(undef, length(indeces))
+  ilength = length(indeces)
+  discrete_temp = MCPhylo.indiscretesupport(c, barbounds)
+  discrete = Bool[]
+  for index in indeces
+    try
+      push!(discrete, discrete_temp[index])
+    catch BoundsError
+    end # try / catch
+  end
   for i in 1:length(discrete)
     if discrete[i] == true
-      plots[i] = barplots[i]
+      plots[i] = bar_int(c, [indeces[i]]; args...)
     else
-      plots[i] = densityplots[i]
+      plots[i] = Plots.plot(c, [indeces[i]]; ptype=:density, size=(500, 300), args...)
+    end # if / else
+  end # for
+  p = Plots.plot(plots..., layout=(1, ilength), size=(ilength * 500, 300))
+  return p
+end # function
+
+
+"""
+    f(trace::Trace)
+
+--- INTERNAL ---
+Recipe for trace plots
+"""
+@recipe function f(trace::Trace)
+  xguide --> "Iteration"
+  yguide --> "Value"
+  layout --> (1, length(trace.indeces))
+  legendtitle --> "Chain"
+  widen --> false
+
+  nrows, nvars, nchains = size(trace.c.value)
+  x = repeat(collect(trace.c.range), outer=[nchains])
+  for (index, i) in enumerate(trace.indeces)
+    subplot := index
+    y = vec(trace.c.value[:, i, :])
+    trace_group = repeat(trace.c.chains, inner=[length(trace.c.range)])
+    for (index, chain) in enumerate(trace.c.chains)
+      idxs = findall(==(chain), trace_group)
+      @series begin
+        label --> string(index)
+        title --> trace.c.names[i]
+        seriestype := :line
+        x[idxs], y[idxs]
+      end # series
+    end # for
+  end # for
+  primary := false
+end # recipe
+
+
+#=
+This is a slightly modified version of the GroupedBar recipe found in the
+StatsPlots package:
+  https://github.com/JuliaPlots/StatsPlots.jl/blob/master/src/bar.jl
+=#
+@userplot GroupBar
+recipetype(::Val{:groupbar}, args...) = GroupBar(args)
+Plots.group_as_matrix(g::GroupBar) = true
+grouped_xy(x::AbstractVector, y::AbstractArray) = x, y
+grouped_xy(y::AbstractArray) = 1:size(y,1), y
+"""
+    f(g::GroupBar; spacing=0)
+
+--- INTERNAL ---
+Recipe for a grouped bar plot.
+"""
+@recipe function f(g::GroupBar; spacing=0)
+    xguide --> "Value"
+    yguide --> "Density"
+    grid --> :dash
+    gridalpha --> 0.5
+    legend --> false
+    legendtitle --> "Chain"
+    legendtitlefonthalign := :left
+    margin --> 7mm
+    x, y = grouped_xy(g.args...)
+
+    nr, nc = size(y)
+    isstack = pop!(plotattributes, :bar_position, :dodge) == :stack
+    isylog = pop!(plotattributes, :yscale, :identity) ∈ (:log10, :log)
+    ymax = maximum(isstack ? mapslices(sum, y, dims=2) : y)
+    ylims --> (0.0, ymax)
+
+    # extract xnums and set default bar width.
+    # might need to set xticks as well
+    xnums = if eltype(x) <: Number
+        xdiff = length(x) > 1 ? mean(diff(x)) : 1
+        bar_width --> 0.8 * xdiff
+        x
+    else
+        bar_width --> 0.8
+        ux = unique(x)
+        xnums = (1:length(ux)) .- 0.5
+        xticks --> (xnums, ux)
+        xnums
     end
-  end
-  return plots
+    @assert length(xnums) == nr
+
+    # compute the x centers.  for dodge, make a matrix for each column
+    x = if isstack
+        x
+    else
+        bws = plotattributes[:bar_width] / nc
+        bar_width := bws * clamp(1 - spacing, 0, 1)
+        xmat = zeros(nr,nc)
+        for r=1:nr
+            bw = Plots._cycle(bws, r)
+            farleft = xnums[r] - 0.5 * (bw * nc)
+            for c=1:nc
+                xmat[r,c] = farleft + 0.5bw + (c-1)*bw
+            end
+        end
+        xmat
+    end
+
+    fill_bottom = if isylog
+        if isfinite(the_ylims[1])
+            min(minimum(y) / 100, the_ylims[1])
+        else
+            minimum(y) / 100
+        end
+    else
+        0
+    end
+    # compute fillrange
+    y, fr = isstack ? groupedbar_fillrange(y) : (y, get(plotattributes, :fillrange, [fill_bottom]))
+    if isylog
+        replace!( fr, 0 => fill_bottom )
+    end
+    fillrange := fr
+
+    seriestype := :bar
+    x, y
 end
 
-function traceplot(c::AbstractChains; legend::Bool=false, na...)
-  nrows, nvars, nchains = size(c.value)
-  # new list initialization
-  plots = Any[]
-  pos = legend ? :right : :none
-  for i in 1:nvars
-    push!(plots, Plots.plot(repeat(collect(c.range), outer=[nchains]),
-                            vec(c.value[:, i, :]), seriestype=:line,
-                            group=repeat(c.chains, inner=[length(c.range)]),
-                            xlabel="Iteration", ylabel="Value",
-                            title=c.names[i], legendtitle="Chain", legend=pos,
-                            widen=false, grid=:dash, gridalpha=0.5))
-end
-  return plots
+
+"""
+    groupedbar_fillrange(y)
+
+--- INTERNAL ---
+Helper function for the groupbar plot
+"""
+function groupedbar_fillrange(y)
+    nr, nc = size(y)
+    # bar series fills from y[nr, nc] to fr[nr, nc], y .>= fr
+    fr = zeros(nr, nc)
+    y = copy(y)
+    y[.!isfinite.(y)] .= 0
+    for r = 1:nr
+        y_neg = 0
+        # upper & lower bounds for positive bar
+        y_pos = sum([e for e in y[r, :] if e > 0])
+        # division subtract towards 0
+        for c = 1:nc
+            el = y[r, c]
+            if el >= 0
+                y[r, c] = y_pos
+                y_pos -= el
+                fr[r, c] = y_pos
+            else
+                fr[r, c] = y_neg
+                y_neg += el
+                y[r, c] = y_neg
+            end
+        end
+    end
+    y, fr
 end

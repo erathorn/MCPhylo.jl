@@ -2,8 +2,13 @@
     upgma(dm::Array{Float64,2}, Array{String,1})
 
 This function returns a phylogenetic tree by using UPGMA based on a
-given distance matrix and an array of leaf names. Returns a node of the
-resulting tree, from which it can be traversed.
+given distance matrix and an array of leaf names.
+
+Returns a node of the resulting tree, from which it can be traversed.
+
+* `dm` : Matrix from which to create the tree.
+
+* `leaf_names` : array of strings containing names of leaf nodes.
 """
 function upgma(dm::Array{Float64,2}, leaf_names::Array{String,1})
     n = size(dm)[1]
@@ -23,8 +28,11 @@ end
     upgma(dm::Array{Float64,2})
 
 This function returns a phylogenetic tree by using UPGMA based on a
-given distance matrix. Creates an array of nodes to be used as leaves. Returns
-a node of the resulting tree, from which it can be traversed.
+given distance matrix. Creates an array of nodes to be used as leaves.
+
+Returns a node of the resulting tree, from which it can be traversed.
+
+* `dm` : Matrix from which to create the tree.
 """
 function upgma(dm::Array{Float64,2})
     n = size(dm)[1]
@@ -40,6 +48,7 @@ end
 """
     upgma_int(dm::Array{Float64,2},leaves::Vector{Node})
 
+--- INTERNAL ---
 Internal function that is called by both UPGMA methods. Contains the
 actual UPGMA algorithm, i.e. builds a phylogenetic tree from the
 given distance matrix and array of leaves. Returns a node of that tree, from
@@ -117,8 +126,13 @@ end # end function upgma
     neighbor_joining(dm::Array{Float64,2}, Array{String,1})
 
 This function returns a phylogenetic tree by using neighbor-joining based on a
-given distance matrix and an array of leaf names. Returns a node of the
-resulting tree, from which it can be traversed.
+given distance matrix and an array of leaf names.
+
+Returns a node of the resulting tree, from which it can be traversed.
+
+* `dm` : Matrix used to create Tree.
+
+* `leaf_names` : Array containing names of leaf nodes.
 """
 function neighbor_joining(dm::Array{Float64,2}, leaf_names::Array{String,1})
     n = size(dm)[1]
@@ -138,8 +152,11 @@ end
     neighbor_joining(dm::Array{Float64,2})
 
 This function returns a phylogenetic tree by using neighbor-joining based on a
-given distance matrix. Creates an array of nodes to be used as leaves. Returns
-a node of the resulting tree, from which it can be traversed.
+given distance matrix. Creates an array of nodes to be used as leaves.
+
+Returns a node of the resulting tree, from which it can be traversed.
+
+* `dm` : Matrix from which to create tree.
 """
 function neighbor_joining(dm::Array{Float64,2})
     n = size(dm)[1]
@@ -155,6 +172,7 @@ end
 """
     neighbor_joining_int(dm::Array{Float64,2},leaves::Vector{Node})
 
+--- INTERNAL ---
 Internal function that is called by both neighbor_joining methods. Contains the
 actual neighbor-joining algorithm, i.e. builds a phylogenetic tree from the
 given distance matrix and array of leaves. Returns a node of that tree, from

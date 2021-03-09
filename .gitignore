@@ -1,5 +1,6 @@
 doc/_build/
 doc/make.bat
+Manifest.toml
 *params.csv
 *params.log
 *.nwk
@@ -7,7 +8,5 @@ doc/make.bat
 *.tsv
 *Drav*
 *params*.log
-docs/build/
 untracked_files/
-p_data/
-notebook/.ipynb_checkpoints/
+Manifest.toml

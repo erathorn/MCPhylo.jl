@@ -39,7 +39,18 @@ end
 
 
 #################### Sampler Constructor ####################
+"""
+    BMG(params::ElementOrVector{Symbol}; k::F=1) where {F<:BMGForm}
 
+Construct a `Sampler` object for BMG sampling. Parameters are assumed to have
+ binary numerical values (0 or 1).
+
+Returns a `Sampler{BMGTune{typeof(k)}}` type object.
+
+* `params`: stochastic node(s) to be updated with the sampler.
+
+* `k`:  number of parameters or vector of parameter indices to select at random for simultaneous updating in each call of the sampler.
+"""
 function BMG(params::ElementOrVector{Symbol}; k::F=1) where {F<:BMGForm}
   samplerfx = function(model::Model, block::Integer)
     block = SamplingBlock(model, block)
@@ -54,7 +65,14 @@ end
 #################### Sampling Functions ####################
 
 sample!(v::SamplerVariate{BMGTune{F}}) where {F<:BMGForm} = sample!(v, v.tune.logf)
+"""
+    sample!(v::SamplerVariate{BMGTune{F}}, logf::Function) where {F<:BMGForm}
 
+Draw one sample from a target distribution using the BMG sampler. Parameters
+are assumed to have binary numerical values (0 or 1).
+
+Returns `v` updated with simulated values and associated tuning parameters.
+"""
 function sample!(v::SamplerVariate{BMGTune{F}}, logf::Function) where {F<:BMGForm}
   n = length(v)
   probs = Vector{Float64}(undef, n)

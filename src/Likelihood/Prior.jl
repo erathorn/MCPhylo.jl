@@ -4,7 +4,6 @@
 This structure implememts the CompoundDirichlet distribution described
 in Zhang, Rannala and Yang 2012. (DOI:10.1093/sysbio/sys030)
 """
-## Type declaration
 mutable struct CompoundDirichlet <: ContinuousUnivariateDistribution
     alpha::Float64
     a::Float64
@@ -14,12 +13,12 @@ mutable struct CompoundDirichlet <: ContinuousUnivariateDistribution
 
     CompoundDirichlet(alpha::Float64, a::Float64, beta::Float64, c::Float64) =
         new(alpha, a, beta, c, missing)
-
     CompoundDirichlet(alpha::Float64, a::Float64, beta::Float64, c::Float64, constraints::Dict) =
             new(alpha, a, beta, c, constraints)
 end # struct
 
-function internal_logpdf(d::CompoundDirichlet, b_lens::Array{Float64}, int_leave_map::Vector{Int64}; rd::Bool=false)
+function internal_logpdf(d::CompoundDirichlet, b_lens::Array{Float64},
+                         int_leave_map::Vector{Int64})
     blen_int = 0.0
     blen_leave = 0.0
     blen_int_log = 0.0
@@ -43,7 +42,7 @@ function internal_logpdf(d::CompoundDirichlet, b_lens::Array{Float64}, int_leave
 
     first = (d.alpha*log(d.beta))-log(gamma(d.alpha)) - (t_l*d.beta)
     second = -log(gamma(d.a))-log(gamma(d.c))+log(gamma(d.a+d.c))
-    third = blen_leave_log*(d.a-1) + blen_int_log*(d.a*d.c-1.0)
+    third = blen_leave_log*(d.a-1.0) + blen_int_log*(d.a*d.c-1.0)
     fourth = (d.alpha-d.a*nterm-d.a*d.c*n_int)*log(t_l)
 
     r2 = first + second +third+fourth
@@ -61,8 +60,8 @@ function gradlogpdf(d::CompoundDirichlet, x::T) where T <: GeneralNode
 end
 
 
-function _logpdf(d::CompoundDirichlet, x::T) where T <: GeneralNode
-    internal_logpdf(d, get_branchlength_vector(x), internal_external(x); rd=true)
+function logpdf(d::CompoundDirichlet, x::T) where T <: GeneralNode
+    internal_logpdf(d, get_branchlength_vector(x), internal_external(x))
 end # function _logpdf
 
 function insupport(d::CompoundDirichlet, x::T) where T <: GeneralNode
@@ -71,11 +70,20 @@ function insupport(d::CompoundDirichlet, x::T) where T <: GeneralNode
 end # function insupport
 
 
-function logpdf_sub(d::ContinuousUnivariateDistribution, x::T, transform::Bool) where T <: GeneralNode
-    insupport(d, x) ? _logpdf(d, x) : -Inf
+function logpdf_sub(d::CompoundDirichlet, x::T, transform::Bool) where T <: GeneralNode
+    insupport(d, x) ? logpdf(d, x) : -Inf
 end
 
+function relistlength(d::CompoundDirichlet, x::AbstractArray)
+  n = length(x)
 
+  (Array(x), n)
+end
+
+"""
+    exponentialBL(scale::Float64) <: ContinuousUnivariateDistribution
+This structure implememts an exponential prior on the branch lengths of a tree.
+"""
 mutable struct exponentialBL <: ContinuousUnivariateDistribution
     scale::Float64
     constraints::Union{Dict, Missing}

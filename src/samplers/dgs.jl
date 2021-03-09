@@ -51,7 +51,18 @@ end
 
 
 #################### Sampler Constructor ####################
+"""
+    DGS(params::ElementOrVector{Symbol})
 
+Construct a `Sampler` object for which DGS sampling is to be applied separately
+to each of the supplied parameters. Parameters are assumed to have discrete
+univariate distributions with finite supports.
+
+Returns a `Sampler{DSTune{Function}}` type object.
+
+* `params`: stochastic node(s) to be updated with the sampler.
+
+"""
 function DGS(params::ElementOrVector{Symbol})
   params = asvec(params)
   samplerfx = function(model::Model, block::Integer)
@@ -104,7 +115,14 @@ end
 
 sample!(v::SamplerVariate{DSTune{F}}) where {F<:DSForm} = sample!(v, v.tune.mass)
 
+"""
+    sample!(v::DGSVariate, mass::Function)
 
+Draw one sample directly from a target probability mass function. Parameters
+are assumed to have discrete and finite support.
+
+Returns `v` updated with simulated values and associated tuning parameters.
+"""
 function sample!(v::DGSVariate, mass::Function)
   tune = v.tune
   n = size(tune.support, 2)
@@ -124,7 +142,14 @@ function sample!(v::DGSVariate, mass::Function)
   v
 end
 
+"""
+    sample!(v::DiscreteVariate, mass::Vector{Float64})
 
+Draw one sample directly from a target probability mass function. Parameters
+are assumed to have discrete and finite support.
+
+Returns `v` updated with simulated values and associated tuning parameters.
+"""
 function sample!(v::DiscreteVariate, mass::Vector{Float64})
   validate(v, v.tune.support, mass)
   v[:] = v.tune.support[:, rand(Categorical(mass))]

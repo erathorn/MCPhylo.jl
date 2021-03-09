@@ -18,7 +18,19 @@ end
 
 
 Sampler(param::Symbol, args...) = Sampler([param], args...)
+"""
+    Sampler(params::Vector{Symbol}, f::Function, tune::Any=Dict())
+Construct a `Sampler` object that defines a sampling function for a block of
+stochastic nodes.
 
+Returns a `Sampler{typeof(tune)}` type object.
+
+* `params`: node(s) being block-updated by the sampler.
+
+* `f`: function for the `eval` field of the constructed sampler and whose arguments are the other model nodes upon which the sampler depends, typed argument `model::Model` that contains all model nodes, and/or typed argument `block::Integer` that is an index identifying the corresponding sampling function in a vector of all samplers for the associated model. Through the arguments, all model nodes and fields can be accessed in the body of the function. The function may return an updated sample for the nodes identified in its `params` field. Such a return value can be a structure of the same type as the node if the block consists of only one node, or a dictionary of node structures with keys equal to the block node symbols if one or more. Alternatively, a value of `nothing` may be returned. Return values that are not `nothing` will be used to automatically update the node values and propagate them to dependent nodes. No automatic updating will be done if `nothing` is returned.
+
+* `tune`: tuning parameters needed by the sampling function.
+"""
 function Sampler(params::Vector{Symbol}, f::Function, tune::Any=Dict())
   Sampler(params, modelfx(samplerfxargs, f), tune, Symbol[])
 end
@@ -105,6 +117,7 @@ end
 
 function sample!(v::SamplerVariate, density; args...)
   isa(density, Missing) && error("must specify a target density in $(typeof(v))", " constructor or sample! method")
+  throw("Who")
   sample!(v, density; args...)
 end
 
@@ -140,6 +153,11 @@ end
 function logpdf!(block::SamplingBlock, x::T) where {T<:GeneralNode}
   logpdf!(block.model, x, block.index, block.transform)
 end
+
+function rand!(block::SamplingBlock, x::Int64)
+  rand!(block.model, x, block.index)
+end
+
 
 
 function _gradlogpdf!(m::Model, x::AbstractArray, block::Integer, dtype::Symbol=:provided)

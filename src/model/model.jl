@@ -2,7 +2,23 @@
 
 #################### Constructors ####################
 
+"""
+    Model(; iter::Integer=0, burnin::Integer=0,
+      samplers::Vector{Sampler}=Sampler[], nodes...)
 
+Construct a `Model` object that defines a model for MCMC simulation.
+
+Returns a `Model` type object.
+
+* `iter`: current iteration of the MCMC simulation.
+
+* `burnin`: number of initial draws to be discarded as a burn-in sequence to allow for convergence.
+
+* `samplers`: block-specific sampling functions.
+
+* `nodes...`: arbitrary number of user-specified arguments defining logical and stochastic nodes in the model. Argument values must be `Logical` or `Stochastic` type objects. Their names in the model will be taken from the argument names.
+
+"""
 function Model(; iter::Integer=0, burnin::Integer=0,
                samplers::Vector{Sampler}=Sampler[], nodes...)
 
@@ -56,7 +72,38 @@ end
 
 
 Base.keys(m::Model) = collect(keys(m.nodes))
+"""
+    Base.keys(m::Model, ntype::Symbol, at...)
 
+Extract the symbols (keys) for all existing nodes or for nodes of a specified type.
+
+* `m` : model containing the nodes of interest.
+
+* `ntype` : type of nodes to return. Options are
+  * `:all` : all input, logical, and stochastic model nodes.
+
+  * `:assigned` : nodes that have been assigned values.
+
+  * `:block` : stochastic nodes being updated by the sampling block(s) `at::Integer=0` (default: all blocks).
+
+  * `:dependent` : logical and stochastic (dependent) nodes in topologically sorted order.
+
+  * `:independent` or `:input` : input (independent) nodes.
+
+  * `:logical` : logical nodes.
+
+  * `:monitor` : stochastic nodes being monitored in MCMC sampler output.
+
+  * `:output` : stochastic nodes upon which no other stochastic nodes depend.
+
+  * `:source` : nodes upon which the node `at::Symbol` or vector of nodes `at::Vector{Symbol}` depends.
+
+  * `:stochastic` : stochastic nodes.
+
+  * `:target` : topologically sorted nodes that depend on the sampling block(s) `at::Integer=0` (default: all blocks), node `at::Symbol` , or vector of nodes `at::Vector{Symbol}` .
+
+* `at...` : additional positional arguments to be passed to the `ntype` options, as described above.
+"""
 function Base.keys(m::Model, ntype::Symbol, at...)
   ntype == :block       ? keys_block(m, at...) :
   ntype == :all         ? keys_all(m) :
@@ -73,7 +120,7 @@ function Base.keys(m::Model, ntype::Symbol, at...)
     throw(ArgumentError("unsupported node type $ntype"))
 end
 
-function keys_all(m::Model)
+function keys_all(m::Model)::Array{Symbol}
   values = Symbol[]
   for key in keys(m)
     node = m[key]
@@ -85,7 +132,7 @@ function keys_all(m::Model)
   unique(values)
 end
 
-function keys_assigned(m::Model)
+function keys_assigned(m::Model)::Array{Symbol}
   if m.hasinits
     values = keys(m)
   else
@@ -99,11 +146,11 @@ function keys_assigned(m::Model)
   values
 end
 
-function keys_block(m::Model, block::Integer=0)
+function keys_block(m::Model, block::Integer=0)::Array{Symbol}
   block == 0 ? keys_block0(m) : m.samplers[block].params
 end
 
-function keys_block0(m::Model)
+function keys_block0(m::Model)::Array{Symbol}
   values = Symbol[]
   for sampler in m.samplers
     append!(values, sampler.params)
@@ -111,7 +158,7 @@ function keys_block0(m::Model)
   unique(values)
 end
 
-function keys_dependent(m::Model)
+function keys_dependent(m::Model)::Array{Symbol}
   values = Symbol[]
   for key in keys(m)
     if isa(m[key], AbstractDependent)
@@ -121,7 +168,7 @@ function keys_dependent(m::Model)
   intersect(tsort(m), values)
 end
 
-function keys_independent(m::Model)
+function keys_independent(m::Model)::Array{Symbol}
   deps = Symbol[]
   for key in keys(m)
     if isa(m[key], AbstractDependent)
@@ -131,17 +178,17 @@ function keys_independent(m::Model)
   setdiff(keys(m, :all), deps)
 end
 
-function keys_logical(m::Model)
+function keys_logical(m::Model)::Array{Symbol}
   values = Symbol[]
   for key in keys(m)
-    if isa(m[key], AbstractLogical)
+    if isa(m[key], AbstractLogical) || isa(m[key], TreeLogical)
       push!(values, key)
     end
   end
   values
 end
 
-function keys_monitor(m::Model)
+function keys_monitor(m::Model)::Array{Symbol}
   values = Symbol[]
   for key in keys(m)
     node = m[key]
@@ -152,7 +199,7 @@ function keys_monitor(m::Model)
   values
 end
 
-function keys_output(m::Model)
+function keys_output(m::Model)::Array{Symbol}
   values = Symbol[]
   dag = ModelGraph(m)
   for v in vertices(dag.graph)
@@ -164,9 +211,9 @@ function keys_output(m::Model)
   values
 end
 
-keys_source(m::Model, nodekey::Symbol) = m[nodekey].sources
+keys_source(m::Model, nodekey::Symbol)::Array{Symbol} = m[nodekey].sources
 
-function keys_source(m::Model, nodekeys::Vector{Symbol})
+function keys_source(m::Model, nodekeys::Vector{Symbol})::Array{Symbol}
   values = Symbol[]
   for key in nodekeys
     append!(values, m[key].sources)
@@ -174,21 +221,21 @@ function keys_source(m::Model, nodekeys::Vector{Symbol})
   unique(values)
 end
 
-function keys_stochastic(m::Model)
+function keys_stochastic(m::Model)::Array{Symbol}
   values = Symbol[]
   for key in keys(m)
-    if isa(m[key], AbstractStochastic)
+    if isa(m[key], AbstractStochastic) || isa(m[key], TreeStochastic)
       push!(values, key)
     end
   end
   values
 end
 
-function keys_target(m::Model, block::Integer=0)
+function keys_target(m::Model, block::Integer=0)::Array{Symbol}
   block == 0 ? keys_target0(m) : m.samplers[block].targets
 end
 
-function keys_target0(m::Model)
+function keys_target0(m::Model)::Array{Symbol}
   values = Symbol[]
   for sampler in m.samplers
     append!(values, sampler.targets)
@@ -196,9 +243,9 @@ function keys_target0(m::Model)
   intersect(keys(m, :dependent), values)
 end
 
-keys_target(m::Model, nodekey::Symbol) = m[nodekey].targets
+keys_target(m::Model, nodekey::Symbol)::Array{Symbol} = m[nodekey].targets
 
-function keys_target(m::Model, nodekeys::Vector{Symbol})
+function keys_target(m::Model, nodekeys::Vector{Symbol})::Array{Symbol}
   values = Symbol[]
   for key in nodekeys
     append!(values, m[key].targets)
@@ -208,11 +255,19 @@ end
 
 
 #################### Display ####################
+"""
+    Base.show(io::IO, m::Model)
 
+Write a text representation of the model, nodes, and attributes to the current output stream.
+"""
 function Base.show(io::IO, m::Model)
   showf(io, m, Base.show)
 end
+"""
+    showall(io::IO, m::Model)
 
+Write a verbose text representation of the model, nodes, and attributes to the current output stream.
+"""
 function showall(io::IO, m::Model)
   showf(io, m, Base.showall)
 end
@@ -251,7 +306,7 @@ end
 
 function names(m::Model, nodekey::Symbol)
   node = m[nodekey]
-  
+
   unlist(node, names(node))
 end
 
