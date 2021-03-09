@@ -56,13 +56,17 @@ end
 
 sample!(v::DMHVariate, model) = DMH_sample!(v, v.tune, model)
 
+# with missing vals (true or false)
+
 function DMH_sample!(v::DMHVariate, tune::DMHTune, model::Model)
 	# 1. propose theta prime
 	# 2. Generate the auxiliary variable using theta prime
+	# if with_missings=true...
 
-	obsdata = unlist(model[tune.datakeys[1]])
-	obsdata = reshape(obsdata, size(getindex(model, tune.datakeys[1])))
-	nfeatures, nlang = size(obsdata)
+	data = unlist(model[tune.datakeys[1]])
+	data = reshape(data, size(getindex(model, tune.datakeys[1])))
+	nfeatures, nlang = size(data)
+
 	@assert v.tune.m >= nlang
 
 	# store old value for possible future reference
@@ -83,14 +87,14 @@ function DMH_sample!(v::DMHVariate, tune::DMHTune, model::Model)
 	v[:] = θ_prime
 
 	# Sample new pseudo observations based on the θ_prime
-	y = inner_sampler(v, deepcopy(obsdata))
+	y = inner_sampler(v, deepcopy(data)) #xobs
 
 	# calculate logpdfs based on pseudo observations
 	#println("pseudo")
 	lf_ytp = tune.pseudolog(v.value, y) # -> Do I calculate the prior here??? This should not happen!!!
 	lf_yt = tune.pseudolog(θ, y)
 
-	# calculate acceptance probability (proposal distribution?)
+	# calculate acceptance probability
 	r = exp((lf_yt + lf_xtp) - (lf_xt + lf_ytp))
 	#println("r $r")
 
@@ -106,16 +110,20 @@ function DMH_sample!(v::DMHVariate, tune::DMHTune, model::Model)
 	end
 	#println("v ", v[:])
 	v
+
+	# here?
 end
+
 
 function inner_sampler(v::DMHVariate, X::Array{N,2})::Array{N, 2} where N <: Real
 	nfeatures, nlangs = size(X)
 	counter = zero(Int64)
+
 	while true
-		random_language_idx = shuffle(1:nlangs)
 		random_feature_idx = shuffle(1:nfeatures)
-		@inbounds for i in random_language_idx
-			@inbounds for f in random_feature_idx
+		random_lang_idx = shuffle(1:nlang)
+		@inbounds for f in random_feature_idx
+			@inbounds for i in random_lang_idx
 				#println("language $i")
 				#println("feature $f")
 				probs = v.tune.condlike(v, X, i, f)
