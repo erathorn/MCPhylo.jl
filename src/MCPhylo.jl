@@ -292,6 +292,7 @@ include("samplers/bia.jl")
 include("samplers/bmc3.jl")
 include("samplers/bmg.jl")
 include("samplers/dgs.jl")
+include("samplers/dmh.jl")
 include("samplers/hmc.jl")
 include("samplers/mala.jl")
 include("samplers/miss.jl")
@@ -433,6 +434,7 @@ export
   Slice, SliceMultivariate, SliceUnivariate,
   SliceSimplex, SliceSimplexVariate,
   PNUTS, PNUTSVariate
+  DMH, DMHVariate
 
 export
   make_tree_with_data,
