@@ -5,7 +5,8 @@ Manifest.toml
 *params.log
 *.nwk
 *.jls
-*.nex
+*.tsv
+*Drav*
 *params*.log
 untracked_files/
 Manifest.toml

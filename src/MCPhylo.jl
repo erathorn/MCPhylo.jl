@@ -300,6 +300,8 @@ include("samplers/bia.jl")
 include("samplers/bmc3.jl")
 include("samplers/bmg.jl")
 include("samplers/dgs.jl")
+include("samplers/dmh.jl")
+include("samplers/empirical.jl")
 include("samplers/hmc.jl")
 include("samplers/mala.jl")
 include("samplers/miss.jl")
@@ -442,6 +444,7 @@ export
   RWM, RWMVariate,
   Slice, SliceMultivariate, SliceUnivariate,
   SliceSimplex, SliceSimplexVariate,
+  DMH, DMHVariate
   PNUTS, PNUTSVariate,
   Empirical, EmpiricalVariate
 

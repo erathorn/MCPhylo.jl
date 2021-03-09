@@ -500,10 +500,26 @@ function logpdf(s::AbstractStochastic, transform::Bool=false)
   logpdf(s, s.value, transform)
 end
 
-function rand(s::AbstractStochastic, x::Int64)
-  rand(s.distr, x)
+function conditional_likelihood(s::AbstractStochastic, args...)
+  conditional_likelihood(s, s.value, args...)
 end
 
+function conditional_likelihood(s::AbstractStochastic, x::AbstractArray, args...)
+  logcond(s.distr, x, args...)
+end
+
+
+function pseudologpdf(s::AbstractStochastic, x::Real, transform::Bool=false)
+  logpdf(s, x, transform)
+end
+
+function pseudologpdf(s::AbstractStochastic, x::AbstractArray, transform::Bool=false)
+  logpdf(s, x, transform)
+end
+
+function rand(s::AbstractStochastic, x::Int64)
+  rand(s.distr, x)
+  
 function gradlogpdf(s::AbstractStochastic)
   gradlogpdf(s, s.value)
 end

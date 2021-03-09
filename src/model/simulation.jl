@@ -116,6 +116,25 @@ function logpdf(m::Model, nodekeys::Vector{Symbol}, transform::Bool=false)
   m.likelihood
 end
 
+function pseudologpdf(m::Model, nodekeys::Vector{Symbol}, y, transform::Bool=false)
+  lp = 0.0
+  for key in nodekeys
+    lp += pseudologpdf(m[key],y, transform)
+    isfinite(lp) || break
+  end
+  lp
+end
+
+function conditional_likelihood(m::Model, nodekeys::Vector{Symbol}, args...)
+  #println(nodekeys)
+  lp = conditional_likelihood(m[nodekeys[1]], args...)
+  #for key in nodekeys[2:end]
+  #  lp .+= conditional_likelihood(m[key], args...)
+  #end
+  lp
+end
+
+
 function rand(m::Model, nodekeys::Vector{Symbol}, x::Int64)
   rand(m[nodekeys[1]], x)
 end
@@ -124,8 +143,6 @@ end
     logpdf(m::Model, x::AbstractArray{T}, block::Integer=0,
             transform::Bool=false) where {T<:Real}
 """
-
-
 function logpdf(m::Model, x::AbstractArray{T}, block::Integer=0,
                 transform::Bool=false) where {T<:Real}
   x0 = unlist(m, block)
@@ -276,6 +293,33 @@ function sample!(m::Model, block::Integer=0)
   m.iter -= isoneblock
   m.likelihood = final_likelihood(m)
   m
+end
+
+function pseudologpdf!(m::Model, x::AbstractArray{T}, y::AbstractArray, block::Integer=0,
+                  transform::Bool=false) where {T<:Real}
+  params = keys(m, :block, block)
+  targets = keys(m, :target, block)
+  m[params] = relist(m, x, params, transform)
+  lp = 0.0
+  for key in targets
+    isfinite(lp) || break
+    node = m[key]
+    update!(node, m)
+    lp += key in params ? pseudologpdf(node, y, transform) : pseudologpdf(node,y)
+  end
+  lp
+end
+
+
+function conditional_likelihood!(m::Model, x::AbstractArray{T}, block::Integer=0,
+                  args...) where {T<:Real}
+  params = keys(m, :block, block)
+  targets = keys(m, :target, block)
+  m[params] = relist(m, x, params)
+
+  lp = conditional_likelihood(m, targets, args...)
+
+  lp
 end
 
 

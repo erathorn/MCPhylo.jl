@@ -138,6 +138,14 @@ function logpdf!(block::SamplingBlock, x::AbstractArray{T}) where {T<:Real}
   logpdf!(block.model, x, block.index, block.transform)
 end
 
+function pseudologpdf!(block::SamplingBlock, x::AbstractArray{T}, y::AbstractArray) where {T<:Real}
+  pseudologpdf!(block.model, x, y, block.index , block.transform)
+end
+
+function conditional_likelihood!(block::SamplingBlock, x::AbstractArray{T}, args...) where {T<:Real}
+  conditional_likelihood!(block.model, x, block.index, args...)
+end
+
 function logpdf!(block::SamplingBlock, x::AbstractArray{T}) where {T<:GeneralNode}
   logpdf!(block.model, x[1])
 end
@@ -161,14 +169,14 @@ function _gradlogpdf!(m::Model, x::AbstractArray, block::Integer, dtype::Symbol=
 
 end
 
-
-
 function logpdfgrad!(block::SamplingBlock, x::AbstractVector{T},
                     dtype::Symbol) where {T<:Real}
   grad = gradlogpdf!(block, x, dtype)
   logf = logpdf!(block, x)
   (logf, ifelse.(isfinite.(grad), grad, 0.0))
 end
+
+#################### unlist and relist functionality ####################
 
 function unlist(block::SamplingBlock)
   unlist(block.model, block.index, block.transform)
