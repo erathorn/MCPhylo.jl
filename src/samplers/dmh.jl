@@ -3,13 +3,17 @@
 #################### Types and Constructors ####################
 
 mutable struct DMHTune <: SamplerTune
-  seed_data::AbstractArray
-  m::Int64
+  outer<:SamplerVariate
+  inner<:SamplerVariate
+  seed_data<:AbstractArray
+  m<:Int64
 
   DMHTune() = new()
-  function DMHTune(seed_data::A, m::Int64) where A<:AbstractArray
+  function DMHTune(outer::S, inner::T, seed_data::A, m::Int64) where {S<:SamplerVariate, T<:SamplerVariate}
+    typeof(outer) == DMHVariate && throw(ArgumentError($outer " cannot be of type " $typeof(outer)))
+    typeof(inner) == DMHVariate && throw(ArgumentError($inner " cannot be of type " $typeof(inner)))
 	@assert m >= length(seed_data)
-    new(seed_data, m)
+    new(outer, inner, seed_data, m)
   end
 end
 
@@ -76,6 +80,8 @@ function DMH_sample!(v::DMHVariate, lf::Function, pslf::Function, cl::Function)
 end
 
 function inner_sampler(v::DMHTune, cond_prob::Function)
+	#X::Array{Int64,1}, v_params, h_params,
+	#u_params, spatial_sums::Array{Float64,2}, ling_sums::Array{Float64,2}, m::Int64)
 	m = v.m
 	X = v.seed_data
 
@@ -89,23 +95,23 @@ function inner_sampler(v::DMHTune, cond_prob::Function)
 		for i in random_index_order
 			if ismissing(X[i]) # no missing values yet, and this part needs improvement;
 				# To do: add the neighbour and global majority methods
-				throw("`Cannot handle missing`")
-				#missing_probs = cond_prob.(Ref(samples), i, feature_vals, Ref(spatial_sums),
-				#	Ref(ling_sums), Ref(v_params), Ref(h_params), Ref(u_params))
-				#missing_probs ./= sum(missing_probs)
-				#new_x = sample(feature_vals, StatsBase.weights(missing_probs))
-				#samples[i] = new_x
+				throw("We should not end up here")
+				missing_probs = cond_prob.(Ref(samples), i, feature_vals, Ref(spatial_sums),
+					Ref(ling_sums), Ref(v_params), Ref(h_params), Ref(u_params))
+				missing_probs ./= sum(missing_probs)
+				new_x = sample(feature_vals, StatsBase.weights(missing_probs))
+				samples[i] = new_x
 			end
-			probs = cond_prob.(Ref(samples), i, feature_vals, Ref(spatial_sums), Ref(ling_sums),
-				Ref(v_params), Ref(h_params), Ref(u_params))
-			probs ./= sum(probs)
-			new_x = sample(feature_vals, StatsBase.weights(probs))
-			samples[i] = new_x
-		
+				probs = cond_prob.(Ref(samples), i, feature_vals, Ref(spatial_sums), Ref(ling_sums),
+					Ref(v_params), Ref(h_params), Ref(u_params))
+				probs ./= sum(probs)
+				new_x = sample(feature_vals, StatsBase.weights(probs))
+				samples[i] = new_x
+			end
 			counter += 1
 			if counter > m
 				return samples
 			end
-		end #if for
-	end # if while
-end # inner_sampler
+		end
+	end
+end
