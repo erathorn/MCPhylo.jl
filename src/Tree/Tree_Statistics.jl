@@ -1,14 +1,14 @@
-
-
 function parse_and_number(treestring::S)::Node where S <: AbstractString
     p_tree2 = parsing_newick_string(string(treestring))
     set_binary!(p_tree2)
     number_nodes!(p_tree2)
     p_tree2
-end
+end # parse_and_number
 
 
-function nodnums2names(bps::Vector{Tuple}, tree::Node)::Vector{Tuple{Set{String}, Set{String}}}
+function nodnums2names(bps::Vector{Tuple}, tree::Node
+                      )::Vector{Tuple{Set{String}, Set{String}}}
+
     treebps = Vector{Tuple{Set{String}, Set{String}}}()
     for bipart in bps
         bipartition = []
@@ -18,65 +18,120 @@ function nodnums2names(bps::Vector{Tuple}, tree::Node)::Vector{Tuple{Set{String}
                 no = find_num(tree, num)
                 if no.nchild == 0
                     push!(myset, no.name)
-                end
-            end
+                end # if
+            end # for
             push!(bipartition, myset)
-        end
+        end # for
         push!(treebps, Tuple(bipartition))
-    end
+    end # for
     treebps
-end
+end # nodnums2names
+
 
 """
-    ASDSF(filename1::S, filename2::S, freq::Int64=1)::Vector{Float64} where S <: AbstractString
+    ASDSF(args...; freq::Int64=1, check_leafsets::Bool=true)::Vector{Float64}
 
-Calculate the average standard deviation of split frequencies for two files containing
-newick representations of trees.
+Calculate the average standard deviation of split frequencies for two files
+containing newick representations of trees.
 """
-function ASDSF(filename1::S, filename2::S, freq::Int64=1)::Vector{Float64} where S <: AbstractString
+function ASDSF(args...; freq::Int64=1, check_leafsets::Bool=true
+              )::Vector{Float64}
+
     splitsQueue = Accumulator{Tuple{Set{String}, Set{String}}, Int64}()
-    splitsQueue_1 = Accumulator{Tuple{Set{String}, Set{String}}, Int64}()
-    splitsQueue_2 = Accumulator{Tuple{Set{String}, Set{String}}, Int64}()
-    ASDF_vals = zeros(Int(countlines(filename1)/freq))
+    splitsQueues = Vector{Accumulator{Tuple{Set{String}, Set{String}}, Int64}}()
+    for arg in args
+        push!(splitsQueues, Accumulator{Tuple{Set{String}, Set{String}}, Int64}())
+    end
+    ASDF_vals = zeros(Int(countlines(args[1])/freq))
     all_keys = Set{Tuple{Set{String},Set{String}}}()
     run = 1
     p = Progress(length(ASDF_vals))
-    for ((ind1, tree_string_1), (ind2, tree_string_2)) in zip(enumerate(eachline(filename1)), enumerate(eachline(filename2)))
-        if mod(ind1,freq) == 0
-            tree1 = parse_and_number(tree_string_1)
-            tree2 = parse_and_number(tree_string_2)
-            bp_t1 = get_bipartitions(tree1)
-            bp_t2 = get_bipartitions(tree2)
-            named_bp_1 = nodnums2names(bp_t1, tree1)
-            named_bp_2 = nodnums2names(bp_t2, tree2)
-            cm1_d = countmap(named_bp_1)
-            cm2_d = countmap(named_bp_2)
+
+    for (i, lines) in enumerate(zip([eachline(arg) for arg in args]...))
+        if mod(i, freq) == 0
+            trees = [parse_and_number(tree_string) for tree_string in lines]
+            check_leafsets && check_leafsets(trees)
+            bps = [get_bipartitions(tree) for tree in trees]
+            named_bps = [nodnums2names(bp, tree) for (bp, tree) in zip(bps, trees)]
+            cmds = [countmap(named_bp) for named_bp in named_bps]
             outer = 0.0
-            new_splits = union(keys(cm1_d), keys(cm2_d))
+            new_splits = union([keys(cmds[t]) for t in 1:length(trees)]...)
             all_keys = union(all_keys, new_splits)
             for split in new_splits
                 inc!(splitsQueue, split)
-            end
+            end # for
             for split in all_keys
                 inner = 0.0
-                if haskey(cm1_d, split)
-                    inner += 0.5
-                    inc!(splitsQueue_1, split)
-                end
-                if haskey(cm2_d, split)
-                    inner += 0.5
-                    inc!(splitsQueue_2, split)
-                end
-                if splitsQueue_1[split]/run > 0.1 || splitsQueue_2[split]/run > 0.1
-                    fre = splitsQueue[split]/run
-                    inner += (inner - fre)^2
+                for (t, tree) in enumerate(trees)
+                    if haskey(cmds[t], split)
+                        inner += 1 / length(trees)
+                        inc!(splitsQueues[t], split)
+                    end # if
+                end # for
+                if any([x[split] / run > 0.1 for x in splitsQueues])
+                    fre = splitsQueue[split] / run
+                    inner += (inner - fre) ^ 2
                     outer += sqrt(inner)
-                end
-            end
+                end # if
+            end # for
             ASDF_vals[run] = outer / length(splitsQueue)
             run += 1
             ProgressMeter.next!(p)
-        end
-    end
+        end # if
+    end # for
     ASDF_vals
-end
+end # ASDSF
+
+
+"""
+    ASDSF(args...; freq::Int64=1, check_leafsets::Bool=true)::Vector{Float64}
+
+Calculate the average standard deviation of split frequencies for two files
+containing newick representations of trees.
+"""
+function ASDSF(args...; freq::Int64=1, check_leafsets::Bool=true
+              )::Vector{Float64}
+
+    splitsQueue = Accumulator{Tuple{Set{String}, Set{String}}, Int64}()
+    splitsQueues = Vector{Accumulator{Tuple{Set{String}, Set{String}}, Int64}}()
+    for arg in args
+        push!(splitsQueues, Accumulator{Tuple{Set{String}, Set{String}}, Int64}())
+    end
+    ASDF_vals = zeros(Int(countlines(args[1])/freq))
+    all_keys = Set{Tuple{Set{String},Set{String}}}()
+    run = 1
+    p = Progress(length(ASDF_vals))
+    for (i, lines) in enumerate(zip([eachline(arg) for arg in args]...))
+        if mod(i, freq) == 0
+            trees = [parse_and_number(tree_string) for tree_string in lines]
+            check_leafsets && check_leafsets(trees)
+            bps = [get_bipartitions(tree) for tree in trees]
+            named_bps = [nodnums2names(bp, tree) for (bp, tree) in zip(bps, trees)]
+            cmds = [countmap(named_bp) for named_bp in named_bps]
+            outer = 0.0
+            new_splits = union([keys(cmds[t]) for t in 1:length(trees)]...)
+            all_keys = union(all_keys, new_splits)
+            for split in new_splits
+                inc!(splitsQueue, split)
+            end # for
+            for split in all_keys
+                inner = 0.0
+                for (t, tree) in enumerate(trees)
+                    if haskey(cmds[t], split)
+                        inner += 1 / length(trees)
+                        inc!(splitsQueues[t], split)
+                    end # if
+                end # for
+                if any([x[split] / run > 0.1 for x in splitsQueues])
+                    fre = splitsQueue[split] / run
+                    inner += (inner - fre) ^ 2
+                    outer += sqrt(inner)
+                end # if
+            end # for
+            ASDF_vals[run] = outer / length(splitsQueue)
+            run += 1
+            ProgressMeter.next!(p)
+        end # if
+    end # for
+    ASDF_vals
+end # ASDSF
