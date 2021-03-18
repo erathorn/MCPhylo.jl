@@ -11,13 +11,20 @@ are implemented.
 
 **This package is currently under heavy development.**
 
-**This package needs at least Julia 1.3.1. This package is not backwards compatible!**
+**This package needs at least Julia 1.4.2. This package is not backwards compatible!**
 
 **This module is build on a forked instance of Mamba 0.12.0**
 
 **Note** This package uses multithreading. (https://docs.julialang.org/en/v1/base/multi-threading/)
 
+------
 
+## Citation
+
+If you use this software in an academic publication please cite the following paper
+No-U-Turn sampling for phylogenetic trees, Wahle (2021).  ([bioRxiv Paper](https://doi.org/10.1101/2021.03.16.435623))
+
+------
 
 ## General Information
 
@@ -48,7 +55,9 @@ You can flush the model parameters and the sampled trees to a file, using the `t
 
 ### New & Adjusted Samplers
 
-`PNUTS ` is a sampler which does *Phylogenetic No-U-Turn sampling* (Wahle (forthcomming)). It samples tree stochastic nodes.
+`PNUTS ` is a sampler which does *Phylogenetic No-U-Turn sampling* (Wahle (2021)).  ([bioRxiv Paper](https://doi.org/10.1101/2021.03.16.435623))
+
+ It samples tree stochastic nodes.
 
 `RWM` Random walk metroplis hastings sampling can work with trees now. For numerical nodes the sampler and the function signature is as in the original Mamba package. For tree structures the signature is slightly different: `RWM(:tree, :all)` or `RWM(:tree, [:NNI, :Swing])` The first variant uses all available tree manipulation moves (see [Tree Manipulation](TreeStuff.md#Tree Manipulation)), the second variant only makes use of a user defined subset of these moves. Ladderization of the tree is not an eligible tree manipulation move
 
