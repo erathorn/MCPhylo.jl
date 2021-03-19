@@ -33,7 +33,8 @@ end # nodnums2names
           ::Vector{Float64}
 
 Calculate the average standard deviation of split frequencies for two or more
-files containing newick representations of trees.
+files containing newick representations of trees. Default frequency is 1 and
+by default only trees with the same leafsets are supported.
 """
 function ASDSF(args::String...; freq::Int64=1, check_leaves::Bool=true
               )::Vector{Float64}
@@ -43,11 +44,20 @@ function ASDSF(args::String...; freq::Int64=1, check_leaves::Bool=true
     for arg in args
         push!(splitsQueues, Accumulator{Tuple{Set{String}, Set{String}}, Int64}())
     end # for
-    iterator = zip([eachline(arg) for arg in args]...)
-    asdsf_int(splitsQueue, splitsQueues, iterator, freq, check_leaves)
+    iter = zip([eachline(arg) for arg in args]...)
+    ASDF_vals = zeros(Int(countlines(args[1]) / freq))
+    asdsf_int(splitsQueue, splitsQueues, iter, ASDF_vals, freq, check_leaves)
 end # ASDSF
 
 
+"""
+    ASDSF(args::Vector{String}...; freq::Int64=1, check_leaves::Bool=true)
+          ::Vector{Float64}
+
+Calculate the average standard deviation of split frequencies for two or more
+Vectors containing newick representations of trees. Default frequency is 1 and
+by default only trees with the same leafsets are supported.
+"""
 function ASDSF(args::Vector{String}...; freq::Int64=1, check_leaves::Bool=true
               )::Vector{Float64}
     length(args) < 2 && throw(ArgumentError("At least two input arrays are needed."))
@@ -56,12 +66,20 @@ function ASDSF(args::Vector{String}...; freq::Int64=1, check_leaves::Bool=true
     for arg in args
         push!(splitsQueues, Accumulator{Tuple{Set{String}, Set{String}}, Int64}())
     end # for
-    ASDF_vals = zeros(Int(length(args[1]) / freq))
-    iterator = zip(args...)
-    asdsf_int(splitsQueue, splitsQueues, iterator, freq, check_leaves)
+    iter = zip(args...)
+    ASDF_vals = zeros(Int(length(iter) / freq))
+    asdsf_int(splitsQueue, splitsQueues, iter, ASDF_vals, freq, check_leaves)
 end # ASDSF
 
 
+"""
+    ASDSF(model::ModelChains; freq::Int64=1, check_leaves::Bool=true)
+          ::Vector{Float64}
+
+Calculate the average standard deviation of split frequencies for the trees in
+different chains in a ModelChains object. Default frequency is 1 and by default
+only trees with the same leafsets are supported.
+"""
 function ASDSF(model::ModelChains; freq::Int64=1, check_leaves::Bool=true
               )::Vector{Float64}
     splitsQueue = Accumulator{Tuple{Set{String}, Set{String}}, Int64}()
@@ -70,18 +88,26 @@ function ASDSF(model::ModelChains; freq::Int64=1, check_leaves::Bool=true
     for i in 1:l
         push!(splitsQueues, Accumulator{Tuple{Set{String}, Set{String}}, Int64}())
     end # for
-    iterator = zip([model.trees[:,:,i] for i in 1:l]...)
-    asdsf_int(splitsQueue, splitsQueues, iterator, freq, check_leaves)
+    iter = zip([model.trees[:,:,i] for i in 1:l]...)
+    ASDF_vals = zeros(Int(length(iter) / freq))
+    asdsf_int(splitsQueue, splitsQueues, iter, ASDF_vals, freq, check_leaves)
 end # ASDSF
 
 
-function asdsf_int(splitsQueue, splitsQueues, iterator, freq, check_leaves
-                  )::Vector{Float64}
+"""
+    asdsf_int(splitsQueue, splitsQueues, iter, ASDF_vals, freq, check_leaves)
+        ::Vector{Float64}
+
+--- INTERNAL ---
+Handles the computation of the Average Standard Deviation of Split Frequencies.
+"""
+function asdsf_int(splitsQueue, splitsQueues, iter, ASDF_vals, freq,
+                   check_leaves)::Vector{Float64}
+
     all_keys = Set{Tuple{Set{String},Set{String}}}()
-    ASDF_vals = zeros(Int(length(iterator) / freq))
     p = Progress(length(ASDF_vals))
     run = 1
-    for (i, lines) in enumerate(iterator)
+    for (i, lines) in enumerate(iter)
         if mod(i, freq) == 0
             trees = [parse_and_number(tree_string) for tree_string in lines]
             check_leaves && check_leafsets(trees)
