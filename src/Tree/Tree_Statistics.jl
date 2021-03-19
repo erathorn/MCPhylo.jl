@@ -29,19 +29,20 @@ end # nodnums2names
 
 
 """
-    ASDSF(args...; freq::Int64=1, check_leaves::Bool=true)::Vector{Float64}
+    ASDSF(args::String...; freq::Int64=1, check_leaves::Bool=true)
+          ::Vector{Float64}
 
 Calculate the average standard deviation of split frequencies for two or more
 files containing newick representations of trees.
 """
 function ASDSF(args::String...; freq::Int64=1, check_leaves::Bool=true
               )::Vector{Float64}
+    length(args) < 2 && throw(ArgumentError("At least two input files are needed."))
     splitsQueue = Accumulator{Tuple{Set{String}, Set{String}}, Int64}()
     splitsQueues = Vector{Accumulator{Tuple{Set{String}, Set{String}}, Int64}}()
     for arg in args
         push!(splitsQueues, Accumulator{Tuple{Set{String}, Set{String}}, Int64}())
     end # for
-    length(args) < 2 && throw(ArgumentError("At least two input files are needed."))
     iterator = zip([eachline(arg) for arg in args]...)
     asdsf_int(splitsQueue, splitsQueues, iterator, freq, check_leaves)
 end # ASDSF
@@ -61,15 +62,15 @@ function ASDSF(args::Vector{String}...; freq::Int64=1, check_leaves::Bool=true
 end # ASDSF
 
 
-function ASDSF(args::ModelChains...; freq::Int64=1, check_leaves::Bool=true
+function ASDSF(model::ModelChains; freq::Int64=1, check_leaves::Bool=true
               )::Vector{Float64}
     splitsQueue = Accumulator{Tuple{Set{String}, Set{String}}, Int64}()
     splitsQueues = Vector{Accumulator{Tuple{Set{String}, Set{String}}, Int64}}()
-    for arg in args
+    l = size(model.trees, 3)
+    for i in 1:l
         push!(splitsQueues, Accumulator{Tuple{Set{String}, Set{String}}, Int64}())
     end # for
-    length(args) < 2 && throw(ArgumentError("At least two input arrays are needed."))
-    iterator = zip(args...)
+    iterator = zip([model.trees[:,:,i] for i in 1:l]...)
     asdsf_int(splitsQueue, splitsQueues, iterator, freq, check_leaves)
 end # ASDSF
 
