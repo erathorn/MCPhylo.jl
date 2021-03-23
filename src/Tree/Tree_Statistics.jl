@@ -1,3 +1,10 @@
+"""
+    parse_and_number(treestring::S)::Node where S<:AbstractString
+
+--- INTERNAL ---
+Parse a newick string and then call set_binary and number_nodes! on the
+resulting tree
+"""
 function parse_and_number(treestring::S)::Node where S<:AbstractString
     p_tree2 = parsing_newick_string(string(treestring))
     set_binary!(p_tree2)
@@ -6,6 +13,12 @@ function parse_and_number(treestring::S)::Node where S<:AbstractString
 end # parse_and_number
 
 
+"""
+    nodnums2names(bps::Vector{Tuple}, tree::Node)
+        ::Vector{Tuple{Set{String}, Set{String}}}
+
+--- INTERNAL ---
+"""
 function nodnums2names(bps::Vector{Tuple}, tree::Node
                       )::Vector{Tuple{Set{String}, Set{String}}}
 
