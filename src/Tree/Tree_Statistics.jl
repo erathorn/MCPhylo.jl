@@ -36,8 +36,8 @@ Calculate the average standard deviation of split frequencies for two or more
 files containing newick representations of trees. Default frequency is 1 and
 by default only trees with the same leafsets are supported.
 """
-function ASDSF(args::String...; freq::Int64=1, check_leaves::Bool=true
-              )::Vector{Float64}
+function ASDSF(args::String...; freq::Int64=1, check_leaves::Bool=true,
+               min_splits::Float64=0.1)::Vector{Float64}
     length(args) < 2 && throw(ArgumentError("At least two input files are needed."))
     splitsQueue = Accumulator{Tuple{Set{String}, Set{String}}, Int64}()
     splitsQueues = Vector{Accumulator{Tuple{Set{String}, Set{String}}, Int64}}()
@@ -46,7 +46,7 @@ function ASDSF(args::String...; freq::Int64=1, check_leaves::Bool=true
     end # for
     iter = zip([eachline(arg) for arg in args]...)
     ASDF_vals = zeros(Int(countlines(args[1]) / freq))
-    asdsf_int(splitsQueue, splitsQueues, iter, ASDF_vals, freq, check_leaves)
+    asdsf_int(splitsQueue, splitsQueues, iter, ASDF_vals, freq, check_leaves, min_splits)
 end # ASDSF
 
 
@@ -58,8 +58,8 @@ Calculate the average standard deviation of split frequencies for two or more
 Vectors containing newick representations of trees. Default frequency is 1 and
 by default only trees with the same leafsets are supported.
 """
-function ASDSF(args::Vector{String}...; freq::Int64=1, check_leaves::Bool=true
-              )::Vector{Float64}
+function ASDSF(args::Vector{String}...; freq::Int64=1, check_leaves::Bool=true,
+               min_splits::Float64=0.1)::Vector{Float64}
     length(args) < 2 && throw(ArgumentError("At least two input arrays are needed."))
     splitsQueue = Accumulator{Tuple{Set{String}, Set{String}}, Int64}()
     splitsQueues = Vector{Accumulator{Tuple{Set{String}, Set{String}}, Int64}}()
@@ -68,7 +68,7 @@ function ASDSF(args::Vector{String}...; freq::Int64=1, check_leaves::Bool=true
     end # for
     iter = zip(args...)
     ASDF_vals = zeros(Int(length(iter) / freq))
-    asdsf_int(splitsQueue, splitsQueues, iter, ASDF_vals, freq, check_leaves)
+    asdsf_int(splitsQueue, splitsQueues, iter, ASDF_vals, freq, check_leaves, min_splits)
 end # ASDSF
 
 
@@ -80,8 +80,8 @@ Calculate the average standard deviation of split frequencies for the trees in
 different chains in a ModelChains object. Default frequency is 1 and by default
 only trees with the same leafsets are supported.
 """
-function ASDSF(model::ModelChains; freq::Int64=1, check_leaves::Bool=true
-              )::Vector{Float64}
+function ASDSF(model::ModelChains; freq::Int64=1, check_leaves::Bool=true,
+               min_splits::Float64=0.1)::Vector{Float64}
     splitsQueue = Accumulator{Tuple{Set{String}, Set{String}}, Int64}()
     splitsQueues = Vector{Accumulator{Tuple{Set{String}, Set{String}}, Int64}}()
     l = size(model.trees, 3)
@@ -90,7 +90,7 @@ function ASDSF(model::ModelChains; freq::Int64=1, check_leaves::Bool=true
     end # for
     iter = zip([model.trees[:,:,i] for i in 1:l]...)
     ASDF_vals = zeros(Int(length(iter) / freq))
-    asdsf_int(splitsQueue, splitsQueues, iter, ASDF_vals, freq, check_leaves)
+    asdsf_int(splitsQueue, splitsQueues, iter, ASDF_vals, freq, check_leaves, min_splits)
 end # ASDSF
 
 
@@ -102,7 +102,7 @@ end # ASDSF
 Handles the computation of the Average Standard Deviation of Split Frequencies.
 """
 function asdsf_int(splitsQueue, splitsQueues, iter, ASDF_vals, freq,
-                   check_leaves)::Vector{Float64}
+                   check_leaves, min_splits)::Vector{Float64}
 
     all_keys = Set{Tuple{Set{String},Set{String}}}()
     p = Progress(length(ASDF_vals))
@@ -128,7 +128,7 @@ function asdsf_int(splitsQueue, splitsQueues, iter, ASDF_vals, freq,
                         inc!(splitsQueues[t], split)
                     end # if
                 end # for
-                if any([x[split] / run > 0.1 for x in splitsQueues])
+                if any([x[split] / run > min_splits for x in splitsQueues])
                     fre = splitsQueue[split] / run
                     inner += (inner - fre) ^ 2
                     outer += sqrt(inner)
