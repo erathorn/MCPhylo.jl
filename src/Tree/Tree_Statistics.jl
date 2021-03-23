@@ -28,13 +28,15 @@ function nodnums2names(bps::Vector{Tuple}, tree::Node
 end # nodnums2names
 
 
+
 """
-    ASDSF(args::String...; freq::Int64=1, check_leaves::Bool=true)
-          ::Vector{Float64}
+    ASDSF(args::String...; freq::Int64=1, check_leaves::Bool=true,
+          min_splits::Float64=0.1, show_progress::Bool=true)::Vector{Float64}
 
 Calculate the average standard deviation of split frequencies for two or more
 files containing newick representations of trees. Default frequency is 1 and
-by default only trees with the same leafsets are supported.
+by default only trees with the same leafsets are supported. The default minimal
+splits threshold is 0.1. The progress bar is activated by default.
 """
 function ASDSF(args::String...; freq::Int64=1, check_leaves::Bool=true,
                min_splits::Float64=0.1)::Vector{Float64}
@@ -51,15 +53,16 @@ end # ASDSF
 
 
 """
-    ASDSF(args::Vector{String}...; freq::Int64=1, check_leaves::Bool=true)
-          ::Vector{Float64}
+    ASDSF(args::Vector{String}...; freq::Int64=1, check_leaves::Bool=true,
+          min_splits::Float64=0.1, show_progress::Bool=true)::Vector{Float64}
 
 Calculate the average standard deviation of split frequencies for two or more
 Vectors containing newick representations of trees. Default frequency is 1 and
-by default only trees with the same leafsets are supported.
+by default only trees with the same leafsets are supported. The default minimal
+splits threshold is 0.1. The progress bar is activated by default.
 """
 function ASDSF(args::Vector{String}...; freq::Int64=1, check_leaves::Bool=true,
-               min_splits::Float64=0.1)::Vector{Float64}
+               min_splits::Float64=0.1, show_progress::Bool=true)::Vector{Float64}
     length(args) < 2 && throw(ArgumentError("At least two input arrays are needed."))
     splitsQueue = Accumulator{Tuple{Set{String}, Set{String}}, Int64}()
     splitsQueues = Vector{Accumulator{Tuple{Set{String}, Set{String}}, Int64}}()
@@ -73,15 +76,16 @@ end # ASDSF
 
 
 """
-    ASDSF(model::ModelChains; freq::Int64=1, check_leaves::Bool=true)
-          ::Vector{Float64}
+    ASDSF(model::ModelChains; freq::Int64=1, check_leaves::Bool=true,
+          min_splits::Float64=0.1, show_progress::Bool=true)::Vector{Float64}
 
 Calculate the average standard deviation of split frequencies for the trees in
 different chains in a ModelChains object. Default frequency is 1 and by default
-only trees with the same leafsets are supported.
+only trees with the same leafsets are supported. The default minimal splits
+threshold is 0.1. The progress bar is activated by default.
 """
 function ASDSF(model::ModelChains; freq::Int64=1, check_leaves::Bool=true,
-               min_splits::Float64=0.1)::Vector{Float64}
+               min_splits::Float64=0.1, show_progress::Bool=true)::Vector{Float64}
     splitsQueue = Accumulator{Tuple{Set{String}, Set{String}}, Int64}()
     splitsQueues = Vector{Accumulator{Tuple{Set{String}, Set{String}}, Int64}}()
     l = size(model.trees, 3)
@@ -95,18 +99,22 @@ end # ASDSF
 
 
 """
-    asdsf_int(splitsQueue, splitsQueues, iter, ASDF_vals, freq, check_leaves)
-        ::Vector{Float64}
+    asdsf_int(splitsQueue, splitsQueues, iter, ASDF_vals, freq, check_leaves
+              min_splits)::Vector{Float64}
 
 --- INTERNAL ---
 Handles the computation of the Average Standard Deviation of Split Frequencies.
 """
 function asdsf_int(splitsQueue, splitsQueues, iter, ASDF_vals, freq,
-                   check_leaves, min_splits)::Vector{Float64}
+                   check_leaves, min_splits, show_progress)::Vector{Float64}
 
     all_keys = Set{Tuple{Set{String},Set{String}}}()
-    p = Progress(length(ASDF_vals))
-    run = 1
+    if show_progress
+        p = Progress(length(ASDF_vals))
+    end # if
+    run::Int64 = 1
+    outer::Float64 = 0.0
+    inner::Float64 = 0.0
     for (i, lines) in enumerate(iter)
         if mod(i, freq) == 0
             trees = [parse_and_number(tree_string) for tree_string in lines]
@@ -136,7 +144,7 @@ function asdsf_int(splitsQueue, splitsQueues, iter, ASDF_vals, freq,
             end # for
             ASDF_vals[run] = outer / length(splitsQueue)
             run += 1
-            ProgressMeter.next!(p)
+            show_progress && ProgressMeter.next!(p)
         end # if
     end # for
     ASDF_vals
