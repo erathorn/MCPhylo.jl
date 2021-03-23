@@ -52,7 +52,9 @@ by default only trees with the same leafsets are supported. The default minimal
 splits threshold is 0.1. The progress bar is activated by default.
 """
 function ASDSF(args::String...; freq::Int64=1, check_leaves::Bool=true,
-               min_splits::Float64=0.1)::Vector{Float64}
+               min_splits::Float64=0.1, show_progress::Bool=true
+               )::Vector{Float64}
+
     length(args) < 2 && throw(ArgumentError("At least two input files are needed."))
     splitsQueue = Accumulator{Tuple{Set{String}, Set{String}}, Int64}()
     splitsQueues = Vector{Accumulator{Tuple{Set{String}, Set{String}}, Int64}}()
@@ -61,7 +63,8 @@ function ASDSF(args::String...; freq::Int64=1, check_leaves::Bool=true,
     end # for
     iter = zip([eachline(arg) for arg in args]...)
     ASDF_vals = zeros(Int(countlines(args[1]) / freq))
-    asdsf_int(splitsQueue, splitsQueues, iter, ASDF_vals, freq, check_leaves, min_splits)
+    asdsf_int(splitsQueue, splitsQueues, iter, ASDF_vals, freq, check_leaves,
+              min_splits, show_progress)
 end # ASDSF
 
 
@@ -75,7 +78,9 @@ by default only trees with the same leafsets are supported. The default minimal
 splits threshold is 0.1. The progress bar is activated by default.
 """
 function ASDSF(args::Vector{String}...; freq::Int64=1, check_leaves::Bool=true,
-               min_splits::Float64=0.1, show_progress::Bool=true)::Vector{Float64}
+               min_splits::Float64=0.1, show_progress::Bool=true
+               )::Vector{Float64}
+
     length(args) < 2 && throw(ArgumentError("At least two input arrays are needed."))
     splitsQueue = Accumulator{Tuple{Set{String}, Set{String}}, Int64}()
     splitsQueues = Vector{Accumulator{Tuple{Set{String}, Set{String}}, Int64}}()
@@ -84,7 +89,8 @@ function ASDSF(args::Vector{String}...; freq::Int64=1, check_leaves::Bool=true,
     end # for
     iter = zip(args...)
     ASDF_vals = zeros(Int(length(iter) / freq))
-    asdsf_int(splitsQueue, splitsQueues, iter, ASDF_vals, freq, check_leaves, min_splits)
+    asdsf_int(splitsQueue, splitsQueues, iter, ASDF_vals, freq, check_leaves,
+              min_splits, show_progress)
 end # ASDSF
 
 
@@ -98,7 +104,9 @@ only trees with the same leafsets are supported. The default minimal splits
 threshold is 0.1. The progress bar is activated by default.
 """
 function ASDSF(model::ModelChains; freq::Int64=1, check_leaves::Bool=true,
-               min_splits::Float64=0.1, show_progress::Bool=true)::Vector{Float64}
+               min_splits::Float64=0.1, show_progress::Bool=true
+               )::Vector{Float64}
+               
     splitsQueue = Accumulator{Tuple{Set{String}, Set{String}}, Int64}()
     splitsQueues = Vector{Accumulator{Tuple{Set{String}, Set{String}}, Int64}}()
     l = size(model.trees, 3)
@@ -107,7 +115,8 @@ function ASDSF(model::ModelChains; freq::Int64=1, check_leaves::Bool=true,
     end # for
     iter = zip([model.trees[:,:,i] for i in 1:l]...)
     ASDF_vals = zeros(Int(length(iter) / freq))
-    asdsf_int(splitsQueue, splitsQueues, iter, ASDF_vals, freq, check_leaves, min_splits)
+    asdsf_int(splitsQueue, splitsQueues, iter, ASDF_vals, freq, check_leaves,
+              min_splits, show_progress)
 end # ASDSF
 
 
