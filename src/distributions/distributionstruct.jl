@@ -147,7 +147,8 @@ logcond(d, x, args...) = logcond(d, x, args...)
 logpdf(d::Distribution, x, transform::Bool) = logpdf(d, x)
 
 function logpdf_sub(d::Distribution, x, transform::Bool)
-  insupport(d, x) ? logpdf(d, x, transform) : -Inf
+  #insupport(d, x) ? logpdf(d, x, transform) : -Inf
+  logpdf(d,x)
 end
 
 function logpdf_sub(d::DiscreteMatrixDistribution, X::AbstractArray, transform::Bool)
