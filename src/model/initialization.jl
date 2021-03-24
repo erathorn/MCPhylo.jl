@@ -1,6 +1,6 @@
 #################### Model Initialization ####################
 
-function setinits!(m::Model, inits::Dict{Symbol})
+function setinits!(m::Model, inits::Dict{Symbol})::Model
   m.hasinputs || throw(ArgumentError("inputs must be set before inits"))
   m.iter = 0
   for key in keys(m, :dependent)
@@ -16,7 +16,7 @@ function setinits!(m::Model, inits::Dict{Symbol})
   m
 end
 
-function setinits!(m::Model, inits::Vector{V} where V<:Dict{Symbol})
+function setinits!(m::Model, inits::Vector{V} where V<:Dict{Symbol})::Model
   n = length(inits)
   m.states = Array{ModelState}(undef, n)
   for i in n:-1:1
@@ -26,7 +26,7 @@ function setinits!(m::Model, inits::Vector{V} where V<:Dict{Symbol})
   m
 end
 
-function setinputs!(m::Model, inputs::Dict{Symbol})
+function setinputs!(m::Model, inputs::Dict{Symbol})::Model
   for key in keys(m, :input)
     haskey(inputs, key) ||
       throw(ArgumentError("missing inputs for node : $key"))
@@ -38,7 +38,7 @@ function setinputs!(m::Model, inputs::Dict{Symbol})
   m
 end
 
-function setsamplers!(m::Model, samplers::Vector{V} where V<:Sampler)
+function setsamplers!(m::Model, samplers::Vector{V} where V<:Sampler)::Model
   m.samplers = deepcopy(samplers)
   for sampler in m.samplers
     sampler.targets = keys(m, :target, sampler.params)

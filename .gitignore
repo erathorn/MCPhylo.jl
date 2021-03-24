@@ -1,8 +1,8 @@
 doc/_build/
 doc/make.bat
+Manifest.toml
 *params.csv
 *params.log
-*.nwk
 *.jls
 *.nex
 *params*.log

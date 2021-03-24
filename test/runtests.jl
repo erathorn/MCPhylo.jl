@@ -37,7 +37,6 @@ const treetests = [
   "ladderize",
   "pruning",
   "spr"
-  #"search"
 ]
 
 const parsertests = [
@@ -51,41 +50,40 @@ println("Running tests:")
 @testset "Tutorial" begin
   @everywhere Random.seed!(123)
   for t in tutorialtests
-    @runtest "../doc/tutorial/" t
+    @runtest "mcmc/" t
 end
 end
 
 @testset "Samplertest" begin
   @everywhere Random.seed!(123)
 for t in samplertests
-    @runtest "../doc/samplers/" t
+    @runtest "samplers/" t
   end
 end
-
 @testset "mcmctests" begin
   for t in mcmctests
-    @runtest "../doc/mcmc/" t
+    @runtest "mcmc/" t
   end
 end
 
 @testset "extensions" begin
 for t in extensiontests
   @everywhere Random.seed!(123)
-    @runtest "../doc/mcmc/" t
+    @runtest "mcmc/" t
   end
 end
 
 @testset "treetests" begin
 for t in treetests
   @everywhere Random.seed!(123)
-    @runtest "../doc/Tree/" t
+    @runtest "Tree/" t
   end
 end
 
 @testset "parsers" begin
 for t in parsertests
   @everywhere Random.seed!(123)
-    @runtest "../doc/parsers/" t
+    @runtest "parsers/" t
   end
 end
 

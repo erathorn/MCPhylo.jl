@@ -353,6 +353,14 @@ function node_height_vec(root::T)::Vector{Float64} where T<:GeneralNode
     t
 end # function node_height
 
+"""
+    node_depth(node::T)::Int64 where T<:GeneralNode
+
+Calculate the depth of a node.
+"""
+function node_depth(node::T)::Int64 where T<:GeneralNode
+    return length(split(node.binary, ",")) - 1
+end
 
 function node_distance(tree::T, node1::T, node2::T)::Float64 where T<:GeneralNode
     lca = find_lca(tree, node1, node2)
@@ -427,20 +435,29 @@ function set_binary!(root::T)  where T<:GeneralNode
             node.binary = string(root.binary,",", ind)
             set_binary!(node)
         end
-
     end # if
 end # function set_binary
 
 """
     number_nodes!(root::T)::Nothing  where T<:GeneralNode
 
-This function assigns a unique, sequential number to each node.
+This function assigns a unique, sequential number to each node. Leaves are numbered first
+in alphabetical order.
 """
 function number_nodes!(root::T)::Nothing  where T<:GeneralNode
-    for (index, value) in enumerate(post_order(root))
-        value.num = index
+    tips = [n.name for n in get_leaves(root)]
+    sort!(tips)
+    running = length(tips)
+    for node in post_order(root)
+        if node.nchild == 0
+            node.num = findfirst(x-> x==node.name, tips)
+        else
+            node.num = running + 1
+            running += 1
+        end
     end # for
 end # fuction number_nodes
+
 
 
 """
@@ -466,7 +483,6 @@ function get_branchlength_vector(root::N)::Vector{Float64}  where {N <:GeneralNo
     if length(root.blv) == 0
         root.blv = zeros(length(post_order(root))-1)
     end
-
     get_branchlength_vector(root, root.blv)
     return root.blv
 end # function get_branchlength_vector
@@ -513,6 +529,11 @@ Get the vector of branch lengths of the tree.
 function set_branchlength_vector!(t::TreeStochastic, blenvec::ArrayStochastic)
     set_branchlength_vector!(t.value, blenvec.value)
 end # function
+
+function set_branchlength_vector!(t::N, blenvec::ArrayStochastic) where N<:Node
+    set_branchlength_vector!(t, blenvec.value)
+end # function
+
 
 """
     set_branchlength_vector!(root::N, blenvec::Array{T}) where {N<:GeneralNode, T<:Real}
@@ -633,7 +654,8 @@ end
 
 """
     check_binary(root::Node)::Bool
-    checks to see if given tree is binary; returns true if properly formatted and false otherwise
+
+Checks to see if given tree is binary; returns true if properly formatted and false otherwise
 """
 function check_binary(root::Node)::Bool
     if root.root
@@ -651,3 +673,24 @@ function check_binary(root::Node)::Bool
     end #for
     return res
 end #function
+
+
+"""
+    check_leafset(trees::Vector{T})::Nothing where T<:AbstractNode
+
+Checks if an array of trees shares the same leafset (based on the leaf names)
+"""
+function check_leafsets(trees::Vector{T})::Nothing where T<:AbstractNode
+    leaveset = Set([n.name for n in get_leaves(trees[1])])
+    count = 0
+    for (index, tree) in enumerate(trees[2:end])
+        leaveset2 = Set([n.name for n in get_leaves(tree)])
+        if leaveset != leaveset2
+            println("Tree #$index has a different set of leaves than the first tree")
+            count += 1
+        end # if
+    end # for
+    if count != 0
+        throw(ArgumentError("$count different trees have a different set of leaves than the first tree"))
+    end # if
+end # function

@@ -33,15 +33,15 @@ function setmonitor!(d::AbstractDependent, monitor::Vector{Int})
   d
 end
 #
-function setmonitor!(d::AbstractTreeStochastic, size::Int, monitor::Bool)
+function setmonitor!(d::AbstractTreeStochastic, monitor::Bool)
   value = monitor ? Int[0] : Int[]
-  setmonitor!(d, size, value)
+  setmonitor!(d, value)
 end
 
-function setmonitor!(d::AbstractTreeStochastic, size::Int, monitor::Vector{Int})
+function setmonitor!(d::AbstractTreeStochastic, monitor::Vector{Int})
   values = monitor
   if !isempty(monitor)
-    n = size#length(unlist(d))
+    n = length(unlist_tree(d))
     if n > 0
       if monitor[1] == 0
         values = collect(1:n)
@@ -120,6 +120,11 @@ function setinits!(l::AbstractLogical, m::Model, ::Any=nothing)
   l.value = l.eval(m)
   setmonitor!(l, l.monitor)
 end
+
+function setinits!(d::TreeLogical, m::Model, x::T) where {T<:Node}
+    d.value = d.eval(m)
+    setmonitor!(d, d.monitor)
+end # function
 
 function update!(l::AbstractLogical, m::Model)
   l.value = l.eval(m)
@@ -206,12 +211,12 @@ end
 
 Stochastic(f::Function, d::T, args...)  where T<:GeneralNode = Stochastic(d, f, args...)
 
-function Stochastic(d::N, f::Function, nnodes::Int, monitor::Union{Bool, Vector{Int}}=true) where N<:GeneralNode
+function Stochastic(d::N, f::Function, monitor::Union{Bool, Vector{Int}}=true) where N<:GeneralNode
     value = Node()
     fx, src = modelfxsrc(depfxargs, f)
     s = TreeStochastic(value, :nothing, Int[], fx, src, Symbol[],
                       NullUnivariateDistribution())
-    setmonitor!(s, nnodes, monitor)
+    setmonitor!(s, monitor)
 end
 
 ScalarStochastic(x::T) where T <: Real = x
@@ -228,8 +233,14 @@ end
 function setinits!(s::ArrayStochastic, m::Model, x::DenseArray)
   s.value = convert(typeof(s.value), copy(x))
   s.distr = s.eval(m)
-  if !isa(s.distr, UnivariateDistribution) && dims(s) != dims(s.distr)
-
+  if isa(s.distr, PhylogeneticDistribution)
+    distrdims = dims(s.distr)
+    for (ind, di) in enumerate(dims(s))
+      if ind != 2
+        di != distrdims[ind] && throw(DimensionMismatch("incompatible distribution for stochastic node"))
+      end
+    end
+  elseif !isa(s.distr, UnivariateDistribution) && dims(s) != dims(s.distr)
     throw(DimensionMismatch("incompatible distribution for stochastic node"))
   end
   setmonitor!(s, s.monitor)
@@ -240,7 +251,7 @@ function setinits!(s::AbstractStochastic, m::Model, x)
 end
 
 function setinits!(d::TreeStochastic, m::Model, x::T) where {T<:GeneralNode}
-    d.value = x
+    d.value = deepcopy(x)
     d.distr = d.eval(m)
     insupport(d.distr, x) || throw(ArgumentError("The supplied tree does not match the topological tree constraints."))
     setmonitor!(d, d.monitor)
@@ -281,9 +292,10 @@ end
 
 
 function relistlength(s::AbstractTreeStochastic, x::AbstractArray,
-                      transform::Bool=false)# where N<:GeneralNode
+                      transform::Bool=false)
+  value, n = relistlength_sub(s.distr, s, x)
 
-  relistlength(s, x[1], transform)
+  (transform ? invlink_sub(s.distr, value) : value, n)
 end
 
 
@@ -293,11 +305,18 @@ function relistlength(s::AbstractTreeStochastic, x::N,
   (transform ? invlink_sub(s.distr, value) : value, n)
 end
 
+function logpdf(s::AbstractTreeStochastic, transform::Bool=false)
+  logpdf(s, s.value, transform)
+end
+
 
 function logpdf(s::AbstractStochastic, transform::Bool=false)
   logpdf(s, s.value, transform)
 end
 
+function rand(s::AbstractStochastic, x::Int64)
+  rand(s.distr, x)
+end
 
 function gradlogpdf(s::AbstractStochastic)
   gradlogpdf(s, s.value)
@@ -329,7 +348,7 @@ end
 
 
 
-function logpdf(s::AbstractStochastic, x::N, transform::Bool=false) where N<:GeneralNode
+function logpdf(s::AbstractTreeStochastic, x::N, transform::Bool=false) where N<:GeneralNode
   logpdf_sub(s.distr, x, transform)
 end
 

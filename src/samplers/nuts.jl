@@ -16,13 +16,14 @@ mutable struct NUTSTune <: SamplerTune
   nalpha::Int
   t0::Float64
   target::Float64
+  tree_depth::Int
 
   NUTSTune() = new()
 
   function NUTSTune(x::Vector, epsilon::Real, logfgrad::Union{Function, Missing};
-                    target::Real=0.6)
+                    target::Real=0.6, tree_depth::Int=10)
     new(logfgrad, false, 0.0, epsilon, 1.0, 0.05, 0.0, 0.75, 0, NaN, 0, 10.0,
-        target)
+        target, tree_depth)
   end
 end
 
@@ -99,7 +100,7 @@ function nuts_sub!(v::NUTSVariate, epsilon::Real, logfgrad::Function)
   j = 0
   n = 1
   s = true
-  while s
+  while s || j < v.tune.tree_depth
     pm = 2 * (rand() > 0.5) - 1
     if pm == -1
       xminus, rminus, gradminus, _, _, _, xprime, nprime, sprime, alpha,

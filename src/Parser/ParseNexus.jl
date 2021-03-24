@@ -11,22 +11,40 @@ function ParseNexus(filename::String)
         global content = readlines(file)
     end # do
 
-    if content[1] != "#NEXUS"
+    if lowercase(content[1]) != "#nexus"
         throw("$filename is not a Nexus file!")
     end # if
 
     while true
         line = popfirst!(content)
-        if line == "BEGIN DATA;"
+        if lowercase(line) == "begin data;"
             # here comes the important information, so break the loop
             break
         end #if
     end # while
     # get meta info
-    ntax, nchar, gap, missing_representation = extract_meta_info(content)
+    ntax, nchar, gap, missing_representation, symbols = extract_meta_info(content)
     df = create_nexusdf(content)
-    return ntax, nchar, gap, missing_representation, df
+
+    out_symbols = symbols == "NOSYMBOLS" ? get_alphabet(df, gap, missing_representation) : [string(s) for s in symbols]
+
+    return ntax, nchar, gap, missing_representation, out_symbols, df
 end # function ParseNexus
+
+
+function get_alphabet(df::DataFrame, gap::String, missing_representation::String)
+    d = df[:, :Data]
+    alphabet = Set{String}()
+    for row in d
+        for entry in row
+            entry = string(entry)
+            if !(entry == gap) && !(entry == missing_representation)
+                push!(alphabet, entry)
+            end
+        end
+    end
+    sort([i for i in alphabet])
+end
 
 """
     extract_meta_info(content::Array{String})
@@ -39,38 +57,42 @@ function extract_meta_info(content::Array{String})
     ntax::Int64 = 0
     nchar::Int64 = 0
     gap::String = "-"
+    symbols::String= "NOSYMBOLS"
     missing_representation::String = "?"
     while true
         line = popfirst!(content)
-        if line=="MATRIX"
+        if lowercase(line)=="matrix"
             # meta info is done, data begins now
             break
         else
             splitted_line = split(line)
             for entry in splitted_line
                 info = split(entry, "=")
+                info = lowercase.(info)
                 if length(info) != 1
                     choped = info[2]
                     if endswith(choped, ";")
                         choped = chop(choped)
                     end #if
-
-                    if info[1] == "ntax"
+                    k_word = info[1]
+                    if k_word == "ntax"
                         ntax = parse(Int64, choped)
-                    elseif info[1] == "NCHAR"
+                    elseif k_word == "nchar"
                         nchar = parse(Int64, choped)
-                    elseif info[1] == "GAP"
+                    elseif k_word == "gap"
                         gap = choped
-                    elseif info[1] == "MISSING"
+                    elseif k_word == "missing"
                         missing_representation = choped
+                    elseif k_word == "symbols"
+                        symbols = strip(String(choped), '\"')
                     else
-                        continue
+                        @warn "Keyword $k_word not understood, will be ignored"
                     end # if
                 end # if
             end # for
         end # if
     end # while
-    return ntax, nchar, gap, missing_representation
+    return ntax, nchar, gap, missing_representation, symbols
 end # function extract_meta_info
 
 """

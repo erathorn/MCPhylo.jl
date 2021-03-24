@@ -40,6 +40,7 @@ end
 """
     upgma_int(dm::Array{Float64,2},leaves::Vector{Node})
 
+--- INTERNAL ---
 Internal function that is called by both UPGMA methods. Contains the
 actual UPGMA algorithm, i.e. builds a phylogenetic tree from the
 given distance matrix and array of leaves. Returns a node of that tree, from
@@ -155,6 +156,7 @@ end
 """
     neighbor_joining_int(dm::Array{Float64,2},leaves::Vector{Node})
 
+--- INTERNAL ---
 Internal function that is called by both neighbor_joining methods. Contains the
 actual neighbor-joining algorithm, i.e. builds a phylogenetic tree from the
 given distance matrix and array of leaves. Returns a node of that tree, from
