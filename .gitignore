@@ -3,7 +3,6 @@ doc/make.bat
 Manifest.toml
 *params.csv
 *params.log
-*.nwk
 *.jls
 *.tsv
 *Drav*

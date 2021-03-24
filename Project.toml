@@ -1,7 +1,7 @@
 name = "MCPhylo"
 uuid = "af0ac7d2-842d-415f-bd76-8183c117c674"
 authors = ["erathorn"]
-version = "0.1.0"
+version = "0.8.0"
 
 [deps]
 BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
@@ -41,7 +41,28 @@ StatsPlots = "f3b207a7-027a-5e70-b257-86293d7955fd"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [compat]
-julia = " >= 1.4.2"
+CSV = "0.8.4"
+CUDA = "2.4"
+ChainRules = "0.7"
+ChainRulesCore = "0.9"
+Compose = "0.9"
+DataFrames = "0.22"
+DataStructures = "0.18"
+Distributions = "0.24"
+FiniteDiff = "2.8"
+GPUArrays = "6.2.0"
+LightGraphs = "1.3"
+PDMats = "0.11.0"
+Plots = "1.11"
+ProgressMeter = "1.5"
+RecipesBase = "1.1"
+Reexport = "1"
+Showoff = "0.3.2"
+SpecialFunctions = "1.3"
+StatsBase = "0.33"
+StatsPlots = "0.14.19"
+Zygote = "0.6.5"
+julia = "1.4.2"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"

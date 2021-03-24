@@ -60,7 +60,6 @@ for t in samplertests
     @runtest "samplers/" t
   end
 end
-
 @testset "mcmctests" begin
   for t in mcmctests
     @runtest "mcmc/" t
