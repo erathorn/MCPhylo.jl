@@ -1,7 +1,7 @@
 name = "MCPhylo"
 uuid = "af0ac7d2-842d-415f-bd76-8183c117c674"
 authors = ["erathorn"]
-version = "0.8.0"
+version = "0.8.1"
 
 [deps]
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
