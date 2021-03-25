@@ -104,15 +104,12 @@ Returns the resulting numeric value of summed log-densities.
 * `transform` : whether to evaluate evaluate log-densities of block parameters on the link–transformed scale.
 """
 function logpdf(m::Model, nodekeys::Vector{Symbol}, transform::Bool=false)
-
   lp = Base.Threads.Atomic{Float64}(0.0)
   Threads.@threads for key in nodekeys
     Base.Threads.atomic_add!(lp, logpdf(m[key], transform))
-    #lp += logpdf(m[key], transform)
     isfinite(lp[]) || break
   end
-
-  m.likelihood=lp[]
+  m.likelihood= isnan(lp[]) ? -Inf : lp[]
   m.likelihood
 end
 
@@ -250,6 +247,7 @@ function logpdf!(m::Model, x::AbstractArray{T}, block::Integer=0,
   targets = keys(m, :target, block)
   m[params] = relist(m, x, params, transform)
   lp = logpdf(m, setdiff(params, targets), transform)
+  lp = isnan(lp) ? -Inf : lp
   for key in targets
     isfinite(lp) || break
     node = m[key]
