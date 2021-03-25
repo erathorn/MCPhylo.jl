@@ -46,7 +46,20 @@ const PNUTSVariate = SamplerVariate{PNUTSTune}
 
 #################### Sampler Constructor ####################
 
-function PNUTS(params::ElementOrVector{Symbol}; dtype::Symbol=:forward,args...)
+
+"""
+    PNUTS(params::ElementOrVector{Symbol}; args...)
+
+Construct a `Sampler` object for PNUTS sampling. The Parameter is assumed to be
+a tree.
+
+Returns a `Sampler{PNUTSTune}` type object.
+
+* params: stochastic node to be updated with the sampler.
+
+* args...: additional keyword arguments to be passed to the PNUTSVariate constructor.
+"""
+function PNUTS(params::ElementOrVector{Symbol}; args...)
   samplerfx = function(model::Model, block::Integer)
     block = SamplingBlock(model, block, true)
     f = (x, sz, ll, gr) -> mlogpdfgrad!(block, x, sz, ll, gr)

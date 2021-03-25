@@ -2,7 +2,23 @@
 
 #################### Constructors ####################
 
+"""
+    Model(; iter::Integer=0, burnin::Integer=0,
+      samplers::Vector{Sampler}=Sampler[], nodes...)
 
+Construct a `Model` object that defines a model for MCMC simulation.
+
+Returns a `Model` type object.
+
+* `iter`: current iteration of the MCMC simulation.
+
+* `burnin`: number of initial draws to be discarded as a burn-in sequence to allow for convergence.
+
+* `samplers`: block-specific sampling functions.
+
+* `nodes...`: arbitrary number of user-specified arguments defining logical and stochastic nodes in the model. Argument values must be `Logical` or `Stochastic` type objects. Their names in the model will be taken from the argument names.
+
+"""
 function Model(; iter::Integer=0, burnin::Integer=0,
                samplers::Vector{Sampler}=Sampler[], nodes...)
 
@@ -56,7 +72,38 @@ end
 
 
 Base.keys(m::Model) = collect(keys(m.nodes))
+"""
+    Base.keys(m::Model, ntype::Symbol, at...)
 
+Extract the symbols (keys) for all existing nodes or for nodes of a specified type.
+
+* `m` : model containing the nodes of interest.
+
+* `ntype` : type of nodes to return. Options are
+  * `:all` : all input, logical, and stochastic model nodes.
+
+  * `:assigned` : nodes that have been assigned values.
+
+  * `:block` : stochastic nodes being updated by the sampling block(s) `at::Integer=0` (default: all blocks).
+
+  * `:dependent` : logical and stochastic (dependent) nodes in topologically sorted order.
+
+  * `:independent` or `:input` : input (independent) nodes.
+
+  * `:logical` : logical nodes.
+
+  * `:monitor` : stochastic nodes being monitored in MCMC sampler output.
+
+  * `:output` : stochastic nodes upon which no other stochastic nodes depend.
+
+  * `:source` : nodes upon which the node `at::Symbol` or vector of nodes `at::Vector{Symbol}` depends.
+
+  * `:stochastic` : stochastic nodes.
+
+  * `:target` : topologically sorted nodes that depend on the sampling block(s) `at::Integer=0` (default: all blocks), node `at::Symbol` , or vector of nodes `at::Vector{Symbol}` .
+
+* `at...` : additional positional arguments to be passed to the `ntype` options, as described above.
+"""
 function Base.keys(m::Model, ntype::Symbol, at...)
   ntype == :block       ? keys_block(m, at...) :
   ntype == :all         ? keys_all(m) :
@@ -208,11 +255,19 @@ end
 
 
 #################### Display ####################
+"""
+    Base.show(io::IO, m::Model)
 
+Write a text representation of the model, nodes, and attributes to the current output stream.
+"""
 function Base.show(io::IO, m::Model)
   showf(io, m, Base.show)
 end
+"""
+    showall(io::IO, m::Model)
 
+Write a verbose text representation of the model, nodes, and attributes to the current output stream.
+"""
 function showall(io::IO, m::Model)
   showf(io, m, Base.showall)
 end

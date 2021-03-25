@@ -1,8 +1,14 @@
 """
-    ladderize_tree!(root::T, ascending::Bool=true)::Nothing where T<:AbstractNode)
+    ladderize_tree!(root::T, ascending::Bool=true)
+        ::Nothing where T<:AbstractNode
 
 This function ladderizes a tree inplace, i.e. sorts the nodes on all levels by the count
-of their descendants
+of their descendants.
+
+* `root` : root Node of tree.
+
+* `ascending` : Boolean, determines whether to sort in ascending (true) or
+                descending (false) order.
 """
 function ladderize_tree!(root::T, ascending::Bool=true) where T<:AbstractNode
     root.nchild == 0 && return nothing
@@ -20,10 +26,15 @@ end
 
 
 """
-    ladderize_tree(root::T, ascending::Bool=true)::T where T<:AbstractNode)
+    ladderize_tree(root::T, ascending::Bool=true)::T where T<:AbstractNode
 
 This function returns a ladderized copy of a tree, i.e. a copy with all the
-nodes on all levels sorted by the count of their descendants
+nodes on all levels sorted by the count of their descendants.
+
+* `root` : root Node of tree.
+
+* `ascending` : Boolean, determines whether to sort in ascending (true) or 
+                descending (false) order.
 """
 function ladderize_tree(root::T, ascending::Bool=true)::T where T<:AbstractNode
     copyroot = deepcopy(root)

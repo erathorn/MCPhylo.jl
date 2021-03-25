@@ -4,7 +4,8 @@ Manifest.toml
 *params.csv
 *params.log
 *.jls
-*.nex
+*.tsv
+*Drav*
 *params*.log
-docs/build/
 untracked_files/
+Manifest.toml

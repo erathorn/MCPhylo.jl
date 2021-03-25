@@ -4,6 +4,8 @@
     get_branchlength_vector(post_order::Vector{Node})::Vector{Float64}
 
 Return a vector of branch lengths.
+
+* `post_order` : Vector of Nodes of a tree.
 """
 function get_branchlength_vector(post_order::Vector{T})::Vector{Float64}  where T<:GeneralNode
     #println("You called a legacy function.")

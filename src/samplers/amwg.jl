@@ -38,7 +38,32 @@ end
 
 
 #################### Sampler Constructor ####################
+"""
+    AMWG(params::ElementOrVector{Symbol},
 
+    sigma::ElementOrVector{T};
+
+    adapt::Symbol=:all,
+
+    args...) where {T<:Real}
+
+Construct a `Sampler` object for AMWG sampling. Parameters are assumed to be continuous, but may be constrained or unconstrained.
+
+Returns a `Sampler{ABCTune}` type object.
+
+* `params`:  stochastic node(s) to be updated with the sampler. Constrained parameters are mapped to unconstrained space according to transformations defined by the Stochastic `unlist()` function.
+
+* `sigma`: scaling value or vector of the same length as the combined elements of nodes
+
+* `params`, defining initial standard deviations for univariate normal proposal distributions. Standard deviations are relative to the unconstrained parameter space, where candidate draws are generated.
+
+* `adapt` : type of adaptation phase.  Options are
+    * `:all` : adapt proposal during all iterations.
+    * `:burnin` : adapt proposal during burn-in iterations.
+    * `:none` : no adaptation (Metropolis-within-Gibbs sampling with fixed proposal).
+
+* `args...`: additional keyword arguments to be passed to the `AMWGVariate` constructor.
+"""
 function AMWG(params::ElementOrVector{Symbol},
               sigma::ElementOrVector{T}; adapt::Symbol=:all, args...) where {T<:Real}
   adapt in [:all, :burnin, :none] ||
@@ -59,7 +84,13 @@ end
 #################### Sampling Functions ####################
 
 sample!(v::AMWGVariate; args...) = sample!(v, v.tune.logf; args...)
+"""
+    sample!(v::AMWGVariate, logf::Function; adapt::Bool=true)
 
+Draw one sample from a target distribution using the AMWG sampler.
+Parameters are assumed to be continuous and unconstrained.
+Returns `v` updated with simulated values and associated tuning parameters.
+"""
 function sample!(v::AMWGVariate, logf::Function; adapt::Bool=true)
   tune = v.tune
   setadapt!(v, adapt)

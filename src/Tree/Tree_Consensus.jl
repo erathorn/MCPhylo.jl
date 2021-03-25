@@ -12,7 +12,8 @@
 
 
 """
-    majority_consensus_tree(trees::Vector{T}, percentage::Float64=0.5)::T where T<:AbstractNode
+    majority_consensus_tree(trees::Vector{T}, percentage::Float64=0.5)
+        ::T where T<:AbstractNode
 
 Construct the majority rule consensus tree from a set of trees that share the
 same leafset. By default the output tree includes clusters that occur in over
@@ -175,7 +176,8 @@ function greedy_consensus_tree(trees::Vector{T})::T where T<:AbstractNode
         num = Dict{Node, Vector{Int64}}()
         for node in post_order(greedy_consensus_tree)
             if node.nchild == 0
-                cluster[leaf_ranks[node.name]] == 1 ? num[node] = [1, 1] : num[node] = [0, 1]
+                cluster[leaf_ranks[node.name]] == 1 ? num[node] = [1, 1] :
+                                                      num[node] = [0, 1]
             else
                 num[node] = [sum([num[child][1] for child in node.children])]
                 n_leaves = 0
@@ -214,7 +216,9 @@ end # greedy_consensus_tree
 Helper function for greedy_consensus_tree that counts the occurrences of each
 bit vector representing a cluster. Returns a priority queue.
 """
-function count_cluster_occurences(bit_vectors::Vector{BitVector})::PriorityQueue{BitVector, Int64}
+function count_cluster_occurences(bit_vectors::Vector{BitVector}
+                                 )::PriorityQueue{BitVector, Int64}
+
     cluster_queue = PriorityQueue{BitVector, Int64}()
     start = bit_vectors[1]
     count = 1
@@ -242,7 +246,9 @@ inc_lengths and statistics of the nodes in the consensus tree. If dealing with a
 (in-progress) majority consensus tree, this function will also delete its
 non-majority clusters (handled by the 'majority' boolean).
 """
-function set_node_stats!(main_tree::T, trees::Vector{T}, majority::Bool, percentage::Float64=0.0)::Nothing where T<:AbstractNode
+function set_node_stats!(main_tree::T, trees::Vector{T}, majority::Bool,
+                         percentage::Float64=0.0)::Nothing where T<:AbstractNode
+
     nodes = level_order(main_tree)
     count_dict = Dict(zip([n.num for n in nodes], zeros(Int64, length(nodes))))
     inc_length_dict = Dict{Int64, Vector{Float64}}()
@@ -271,7 +277,7 @@ function set_node_stats!(main_tree::T, trees::Vector{T}, majority::Bool, percent
             node.stats["frequency"] = count_dict[node.num] / length(trees)
         end # if
     end # for
-end
+end # set_node_stats
 
 
 """
@@ -281,9 +287,15 @@ end
 --- INTERNAL ---
 Use Day's algorithm to create a dictionary, that tells us for each node of the
 second input tree, if its corresponding cluster is a common cluster of the trees.
-Based on section 2.1. of the paper.
+
+Returns dictionary.
+
+* `ref_tree` : Tree used to create dictionary.
+
+* `tree` : Tree used to create dictionary.
+
 """
-function find_common_clusters(ref_tree::T, tree::T)::Dict{Int64, Tuple{Bool, Union{Float64, Missing}}} where T<:AbstractNode
+function find_common_clusters(ref_tree::T, tree::T) where T<:AbstractNode
     ref_nodes = post_order(ref_tree)
     leaves_dict = Dict{String, Tuple{Int64, Float64}}()
     clusters = Dict{Node, Vector{String}}()
@@ -296,7 +308,8 @@ function find_common_clusters(ref_tree::T, tree::T)::Dict{Int64, Tuple{Bool, Uni
         else
             cluster = Vector{String}()
             for child in ref_node.children
-                child.nchild == 0 ? push!(cluster, child.name) : append!(cluster, clusters[child])
+                child.nchild == 0 ? push!(cluster, child.name) :
+                                    append!(cluster, clusters[child])
             end # for
             clusters[ref_node] = cluster
             if ref_node.root == true || ref_node == ref_node.mother.children[1]
@@ -324,13 +337,16 @@ function find_common_clusters(ref_tree::T, tree::T)::Dict{Int64, Tuple{Bool, Uni
             try
                 leaves_dict[node.name]
             catch KeyError
-                throw(ArgumentError("The leafs sets of the trees need to be identical"))
+                throw(ArgumentError(
+                      "The leafs sets of the trees need to be identical"
+                      ))
             end # try
             is_common_cluster[node.num] = (true, leaves_dict[node.name][2])
         else
             cluster = Vector{String}()
             for child in node.children
-                child.nchild == 0 ? push!(cluster, child.name) : append!(cluster, clusters[child])
+                child.nchild == 0 ? push!(cluster, child.name) :
+                                    append!(cluster, clusters[child])
             end # for
             clusters[node] = cluster
             cluster_indeces = [leaves_dict[leaf][1] for leaf in cluster]
@@ -347,7 +363,7 @@ function find_common_clusters(ref_tree::T, tree::T)::Dict{Int64, Tuple{Bool, Uni
         throw(ArgumentError("The leafs sets of the trees need to be identical"))
     end # if
     return is_common_cluster
-end # function find_common_clusters
+end # find_common_clusters
 
 
 """
@@ -355,8 +371,13 @@ end # function find_common_clusters
 
 --- INTERNAL ---
 Takes two trees and returns a copy of the first one, where all the clusters that
-are not compatible with the second tree are removed. Based on section 2.5 of the
-paper.
+are not compatible with the second tree are removed.
+
+Returns root node of edited tree.
+
+* `ref_tree` : tree used to determine clusters.
+
+* `tree` : tree used to determine clusters.
 """
 function one_way_compatible(ref_tree::T, tree::T)::T where T<:AbstractNode
     ref_tree_copy = deepcopy(ref_tree)
@@ -367,7 +388,8 @@ function one_way_compatible(ref_tree::T, tree::T)::T where T<:AbstractNode
     xleft_dict, xright_dict = depth_dicts(leaves)
     marked_nodes = Dict{Int64, Bool}()
     for ref_node in ref_nodes
-        check_node!(ref_node, leaves, leaf_ranks_reverse, xleft_dict, xright_dict, marked_nodes)
+        check_node!(ref_node, leaves, leaf_ranks_reverse, xleft_dict,
+                    xright_dict, marked_nodes)
     end # for
     for node in level_order(ref_tree_copy)
         if node.nchild != 0 && marked_nodes[node.num] == true
@@ -385,8 +407,14 @@ end # function one_way_compatible
 
 --- INTERNAL ---
 Merge two compatible trees, i.e. inserts all cluster of the first tree, which
-aren't already in the second tree, into the second tree. Based on section 2.4 of
-the paper.
+aren't already in the second tree, into the second tree
+
+Returns a Tuple containing the root node of the merged tree, as well as a vector
+of nodes that were added.
+
+* `ref_tree` : tree used to determine common clusters.
+
+* `tree` : tree used to determine common clusters.
 """
 function merge_trees!(ref_tree::T, tree::T)::Vector{T} where T<:AbstractNode
     ref_nodes = post_order(ref_tree)
@@ -397,7 +425,8 @@ function merge_trees!(ref_tree::T, tree::T)::Vector{T} where T<:AbstractNode
     inserted_nodes = Vector{Node}()
     count = -1
     for ref_node in ref_nodes
-        tuple = check_node!(ref_node, leaves, leaf_ranks_reverse, xleft_dict, xright_dict)
+        tuple = check_node!(ref_node, leaves, leaf_ranks_reverse, xleft_dict,
+                            xright_dict)
         isnothing(tuple) && continue
         d, e, r, start_node, stop_node, left_path, right_path = tuple
         left = d == r.children[1]
@@ -437,7 +466,7 @@ end # function merge_trees!
         xleft_dict::Dict{T, Tuple{T, Dict{Int64, T}}},
         xright_dict::Dict{T, Tuple{T, Dict{Int64, T}}},
         marked_nodes::Union{Dict{Int64, Bool, Nothing}}=nothing
-    )::Union{Nothing, Tuple{T, T, T, Dict{Int64, T}, Dict{Int64, T}}} where T<:AbstractNode
+        )::Union{Nothing, Tuple{T, T, T, Dict{Int64, T}, Dict{Int64, T}}} where T<:AbstractNode
 
 --- INTERNAL ---
 Helper function that handles major chunk of code that one_way_compatible and
@@ -505,7 +534,9 @@ end # check_node
 Helper function to obtain the cluster start indeces for a tree (tree), based
 on the nodes of another tree (ref_nodes).
 """
-function get_cluster_start_indeces(ref_nodes::Vector{T}, tree::T)::Dict{T, Int64} where T<:AbstractNode
+function get_cluster_start_indeces(ref_nodes::Vector{T}, tree::T
+                                  )::Dict{T, Int64} where T<:AbstractNode
+
     leaf_ranks = get_leaf_ranks(ref_nodes)
     leaves = Vector{Node}()
     cluster_start_indeces = Dict{Node, Int64}()
@@ -535,7 +566,9 @@ end
 --- INTERNAL ---
 Enumerate the leaf nodes in a tree. Returns a dictionary of this mapping.
 """
-function get_leaf_ranks(nodes::Vector{T})::Dict{String, Int64} where T<:AbstractNode
+function get_leaf_ranks(nodes::Vector{T}
+                       )::Dict{String, Int64} where T<:AbstractNode
+
     leaf_ranks = Dict{String, Int64}()
     count = 1
     for node in nodes
@@ -545,7 +578,7 @@ function get_leaf_ranks(nodes::Vector{T})::Dict{String, Int64} where T<:Abstract
         end # if
     end # for
     return leaf_ranks
-end
+end # get_leaf_ranks
 
 
 """
@@ -556,8 +589,11 @@ end
 Helper function to order a tree based on cluster indeces and return the leaves
 of the ordered tree
 """
-function order_tree!(root::T, cluster_start_indeces::Dict{T, Int64}, leaves=Vector{T}())::Vector{T} where T<:AbstractNode
-    sort!(root.children, by = child -> cluster_start_indeces[child], alg=InsertionSort)
+function order_tree!(root::T, cluster_start_indeces::Dict{T, Int64},
+                     leaves=Vector{T}())::Vector{T} where T<:AbstractNode
+
+    sort!(root.children, by = child -> cluster_start_indeces[child],
+          alg=InsertionSort)
     for child in root.children
         if child.nchild == 0
             push!(leaves, child)
@@ -567,7 +603,7 @@ function order_tree!(root::T, cluster_start_indeces::Dict{T, Int64}, leaves=Vect
     end # for
     set_binary!(root)
     return leaves
-end # function order_tree!
+end # order_tree!
 
 
 """
@@ -577,7 +613,9 @@ end # function order_tree!
 ---- INTERNAL ---
 Recursive helper function to find the lowest ranked leaf descendant of a node
 """
-function min_leaf_rank(leaf_ranks::Dict{String, Int64}, node::T)::Int64 where T<:AbstractNode
+function min_leaf_rank(leaf_ranks::Dict{String, Int64}, node::T
+                      )::Int64 where T<:AbstractNode
+
     if node.nchild == 0
         return leaf_ranks[node.name]
     else
@@ -591,7 +629,7 @@ function min_leaf_rank(leaf_ranks::Dict{String, Int64}, node::T)::Int64 where T<
         end # for
     end # if/else
     minimum(possible_minima)
-end # function min_leaf_rank
+end # min_leaf_rank
 
 
 """
@@ -601,7 +639,9 @@ end # function min_leaf_rank
 --- INTERNAL ---
 Recursive helper function to find the highest ranked leaf descendant of a node
 """
-function max_leaf_rank(leaf_ranks::Dict{String, Int64}, node::T)::Int64 where T<:AbstractNode
+function max_leaf_rank(leaf_ranks::Dict{String, Int64}, node::T
+                      )::Int64 where T<:AbstractNode
+
     if node.nchild == 0
         return leaf_ranks[node.name]
     else
@@ -615,7 +655,7 @@ function max_leaf_rank(leaf_ranks::Dict{String, Int64}, node::T)::Int64 where T<
         end # for
     end # if/else
     maximum(possible_maxima)
-end # function max_leaf_rank
+end # max_leaf_rank
 
 
 """
@@ -640,7 +680,7 @@ function x_left(node::T)::Tuple{T, Vector{T}} where T<:AbstractNode
         push!(path, node)
         end # if/else
     end # while
-end # function x_left
+end # x_left
 
 
 """
@@ -665,7 +705,7 @@ function x_right(node::T)::Tuple{T, Vector{T}} where T<:AbstractNode
         push!(path, node)
         end # if/else
     end # while
-end # function x_right
+end # x_right
 
 
 """

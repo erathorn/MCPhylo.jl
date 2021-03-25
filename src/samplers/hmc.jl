@@ -43,12 +43,38 @@ end
 
 
 #################### Sampler Constructor ####################
+"""
+    HMC(params::ElementOrVector{Symbol}, epsilon::Real, L::Integer; args...)
 
+Construct a `Sampler` object for HMC sampling. Parameters are assumed to be
+continuous, but may be constrained or unconstrained.
+
+Returns a `Sampler{HMCTune}` type object.
+
+* `params`: stochastic node(s) to be updated with the sampler. Constrained parameters are mapped to unconstrained space according to transformations defined by the Stochastic `unlist()` function.
+
+* `epsilon`: step size.
+
+* `L`: number of steps to take in the Leapfrog algorithm.
+
+* `Sigma`: covariance matrix for the multivariate normal proposal distribution. The covariance matrix is relative to the unconstrained parameter space, where candidate draws are generated. If omitted, the identity matrix is assumed.
+
+* `dtype` : differentiation for gradient calculations. Options are
+    * `:central` : central differencing
+    * `:forward` : forward differencing.
+"""
 function HMC(params::ElementOrVector{Symbol}, epsilon::Real, L::Integer;
              args...)
   HMCSampler(params, epsilon, L; args...)
 end
+"""
+    HMC(params::ElementOrVector{Symbol}, epsilon::Real, L::Integer, Sigma::Matrix{T}; args...)
 
+Construct a `Sampler` object for HMC sampling. Parameters are assumed to be
+continuous, but may be constrained or unconstrained.
+
+Returns a `Sampler{HMCTune}` type object.
+"""
 function HMC(params::ElementOrVector{Symbol}, epsilon::Real,
               L::Integer, Sigma::Matrix{T}; args...) where {T<:Real}
   HMCSampler(params, epsilon, L, Sigma; args...)
@@ -68,7 +94,14 @@ end
 #################### Sampling Functions ####################
 
 sample!(v::HMCVariate) = sample!(v, v.tune.logfgrad)
+"""
+    sample!(v::HMCVariate, logfgrad::Function)
 
+Draw one sample from a target distribution using the HMC sampler. Parameters
+are assumed to be continuous and unconstrained.
+
+Returns `v` updated with simulated values and associated tuning parameters.
+"""
 function sample!(v::HMCVariate, logfgrad::Function)
   tune = v.tune
 

@@ -12,9 +12,11 @@ using Distributed
 using Printf: @sprintf
 using LinearAlgebra
 using Plots
+@reexport using Plots
 using StatsPlots
 @reexport using StatsPlots
-import RecipesBase: plot
+using RecipesBase
+using StatsBase
 using Zygote
 using FiniteDiff
 using Showoff: showoff
@@ -33,7 +35,6 @@ else
   @warn "The Julia CUDA library is installed, but no CUDA device detected.
          Computation is performed without CUDA functionality."
 end
-
 
 import Base: Matrix, names, summary, iterate
 import Base.Threads.@spawn
@@ -287,6 +288,7 @@ include("output/modelstats.jl")
 include("output/rafterydiag.jl")
 include("output/stats.jl")
 include("output/plot.jl")
+include("output/tree_plot.jl")
 
 include("samplers/sampler.jl")
 
@@ -298,10 +300,13 @@ include("samplers/bia.jl")
 include("samplers/bmc3.jl")
 include("samplers/bmg.jl")
 include("samplers/dgs.jl")
+include("samplers/dmh.jl")
+include("samplers/empirical.jl")
 include("samplers/hmc.jl")
 include("samplers/mala.jl")
 include("samplers/miss.jl")
 include("samplers/nuts.jl")
+include("samplers/pnuts.jl")
 include("samplers/rwm.jl")
 include("samplers/rwmc.jl")
 include("samplers/slice.jl")
@@ -326,12 +331,8 @@ include("Parser/Parser.jl")
 include("Parser/ParseCSV.jl")
 include("Parser/ParseNexus.jl")
 include("Parser/ParseNewick.jl")
-include("Sampler/PNUTS.jl")
-include("Sampler/EmpiricalMove.jl")
 
-include("Substitution/SubstitutionMat.jl")
 
-include("Utils/SIMD_Mat.jl")
 include("Utils/FileIO.jl")
 
 include("Likelihood/LikelihoodCalculator_Node.jl")
@@ -443,6 +444,7 @@ export
   RWM, RWMVariate,
   Slice, SliceMultivariate, SliceUnivariate,
   SliceSimplex, SliceSimplexVariate,
+  DMH, DMHVariate
   PNUTS, PNUTSVariate,
   Empirical, EmpiricalVariate
 

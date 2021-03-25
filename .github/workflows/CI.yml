@@ -2,9 +2,9 @@
 
 name: CI
 
-# Controls when the action will run. 
+# Controls when the action will run.
 on:
-  # Triggers the workflow on push or pull request events but only for the master branch
+  # Triggers the workflow on push or pull request events but only for the master and the development branch
   pull_request:
     branches: [ master , development]
 
@@ -21,8 +21,8 @@ jobs:
       fail-fast: false
       matrix:
         version:
-          #- '1.5'
-          - '1.4.2'
+          - '1.5'
+          #- '1.4.2'
           #- 'nightly'
         os:
           - ubuntu-latest

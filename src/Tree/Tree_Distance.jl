@@ -5,6 +5,12 @@
 
 Calculate the Robinson-Foulds distance between the two trees.
 In its current form the function assumes the trees have identical leave sets.
+
+Returns result of algorithm as integer.
+
+* `tree1` : tree used to determine RF distance.
+
+* `tree2` : tree used to determine RF distance.
 """
 function RF(tree1::T, tree2::T)::Int64 where T <: GeneralNode
     bt3 = get_bipartitions(tree1)
@@ -15,8 +21,9 @@ end
 """
     get_bipartitions(tree::T)::Vector{Tuple} where T <:GeneralNode
 
-Get a vector of all bipartions of `tree`. The resulting vector contains Tuples
-of sets representing the bipartions.
+Get a vector of all bipartions of `tree`.
+
+Returns a vector containing Tuples of sets representing the bipartions.
 """
 function get_bipartitions(tree::T)::Vector{Tuple} where T <:GeneralNode
     po_vect= post_order(tree)[1:end-1]
@@ -38,6 +45,8 @@ end
 
 This function calculates the lower and upper bounds of the geodesic in the
 Billera-Holmes-Vogtman space.
+
+Returns tuple of floats.
 """
 function BHV_bounds(tree1::T, tree2::T)::Tuple{Float64, Float64} where T <:GeneralNode
     res_upper_1 = Threads.Atomic{Float64}(0.0)

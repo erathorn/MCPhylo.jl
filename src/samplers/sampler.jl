@@ -18,7 +18,19 @@ end
 
 
 Sampler(param::Symbol, args...) = Sampler([param], args...)
+"""
+    Sampler(params::Vector{Symbol}, f::Function, tune::Any=Dict())
+Construct a `Sampler` object that defines a sampling function for a block of
+stochastic nodes.
 
+Returns a `Sampler{typeof(tune)}` type object.
+
+* `params`: node(s) being block-updated by the sampler.
+
+* `f`: function for the `eval` field of the constructed sampler and whose arguments are the other model nodes upon which the sampler depends, typed argument `model::Model` that contains all model nodes, and/or typed argument `block::Integer` that is an index identifying the corresponding sampling function in a vector of all samplers for the associated model. Through the arguments, all model nodes and fields can be accessed in the body of the function. The function may return an updated sample for the nodes identified in its `params` field. Such a return value can be a structure of the same type as the node if the block consists of only one node, or a dictionary of node structures with keys equal to the block node symbols if one or more. Alternatively, a value of `nothing` may be returned. Return values that are not `nothing` will be used to automatically update the node values and propagate them to dependent nodes. No automatic updating will be done if `nothing` is returned.
+
+* `tune`: tuning parameters needed by the sampling function.
+"""
 function Sampler(params::Vector{Symbol}, f::Function, tune::Any=Dict())
   Sampler(params, modelfx(samplerfxargs, f), tune, Symbol[])
 end
@@ -126,6 +138,14 @@ function logpdf!(block::SamplingBlock, x::AbstractArray{T}) where {T<:Real}
   logpdf!(block.model, x, block.index, block.transform)
 end
 
+function pseudologpdf!(block::SamplingBlock, x::AbstractArray{T}, y::AbstractArray) where {T<:Real}
+  pseudologpdf!(block.model, x, y, block.index , block.transform)
+end
+
+function conditional_likelihood!(block::SamplingBlock, x::AbstractArray{T}, args...) where {T<:Real}
+  conditional_likelihood!(block.model, x, block.index, args...)
+end
+
 function logpdf!(block::SamplingBlock, x::AbstractArray{T}) where {T<:GeneralNode}
   logpdf!(block.model, x[1])
 end
@@ -149,14 +169,14 @@ function _gradlogpdf!(m::Model, x::AbstractArray, block::Integer, dtype::Symbol=
 
 end
 
-
-
 function logpdfgrad!(block::SamplingBlock, x::AbstractVector{T},
                     dtype::Symbol) where {T<:Real}
   grad = gradlogpdf!(block, x, dtype)
   logf = logpdf!(block, x)
   (logf, ifelse.(isfinite.(grad), grad, 0.0))
 end
+
+#################### unlist and relist functionality ####################
 
 function unlist(block::SamplingBlock)
   unlist(block.model, block.index, block.transform)

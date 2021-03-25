@@ -1,4 +1,7 @@
-
+"""
+    This structure implements a Distribution whos likelihood is calculated
+    according to Felsensteins algorithm.
+"""
 mutable struct PhyloDist <: DiscreteMatrixDistribution
     tree::T where T <: GeneralNode
     base_freq::Array{Float64}
@@ -24,6 +27,11 @@ function PhyloDist(my_tree::T, base_freq::S, substitution_rates::R, rates::R, su
     PhyloDist(my_tree.value, Array(base_freq), [substitution_rates], [rates], substitution_model)
 end
 
+"""
+    function PhyloDist(my_tree::T, base_freq::S, substitution_rates::R, rates::R, substitution_model::Function) where {T<:Node, S<:DenseArray{Float64}, R<:Real}
+
+Convenience function which can work with MCPhylo types.
+"""
 function PhyloDist(my_tree::T, base_freq::S, substitution_rates::R, rates::R, substitution_model::Function) where {T<:Node, S<:DenseArray{Float64}, R<:Real}
     PhyloDist(my_tree, Array(base_freq), [substitution_rates], [rates], substitution_model)
 end

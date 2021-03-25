@@ -1,5 +1,30 @@
 #################### Gelman, Rubin, and Brooks Diagnostics ####################
+"""
+    gelmandiag(c::AbstractChains; alpha::Real=0.05, mpsrf::Bool=false,
+                transform::Bool=false)
 
+Compute the convergence diagnostics of Gelman, Rubin, and Brooks for MCMC sampler output. The diagnostics are designed to asses convergence of posterior means estimated with multiple autocorrelated samples (chains). They does so by comparing the between and within-chain variances with metrics called potential scale reduction factors (PSRF). Both univariate and multivariate factors are available to assess the convergence of parameters individually and jointly. Scale factors close to one are indicative of convergence. As a rule of thumb, convergence is concluded if the 0.975 quantile of an estimated factor is less than 1.2. Multiple chains are required for calculations. It is recommended that at least three chains be generated, each with different starting values chosen to be diffuse with respect to the anticipated posterior distribution. Use of multiple chains in the diagnostic provides for more robust assessment of convergence than is possible with single chain diagnostics.
+
+Returns a `ChainSummary` type object of the form:
+```
+struct ChainSummary
+  value::Array{Float64, 3}
+  rownames::Vector{AbstractString}
+  colnames::Vector{AbstractString}
+  header::AbstractString
+end
+```
+
+with parameters contained in the rows of the `value` field, and scale reduction factors and upper-limit quantiles in the first and second columns.
+
+* `c` : sampler output on which to perform calculations.
+
+* `alpha` : quantile (`1 - alpha / 2`) at which to estimate the upper limits of scale reduction factors.
+
+* `mpsrf` : whether to compute the multivariate potential scale reduction factor. This factor will not be calculable if any one of the parameters in the output is a linear combination of others.
+
+* `transform` : whether to apply log or logit transformations, as appropriate, to parameters in the chain to potentially produce output that is more normally distributed, an assumption of the PSRF formulations.
+"""
 function gelmandiag(c::AbstractChains; alpha::Real=0.05, mpsrf::Bool=false,
                     transform::Bool=false)
   n, p, m = size(c.value)

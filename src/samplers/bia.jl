@@ -47,7 +47,17 @@ end
 
 
 #################### Sampler Constructor ####################
+"""
+    BIA(params::ElementOrVector{Symbol}; args...)
+Construct a `Sampler` object for BIA sampling. Parameters are assumed to have
+   binary numerical values (0 or 1).
 
+Returns a `Sampler{BIATune}` type object.
+
+* `params`: stochastic node(s) to be updated with the sampler.
+
+* `args...`: additional keyword arguments to be passed to the `BIAVariate` constructor.
+"""
 function BIA(params::ElementOrVector{Symbol}; args...)
   samplerfx = function(model::Model, block::Integer)
     block = SamplingBlock(model, block)
@@ -62,7 +72,14 @@ end
 #################### Sampling Functions ####################
 
 sample!(v::BIAVariate) = sample!(v, v.tune.logf)
+"""
+    sample!(v::BIAVariate, logf::Function)
+Draw one sample from a target distribution using the BIA sampler. Parameters
+ are assumed to have binary numerical values (0 or 1).
 
+
+Returns `v` updated with simulated values and associated tuning parameters.
+"""
 function sample!(v::BIAVariate, logf::Function)
   tune = v.tune
   tune.iter += 1
