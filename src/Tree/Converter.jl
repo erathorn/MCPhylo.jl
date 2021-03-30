@@ -1,26 +1,18 @@
-
-#TODO: Newick parser
-
 """
-    to_df(root::Node)::DataFrame
+    to_df(root::Node)::Tuple{Array{Float64}, Vector{String}}
 
-This function returns a matrix representation of the tree structure. The matirx
-is returned as a DataFrame so that the names of the columns are the names of the
-tips in the tree. The entry `df[i,j]` is the length of the edge connecting node
-`i` with node `j`.
-
-Returns a Dataframe.
+This function returns a matrix representation of the tree structure and a vector with the column names.
+The entry `mat[i,j]` is the length of the edge connecting node `i` with node `j`.
+Returns Tuple containing the matrix and a vector of names.
 
 * `root` : root of tree used to create matrix represenation.
 """
-function to_df(root::Node)::DataFrame
+function to_df(root::Node)::Tuple{Array{Float64}, Vector{String}}
 
     post_order_iteration = post_order(root)
 
     name_list = [i.name for i in post_order_iteration]
-
     temp_ar = zeros(Float64, (length(post_order_iteration), length(post_order_iteration)))
-
     for i in post_order_iteration
         if i.nchild != 0
             ind = indexin(i.name, name_list)
@@ -30,25 +22,25 @@ function to_df(root::Node)::DataFrame
             end # end for
         end # end if
     end # end for
-    df = convert(DataFrame, temp_ar)
-    names!(df, [Symbol(i) for i in name_list])
-    return df
+
+    return df, name_list
 end # end function to_df
 
 
 """
-    from_df(df::DataFrame)::Node
+    from_df(df::Array{Float64,2}, name_list::Vector{String})::Node
 
-This function takes a DataFrame and turns it into a tree. It assumes a rooted
-binary tree is stored in the matrix. No checks are performed.
+This function takes an adjacency matrix and a vector of names
+and turns it into a tree. No checks are performed.
 
 Returns the root node of the tree.
 
-* `df` : Dataframe used to create a tree.
+* `df` : matrix with edge weights
+* `name_list` : a list of names such that they match the column indices of the matrix
 """
-function from_df(df::DataFrame)::Node
+function from_df(df::Array{Float64,2}, name_list::Vector{String})::Node
 
-    node_list::Vector{Node} = [Node(String(i) , [0.0], Node[], 0, true, 0.0, "0") for i in names(df)]
+    node_list::Vector{Node} = [Node(String(i) , [0.0], Node[], 0, true, 0.0, "0") for i in name_list]
 
     for (col_index, col) in enumerate(eachcol(df))
         for (row_index, entry) in enumerate(col)
@@ -71,6 +63,7 @@ function from_df(df::DataFrame)::Node
 
     # do some bookeeping here and set the binary representation of the nodes
     set_binary!(node)
+    number_nodes!(node)
     return node
 end # function from_df
 
@@ -192,7 +185,7 @@ Returns an Array of Real numbers.
 
 * `tree` : Node in tree of interest.
 
-* `blv` : branchlength vector of tree. 
+* `blv` : branchlength vector of tree.
 
 """
 function to_covariance(tree::N, blv::Vector{T})::Array{T,2} where {N<:GeneralNode,T<: Real}

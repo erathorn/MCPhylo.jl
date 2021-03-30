@@ -28,7 +28,7 @@ Returns a vector containing Tuples of sets representing the bipartions.
 function get_bipartitions(tree::T)::Vector{Tuple} where T <:GeneralNode
     po_vect= post_order(tree)[1:end-1]
     bt = Vector{Tuple}(undef, length(po_vect))
-    Base.Threads.@threads for ind in eachindex(po_vect)
+    for ind in eachindex(po_vect)
         elem = po_vect[ind]::T
         inset = Set{Int64}()
         outset = Set{Int64}()
@@ -49,22 +49,22 @@ Billera-Holmes-Vogtman space.
 Returns tuple of floats.
 """
 function BHV_bounds(tree1::T, tree2::T)::Tuple{Float64, Float64} where T <:GeneralNode
-    res_upper_1 = Threads.Atomic{Float64}(0.0)
-    res_upper_2 = Threads.Atomic{Float64}(0.0)
-    res_upper_3 = Threads.Atomic{Float64}(0.0)
+    res_upper_1 = 0.0
+    res_upper_2 = 0.0
+    res_upper_3 = 0.0
     po::Vector{T} = post_order(tree1)
-    Base.Threads.@threads for node in po[1:end-1]
+    for node in po[1:end-1]
         nom = find_num(tree2, node.num)
         if node.mother.num == nom.mother.num
-            Threads.atomic_add!(res_upper_3, (node.inc_length-nom.inc_length)^2)
+            res_upper_3 += node.inc_length-nom.inc_length)^2
         else
-            Threads.atomic_add!(res_upper_2 , nom.inc_length^2)
-            Threads.atomic_add!(res_upper_1, node.inc_length^2)
+            res_upper_2  += nom.inc_length^2
+            res_upper_1 += node.inc_length^2
         end # if
 
     end # for
-    res_low::Float64 = res_upper_1[]+res_upper_2[]+res_upper_3[]
-    res_high::Float64 = (sqrt(res_upper_2[])+sqrt(res_upper_1[]))^2+res_upper_3[]
+    res_low::Float64 = res_upper_1+res_upper_2+res_upper_3
+    res_high::Float64 = (sqrt(res_upper_2)+sqrt(res_upper_1))^2+res_upper_3
 
     sqrt(res_low), sqrt(res_high)
 end

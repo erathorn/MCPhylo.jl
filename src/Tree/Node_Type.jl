@@ -1,25 +1,20 @@
 
-
 abstract type AbstractNode end
 
 """
     Node
-
 This data type holds the basic Node structure. The type T is used to specify the type of the data
 stored in the node.
-
 * If `nchild` is `0` the Node is a leaf node.
 * If `root` is `False` the Node is a child of another node.
 * `inc_length` specifies the length of the incomming branch.
 * `binary` specifies the path from the root to the Node. `1` and `0` represent left and right turns respectively.
 """
-mutable struct GeneralNode{S<: AbstractString, R<:Real, A<:AbstractArray{<:Real},
-                    C<:AbstractArray{<:Real}, I<:Integer, T<: AbstractString, B<:Bool} <: AbstractNode
+mutable struct GeneralNode{S<: AbstractString, R<:Real,
+                            I<:Integer, T<: AbstractString, B<:Bool} <: AbstractNode
     name::S
-    data::A
-    mother::Union{GeneralNode{S,R,A,C,I,T,B}, Missing}
-    children::Vector{GeneralNode{S,R,A,C,I,T,B}}
-    scaler::C
+    mother::Union{GeneralNode{S,R,I,T,B}, Missing}
+    children::Vector{GeneralNode{S,R,I,T,B}}
     nchild::I
     root::B
     inc_length::R
@@ -32,21 +27,19 @@ mutable struct GeneralNode{S<: AbstractString, R<:Real, A<:AbstractArray{<:Real}
     stats::Dict{String, Float64}
 end # struct Node
 
-const Node = GeneralNode{String, Float64, Array{Float64, 2}, Array{Float64, 2}, Int64, String, Bool}
-const Node_cu = GeneralNode{String, Float64, CuArray{Float64}, CuArray{Float64}, Int64, String, Bool}
-
+const Node = GeneralNode{String, Float64,Int64, String, Bool}
+const Node_cu = GeneralNode{String, Float64, Int64, String, Bool}
 """
     function Node()::Node
-
 This function will initialize an empty node.
 """
 function Node()::Node
-        Node("no_name", ones(3,3), missing,Node[] ,ones(1,3),0,true,1.0,"0",1,1.0,Int64[],Float64[],false,  Dict{String, Float64}())
+        Node("no_name", missing,Node[], 0, true, 1.0, "0",1,1.0,Int64[],Float64[],false,  Dict{String, Float64}())
 end
 
 
-function Node(name::String; data::Array{A,2}=ones(2,3))::Node where A<:Real
-        Node(name, data ,missing, Node[], ones(3,2), 0, true, 1.0, "0", 1, 1.0, Int64[], Float64[], false,  Dict{String, Float64}())
+function Node(name::String)::Node where A<:Real
+        Node(name, missing, Node[], 0, true, 1.0, "0", 1, 1.0, Int64[], Float64[], false,  Dict{String, Float64}())
 end
 
 
