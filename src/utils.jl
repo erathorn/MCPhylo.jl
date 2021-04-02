@@ -110,13 +110,19 @@ end
 ## instead to avoid the error handling issue.  In multi-processor mode, pmap is
 ## called and will apply its error processing.
 
-function pmap2(f::Function, lsts::AbstractArray)
-  if (nprocs() > 1)
-    pmap(f, lsts)
-  else
-    map(f, lsts)
-  end
-end
+function pmap2(f::Function, lsts::AbstractArray, ASDSF::Bool)
+    rc_channel = RemoteChannel(()->Channel{Array{AbstractString,3}}(32))
+    if length(lsts) <= nworkers()
+      results = Dict{Int64, Tuple{Chains, Model, ModelState}}()
+      @sync for (index, list) in enumerate(lsts)
+          @async results[index] = @fetchfrom (index + 2) f(list, rc_channel), index
+      end # for
+      wait(rc_channel)
+      println(fetch(rc_channel))
+    else
+      map(f, lsts)
+    end # if/else
+end # pmap2
 
 ind2sub(dims, ind) = Tuple(CartesianIndices(dims)[ind])
 
