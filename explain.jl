@@ -1,8 +1,9 @@
 using Revise
 using Pkg
 Pkg.activate(".")
-
-using MCPhylo
+using Distributed
+addprocs(2, exeflags="--project=.")
+@everywhere using MCPhylo
 using DataStructures
 using ProgressMeter
 using StatsBase

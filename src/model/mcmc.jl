@@ -57,7 +57,8 @@ Simulate MCMC draws from the model `m`.
 function mcmc(m::Model, inputs::Dict{Symbol},
               inits::Vector{V} where V<:Dict{Symbol},
               iters::Integer; burnin::Integer=0, thin::Integer=1,
-              chains::Integer=1, verbose::Bool=true, trees::Bool=false)
+              chains::Integer=1, verbose::Bool=true, trees::Bool=false,
+              ASDSF::Bool=false)
   iters > burnin ||
     throw(ArgumentError("burnin is greater than or equal to iters"))
   length(inits) >= chains ||
@@ -67,12 +68,13 @@ function mcmc(m::Model, inputs::Dict{Symbol},
   setinputs!(mm, inputs)
   setinits!(mm, inits[1:chains])
   mm.burnin = burnin
-  mcmc_master!(mm, 1:iters, burnin, thin, 1:chains, verbose, trees)
+  mcmc_master!(mm, 1:iters, burnin, thin, 1:chains, verbose, trees, ASDSF)
 end
 
 
 function mcmc_master!(m::Model, window::UnitRange{Int}, burnin::Integer,
-                      thin::Integer, chains::AbstractArray{Int}, verbose::Bool, trees::Bool)
+                      thin::Integer, chains::AbstractArray{Int}, verbose::Bool,
+                      trees::Bool, ASDSF::Bool)
   states::Vector{ModelState} = m.states
   m.states = ModelState[]
 
@@ -87,7 +89,8 @@ function mcmc_master!(m::Model, window::UnitRange{Int}, burnin::Integer,
     Any[m, states[k], window, burnin, thin, ChainProgress(frame, k, N), trees]
     for k in chains
   ]
-  results::Vector{Tuple{Chains, Model, ModelState}} = pmap2(mcmc_worker!, lsts)
+  results::Vector{Tuple{Chains, Model, ModelState}} = pmap2(mcmc_worker!, lsts,
+                                                            ASDSF)
 
   sims::Array{Chains}  = Chains[results[k][1] for k in 1:K]
   model::Model = results[1][2]
@@ -97,7 +100,7 @@ function mcmc_master!(m::Model, window::UnitRange{Int}, burnin::Integer,
 end
 
 
-function mcmc_worker!(args::Vector)::Tuple{Chains, Model, ModelState}
+function mcmc_worker!(args::Vector, rc_channel::Union{Nothing, RemoteChannel}=nothing)::Tuple{Chains, Model, ModelState}
   m::Model, state::ModelState, window::UnitRange{Int}, burnin::Integer, thin::Integer, meter::ChainProgress, store_trees::Bool = args
   llname::AbstractString = "likelihood"
   treeind = 1
@@ -135,7 +138,7 @@ function mcmc_worker!(args::Vector)::Tuple{Chains, Model, ModelState}
     end
     next!(meter)
   end
-
+  put!(rc_channel, sim.trees)
   mv = samparas(m)
 
   sim.moves[1] = mv
