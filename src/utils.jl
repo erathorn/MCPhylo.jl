@@ -111,16 +111,23 @@ end
 ## called and will apply its error processing.
 
 function pmap2(f::Function, lsts::AbstractArray, ASDSF::Bool)
-    rc_channel = RemoteChannel(()->Channel{Array{AbstractString,3}}(32))
-    if length(lsts) <= nworkers()
+  ll = length(lsts)
+  rc_channels = [RemoteChannel(()->Channel{Array{AbstractString,3}}(32)) for x in 1:ll]
+    if ll <= nworkers()
       results = Dict{Int64, Tuple{Chains, Model, ModelState}}()
-      @sync for (index, list) in enumerate(lsts)
-          @async results[index] = @fetchfrom (index + 2) f(list, rc_channel), index
-      end # for
-      wait(rc_channel)
-      println(fetch(rc_channel))
+      @sync begin
+        # ASDSF && asdsf(rc_channels)
+        for (index, list) in enumerate(lsts)
+          @async results[index] = @fetchfrom (index + 1) f(list, rc_channels[index])
+        end # for
+      end # begin
+      wait(rc_channels[1])
+      println(fetch(rc_channels[1]))
+      wait(rc_channels[2])
+      println(fetch(rc_channels[2]))
+      return [results[i] for i in 1:ll]
     else
-      map(f, lsts)
+      return map(f, lsts)
     end # if/else
 end # pmap2
 
