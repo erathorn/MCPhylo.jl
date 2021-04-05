@@ -138,7 +138,7 @@ function mcmc_worker!(args::Vector, rc_channel::Union{Nothing, RemoteChannel}=no
     end
     next!(meter)
   end
-  put!(rc_channel, sim.trees)
+  !isnothing(rc_channel) && put!(rc_channel, sim.trees)
   mv = samparas(m)
 
   sim.moves[1] = mv
