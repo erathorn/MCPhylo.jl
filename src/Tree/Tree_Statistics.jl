@@ -106,7 +106,7 @@ threshold is 0.1. The progress bar is activated by default.
 function ASDSF(model::ModelChains; freq::Int64=1, check_leaves::Bool=true,
                min_splits::Float64=0.1, show_progress::Bool=true
                )::Vector{Float64}
-               
+
     splitsQueue = Accumulator{Tuple{Set{String}, Set{String}}, Int64}()
     splitsQueues = Vector{Accumulator{Tuple{Set{String}, Set{String}}, Int64}}()
     l = size(model.trees, 3)
@@ -137,9 +137,9 @@ function asdsf_int(splitsQueue, splitsQueues, iter, ASDF_vals, freq,
     run::Int64 = 1
     outer::Float64 = 0.0
     inner::Float64 = 0.0
-    for (i, lines) in enumerate(iter)
+    for (i, line) in enumerate(iter)
         if mod(i, freq) == 0
-            trees = [parse_and_number(tree_string) for tree_string in lines]
+            trees = [parse_and_number(tree_string) for tree_string in line]
             check_leaves && check_leafsets(trees)
             bps = [get_bipartitions(tree) for tree in trees]
             named_bps = [nodnums2names(bp, tree) for (bp, tree) in zip(bps, trees)]
@@ -169,5 +169,73 @@ function asdsf_int(splitsQueue, splitsQueues, iter, ASDF_vals, freq,
             show_progress && ProgressMeter.next!(p)
         end # if
     end # for
+    ASDF_vals
+end # asdsf_int
+
+# = ------------------------ =#
+
+
+
+
+
+
+function ASDSF_channel(r_channels::Vector{RemoteChannel}, n_trees::Int64;
+                       freq::Int64=1, check_leaves::Bool=true,
+                       min_splits::Float64=0.1)::Vector{Float64}
+
+    splitsQueue = Accumulator{Tuple{Set{String}, Set{String}}, Int64}()
+    splitsQueues = Vector{Accumulator{Tuple{Set{String}, Set{String}}, Int64}}()
+    ASDF_vals = zeros(Int(length(n_trees) / freq))
+    l = length(r_channels)
+    for i in 1:l
+        push!(splitsQueues, Accumulator{Tuple{Set{String}, Set{String}}, Int64}())
+    end # for
+    trees::Vector{AbstractString} = ["" for x in 1:l]
+    asdsf_int_channel(splitsQueue, splitsQueues, ASDF_vals, freq, check_leaves,
+              min_splits, r_channels)
+end # ASDSF
+
+
+function asdsf_int_channel(splitsQueue, splitsQueues, ASDF_vals, freq, check_leaves,
+                   min_splits, r_channels)::Vector{Float64}
+
+    all_keys = Set{Tuple{Set{String},Set{String}}}()
+    run::Int64 = 1
+    outer::Float64 = 0.0
+    inner::Float64 = 0.0
+    i::Int64 = 1
+    while isopen(r_channels[1])
+        line = [take!(rc) for rc in r_channels]
+        if mod(i, freq) == 0
+            trees = [parse_and_number(tree_string) for tree_string in line]
+            check_leaves && check_leafsets(trees)
+            bps = [get_bipartitions(tree) for tree in trees]
+            named_bps = [nodnums2names(bp, tree) for (bp, tree) in zip(bps, trees)]
+            cmds = [countmap(named_bp) for named_bp in named_bps]
+            outer = 0.0
+            new_splits = union([keys(cmds[t]) for t in 1:length(trees)]...)
+            all_keys = union(all_keys, new_splits)
+            for split in new_splits
+                inc!(splitsQueue, split)
+            end # for
+            for split in all_keys
+                inner = 0.0
+                for (t, tree) in enumerate(trees)
+                    if haskey(cmds[t], split)
+                        inner += 1 / length(trees)
+                        inc!(splitsQueues[t], split)
+                    end # if
+                end # for
+                if any([x[split] / run > min_splits for x in splitsQueues])
+                    fre = splitsQueue[split] / run
+                    inner += (inner - fre) ^ 2
+                    outer += sqrt(inner)
+                end # if
+            end # for
+            ASDF_vals[run] = outer / length(splitsQueue)
+            run += 1
+            i += 1
+        end # if
+    end # while
     ASDF_vals
 end # asdsf_int
