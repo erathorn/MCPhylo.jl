@@ -110,21 +110,27 @@ end
 ## instead to avoid the error handling issue.  In multi-processor mode, pmap is
 ## called and will apply its error processing.
 
-function pmap2(f::Function, lsts::AbstractArray, ASDSF::Bool)
-  ll = length(lsts)
-  rc_channels = [RemoteChannel(()->Channel{Array{AbstractString,3}}(32)) for x in 1:ll]
+function pmap2(f::Function, lsts::AbstractArray, ASDSF::Bool, ASDSF_step::Int64)
+  ll::Int64 = length(lsts)
+  r_channels::Vector{RemoteChannel} = [RemoteChannel(()->Channel{Vector{AbstractString}}(300)) for x in 1:ll]
     if ll <= nworkers()
       results = Dict{Int64, Tuple{Chains, Model, ModelState}}()
       @sync begin
-        # ASDSF && asdsf(rc_channels)
+        if ASDSF
+          n_trees::Int64 = floor((last(lsts[1][3]) - lsts[1][4]) / lsts[1][5])
+          @async ASDSF_vals = @fetchfrom 4 ASDSF_channel(r_channels, n_trees)
+        end # if
         for (index, list) in enumerate(lsts)
-          @async results[index] = @fetchfrom (index + 1) f(list, rc_channels[index])
+          if ASDSF
+            @async results[index] =
+              @fetchfrom (index + 1) f(list, ASDSF_step, r_channels[index])
+          else
+            @async results[index] = @fetchfrom (index + 1) f(list)
+          end # if/else
         end # for
       end # begin
-      wait(rc_channels[1])
-      println(fetch(rc_channels[1]))
-      wait(rc_channels[2])
-      println(fetch(rc_channels[2]))
+      println(take!(r_channels[1]))
+      println(take!(r_channels[2]))
       return [results[i] for i in 1:ll]
     else
       return map(f, lsts)
