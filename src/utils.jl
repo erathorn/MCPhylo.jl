@@ -112,12 +112,12 @@ end
 
 function pmap2(f::Function, lsts::AbstractArray, ASDSF::Bool, ASDSF_step::Int64)
   ll::Int64 = length(lsts)
-  r_channels::Vector{RemoteChannel} = [RemoteChannel(()->Channel{Vector{AbstractString}}(1000)) for x in 1:ll]
+  r_channels::Vector{RemoteChannel} = [RemoteChannel(()->Channel{AbstractString}(1000)) for x in 1:ll]
     if ll <= nworkers()
       results = Dict{Int64, Tuple{Chains, Model, ModelState}}()
       @sync begin
         if ASDSF
-          n_trees::Int64 = floor((last(lsts[1][3]) - lsts[1][4]) / lsts[1][5])
+          n_trees::Int64 = floor((last(lsts[1][3]) - lsts[1][4]) / ASDSF_step)
           @async ASDSF_vals = @fetchfrom 4 ASDSF_channel(r_channels, n_trees)
         end # if
         for (index, list) in enumerate(lsts)
@@ -129,8 +129,7 @@ function pmap2(f::Function, lsts::AbstractArray, ASDSF::Bool, ASDSF_step::Int64)
           end # if/else
         end # for
       end # begin
-      println(take!(r_channels[1]))
-      println(take!(r_channels[2]))
+      println(ASDSF_vals)
       return [results[i] for i in 1:ll]
     else
       return map(f, lsts)
