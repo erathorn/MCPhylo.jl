@@ -180,8 +180,7 @@ end # asdsf_int
 
 
 function ASDSF_channel(r_channels::Vector{RemoteChannel}, n_trees::Int64;
-                       freq::Int64=1, check_leaves::Bool=true,
-                       min_splits::Float64=0.1)::Vector{Float64}
+                       freq::Int64=1, min_splits::Float64=0.1)::Vector{Float64}
 
     splitsQueue = Accumulator{Tuple{Set{String}, Set{String}}, Int64}()
     splitsQueues = Vector{Accumulator{Tuple{Set{String}, Set{String}}, Int64}}()
@@ -191,8 +190,8 @@ function ASDSF_channel(r_channels::Vector{RemoteChannel}, n_trees::Int64;
         push!(splitsQueues, Accumulator{Tuple{Set{String}, Set{String}}, Int64}())
     end # for
     trees::Vector{AbstractString} = ["" for x in 1:l]
-    asdsf_int_channel(splitsQueue, splitsQueues, ASDF_vals, freq, check_leaves,
-              min_splits, r_channels)
+    asdsf_int_channel(splitsQueue, splitsQueues, ASDF_vals, freq, false,
+                      min_splits, r_channels)
 end # ASDSF
 
 
@@ -205,6 +204,7 @@ function asdsf_int_channel(splitsQueue, splitsQueues, ASDF_vals, freq, check_lea
     inner::Float64 = 0.0
     i::Int64 = 1
     while isopen(r_channels[1])
+        println("ASDSF Loop")
         line = [take!(rc) for rc in r_channels]
         if mod(i, freq) == 0
             trees = [parse_and_number(tree_string) for tree_string in line]

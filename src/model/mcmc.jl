@@ -59,6 +59,8 @@ function mcmc(m::Model, inputs::Dict{Symbol},
               iters::Integer; burnin::Integer=0, thin::Integer=1,
               chains::Integer=1, verbose::Bool=true, trees::Bool=false,
               ASDSF::Bool=false, ASDSF_step::Int64=100)
+  ASDSF && !trees &&
+   throw(ArgumentError("ASDSF can not be calculated without trees"))
   iters > burnin ||
     throw(ArgumentError("burnin is greater than or equal to iters"))
   length(inits) >= chains ||
@@ -135,25 +137,17 @@ function mcmc_worker!(args::Vector, ASDSF_step::Int64=100,
       sim[i, :, 1] = unlist(m, true)
 
       if store_trees
-       for (ind, tree_node) in enumerate(treenodes)
-         sim.trees[treeind, ind, 1] = newick(m[tree_node].value)
-       end # for
-       #=
-       Alternative e.g.:
-       thin = 5
-       asdsf_step = 50
-       tree_step = round(asdsf_step / thin)
-       if asdsf_step % thin != 0
-          rounded_asdsf_step = tree_step * thin
-          print("ASDSF step not possible with current thin value. Using every $rounded_asdsf_step -th tree instead")
-       if counter % tree_step == 0
-          put!(rc_channel, sim.trees[treeind, :, :])
-       =#
-       if !isnothing(rc)
-         put!(rc, sim.trees[treeind, :, :])
-       end # if
-       treeind +=1
-     end # if
+        for (ind, tree_node) in enumerate(treenodes)
+          sim.trees[treeind, ind, 1] = newick(m[tree_node].value)
+        end # for
+
+        if !isnothing(rc)
+          println("Channel entry added")
+          put!(rc, sim.trees[treeind, :, :])
+
+        end # if
+        treeind +=1
+      end # if
     end # if
     next!(meter)
 
