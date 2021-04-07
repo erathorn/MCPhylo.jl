@@ -126,27 +126,26 @@ function mcmc_worker!(args::Vector, ASDSF_step::Int64=100,
                names=pnames, ntrees=length(treenodes), tree_names=treenodes)
 
   reset!(meter)
-  if !isnothing(rc)
-    counter::Int64 = 0
-  end # if
   for i in window
 
     sample!(m)
-    if i > burnin && (i - burnin) % thin == 0
-
-      sim[i, :, 1] = unlist(m, true)
-
-      if store_trees
-        for (ind, tree_node) in enumerate(treenodes)
-          sim.trees[treeind, ind, 1] = newick(m[tree_node].value)
-        end # for
-
-        if !isnothing(rc)
-          println("Channel entry added")
-          put!(rc, sim.trees[treeind, :, :])
-
+    if i > burnin
+      if (i - burnin) % thin == 0
+        sim[i, :, 1] = unlist(m, true)
+        if store_trees
+          for (ind, tree_node) in enumerate(treenodes)
+            sim.trees[treeind, ind, 1] = newick(m[tree_node].value)
+          end # for
+          treeind +=1
         end # if
-        treeind +=1
+      end # if
+      if !isnothing(rc) && (i - burnin) % ASDSF_step == 0
+        println("Channel entry added")
+        tree = []
+        for (ind, tree_node) in enumerate(treenodes)
+          push!(tree, newick(m[tree_node].value))
+        end # for
+        put!(rc, tree[1])
       end # if
     end # if
     next!(meter)
@@ -154,7 +153,7 @@ function mcmc_worker!(args::Vector, ASDSF_step::Int64=100,
   end # for
   mv = samparas(m)
   sim.moves[1] = mv
-  close(rc)
+  !isnothing(rc) && close(rc)
   (sim, m, ModelState(unlist(m), gettune(m)))
 end # mcmc_worker!
 
