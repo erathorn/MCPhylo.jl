@@ -184,7 +184,7 @@ function ASDSF_channel(r_channels::Vector{RemoteChannel}, n_trees::Int64;
 
     splitsQueue = Accumulator{Tuple{Set{String}, Set{String}}, Int64}()
     splitsQueues = Vector{Accumulator{Tuple{Set{String}, Set{String}}, Int64}}()
-    ASDF_vals = zeros(Int(length(n_trees) / freq))
+    ASDF_vals = zeros(Int(n_trees))
     l = length(r_channels)
     for i in 1:l
         push!(splitsQueues, Accumulator{Tuple{Set{String}, Set{String}}, Int64}())
@@ -206,36 +206,34 @@ function asdsf_int_channel(splitsQueue, splitsQueues, ASDF_vals, freq, check_lea
     while isopen(r_channels[1])
         println("ASDSF Loop")
         line = [take!(rc) for rc in r_channels]
-        if mod(i, freq) == 0
-            trees = [parse_and_number(tree_string) for tree_string in line]
-            check_leaves && check_leafsets(trees)
-            bps = [get_bipartitions(tree) for tree in trees]
-            named_bps = [nodnums2names(bp, tree) for (bp, tree) in zip(bps, trees)]
-            cmds = [countmap(named_bp) for named_bp in named_bps]
-            outer = 0.0
-            new_splits = union([keys(cmds[t]) for t in 1:length(trees)]...)
-            all_keys = union(all_keys, new_splits)
-            for split in new_splits
-                inc!(splitsQueue, split)
-            end # for
-            for split in all_keys
-                inner = 0.0
-                for (t, tree) in enumerate(trees)
-                    if haskey(cmds[t], split)
-                        inner += 1 / length(trees)
-                        inc!(splitsQueues[t], split)
-                    end # if
-                end # for
-                if any([x[split] / run > min_splits for x in splitsQueues])
-                    fre = splitsQueue[split] / run
-                    inner += (inner - fre) ^ 2
-                    outer += sqrt(inner)
+        trees = [parse_and_number(tree_string) for tree_string in line]
+        check_leaves && check_leafsets(trees)
+        bps = [get_bipartitions(tree) for tree in trees]
+        named_bps = [nodnums2names(bp, tree) for (bp, tree) in zip(bps, trees)]
+        cmds = [countmap(named_bp) for named_bp in named_bps]
+        outer = 0.0
+        new_splits = union([keys(cmds[t]) for t in 1:length(trees)]...)
+        all_keys = union(all_keys, new_splits)
+        for split in new_splits
+            inc!(splitsQueue, split)
+        end # for
+        for split in all_keys
+            inner = 0.0
+            for (t, tree) in enumerate(trees)
+                if haskey(cmds[t], split)
+                    inner += 1 / length(trees)
+                    inc!(splitsQueues[t], split)
                 end # if
             end # for
-            ASDF_vals[run] = outer / length(splitsQueue)
-            run += 1
-            i += 1
-        end # if
+            if any([x[split] / run > min_splits for x in splitsQueues])
+                fre = splitsQueue[split] / run
+                inner += (inner - fre) ^ 2
+                outer += sqrt(inner)
+            end # if
+        end # for
+        ASDF_vals[run] = outer / length(splitsQueue)
+        run += 1
+        i += 1
     end # while
     ASDF_vals
 end # asdsf_int
