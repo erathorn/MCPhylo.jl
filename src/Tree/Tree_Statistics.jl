@@ -142,7 +142,7 @@ function ASDSF(r_channels::Vector{RemoteChannel}, n_trees::Int64,
     end # for
     trees::Vector{AbstractString} = ["" for x in 1:l]
     asdsf_int(splitsQueue, splitsQueues, iter, ASDF_vals, 1, false,
-              min_splits, false, r_channels)
+              min_splits, false; r_channels=r_channels)
 end # ASDSF
 
 
@@ -154,7 +154,7 @@ end # ASDSF
 Handles the computation of the Average Standard Deviation of Split Frequencies.
 """
 function asdsf_int(splitsQueue, splitsQueues, iter, ASDF_vals, freq,
-                   check_leaves, min_splits, show_progress; r_channels=Nothing
+                   check_leaves, min_splits, show_progress; r_channels=nothing
                    )::Vector{Float64}
 
     all_keys = Set{Tuple{Set{String},Set{String}}}()
