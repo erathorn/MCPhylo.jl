@@ -14,7 +14,9 @@ This function simulates additional draws from a model.
 
 * `trees` indicates if the states of the model nodes describing tree structures should be stored as well.
 """
-function mcmc(mc::ModelChains, iters::Integer; verbose::Bool=true, trees::Bool=false)
+function mcmc(mc::ModelChains, iters::Integer; verbose::Bool=true,
+              trees::Bool=false)::ModelChains
+
   thin = step(mc)
   last(mc) == div(mc.model.iter, thin) * thin ||
     throw(ArgumentError("chain is missing its last iteration"))
@@ -58,7 +60,9 @@ function mcmc(m::Model, inputs::Dict{Symbol},
               inits::Vector{V} where V<:Dict{Symbol},
               iters::Integer; burnin::Integer=0, thin::Integer=1,
               chains::Integer=1, verbose::Bool=true, trees::Bool=false,
-              ASDSF::Bool=false, ASDSF_step::Int64=100)
+              ASDSF::Bool=false, ASDSF_step::Int64=100,
+              ASDSF_min_splits::Float64=0.1)::ModelChains
+
   ASDSF && !trees &&
    throw(ArgumentError("ASDSF can not be calculated without trees"))
   iters > burnin ||
@@ -71,13 +75,15 @@ function mcmc(m::Model, inputs::Dict{Symbol},
   setinits!(mm, inits[1:chains])
   mm.burnin = burnin
   mcmc_master!(mm, 1:iters, burnin, thin, 1:chains, verbose, trees, ASDSF,
-               ASDSF_step)
+               ASDSF_step, ASDSF_min_splits)
 end
 
 
 function mcmc_master!(m::Model, window::UnitRange{Int}, burnin::Integer,
                       thin::Integer, chains::AbstractArray{Int}, verbose::Bool,
-                      trees::Bool, ASDSF::Bool, ASDSF_step::Int64)
+                      trees::Bool, ASDSF::Bool, ASDSF_step::Int64,
+                      ASDSF_min_splits::Float64)::ModelChains
+
   states::Vector{ModelState} = m.states
   m.states = ModelState[]
 
@@ -93,7 +99,8 @@ function mcmc_master!(m::Model, window::UnitRange{Int}, burnin::Integer,
     for k in chains
   ]
   results::Vector{Tuple{Chains, Model, ModelState}} = pmap2(mcmc_worker!, lsts,
-                                                            ASDSF, ASDSF_step)
+                                                            ASDSF, ASDSF_step,
+                                                            ASDSF_min_splits)
 
   sims::Array{Chains}  = Chains[results[k][1] for k in 1:K]
   model::Model = results[1][2]
