@@ -113,7 +113,7 @@ end
 function pmap2(f::Function, lsts::AbstractArray, asdsf::Bool, ASDSF_freq::Int64,
                ASDSF_min_splits::Float64)
   ll::Int64 = length(lsts)
-  r_channels::Vector{RemoteChannel} = [RemoteChannel(()->Channel{AbstractString}(1000)) for x in 1:ll]
+  r_channels::Vector{RemoteChannel} = [RemoteChannel(()->Channel{AbstractString}(10)) for x in 1:ll]
   ASDSF_results::Vector{Float64} = []
     if ll <= nworkers()
       results = Dict{Int64, Tuple{Chains, Model, ModelState}}()

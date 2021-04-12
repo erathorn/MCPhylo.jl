@@ -105,18 +105,22 @@ threshold is 0.1. The progress bar is activated by default.
 """
 function ASDSF(model::ModelChains; freq::Int64=1, check_leaves::Bool=true,
                min_splits::Float64=0.1, show_progress::Bool=true
-               )::Vector{Float64}
-
-    splitsQueue = Accumulator{Tuple{Set{String}, Set{String}}, Int64}()
-    splitsQueues = Vector{Accumulator{Tuple{Set{String}, Set{String}}, Int64}}()
-    l = size(model.trees, 3)
-    for i in 1:l
-        push!(splitsQueues, Accumulator{Tuple{Set{String}, Set{String}}, Int64}())
+               )::Tuple{Vector{Float64}}
+    results::Vector{Vector{Float64}} = []
+    tsize = size(model.trees, 2)
+    for t in 1:tsize
+        splitsQueue = Accumulator{Tuple{Set{String}, Set{String}}, Int64}()
+        splitsQueues = Vector{Accumulator{Tuple{Set{String}, Set{String}}, Int64}}()
+        c_size = size(model.trees, 3)
+        for i in 1:c_size
+            push!(splitsQueues, Accumulator{Tuple{Set{String}, Set{String}}, Int64}())
+        end # for
+        iter = zip([model.trees[:,t,c] for c in 1:c_size]...)
+        ASDF_vals = zeros(Int(length(iter) / freq))
+        push!(results, asdsf_int(splitsQueue, splitsQueues, iter, ASDF_vals,
+              freq, check_leaves, min_splits, show_progress))
     end # for
-    iter = zip([model.trees[:,:,i] for i in 1:l]...)
-    ASDF_vals = zeros(Int(length(iter) / freq))
-    asdsf_int(splitsQueue, splitsQueues, iter, ASDF_vals, freq, check_leaves,
-              min_splits, show_progress)
+    return (Tuple(results))
 end # ASDSF
 
 
