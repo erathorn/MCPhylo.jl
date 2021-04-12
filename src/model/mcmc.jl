@@ -111,7 +111,7 @@ end
 
 
 function mcmc_worker!(args::Vector, ASDSF_step::Int64=100,
-                      rc::Union{Nothing, RemoteChannel}=nothing
+                      rc::Union{Nothing, Vector{RemoteChannel}}=nothing
                       )::Tuple{Chains, Model, ModelState}
   m::Model, state::ModelState, window::UnitRange{Int}, burnin::Integer, thin::Integer, meter::ChainProgress, store_trees::Bool = args
   llname::AbstractString = "likelihood"
@@ -148,11 +148,9 @@ function mcmc_worker!(args::Vector, ASDSF_step::Int64=100,
       end # if
       if !isnothing(rc) && (i - burnin) % ASDSF_step == 0
         println("Channel entry added")
-        tree = []
         for (ind, tree_node) in enumerate(treenodes)
-          push!(tree, newick(m[tree_node].value))
+          put!(rc[ind], newick(m[tree_node].value))
         end # for
-        put!(rc, tree[1])
       end # if
     end # if
     next!(meter)
@@ -160,7 +158,6 @@ function mcmc_worker!(args::Vector, ASDSF_step::Int64=100,
   end # for
   mv = samparas(m)
   sim.moves[1] = mv
-  !isnothing(rc) && close(rc)
   (sim, m, ModelState(unlist(m), gettune(m)))
 end # mcmc_worker!
 
