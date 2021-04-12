@@ -110,7 +110,7 @@ end
 ## instead to avoid the error handling issue.  In multi-processor mode, pmap is
 ## called and will apply its error processing.
 
-function pmap2(f::Function, lsts::AbstractArray, asdsf::Bool, ASDSF_step::Int64,
+function pmap2(f::Function, lsts::AbstractArray, asdsf::Bool, ASDSF_freq::Int64,
                ASDSF_min_splits::Float64)
   ll::Int64 = length(lsts)
   r_channels::Vector{RemoteChannel} = [RemoteChannel(()->Channel{AbstractString}(1000)) for x in 1:ll]
@@ -118,14 +118,14 @@ function pmap2(f::Function, lsts::AbstractArray, asdsf::Bool, ASDSF_step::Int64,
       results = Dict{Int64, Tuple{Chains, Model, ModelState}}()
       @sync begin
         if asdsf
-          n_trees::Int64 = floor((last(lsts[1][3]) - lsts[1][4]) / ASDSF_step)
+          n_trees::Int64 = floor((last(lsts[1][3]) - lsts[1][4]) / ASDSF_freq)
           @async println(@fetchfrom 4 ASDSF(r_channels, n_trees,
                                             ASDSF_min_splits))
         end # if
         for (index, list) in enumerate(lsts)
           if asdsf
             @async results[index] =
-              @fetchfrom (index + 1) f(list, ASDSF_step, r_channels[index])
+              @fetchfrom (index + 1) f(list, ASDSF_freq, r_channels[index])
           else
             @async results[index] = @fetchfrom (index + 1) f(list)
           end # if/else
