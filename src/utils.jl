@@ -114,23 +114,28 @@ function pmap2(f::Function, lsts::AbstractArray, asdsf::Bool, ASDSF_freq::Int64,
                ASDSF_min_splits::Float64)
   ll::Int64 = length(lsts)
   r_channels::Vector{RemoteChannel} = [RemoteChannel(()->Channel{AbstractString}(1000)) for x in 1:ll]
+  ASDSF_results::Vector{Float64} = []
     if ll <= nworkers()
       results = Dict{Int64, Tuple{Chains, Model, ModelState}}()
       @sync begin
+        if ll == nworkers() && asdsf
+          asdsf = false
+          @warn "Not enough workers to run ASDSF on-the-fly parallel to the chains. Generating chains normally without ASDSF"
+        end # if
         if asdsf
           n_trees::Int64 = floor((last(lsts[1][3]) - lsts[1][4]) / ASDSF_freq)
-          @async println(@fetchfrom 4 ASDSF(r_channels, n_trees,
-                                            ASDSF_min_splits))
+          @async ASDSF_results = @fetchfrom workers()[end] ASDSF(r_channels, n_trees,
+                                                                 ASDSF_min_splits)
         end # if
         for (index, list) in enumerate(lsts)
           if asdsf
-            @async results[index] =
-              @fetchfrom (index + 1) f(list, ASDSF_freq, r_channels[index])
+            @async results[index] = @fetchfrom workers()[index] f(list, ASDSF_freq, r_channels[index])
           else
-            @async results[index] = @fetchfrom (index + 1) f(list)
+            @async results[index] = @fetchfrom workers()[index] f(list)
           end # if/else
         end # for
       end # begin
+      println(ASDSF_results)
       return [results[i] for i in 1:ll]
     else
       return map(f, lsts)
