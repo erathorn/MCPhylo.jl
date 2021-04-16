@@ -14,6 +14,7 @@ randomize!(mt2)
 my_data = Dict{Symbol, Any}(
   :mtree => mt,
   :df => df,
+  :df2 => df,
   :nnodes => size(df)[3],
   :nbase => size(df)[1],
   :nsites => size(df)[2],
@@ -24,12 +25,15 @@ my_data = Dict{Symbol, Any}(
 # model setup
 model =  Model(
     df = Stochastic(3, (mtree, mypi) ->  PhyloDist(mtree, mypi, [1.0], [1.0], Restriction), false, false),
+    df2 = Stochastic(3, (mtree2, mypi) ->  PhyloDist(mtree2, mypi, [1.0], [1.0], Restriction), false, false),
     mypi = Stochastic(1, () -> Dirichlet(2,1)),
-    mtree = Stochastic(Node(), () -> CompoundDirichlet(1.0, 1.0, 0.100, 1.0), true)
+    mtree = Stochastic(Node(), () -> CompoundDirichlet(1.0, 1.0, 0.100, 1.0), true),
+    mtree2 = Stochastic(Node(), () -> CompoundDirichlet(1.0, 1.0, 0.100, 1.0), true)
      )
 # intial model values
 inits = [ Dict{Symbol, Union{Any, Real}}(
     :mtree => mt,
+    :mtree2 => mt,
     :mypi=> rand(Dirichlet(2,1)),
     :df => my_data[:df],
     :nnodes => my_data[:nnodes],
@@ -39,6 +43,7 @@ inits = [ Dict{Symbol, Union{Any, Real}}(
     ),
     Dict{Symbol, Union{Any, Real}}(
         :mtree => mt2,
+        :mtree2 => mt2,
         :mypi=> rand(Dirichlet(2,1)),
         :df => my_data[:df],
         :nnodes => my_data[:nnodes],
@@ -49,6 +54,7 @@ inits = [ Dict{Symbol, Union{Any, Real}}(
     ]
 
 scheme = [MCPhylo.PNUTS(:mtree, target=0.7, targetNNI=1),
+          MCPhylo.PNUTS(:mtree2, target=0.7, targetNNI=1),
            SliceSimplex(:mypi),
           ]
 
