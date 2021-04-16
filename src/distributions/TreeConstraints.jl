@@ -1,5 +1,5 @@
 
-function topological(tree<:GeneralNode, constraints::Dict)
+function topological(tree::N, constraints::Dict) where N<:GeneralNode
     for key in keys(constraints)
         lca = find_lca(tree, constraints[key])
         lca.root && return false
@@ -9,6 +9,6 @@ end
 
 
 # topological constraints fallback
-function topological(tree<:GeneralNode, constraints::Missing)
+function topological(tree::N, constraints::Missing) where N<:GeneralNode
     true
 end

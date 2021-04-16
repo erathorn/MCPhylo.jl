@@ -15,14 +15,14 @@ mutable struct AMMTune <: SamplerTune
 
   AMMTune() = new()
 
-  function AMMTune(x::Vector, Sigma::Matrix{<:Real},
+  function AMMTune(x::Vector, Sigma::Matrix{T},
                   logf::Union{Function, Missing}; beta::Real=0.05,
-                  scale::Real=2.38)
+                  scale::Real=2.38) where {T<:Real}
     new(logf, false, beta, 0, Vector{Float64}(undef, 0), Matrix{Float64}(undef, 0, 0), scale, cholesky(Sigma).L, Matrix{Float64}(undef, 0, 0))
   end
 end
 
-AMMTune(x::Vector, Sigma::Matrix{<:Real}; args...) = AMMTune(x, Sigma, missing; args...)
+AMMTune(x::Vector, Sigma::Matrix{T}; args...) where {T<:Real} = AMMTune(x, Sigma, missing; args...)
 
 const AMMVariate = SamplerVariate{AMMTune}
 

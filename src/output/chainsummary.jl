@@ -21,14 +21,14 @@ struct ChainSummary
   end
 end
 
-function ChainSummary(value::Array{Float64, 3}, rownames::Vector{<:AbstractString},
-                     colnames::Vector{<:AbstractString}, header::AbstractString)
+function ChainSummary(value::Array{Float64, 3}, rownames::Vector{T},
+                     colnames::Vector{U}, header::AbstractString) where {T<:AbstractString, U<:AbstractString}
   ChainSummary(copy(value), AbstractString[rownames...],
                AbstractString[colnames...], header)
 end
 
-function ChainSummary(value::Matrix{Float64}, rownames::Vector{<:AbstractString},
-                     colnames::Vector{<:AbstractString}, header::AbstractString)
+function ChainSummary(value::Matrix{Float64}, rownames::Vector{T},
+                     colnames::Vector{U}, header::AbstractString) where {T<:AbstractString, U<:AbstractString}
   dim = size(value)
   ChainSummary(reshape(value, dim[1], dim[2], 1), AbstractString[rownames...],
                AbstractString[colnames...], header)

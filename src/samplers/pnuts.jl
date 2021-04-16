@@ -25,17 +25,17 @@ mutable struct PNUTSTune <: SamplerTune
 
   PNUTSTune() = new()
 
-  function PNUTSTune(x::Vector{<:Node}, epsilon::Float64, logfgrad::Union{Function, Missing};
-                    target::Real=0.6, tree_depth::Int=10, targetNNI::Int=5)
+  function PNUTSTune(x::Vector{T}, epsilon::Float64, logfgrad::Union{Function, Missing};
+                    target::Real=0.6, tree_depth::Int=10, targetNNI::Int=5) where T<:Node
     new(logfgrad, false, 0.0, epsilon, 1.0, 0.05, 0.0, 0.75, 0, NaN, 0, 10.0,0.003,
         target,0, tree_depth,0, targetNNI)
   end
 end
 
-PNUTSTune(x::Vector{<:Node}, logfgrad::Function, ::NullFunction, delta::Float64=0.003; args...) =
+PNUTSTune(x::Vector{T}, logfgrad::Function, ::NullFunction, delta::Float64=0.003; args...) where T<:Node =
   PNUTSTune(x, nutsepsilon(x[1], logfgrad, delta), logfgrad; args...)
 
-PNUTSTune(x::Vector{<:Node}, logfgrad::Function, delta::Float64; args...) =
+PNUTSTune(x::Vector{T}, logfgrad::Function, delta::Float64; args...) where T<:Node =
   PNUTSTune(x, nutsepsilon(x[1], logfgrad, delta), logfgrad; args...)
 
 PNUTSTune(x::Vector; epsilon::Real, args...) =
@@ -75,7 +75,7 @@ end
 
 #################### Sampling Functions ####################
 
-function mlogpdfgrad!(block::SamplingBlock, x<:Node, sz::Int64, ll::Bool=false, gr::Bool=false)::Tuple{Float64, Vector{Float64}}
+function mlogpdfgrad!(block::SamplingBlock, x::T, sz::Int64, ll::Bool=false, gr::Bool=false)::Tuple{Float64, Vector{Float64}}  where T<:Node
   grad = Vector{Float64}(undef, sz)
   lp = zero(Float64)
 

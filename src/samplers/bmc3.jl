@@ -8,9 +8,8 @@ mutable struct BMC3Tune{F<:BMC3Form} <: SamplerTune
   logf::Union{Function, Missing}
   k::F
 
-  function BMC3Tune{F}() where {F<:BMC3Form}
-    new{F}()
-  end
+  BMC3Tune{F}() where {F<:BMC3Form} = new{F}()
+
   BMC3Tune{F}(x::Vector, k::F) where {F<:BMC3Form} = new{F}(missing, k)
 
   BMC3Tune{F}(x::Vector, k::F, logf::Function) where {F<:BMC3Form} =

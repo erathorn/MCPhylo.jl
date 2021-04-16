@@ -206,7 +206,7 @@ the parameter num.
 
 * `num` : amount of NNI moves to perform.
 """
-function randomize!(root<:GeneralNode, num::Int64=100)::Nothing
+function randomize!(root::T, num::Int64=100)::Nothing where T <:GeneralNode
     n_nodes = size(root)[1]
     i = 0
     while i < num

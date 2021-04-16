@@ -26,7 +26,7 @@ function hangartner_inner(Y::AbstractMatrix, m::Int)
   return (n * sum(chi_stat), m_tot)
 end
 
-function weiss(X::AbstractMatrix{U}) where U<:Any
+function weiss(X::AbstractMatrix{U}) where {U<:Any}
   ## number of iterations, number of chains
   n, d = size(X)
 

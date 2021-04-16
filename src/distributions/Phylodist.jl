@@ -3,7 +3,7 @@
     according to Felsensteins algorithm.
 """
 mutable struct PhyloDist <: DiscreteMatrixDistribution
-    tree<: GeneralNode
+    tree::T where T <: GeneralNode
     base_freq::Array{Float64}
     substitution_rates::Array{Float64}
     rates::Array{Float64}

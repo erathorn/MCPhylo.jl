@@ -10,7 +10,7 @@ of their descendants.
 * `ascending` : Boolean, determines whether to sort in ascending (true) or
                 descending (false) order.
 """
-function ladderize_tree!(root<:AbstractNode, ascending::Bool=true)
+function ladderize_tree!(root::T, ascending::Bool=true) where T<:AbstractNode
     root.nchild == 0 && return nothing
     ndescendants = Array{Float64,1}(undef, length(root.children))
     for (index, child) in enumerate(root.children)

@@ -249,7 +249,7 @@ non-majority clusters (handled by the 'majority' boolean).
 function set_node_stats!(main_tree::T, trees::Vector{T}, majority::Bool,
                          percentage::Float64=0.0)::Nothing where T<:AbstractNode
 
-    nodes::Vector{T} = level_order(main_tree)
+    nodes = level_order(main_tree)
     count_dict = Dict(zip([n.num for n in nodes], zeros(Int64, length(nodes))))
     inc_length_dict = Dict{Int64, Vector{Float64}}()
     for tree in trees

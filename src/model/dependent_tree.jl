@@ -18,17 +18,17 @@ function names(d::TreeLogical, nodekey::Symbol)
 end
 
 
-function unlist(root<:GeneralNode)
+function unlist(root::N) where N<:GeneralNode
     [tree_height(root), tree_length(root)]
 end
 
 
-function unlist(d<: TreeVariate)
+function unlist(d::T) where T <: TreeVariate
     unlist(d.value)
 end
 
 
-function unlist_tree(root<:GeneralNode)
+function unlist_tree(root::N) where N<:GeneralNode
     [tree_height(root), tree_length(root)]
 end
 

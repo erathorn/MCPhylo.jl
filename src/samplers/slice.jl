@@ -2,40 +2,38 @@
 
 #################### Types and Constructors ####################
 
-const SliceForm = Union{Univariate,Multivariate}
+const SliceForm = Union{Univariate, Multivariate}
 
-mutable struct SliceTune{F <: SliceForm} <: SamplerTune
-    logf::Union{Function,Missing}
-    width::Union{Float64,Vector{Float64}}
+mutable struct SliceTune{F<:SliceForm} <: SamplerTune
+  logf::Union{Function, Missing}
+  width::Union{Float64, Vector{Float64}}
 
-    function SliceTune{F}() where {F <: SliceForm}
-        new{F}()
-    end
+  SliceTune{F}() where {F<:SliceForm} = new{F}()
 
-    SliceTune{F}(x::Vector, width) where {F <: SliceForm} =
+  SliceTune{F}(x::Vector, width) where {F<:SliceForm} =
     SliceTune{F}(x, width, missing)
 
-    SliceTune{F}(x::Vector, width::Real, logf::Union{Function,Missing}) where
-    {F <: SliceForm} = new{F}(logf, Float64(width))
+  SliceTune{F}(x::Vector, width::Real, logf::Union{Function, Missing}) where
+    {F<:SliceForm} = new{F}(logf, Float64(width))
 
-    SliceTune{F}(x::Vector, width::Vector, logf::Union{Function,Missing}) where
-    {F <: SliceForm} = new{F}(logf, convert(Vector{Float64}, width))
+  SliceTune{F}(x::Vector, width::Vector, logf::Union{Function, Missing}) where
+    {F<:SliceForm} = new{F}(logf, convert(Vector{Float64}, width))
 end
 
 
 const SliceUnivariate = SamplerVariate{SliceTune{Univariate}}
 const SliceMultivariate = SamplerVariate{SliceTune{Multivariate}}
 
-validate(v::SamplerVariate{SliceTune{F}}) where {F <: SliceForm} =
+validate(v::SamplerVariate{SliceTune{F}}) where {F<:SliceForm} =
   validate(v, v.tune.width)
 
-validate(v::SamplerVariate{SliceTune{F}}, width::Float64) where {F <: SliceForm} = v
+validate(v::SamplerVariate{SliceTune{F}}, width::Float64) where {F<:SliceForm} = v
 
-function validate(v::SamplerVariate{SliceTune{F}}, width::Vector) where {F <: SliceForm}
-    n = length(v)
-    length(width) == n ||
+function validate(v::SamplerVariate{SliceTune{F}}, width::Vector) where {F<:SliceForm}
+  n = length(v)
+  length(width) == n ||
     throw(ArgumentError("length(width) differs from variate length $n"))
-    v
+  v
 end
 
 
@@ -65,20 +63,20 @@ type object if sampling univariately or multivariately, respectively.
 function Slice(params::ElementOrVector{Symbol},
                 width::ElementOrVector{T},
                 ::Type{F}=Multivariate;
-                transform::Bool=false) where {T <: Real,F <: SliceForm}
-    samplerfx = function (model::Model, block::Integer)
-        block = SamplingBlock(model, block, transform)
-        v = SamplerVariate(block, width)
-        sample!(v, x -> logpdf!(block, x))
-        relist(block, v)
-    end
-    Sampler(params, samplerfx, SliceTune{F}())
+                transform::Bool=false) where {T<:Real, F<:SliceForm}
+  samplerfx = function(model::Model, block::Integer)
+    block = SamplingBlock(model, block, transform)
+    v = SamplerVariate(block, width)
+    sample!(v, x -> logpdf!(block, x))
+    relist(block, v)
+  end
+  Sampler(params, samplerfx, SliceTune{F}())
 end
 
 
 #################### Sampling Functions ####################
 
-sample!(v::Union{SliceUnivariate,SliceMultivariate}) = sample!(v, v.tune.logf)
+sample!(v::Union{SliceUnivariate, SliceMultivariate}) = sample!(v, v.tune.logf)
 """
     sample!(v::Union{SliceUnivariate, SliceMultivariate}, logf::Function)
 
@@ -88,8 +86,8 @@ constrained or unconstrained.
 
 Returns `v` updated with simulated values and associated tuning parameters.
 """
-function sample!(v::Union{SliceUnivariate,SliceMultivariate}, logf::Function)
-    typeof(v.value[1]) <: GeneralNode ? sample_node!(v, logf) : sample_number!(v, logf)
+function sample!(v::Union{SliceUnivariate, SliceMultivariate}, logf::Function)
+    typeof(v.value[1]) <:GeneralNode ? sample_node!(v, logf) : sample_number!(v, logf)
 end
 
 
@@ -174,7 +172,7 @@ function sample_number!(v::SliceUnivariate, logf::Function)
     x = v[i]
     v[i] = rand(Uniform(lower[i], upper[i]))
     while true
-            logf0 = logf(v.value)
+      logf0 = logf(v.value)
       logf0 < p0 || break
       value = v[i]
       if value < x

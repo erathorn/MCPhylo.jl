@@ -56,7 +56,7 @@ function BHV_bounds(tree1::T, tree2::T)::Tuple{Float64, Float64} where T <:Gener
     for node in po[1:end-1]
         nom = find_num(tree2, node.num)
         if node.mother.num == nom.mother.num
-            res_upper_3 += node.inc_length-nom.inc_length^2
+            res_upper_3 += node.inc_length-nom.inc_length)^2
         else
             res_upper_2  += nom.inc_length^2
             res_upper_1 += node.inc_length^2

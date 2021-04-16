@@ -5,7 +5,7 @@
 Parse a newick string and then call set_binary and number_nodes! on the
 resulting tree
 """
-function parse_and_number(treestring<:AbstractString)::Node
+function parse_and_number(treestring::S)::Node where S<:AbstractString
     p_tree2 = parsing_newick_string(string(treestring))
     set_binary!(p_tree2)
     number_nodes!(p_tree2)

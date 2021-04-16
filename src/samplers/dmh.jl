@@ -8,7 +8,7 @@ mutable struct DMHTune <: SamplerTune
 
 
   DMHTune() = new()
-  function DMHTune(seed_data::<:AbstractArray, m::Int64)
+  function DMHTune(seed_data::A, m::Int64) where A<:AbstractArray
 	@assert m >= length(seed_data)
     new(seed_data, m)
   end

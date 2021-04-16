@@ -13,14 +13,14 @@ mutable struct AMWGTune <: SamplerTune
 
   AMWGTune() = new()
 
-  function AMWGTune(x::Vector, sigma::ElementOrVector{<:Real},
+  function AMWGTune(x::Vector, sigma::ElementOrVector{T},
                     logf::Union{Function, Missing}; batchsize::Integer=50,
-                    target::Real=0.44)
+                    target::Real=0.44) where {T<:Real}
     new(logf, false, zeros(Int, length(x)), batchsize, 0, copy(sigma), target)
   end
 end
 
-AMWGTune(x::Vector, sigma::ElementOrVector{<:Real}; args...) =
+AMWGTune(x::Vector, sigma::ElementOrVector{T}; args...) where {T<:Real} =
   AMWGTune(x, sigma, missing; args...)
 
 AMWGTune(x::Vector, sigma::Real, logf::Union{Function, Missing}; args...) =

@@ -51,7 +51,7 @@ function internal_logpdf(d::CompoundDirichlet, b_lens::Array{Float64},
 
 end
 
-function gradlogpdf(d::CompoundDirichlet, x<:GeneralNode)
+function gradlogpdf(d::CompoundDirichlet, x::T) where T <: GeneralNode
     int_ext = internal_external(x)
     blv = get_branchlength_vector(x)
     f(y) =  internal_logpdf(d, y, int_ext)
@@ -60,7 +60,7 @@ function gradlogpdf(d::CompoundDirichlet, x<:GeneralNode)
 end
 
 
-function logpdf(d::CompoundDirichlet, x<:GeneralNode)
+function logpdf(d::CompoundDirichlet, x::T) where T <: GeneralNode
     internal_logpdf(d, get_branchlength_vector(x), internal_external(x))
 end # function _logpdf
 
