@@ -108,12 +108,12 @@ end
 
 
 #################### Covariance wrapper ####################
-function to_covariance(tree::TreeStochastic)::Array{T,2} where T <: Real
-    blv::Vector{T} = get_branchlength_vector(tree)
+function to_covariance(tree::TreeStochastic)::Array{Float64,2}
+    blv::Vector = get_branchlength_vector(tree)
     to_covariance(tree.value, blv)
 end # end to_covariance
 
-function to_covariance(tree::N) where {N<:GeneralNode, T <: Real}
+function to_covariance(tree::N) where N<:GeneralNode
     blv = get_branchlength_vector(tree)
     to_covariance(tree, blv)
 end # end to_covariance
