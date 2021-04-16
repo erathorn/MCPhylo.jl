@@ -64,7 +64,7 @@ function make_tree_with_data(filename::String, dialect::AbstractString="nexus",
 		for (ind, i) in enumerate(row)
 			ent = string(i)
 			index = findfirst(x->x==ent, symbols)
-			if index == nothing
+			if index === nothing
 				if ent == gap || ent == miss
 					my_df[:, ind, mind] .= 1.0
 				else

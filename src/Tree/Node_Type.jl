@@ -10,36 +10,33 @@ stored in the node.
 * `inc_length` specifies the length of the incomming branch.
 * `binary` specifies the path from the root to the Node. `1` and `0` represent left and right turns respectively.
 """
-mutable struct GeneralNode{S<: AbstractString, R<:Real,
-                            I<:Integer, T<: AbstractString, B<:Bool} <: AbstractNode
-    name::S
-    mother::Union{GeneralNode{S,R,I,T,B}, Missing}
-    children::Vector{GeneralNode{S,R,I,T,B}}
+mutable struct GeneralNode{R<:Real, I<:Integer} <: AbstractNode
+    name::String
+    mother::Union{GeneralNode{R,I}, Missing}
+    children::Vector{GeneralNode{R,I}}
     nchild::I
-    root::B
+    root::Bool
     inc_length::R
-    binary::T
+    binary::String
     num::I
     height::R
     IntExtMap::Vector{I}
     blv::Vector{R}
-    initialized::B
     stats::Dict{String, Float64}
 end # struct Node
 
-const Node = GeneralNode{String, Float64,Int64, String, Bool}
-const Node_cu = GeneralNode{String, Float64, Int64, String, Bool}
+const FNode = GeneralNode{Float64, Int64}
 """
-    function Node()::Node
+    function Node()::FNode
 This function will initialize an empty node.
 """
-function Node()::Node
-        Node("no_name", missing,Node[], 0, true, 1.0, "0",1,1.0,Int64[],Float64[],false,  Dict{String, Float64}())
+function Node()::FNode
+        FNode("no_name", missing, FNode[], 0, true, 1.0, "0",1, 1.0,Int64[], Float64[], Dict{String, Float64}())
 end
 
 
-function Node(name::String)::Node
-        Node(name, missing, Node[], 0, true, 1.0, "0", 1, 1.0, Int64[], Float64[], false,  Dict{String, Float64}())
+function Node(name::String)::FNode
+        FNode(name, missing, FNode[], 0, true, 1.0, "0", 1, 1.0, Int64[], Float64[], Dict{String, Float64}())
 end
 
 

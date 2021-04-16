@@ -26,16 +26,16 @@ mutable struct PNUTSTune <: SamplerTune
     PNUTSTune() = new()
 
     function PNUTSTune(x::Vector{T}, epsilon::Float64, logfgrad::Union{Function,Missing};
-                    target::Real=0.6, tree_depth::Int=10, targetNNI::Int=5) where T <: Node
+                    target::Real=0.6, tree_depth::Int=10, targetNNI::Int=5) where T <: GeneralNode
         new(logfgrad, false, 0.0, epsilon, 1.0, 0.05, 0.0, 0.75, 0, NaN, 0, 10.0,0.003,
         target,0, tree_depth,0, targetNNI)
     end
 end
 
-PNUTSTune(x::Vector{T}, logfgrad::Function, ::NullFunction, delta::Float64=0.003; args...) where T <: Node =
+PNUTSTune(x::Vector{T}, logfgrad::Function, ::NullFunction, delta::Float64=0.003; args...) where T <: GeneralNode =
   PNUTSTune(x, nutsepsilon(x[1], logfgrad, delta), logfgrad; args...)
 
-PNUTSTune(x::Vector{T}, logfgrad::Function, delta::Float64; args...) where T <: Node =
+PNUTSTune(x::Vector{T}, logfgrad::Function, delta::Float64; args...) where T <: GeneralNode =
   PNUTSTune(x, nutsepsilon(x[1], logfgrad, delta), logfgrad; args...)
 
 PNUTSTune(x::Vector; epsilon::Real, args...) =
@@ -75,7 +75,7 @@ end
 
 #################### Sampling Functions ####################
 
-function mlogpdfgrad!(block::SamplingBlock, x::T, sz::Int64, ll::Bool=false, gr::Bool=false)::Tuple{Float64,Vector{Float64}}  where T <: Node
+function mlogpdfgrad!(block::SamplingBlock, x::FNode, sz::Int64, ll::Bool=false, gr::Bool=false)::Tuple{Float64,Vector{Float64}}
     grad = Vector{Float64}(undef, sz)
     lp = zero(Float64)
 
@@ -186,9 +186,9 @@ function nuts_sub!(v::PNUTSVariate, epsilon::Float64, logfgrad::Function)
 end
 
 
-function refraction(v::T, r::Vector{Float64}, pm::Int64,
+function refraction(v::FNode, r::Vector{Float64}, pm::Int64,
                     grad::Vector{Float64}, epsilon::Float64, logfgrad::Function,
-                    delta::Float64, sz::Int64)  where T <: Node
+                    delta::Float64, sz::Int64)
 
     v1 = deepcopy(v)
 
@@ -224,8 +224,8 @@ function refraction(v::T, r::Vector{Float64}, pm::Int64,
 end
 
 
-function ref_NNI(v::T, tmpB::Vector{Float64}, r::Vector{Float64}, epsilon::Float64, blv::Vector{Float64},
-                 delta::Float64, logfgrad::Function, sz::Int64)  where T <: Node
+function ref_NNI(v::FNode, tmpB::Vector{Float64}, r::Vector{Float64}, epsilon::Float64, blv::Vector{Float64},
+                 delta::Float64, logfgrad::Function, sz::Int64)
 
     intext = internal_external(v)
     t = 0.0
@@ -280,10 +280,10 @@ end
 
 
 
-function buildtree(x::T, r::Vector{Float64},
+function buildtree(x::FNode, r::Vector{Float64},
                    grad::Vector{Float64}, pm::Int64, j::Integer,
                    epsilon::Float64, logfgrad::Function, logp0::Real, logu0::Real,
-                   delta::Float64, sz::Int64, lu::Float64)  where T <: Node
+                   delta::Float64, sz::Int64, lu::Float64)
 
 
     if j == 0
@@ -340,7 +340,7 @@ end
 
 function nouturn(xminus::T, xplus::T,
                 rminus::Vector{Float64}, rplus::Vector{Float64}, gradminus::Vector{Float64},gradplus::Vector{Float64},
-                epsilon::Float64, logfgrad::Function, delta::Float64, sz::Int64, j::Int64)  where T <: Node
+                epsilon::Float64, logfgrad::Function, delta::Float64, sz::Int64, j::Int64)  where T <: GeneralNode
 
     curr_l, curr_h = BHV_bounds(xminus, xplus)
 
@@ -360,7 +360,7 @@ end
 
 #################### Auxilliary Functions ####################
 
-function nutsepsilon(x::Node, logfgrad::Function, delta::Float64)
+function nutsepsilon(x::FNode, logfgrad::Function, delta::Float64)
 
     x0 = deepcopy(x)
     n = size(x)[1] - 1
