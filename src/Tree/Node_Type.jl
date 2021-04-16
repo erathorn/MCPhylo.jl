@@ -57,19 +57,11 @@ end
 function Base.show(io::IO, d::N) where N <: GeneralNode
     print(io, "Tree with root:\n")
     show(io, d.name)
-    if d.initialized
-        print(io, "\nLength:\n")
-        show(io, "text/plain", tree_length(d))
-        print(io, "\nHeight:\n")
-        show(io, "text/plain", tree_height(d))
-    else
-        print(io, "\nLength:\n")
-        show(io, "text/plain", 0)
-        print(io, "\nHeight:\n")
-        show(io, "text/plain", 0)
-        print(io, "\nNumber of leave nodes:\n")
-        show(io, "text/plain",0)
-    end
+    print(io, "\nLength:\n")
+    show(io, "text/plain", tree_length(d))
+    print(io, "\nHeight:\n")
+    show(io, "text/plain", tree_height(d))
+    
 end
 
 function showall(io::IO, d::N) where N <: GeneralNode

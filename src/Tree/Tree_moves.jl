@@ -313,14 +313,13 @@ end #func
     Performs SPR on tree in place. Takes reference to root of tree;
     Returns reference to root of altered tree. Throws error if tree is improperly formatted.
 """
-
 function SPR!(root::Node)
     if length(post_order(root)) <= 2
         error("The tree is too small for SPR")
     end #if
-    binary = check_binary(root)
-    spr_tree = binary ? perform_spr(root) : throw("Not yet implemented for not binary trees")
-    return spr_tree
+    check_binary(root) || throw(ArgumentError("Not yet implemented for not binary trees"))
+    perform_spr(root)
+    return root
 end #function
 
 """
@@ -381,5 +380,6 @@ function perform_spr(root::Node)
     remove_child!(target_mother, target)
     add_child!(target_mother, tn_mother)
     add_child!(tn_mother, target)
+    set_binary!(root)
     return root
 end #func
