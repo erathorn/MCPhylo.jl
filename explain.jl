@@ -1,6 +1,6 @@
 using Revise
 using Distributed
-addprocs(3)
+addprocs(4)
 @everywhere using Pkg
 @everywhere Pkg.activate(".")
 @everywhere using MCPhylo
