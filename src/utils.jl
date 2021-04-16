@@ -112,35 +112,31 @@ end
 
 function pmap2(f::Function, lsts::AbstractArray, asdsf::Bool, ASDSF_freq::Int64,
                ASDSF_min_splits::Float64)
-  ntrees = 0
+  tree_dim::Int64 = 0
   for i in lsts[1][1].nodes
     if isa(i[2], TreeStochastic)
-      ntrees += 1
+      tree_dim += 1
     end # if
   end # for
-  println(ntrees)
   ll::Int64 = length(lsts)
-  r_channels::Array{RemoteChannel,2} = Array{RemoteChannel}(undef, ll, ntrees)
-  fill!(r_channels, RemoteChannel(()->Channel{AbstractString}(10)))
+  r_channels = [RemoteChannel(()->Channel{Vector{AbstractString}}(10)) for x in 1:ll]
   ASDSF_results::Vector{Vector{Float64}} = []
     if ll <= nworkers()
       results = Dict{Int64, Tuple{Chains, Model, ModelState}}()
       @sync begin
-        if ll + ntrees > nworkers() && asdsf
+        if ll == nworkers() && asdsf
           asdsf = false
           @warn "Not enough workers to run ASDSF on-the-fly parallel to the chains. Generating chains normally without ASDSF"
         end # if
         if asdsf
           n_trees::Int64 = floor((last(lsts[1][3]) - lsts[1][4]) / ASDSF_freq)
-          @async for i in 1:ntrees
-            push!(ASDSF_results, @fetchfrom workers()[end + 1 - i] ASDSF(r_channels[:, i], n_trees,
-                                                                         ASDSF_min_splits))
-          end # for
+          @async ASDSF_results = @fetchfrom workers()[end] ASDSF(r_channels[:, i], n_trees,
+                                                                 1:tree_dim, ASDSF_min_splits)
         end # if
         for (ind, list) in enumerate(lsts)
           if asdsf
             @async results[ind] =
-              @fetchfrom workers()[ind] f(list, ASDSF_freq, r_channels[ind, :])
+              @fetchfrom workers()[ind] f(list, ASDSF_freq, r_channels[ind])
           else
             @async results[ind] = @fetchfrom workers()[ind] f(list)
           end # if/else
