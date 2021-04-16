@@ -17,7 +17,7 @@ mutable struct RWMCTune <: SamplerTune
   end
 end
 
-RWMCTune(x::Vector; args...) where {T<:Real} =
+RWMCTune(x::Vector; args...) =
   RWMCTune(x, missing; args...)
 
 
@@ -38,7 +38,7 @@ validate(v::RWMCVariate) = v#validate(v, v.tune.scale)
 #################### Sampler Constructor ####################
 
 function RWMC(params::ElementOrVector{Symbol};
-             args...) where {T<:Real}
+             args...)
   samplerfx = function(model::Model, block::Integer)
     block = SamplingBlock(model, block, true)
     v = SamplerVariate(block; args...)

@@ -19,9 +19,9 @@ Recipe that handles plotting of MCPhylo Trees. Takes the root node as input.
 - 'marker_group=nothing' : currently not supported
 - 'line_group=nothing' : currently not supported
 """
-@recipe function f(root::T; treetype=:dendrogram, marker_group=nothing,
+@recipe function f(root<:AbstractNode; treetype=:dendrogram, marker_group=nothing,
                    line_group=nothing, showtips=true, tipfont=(7,)
-                   ) where T<:AbstractNode
+                   )
 
     linecolor --> :black
     grid --> false
@@ -215,7 +215,7 @@ function _findxy(root::T)::Tuple{Dict{Node, Float64}, Dict{Node, Float64}, Vecto
         end
     end
 
-    function finddepths!(node::T, parentdepth::Float64 = 0.0) where T>:AbstractNode
+    function finddepths!(node<:AbstractNode, parentdepth::Float64 = 0.0)
         mydepth = parentdepth
         push!(names, node.name)
         mydepth += node.inc_length

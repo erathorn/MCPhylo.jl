@@ -36,11 +36,11 @@ function Sampler(params::Vector{Symbol}, f::Function, tune::Any=Dict())
 end
 
 
-function SamplerVariate(x::AbstractVector{U}, tune::T) where {T<:SamplerTune, U<:Real}
+function SamplerVariate(x::AbstractVector{<:Real}, tune::T) where T<:SamplerTune
   SamplerVariate{T}(x, tune)
 end
 
-function SamplerVariate(x::AbstractVector{U}, tune::T) where {T<:SamplerTune, U<:GeneralNode}
+function SamplerVariate(x::AbstractVector{<:GeneralNode}, tune::T) where T<:SamplerTune
   SamplerVariate{T}(x, tune)
 end
 

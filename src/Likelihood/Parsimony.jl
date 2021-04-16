@@ -6,7 +6,7 @@ Do parsimony reconstruction for a tree and a set of characters. The characters a
 supplied as the char dictionary with the key being the name of a leave and the value
 string representation of the character.
 """
-function parsimony(tree::N, char::Dict{String,String}, gap::String="-")::Float64 where N<: GeneralNode
+function parsimony(tree<:GeneralNode, char::Dict{String,String}, gap::String="-")::Float64
       po = post_order(tree)
       states = filter(x -> x != "-", unique(collect(values(char))))
       nStates = length(states)

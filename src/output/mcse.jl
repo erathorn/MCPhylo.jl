@@ -17,14 +17,14 @@ Returns the numeric standard error value.
 
 * `args...` : additional arguments for the calculation method.
 """
-function mcse(x::Vector{T}, method::Symbol=:imse; args...) where {T<:Real}
+function mcse(x::Vector{<:Real}, method::Symbol=:imse; args...)
   method == :bm ? mcse_bm(x; args...) :
   method == :imse ? mcse_imse(x) :
   method == :ipse ? mcse_ipse(x) :
     throw(ArgumentError("unsupported mcse method $method"))
 end
 
-function mcse_bm(x::Vector{T}; size::Integer=100) where {T<:Real}
+function mcse_bm(x::Vector{<:Real}; size::Integer=100)
   n = length(x)
   m = div(n, size)
   m >= 2 ||

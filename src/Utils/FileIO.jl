@@ -35,7 +35,7 @@ end
 
 
 function to_file(df::Array, tdf::Array, outpath::AbstractString,
-                run::AbstractString, thin::Int64, names::Array, tree_names::Array{A}) where A <: AbstractString
+                run::AbstractString, thin::Int64, names::Array, tree_names::Array{<:AbstractString})
 
     to_file(df, outpath, run, thin, names)
     for (ind, n_name) in enumerate(tree_names)

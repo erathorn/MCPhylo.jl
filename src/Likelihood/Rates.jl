@@ -8,7 +8,7 @@ such that each category is of equal proportion.
 See: Yang, 1994, Maximum likelihood phylogenetic estimation from DNA sequences
 with variable rates over sites: Approximate methods. (https://doi.org/10.1007/BF00160154)
 """
-function discrete_gamma_rates(α::T, β::S,k::Int64, method::Symbol=:mean; sig::Int64=1)::Array{Float64} where {T<:Real, S<:Real}
+function discrete_gamma_rates(α<:Real, β<:Real,k::Int64, method::Symbol=:mean; sig::Int64=1)::Array{Float64}
     meanvals = Array{Float64, 1}(undef, k)
     factor::Float64 = α/β*k
 
@@ -33,8 +33,8 @@ end
 
 #### helper functions for boundaries of rate categories ####
 
-function mean_boundaries(α::T, β::S, k::Int64)::Array{Float64} where {T<:Real, S<:Real}
-    ch = Chisq((2*α)/(2*β))
+function mean_boundaries(α<:Real, β<:Real, k::Int64)::Array{Float64}
+    ch::Distribution = Chisq((2*α)/(2*β))
     boundaries = Array{Float64, 1}(undef, k)
     for i in 1:k-1
         boundaries[i] = quantile(ch, i/k)/(2*β)
@@ -42,8 +42,8 @@ function mean_boundaries(α::T, β::S, k::Int64)::Array{Float64} where {T<:Real,
     boundaries
 end
 
-function median_boundaries(α::T, β::S, k::Int64)::Array{Float64} where {T<:Real, S<:Real}
-    ch = Chisq((2*α)/(2*β))
+function median_boundaries(α<:Real, β<:Real, k::Int64)::Array{Float64}
+    ch::Distribution = Chisq((2*α)/(2*β))
     boundaries = Array{Float64, 1}(undef, k)
     for i in 1:k
         boundaries[i] = quantile(ch, ((i-1)*2+1)/(2*k))

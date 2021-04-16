@@ -14,14 +14,14 @@ mutable struct RWMTune <: SamplerTune
     new(logf, Float64(scale), proposal)
   end
 
-  function RWMTune(x::Vector, scale::Vector{T},
+  function RWMTune(x::Vector, scale::Vector{T<:Real},
                   logf::Union{Function, Missing};
-                  proposal::SymDistributionType=Normal) where {T<:Real}
+                  proposal::SymDistributionType=Normal)
     new(logf, convert(Vector{Float64}, scale), proposal)
   end
 end
 
-RWMTune(x::Vector, scale::ElementOrVector{T}; args...) where {T<:Real} =
+RWMTune(x::Vector, scale::ElementOrVector{<:Real}; args...) =
   RWMTune(x, scale, missing; args...)
 
 

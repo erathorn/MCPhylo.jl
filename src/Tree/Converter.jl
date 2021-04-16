@@ -75,7 +75,7 @@ Returns a properly formatted newick String.
 
 * `node` : root node of tree used to create the newick string.
 """
-function newick(root::T)::String  where T<:GeneralNode
+function newick(root<:GeneralNode)::String
     # get the newickstring
     newickstring = newick(root, "")
 
@@ -90,7 +90,7 @@ end
 
 Do the newick recursion. It is meant as the internal iterator function.
 """
-function newick(root::T, newickstring::AbstractString) where T<:GeneralNode
+function newick(root<:GeneralNode, newickstring::AbstractString)
     if root.nchild != 0
         # internal node
         newickstring = string(newickstring, "(")
@@ -108,12 +108,12 @@ end
 
 
 #################### Covariance wrapper ####################
-function to_covariance(tree::TreeStochastic)::Array{T,2} where T <: Real
-    blv::Vector{T} = get_branchlength_vector(tree)
+function to_covariance(tree::TreeStochastic)::Array{Float64,2}
+    blv::Vector{Float64} = get_branchlength_vector(tree)
     to_covariance(tree.value, blv)
 end # end to_covariance
 
-function to_covariance(tree::N) where {N<:GeneralNode, T <: Real}
+function to_covariance(tree::GeneralNode)
     blv = get_branchlength_vector(tree)
     to_covariance(tree, blv)
 end # end to_covariance

@@ -25,7 +25,7 @@ function modelexprsrc(f::Function, literalargs::Vector{Tuple{Symbol, DataType}})
   literalinds = Int[]
   for (key, T) in literalargs
     i = findfirst(fkey -> fkey == key, fkeys)
-    if i != nothing && ftypes[i] == T
+    if i !== nothing && ftypes[i] == T
       push!(literalinds, i)
     end
   end

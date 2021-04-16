@@ -20,8 +20,8 @@ Returns log-likelihood as a Real number.
 
 * `blv` : Vector of Floats, branchlength vector derived from tree.
 """
-function FelsensteinFunction(tree_postorder::Vector{N}, pi_::Array{Float64}, rates::Float64,
-                             data::Array{Float64,3}, n_c::Int64, blv::Array{Float64,1})::Float64 where {N<:GeneralNode}
+function FelsensteinFunction(tree_postorder::Vector{<:GeneralNode}, pi_::Array{Float64}, rates::Float64,
+                             data::Array{Float64,3}, n_c::Int64, blv::Array{Float64,1})::Float64
 
     mu::Float64 =  1.0 / (2.0 * prod(pi_))
     mutationArray::Vector{Array{Float64, 2}} = calc_trans.(blv, pi_[1], mu, rates)
@@ -47,7 +47,7 @@ end # function
     sum(log.(sum(root .* pi_, dims=1))+rns)
 end
 
-function node_loop(node::N, mutationArray::Vector{Array{Float64, 2}})::Array{Float64,2} where {N<:GeneralNode, S<:Real}
+function node_loop(node::N, mutationArray::Vector{Array{Float64, 2}})::Array{Float64,2} where N<:GeneralNode
     # creating a new array is necessary because Zygote can not differentiate otherwise
     out = ones(size(node.data))
     @inbounds @views for child in node.children
