@@ -112,21 +112,27 @@ end
 
 function pmap2(f::Function, lsts::AbstractArray, asdsf::Bool, ASDSF_freq::Int64,
                ASDSF_min_splits::Float64)
-  questionmark = 1
+  ntrees = 0
+  for i in lsts[1][1].nodes
+    if isa(i[2], TreeStochastic)
+      ntrees += 1
+    end # if
+  end # for
+  println(ntrees)
   ll::Int64 = length(lsts)
-  r_channels::Array{RemoteChannel,2} = Array{RemoteChannel}(undef, ll, questionmark)
+  r_channels::Array{RemoteChannel,2} = Array{RemoteChannel}(undef, ll, ntrees)
   fill!(r_channels, RemoteChannel(()->Channel{AbstractString}(10)))
   ASDSF_results::Vector{Vector{Float64}} = []
     if ll <= nworkers()
       results = Dict{Int64, Tuple{Chains, Model, ModelState}}()
       @sync begin
-        if ll + questionmark > nworkers() && asdsf
+        if ll + ntrees > nworkers() && asdsf
           asdsf = false
           @warn "Not enough workers to run ASDSF on-the-fly parallel to the chains. Generating chains normally without ASDSF"
         end # if
         if asdsf
           n_trees::Int64 = floor((last(lsts[1][3]) - lsts[1][4]) / ASDSF_freq)
-          @async for i in 1:questionmark
+          @async for i in 1:ntrees
             push!(ASDSF_results, @fetchfrom workers()[end + 1 - i] ASDSF(r_channels[:, i], n_trees,
                                                                          ASDSF_min_splits))
           end # for
