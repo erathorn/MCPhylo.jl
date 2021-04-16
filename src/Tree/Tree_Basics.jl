@@ -130,7 +130,7 @@ function tree_from_leaves(leaf_nodes::Vector{String},node_size::Int, final_lengt
 
     # first create a list of leaf nodes
     for node_name in leaf_nodes
-        nn = Node(node_name, data=zeros(Float64, (2, node_size)))
+        nn = Node(node_name)
 
         push!(my_node_list,nn)
     end # for
@@ -149,7 +149,7 @@ function tree_from_leaves(leaf_nodes::Vector{String},node_size::Int, final_lengt
         first_child.inc_length = rand()#*0.1
         second_child::Node = pop!(my_node_list)
         second_child.inc_length = rand()
-        curr_node::Node = Node(string(temp_name), data=zeros(Float64, (2, node_size)))
+        curr_node::Node = Node(string(temp_name))
 
         add_child!(curr_node, first_child)
         add_child!(curr_node, second_child)
@@ -175,7 +175,7 @@ function create_tree_from_leaves_bin(leaf_nodes::Vector{String}, node_size::Int)
 
     my_node_list, temp_name = tree_from_leaves(leaf_nodes, node_size ,2)
 
-    root::Node = Node(string(temp_name), data=zeros(Float64, (2, node_size)))
+    root::Node = Node(string(temp_name))
 
     lchild = pop!(my_node_list)
     lchild.inc_length = rand()
@@ -211,7 +211,7 @@ function create_tree_from_leaves(leaf_nodes::Vector{String}, node_size::Int64 = 
 
     my_node_list, temp_name = tree_from_leaves(leaf_nodes, node_size, 3)
 
-    root::Node = Node(string(temp_name), data=zeros(Float64, (2, node_size)))
+    root::Node = Node(string(temp_name))
     lchild = pop!(my_node_list)
     lchild.inc_length = rand()
     mchild = pop!(my_node_list)

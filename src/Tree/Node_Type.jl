@@ -38,7 +38,7 @@ function Node()::Node
 end
 
 
-function Node(name::String)::Node where A<:Real
+function Node(name::String)::Node
         Node(name, missing, Node[], 0, true, 1.0, "0", 1, 1.0, Int64[], Float64[], false,  Dict{String, Float64}())
 end
 
