@@ -36,6 +36,7 @@ inits = [ Dict{Symbol, Union{Any, Real}}(
     :mtree2 => mt,
     :mypi=> rand(Dirichlet(2,1)),
     :df => my_data[:df],
+    :df2 => my_data[:df2],
     :nnodes => my_data[:nnodes],
     :nbase => my_data[:nbase],
     :nsites => my_data[:nsites],
@@ -46,12 +47,13 @@ inits = [ Dict{Symbol, Union{Any, Real}}(
         :mtree2 => mt2,
         :mypi=> rand(Dirichlet(2,1)),
         :df => my_data[:df],
+        :df2 => my_data[:df2],
         :nnodes => my_data[:nnodes],
         :nbase => my_data[:nbase],
         :nsites => my_data[:nsites],
         :a => rand()
         )
-    ]
+]
 
 scheme = [MCPhylo.PNUTS(:mtree, target=0.7, targetNNI=1),
           MCPhylo.PNUTS(:mtree2, target=0.7, targetNNI=1),
