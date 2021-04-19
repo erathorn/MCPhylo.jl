@@ -130,7 +130,7 @@ function pmap2(f::Function, lsts::AbstractArray, asdsf::Bool, ASDSF_freq::Int64,
         end # if
         if asdsf
           n_trees::Int64 = floor((last(lsts[1][3]) - lsts[1][4]) / ASDSF_freq)
-          @async ASDSF_results = @fetchfrom workers()[end] ASDSF(r_channels[:, i], n_trees,
+          @async ASDSF_results = @fetchfrom workers()[end] ASDSF(r_channels, n_trees,
                                                                  1:tree_dim, ASDSF_min_splits)
         end # if
         for (ind, list) in enumerate(lsts)
