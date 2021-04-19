@@ -55,15 +55,15 @@ function ASDSF(args::String...; freq::Int64=1, check_leaves::Bool=true,
                )::Vector{Float64}
 
     length(args) < 2 && throw(ArgumentError("At least two input files are needed."))
-    splitsQueue = Accumulator{Tuple{Set{String}, Set{String}}, Int64}()
-    splitsQueues = Vector{Accumulator{Tuple{Set{String}, Set{String}}, Int64}}()
+    splitsQueue = [Accumulator{Tuple{Set{String}, Set{String}}, Int64}()]
+    splitsQueues = [Vector{Accumulator{Tuple{Set{String}, Set{String}}, Int64}}()]
     for arg in args
-        push!(splitsQueues, Accumulator{Tuple{Set{String}, Set{String}}, Int64}())
+        push!(splitsQueues[1], Accumulator{Tuple{Set{String}, Set{String}}, Int64}())
     end # for
     iter = zip([eachline(arg) for arg in args]...)
-    ASDF_vals = zeros(Int(countlines(args[1]) / freq))
-    asdsf_int(splitsQueue, splitsQueues, iter, ASDF_vals, freq, check_leaves,
-              min_splits, show_progress)
+    ASDF_vals = [zeros(Int(countlines(args[1]) / freq))]
+    asdsf_int(splitsQueue, splitsQueues, iter, 1, ASDF_vals, freq, check_leaves,
+              min_splits, show_progress, basic=true)[1]
 end # ASDSF
 
 
@@ -81,15 +81,15 @@ function ASDSF(args::Vector{String}...; freq::Int64=1, check_leaves::Bool=true,
                )::Vector{Float64}
 
     length(args) < 2 && throw(ArgumentError("At least two input arrays are needed."))
-    splitsQueue = Accumulator{Tuple{Set{String}, Set{String}}, Int64}()
-    splitsQueues = Vector{Accumulator{Tuple{Set{String}, Set{String}}, Int64}}()
+    splitsQueue = [Accumulator{Tuple{Set{String}, Set{String}}, Int64}()]
+    splitsQueues = [Vector{Accumulator{Tuple{Set{String}, Set{String}}, Int64}}()]
     for arg in args
-        push!(splitsQueues, Accumulator{Tuple{Set{String}, Set{String}}, Int64}())
+        push!(splitsQueues[1], Accumulator{Tuple{Set{String}, Set{String}}, Int64}())
     end # for
     iter = zip(args...)
-    ASDF_vals = zeros(Int(length(iter) / freq))
-    asdsf_int(splitsQueue, splitsQueues, iter, ASDF_vals, freq, check_leaves,
-              min_splits, show_progress)
+    ASDF_vals = [zeros(Int(length(iter) / freq))]
+    asdsf_int(splitsQueue, splitsQueues, iter, 1, ASDF_vals, freq, check_leaves,
+              min_splits, show_progress; basic=true)[1]
 end # ASDSF
 
 
@@ -170,8 +170,8 @@ end # ASDSF
 Handles the computation of the Average Standard Deviation of Split Frequencies.
 """
 function asdsf_int(splitsQueue, splitsQueues, iter, tree_dims, ASDF_vals, freq,
-                   check_leaves, min_splits, show_progress; r_channels=nothing
-                   )::Vector{Vector{Float64}}
+                   check_leaves, min_splits, show_progress; r_channels=nothing,
+                   basic=false)::Vector{Vector{Float64}}
 
     all_keys = [Set{Tuple{Set{String},Set{String}}}() for x in tree_dims]
     if show_progress
@@ -187,7 +187,8 @@ function asdsf_int(splitsQueue, splitsQueues, iter, tree_dims, ASDF_vals, freq,
                 line = [take!(rc) for rc in r_channels]
             end
             for td in tree_dims
-                trees = [parse_and_number(tree_string[td]) for tree_string in line]
+                trees = basic ? [parse_and_number(tree) for tree in line] :
+                                [parse_and_number(tree[td]) for tree in line]
                 check_leaves && check_leafsets(trees)
                 bps = [get_bipartitions(tree) for tree in trees]
                 named_bps = [nodnums2names(bp, tree) for (bp, tree) in zip(bps, trees)]
