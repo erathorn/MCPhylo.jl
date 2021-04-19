@@ -104,13 +104,15 @@ end
 
 
 #################### Auxiliary Functions ####################
+"""
+  assign_mcmc_work(f::Function, lsts::AbstractArray, asdsf::Bool,
+                   ASDSF_freq::Int64, ASDSF_min_splits::Float64)
 
-## pmap2 is a partial work-around for the pmap issue in julia 0.4.0 of worker
-## node errors being blocked.  In single-processor mode, pmap2 calls map
-## instead to avoid the error handling issue.  In multi-processor mode, pmap is
-## called and will apply its error processing.
-
-function pmap2(f::Function, lsts::AbstractArray, asdsf::Bool, ASDSF_freq::Int64,
+--- INTERNAL ---
+Starts the MCMC chain generation (on multiple workers if possible) and also
+starts parallel ASDSF - if possible and requested by the user.
+"""
+function assign_mcmc_work(f::Function, lsts::AbstractArray, asdsf::Bool, ASDSF_freq::Int64,
                ASDSF_min_splits::Float64)
   tree_dim::Int64 = 0
   for i in lsts[1][1].nodes
@@ -148,7 +150,7 @@ function pmap2(f::Function, lsts::AbstractArray, asdsf::Bool, ASDSF_freq::Int64,
     else
       return map(f, lsts)
     end # if/else
-end # pmap2
+end # assign_mcmc_work
 
 ind2sub(dims, ind) = Tuple(CartesianIndices(dims)[ind])
 
