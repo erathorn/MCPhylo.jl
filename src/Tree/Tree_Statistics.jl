@@ -142,8 +142,8 @@ channels (where the generated trees are stored during the mcmc simulation) and
 the total number of trees in each chain as arguments. The default minimal splits
 threshold is 0.1.
 """
-function ASDSF(r_channels::Vector{RemoteChannel}, n_trees::Int64,
-               tree_dims::UnitRange{Int64}, min_splits::Float64
+function ASDSF(r_channels::Vector{RemoteChannel{Channel{Array{AbstractString,1}}}},
+               n_trees::Int64, tree_dims::UnitRange{Int64}, min_splits::Float64
                )::Vector{Vector{Float64}}
 
     iter = 1:n_trees

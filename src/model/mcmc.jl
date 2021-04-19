@@ -147,8 +147,7 @@ function mcmc_worker!(args::Vector, ASDSF_step::Int64=100,
         end # if
       end # if
       if !isnothing(rc) && (i - burnin) % ASDSF_step == 0
-        println("Channel entry added")
-        trees::Vector{Node} = []
+        trees::Vector{AbstractString} = []
         for (ind, tree_node) in enumerate(treenodes)
           push!(trees, newick(m[tree_node].value))
         end # for
