@@ -13,6 +13,7 @@ using Printf: @sprintf
 using LinearAlgebra
 using Plots
 @reexport using Plots
+using Plots.PlotMeasures
 using StatsPlots
 @reexport using StatsPlots
 using RecipesBase

@@ -48,7 +48,7 @@ Returns reference to Node.
 """
 function find_num(root::T, num::I)::T  where {T<:GeneralNode, I<:Integer}
     po = post_order(root)
-    store = Node[]
+    store = T[]
     found = find_num(root, num, store)
     if length(store) == 0
         throw(ArgumentError("Node not found"))
