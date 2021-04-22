@@ -98,13 +98,16 @@ function mcmc_master!(m::Model, window::UnitRange{Int}, burnin::Integer,
     Any[m, states[k], window, burnin, thin, ChainProgress(frame, k, N), trees]
     for k in chains
   ]
-  results::Vector{Tuple{Chains, Model, ModelState}} = assign_mcmc_work(mcmc_worker!, lsts, ASDSF, ASDSF_freq, ASDSF_min_splits)
+  results::Vector{Tuple{Chains, Model, ModelState}}, raw_stats::Vector{Vector{Float64}} = assign_mcmc_work(mcmc_worker!, lsts, ASDSF, ASDSF_freq, ASDSF_min_splits)
 
   sims::Array{Chains}  = Chains[results[k][1] for k in 1:K]
   model::Model = results[1][2]
   model.states = ModelState[results[k][3] for k in sortperm(chains)]
-
-  ModelChains(cat(sims..., dims=3), model)
+  stats = Array{Float64,3}(undef, length(raw_stats[1]),1,K)
+  for i =1:K
+    stats[:, :, i] .= raw_stats[i]
+  end
+  ModelChains(cat(sims..., dims=3), model, stats)
 end
 
 

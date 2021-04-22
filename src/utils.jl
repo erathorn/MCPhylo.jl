@@ -160,9 +160,9 @@ function assign_mcmc_work(f::Function, lsts::AbstractArray, asdsf::Bool, ASDSF_f
       end # begin
       close.(r_channels)
       println(ASDSF_results)
-      return [results[i] for i in 1:ll]
+      return [results[i] for i in 1:ll], ASDSF_results
     else
-      return map(f, lsts)
+      return map(f, lsts), [Float64[]]
     end # if/else
 end # assign_mcmc_work
 
