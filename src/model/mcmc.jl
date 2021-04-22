@@ -28,7 +28,7 @@ function mcmc(mc::ModelChains, iters::Integer; verbose::Bool=true,
     mc2 = mc2[:, mc.names, :]
   end
 
-  ModelChains(vcat(mc, mc2), mc2.model)
+  ModelChains(vcat(mc, mc2), mc2.model, cat(mc.stats, mc2.stats, dims=1), mc.stat_names)
 end
 
 
@@ -107,7 +107,8 @@ function mcmc_master!(m::Model, window::UnitRange{Int}, burnin::Integer,
   for i =1:K
     stats[:, :, i] .= raw_stats[i]
   end
-  ModelChains(cat(sims..., dims=3), model, stats)
+  statnames::Vector{AbstractString} = ["asdsf"]
+  ModelChains(cat(sims..., dims=3), model, stats, statnames)
 end
 
 
