@@ -13,19 +13,18 @@ using Printf: @sprintf
 using LinearAlgebra
 using Plots
 @reexport using Plots
+using Plots.PlotMeasures
 using StatsPlots
 @reexport using StatsPlots
 using RecipesBase
 using StatsBase
 using Zygote
 using FiniteDiff
-using Showoff: showoff
-using Markdown
-using DataFrames
-using Random
-using CSV
 using ChainRules
 using ChainRulesCore
+using Showoff: showoff
+using Markdown
+using Random
 using DataStructures
 using ProgressMeter
 using CUDA
@@ -38,7 +37,6 @@ end
 
 import Base: Matrix, names, summary, iterate
 import Base.Threads.@spawn
-import Compose: Context, context, cm, gridstack, inch, MeasureOrNumber, mm, pt, px
 import LinearAlgebra: cholesky, dot, BlasFloat
 import Statistics: cor
 import Distributions:
@@ -71,7 +69,6 @@ using LightGraphs: DiGraph, add_edge!, outneighbors,
        topological_sort_by_dfs, vertices
 import StatsBase: autocor, autocov, countmap, counts, describe, predict,
        quantile, sample, sem, summarystats
-
 
 include("distributions/pdmats2.jl")
 using .PDMats2

@@ -48,7 +48,7 @@ Returns reference to Node.
 """
 function find_num(root::T, num::I)::T  where {T<:GeneralNode, I<:Integer}
     po = post_order(root)
-    store = Node[]
+    store = T[]
     found = find_num(root, num, store)
     if length(store) == 0
         throw(ArgumentError("Node not found"))
@@ -112,7 +112,7 @@ function find_binary(root::T, bin::String)::T where T<:GeneralNode
 end
 
 """
-    find_root(node::Node)::Node
+    find_root(node::T)::T where T <: GeneralNode
 
 Finds the root of tree indicated by Node.
 
@@ -120,7 +120,7 @@ Returns reference to root Node of the tree.
 
 * `node` : Node in Tree of interest.
 """
-function find_root(node::Node)::Node
+function find_root(node::T)::T where T <: GeneralNode
     while node.root == false
         node = node.mother
     end # while

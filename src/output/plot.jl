@@ -51,11 +51,11 @@ function plot(c::AbstractChains, ptype::Vector{Symbol}=[:trace, :density];
     ptype[i] == :mixeddensity ? p[i] = mixeddensityplot(c, indeces; args...) :
     p[i] = Plots.plot(c, indeces; ptype=ptype[i], size=(ilength * 500, 300), args...)
     if !fuse
-      if n != 1
+      display(p[i])
+      if n != 1 && i != n
         println("Press ENTER to draw next plot")
         readline(stdin)
       end # if
-      display(p[i])
     end # if
   end # for
   if fuse

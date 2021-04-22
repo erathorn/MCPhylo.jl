@@ -76,7 +76,7 @@ end # function
 In this function main parsing process happens, it uses recursive method to parse newick formated string
 """
 
-function parsing_newick_string(newick::String)
+function parsing_newick_string(newick::String)::FNode
     newick = replace(newick," "=> "")
 
     if  newick[end] == ';' #no need for semicolon
@@ -140,7 +140,7 @@ end #function
 
 
 """
-    ParseNewick(filename::String)::Array{AbstractNode, 1}
+    ParseNewick(filename::String)::Array{GeneralNode, 1}
 
 This function takes a filename as a String, and returns an array of trees(represented as Node objects).
 The file should solely consist of newick tree representations, separated by line.
@@ -151,10 +151,10 @@ Returns an Array of Nodes; each Node is the root of the tree represented by a ne
 
 * `filename` : name of file containing newick strings to parse.
 """
-function ParseNewick(filename::String)::Array{AbstractNode, 1}
+function ParseNewick(filename::String)::Array{GeneralNode, 1}
 
     list_of_trees = load_newick(filename)
-    list_of_newicks = Node[]
+    list_of_newicks = GeneralNode[]
     for content in list_of_trees
         if content == ""
             continue
