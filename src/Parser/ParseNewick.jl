@@ -154,7 +154,7 @@ Returns an Array of Nodes; each Node is the root of the tree represented by a ne
 function ParseNewick(filename::String)::Array{GeneralNode, 1}
 
     list_of_trees = load_newick(filename)
-    list_of_newicks = Node[]
+    list_of_newicks = GeneralNode[]
     for content in list_of_trees
         if content == ""
             continue
