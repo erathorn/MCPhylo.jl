@@ -137,33 +137,25 @@ function assign_mcmc_work(f::Function, lsts::AbstractArray, asdsf::Bool, ASDSF_f
   ll::Int64 = length(lsts)
   r_channels = [RemoteChannel(()->Channel{Vector{AbstractString}}(10)) for x in 1:ll]
   ASDSF_results::Vector{Vector{Float64}} = []
-    if ll <= nworkers()
-      results = Dict{Int64, Tuple{Chains, Model, ModelState}}()
-      @sync begin
-        if ll == nworkers() && asdsf
-          asdsf = false
-          @warn "Not enough workers to run ASDSF on-the-fly parallel to the chains. Generating chains normally without ASDSF"
-        end # if
-        if asdsf
-          n_trees::Int64 = floor((last(lsts[1][3]) - lsts[1][4]) / ASDSF_freq)
-          @async ASDSF_results = @fetchfrom workers()[end] ASDSF(r_channels, n_trees,
-                                                                 1:tree_dim, ASDSF_min_splits)
-        end # if
-        for (ind, list) in enumerate(lsts)
-          if asdsf
-            @async results[ind] =
-              @fetchfrom workers()[ind] f(list, ASDSF_freq, r_channels[ind])
-          else
-            @async results[ind] = @fetchfrom workers()[ind] f(list)
-          end # if/else
-        end # for
-      end # begin
-      close.(r_channels)
-      println(ASDSF_results)
-      return [results[i] for i in 1:ll], ASDSF_results
-    else
-      return map(f, lsts), [Float64[]]
-    end # if/else
+  results = Dict{Int64, Tuple{Chains, Model, ModelState}}()
+  @sync begin
+    for (ind, list) in enumerate(lsts)
+      if asdsf
+        @async results[ind] =
+          @fetchfrom default_worker_pool() f(list, ASDSF_freq, r_channels[ind])
+      else
+        @async results[ind] = @fetchfrom default_worker_pool() f(list)
+      end # if/else
+    end # for
+    if asdsf
+      n_trees::Int64 = floor((last(lsts[1][3]) - lsts[1][4]) / ASDSF_freq)
+      @async ASDSF_results = @fetchfrom default_worker_pool() ASDSF(r_channels, n_trees,
+                                                             1:tree_dim, ASDSF_min_splits)
+    end # if
+  end # begin
+  close.(r_channels)
+  println(ASDSF_results)
+  return [results[i] for i in 1:ll], ASDSF_results
 end # assign_mcmc_work
 
 ind2sub(dims, ind) = Tuple(CartesianIndices(dims)[ind])
