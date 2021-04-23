@@ -10,7 +10,7 @@ This function simulates additional draws from a model.
 
 * `iters` indicates the number of draws to simulate.
 
-* `verbose` controls whether to print porgress statements to the console.
+* `verbose` controls whether to print progress statements to the console.
 
 * `trees` indicates if the states of the model nodes describing tree structures should be stored as well.
 """
@@ -23,7 +23,7 @@ function mcmc(mc::ModelChains, iters::Integer; verbose::Bool=true,
 
   mm = deepcopy(mc.model)
   mc2 = mcmc_master!(mm, mm.iter .+ (1:iters), last(mc), thin, mc.chains,
-                     verbose, trees)
+                     verbose, trees, false, 0, 0.0)
   if mc2.names != mc.names
     mc2 = mc2[:, mc.names, :]
   end
@@ -103,11 +103,12 @@ function mcmc_master!(m::Model, window::UnitRange{Int}, burnin::Integer,
   sims::Array{Chains}  = Chains[results[k][1] for k in 1:K]
   model::Model = results[1][2]
   model.states = ModelState[results[k][3] for k in sortperm(chains)]
-  stats = Array{Float64,3}(undef, length(raw_stats[1]),1,K)
-  for i =1:K
-    stats[:, :, i] .= raw_stats[i]
+  stats = Array{Float64,2}(undef, length(raw_stats[1]), length(raw_stats))
+  for i = 1:length(raw_stats)
+    stats[:, i] = raw_stats[i] 
   end
   statnames::Vector{AbstractString} = ["asdsf"]
+  println(typeof(cat(sims..., dims=3).value))
   ModelChains(cat(sims..., dims=3), model, stats, statnames)
 end
 
