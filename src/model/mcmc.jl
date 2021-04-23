@@ -103,10 +103,14 @@ function mcmc_master!(m::Model, window::UnitRange{Int}, burnin::Integer,
   sims::Array{Chains}  = Chains[results[k][1] for k in 1:K]
   model::Model = results[1][2]
   model.states = ModelState[results[k][3] for k in sortperm(chains)]
-  stats = Array{Float64,2}(undef, length(raw_stats[1]), length(raw_stats))
-  for i = 1:length(raw_stats)
-    stats[:, i] = raw_stats[i] 
-  end
+  if ASDSF
+    stats = Array{Float64,2}(undef, length(raw_stats[1]), length(raw_stats))
+    for i = 1:length(raw_stats)
+      stats[:, i] = raw_stats[i]
+    end # for
+  else
+    stats = zeros(Float64, 1, 1)
+  end # if/else
   statnames::Vector{AbstractString} = ["asdsf"]
   println(typeof(cat(sims..., dims=3).value))
   ModelChains(cat(sims..., dims=3), model, stats, statnames)
