@@ -181,7 +181,6 @@ function asdsf_int(splitsQueue, splitsQueues, iter, tree_dims, ASDF_vals, freq,
     outer::Float64 = 0.0
     inner::Float64 = 0.0
     for (i, line) in enumerate(iter)
-        run == 1 && println(line)
         if mod(i, freq) == 0
             if !isnothing(r_channels)
                 line = [take!(rc) for rc in r_channels]
