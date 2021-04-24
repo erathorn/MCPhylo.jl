@@ -15,7 +15,8 @@ This function simulates additional draws from a model.
 * `trees` indicates if the states of the model nodes describing tree structures should be stored as well.
 """
 function mcmc(mc::ModelChains, iters::Integer; verbose::Bool=true,
-              trees::Bool=false)::ModelChains
+              trees::Bool=false, ASDSF::Bool=false, ASDSF_freq::Int64=100,
+              ASDSF_min_splits::Float64=0.1)::ModelChains
 
   thin = step(mc)
   last(mc) == div(mc.model.iter, thin) * thin ||
@@ -23,11 +24,10 @@ function mcmc(mc::ModelChains, iters::Integer; verbose::Bool=true,
 
   mm = deepcopy(mc.model)
   mc2 = mcmc_master!(mm, mm.iter .+ (1:iters), last(mc), thin, mc.chains,
-                     verbose, trees, false, 0, 0.0)
+                     verbose, trees, ASDSF, ASDSF_freq, ASDSF_min_splits)
   if mc2.names != mc.names
     mc2 = mc2[:, mc.names, :]
   end
-
   ModelChains(vcat(mc, mc2), mc2.model, cat(mc.stats, mc2.stats, dims=1), mc.stat_names)
 end
 
@@ -98,21 +98,12 @@ function mcmc_master!(m::Model, window::UnitRange{Int}, burnin::Integer,
     Any[m, states[k], window, burnin, thin, ChainProgress(frame, k, N), trees]
     for k in chains
   ]
-  results::Vector{Tuple{Chains, Model, ModelState}}, raw_stats::Vector{Vector{Float64}} = assign_mcmc_work(mcmc_worker!, lsts, ASDSF, ASDSF_freq, ASDSF_min_splits)
+  results::Vector{Tuple{Chains, Model, ModelState}}, stats::Array{Float64, 2} = assign_mcmc_work(mcmc_worker!, lsts, ASDSF, ASDSF_freq, ASDSF_min_splits)
 
   sims::Array{Chains}  = Chains[results[k][1] for k in 1:K]
   model::Model = results[1][2]
   model.states = ModelState[results[k][3] for k in sortperm(chains)]
-  if ASDSF
-    stats = Array{Float64,2}(undef, length(raw_stats[1]), length(raw_stats))
-    for i = 1:length(raw_stats)
-      stats[:, i] = raw_stats[i]
-    end # for
-  else
-    stats = zeros(Float64, 1, 1)
-  end # if/else
   statnames::Vector{AbstractString} = ["asdsf"]
-  println(typeof(cat(sims..., dims=3).value))
   ModelChains(cat(sims..., dims=3), model, stats, statnames)
 end
 
@@ -132,7 +123,7 @@ function mcmc_worker!(args::Vector, ASDSF_step::Int64=100,
   treenodes = Symbol[]
   for i in m.nodes
     if isa(i[2], TreeStochastic)
-      push!(treenodes ,i[1])
+      push!(treenodes, i[1])
     end
   end
 
