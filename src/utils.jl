@@ -120,14 +120,16 @@ end
 
 """
   assign_mcmc_work(f::Function, lsts::AbstractArray, asdsf::Bool,
-                   ASDSF_freq::Int64, ASDSF_min_splits::Float64)
-
+                   ASDSF_freq::Int64, ASDSF_min_splits::Float64
+                   )::Tuple{Vector{Tuple{Chains, Model, ModelState}}, Array{Float64, 2}}
 --- INTERNAL ---
 Starts the MCMC chain generation (on multiple workers if possible) and also
 starts parallel ASDSF - if possible and requested by the user.
 """
 function assign_mcmc_work(f::Function, lsts::AbstractArray, asdsf::Bool, ASDSF_freq::Int64,
-               ASDSF_min_splits::Float64)
+                          ASDSF_min_splits::Float64
+                          )::Tuple{Vector{Tuple{Chains, Model, ModelState}}, Array{Float64, 2}}
+  # count the number of trees per step per chain
   tree_dim::Int64 = 0
   for i in lsts[1][1].nodes
     if isa(i[2], TreeStochastic)
@@ -135,7 +137,7 @@ function assign_mcmc_work(f::Function, lsts::AbstractArray, asdsf::Bool, ASDSF_f
     end # if
   end # for
   ll::Int64 = length(lsts)
-  r_channels = [RemoteChannel(()->Channel{Vector{AbstractString}}(10)) for x in 1:ll]
+  r_channels = [RemoteChannel(()->Channel{Vector{AbstractString}}(100)) for x in 1:ll]
   ASDSF_results::Vector{Vector{Float64}} = []
   results = Dict{Int64, Tuple{Chains, Model, ModelState}}()
   @sync begin
@@ -154,8 +156,15 @@ function assign_mcmc_work(f::Function, lsts::AbstractArray, asdsf::Bool, ASDSF_f
     end # if
   end # begin
   close.(r_channels)
-  println(ASDSF_results)
-  return [results[i] for i in 1:ll], ASDSF_results
+  if asdsf
+    stats = Array{Float64,2}(undef, length(ASDSF_results[1]), length(ASDSF_results))
+    for i = 1:length(ASDSF_results)
+      stats[:, i] = ASDSF_results[i]
+    end # for
+  else
+    stats = zeros(Float64, 0, tree_dim)
+  end # if/else
+  return [results[i] for i in 1:ll], stats
 end # assign_mcmc_work
 
 ind2sub(dims, ind) = Tuple(CartesianIndices(dims)[ind])
