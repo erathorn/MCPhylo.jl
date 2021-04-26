@@ -19,15 +19,15 @@ const DMHVariate = SamplerVariate{DMHTune}
 
 #################### Sampler Constructor ####################
 
-function DMH(params::ElementOrVector{Symbol}, outer::Symbol,
-             inner::Symbol)
+function DMH(params::ElementOrVector{Symbol}, seed::AbstractArray,
+             m::Int64)
   samplerfx = function(model::Model, block::Integer)
     block = SamplingBlock(model, block, true)
 	targets = keys(model, :target, block)
     f = x -> logpdf!(block, x)
 	fp = (x, y) -> pseudologpdf!(block, x, y)
 	cl = x -> conditional_likelihood(block, x)
-    v = SamplerVariate(block, f, NullFunction(); args...)
+    v = SamplerVariate(block, seed, m)
 
     DMH_sample!(v::DMHVariate, f, fp, cl)
 
