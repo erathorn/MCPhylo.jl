@@ -62,7 +62,7 @@ function ASDSF(args::String...; freq::Int64=1, check_leaves::Bool=true,
     end # for
     iter = zip([eachline(arg) for arg in args]...)
     ASDF_vals = [zeros(Int(countlines(args[1]) / freq))]
-    asdsf_int(splitsQueue, splitsQueues, iter, 1, ASDF_vals, freq, check_leaves,
+    ASDSF_int(splitsQueue, splitsQueues, iter, 1, ASDF_vals, freq, check_leaves,
               min_splits, show_progress, basic=true)[1]
 end # ASDSF
 
@@ -88,7 +88,7 @@ function ASDSF(args::Vector{String}...; freq::Int64=1, check_leaves::Bool=true,
     end # for
     iter = zip(args...)
     ASDF_vals = [zeros(Int(length(iter) / freq))]
-    asdsf_int(splitsQueue, splitsQueues, iter, 1, ASDF_vals, freq, check_leaves,
+    ASDSF_int(splitsQueue, splitsQueues, iter, 1, ASDF_vals, freq, check_leaves,
               min_splits, show_progress; basic=true)[1]
 end # ASDSF
 
@@ -125,7 +125,7 @@ function ASDSF(model::ModelChains; freq::Int64=1, check_leaves::Bool=true,
     end # if
     iter = zip([trees[:,c] for c in 1:nchains]...)
     ASDF_vals::Vector{Vector{Float64}} = [zeros(Int(floor(length(iter) / freq))) for x in tree_dims]
-    asdsf_int(splitsQueue, splitsQueues, iter, tree_dims, ASDF_vals, freq,
+    ASDSF_int(splitsQueue, splitsQueues, iter, tree_dims, ASDF_vals, freq,
               check_leaves, min_splits, show_progress)
 end # ASDSF
 
@@ -156,20 +156,20 @@ function ASDSF(r_channels::Vector{RemoteChannel{Channel{Array{AbstractString,1}}
             push!(splitsQueues[j], Accumulator{Tuple{Set{String}, Set{String}}, Int64}())
         end # for
     end # for
-    asdsf_int(splitsQueue, splitsQueues, iter, tree_dims, ASDF_vals, 1, false,
+    ASDSF_int(splitsQueue, splitsQueues, iter, tree_dims, ASDF_vals, 1, false,
               min_splits, false; r_channels=r_channels)
 end # ASDSF
 
 
 """
-    asdsf_int(splitsQueue, splitsQueues, iter, tree_dims, ASDF_vals, freq,
+    ASDSF_int(splitsQueue, splitsQueues, iter, tree_dims, ASDF_vals, freq,
               check_leaves, min_splits, show_progress; r_channels=nothing
               )::Vector{Float64}
 
 --- INTERNAL ---
 Handles the computation of the Average Standard Deviation of Split Frequencies.
 """
-function asdsf_int(splitsQueue, splitsQueues, iter, tree_dims, ASDF_vals, freq,
+function ASDSF_int(splitsQueue, splitsQueues, iter, tree_dims, ASDF_vals, freq,
                    check_leaves, min_splits, show_progress; r_channels=nothing,
                    basic=false)::Vector{Vector{Float64}}
 
@@ -219,4 +219,4 @@ function asdsf_int(splitsQueue, splitsQueues, iter, tree_dims, ASDF_vals, freq,
         end # if
     end # for
     ASDF_vals
-end # asdsf_int
+end # ASDSF_int
