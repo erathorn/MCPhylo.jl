@@ -126,9 +126,10 @@ end
 Starts the MCMC chain generation (on multiple workers if possible) and also
 starts parallel ASDSF - if possible and requested by the user.
 """
-function assign_mcmc_work(f::Function, lsts::AbstractArray, asdsf::Bool, ASDSF_freq::Int64,
-                          ASDSF_min_splits::Float64
+function assign_mcmc_work(f::Function, lsts::AbstractArray, asdsf::Bool,
+                          ASDSF_freq::Int64, ASDSF_min_splits::Float64
                           )::Tuple{Vector{Tuple{Chains, Model, ModelState}}, Array{Float64, 2}, Vector{AbstractString}}
+
   # count the number of trees per step per chain
   tree_dim::Int64 = 0
   for i in lsts[1][1].nodes
@@ -137,10 +138,13 @@ function assign_mcmc_work(f::Function, lsts::AbstractArray, asdsf::Bool, ASDSF_f
     end # if
   end # for
   ll::Int64 = length(lsts)
+  # set up remote channels for communication across workers for ASDSF-on-the-fly
   r_channels = [RemoteChannel(()->Channel{Vector{AbstractString}}(100)) for x in 1:ll]
-  ASDSF_results::Vector{Vector{Float64}} = []
+  ASDSF_vals::Vector{Vector{Float64}} = []
   results = Dict{Int64, Tuple{Chains, Model, ModelState}}()
+  # @sync and @async asure parallel computation
   @sync begin
+    # assign each chain a free worker
     for (ind, list) in enumerate(lsts)
       if asdsf
         @async results[ind] =
@@ -149,17 +153,17 @@ function assign_mcmc_work(f::Function, lsts::AbstractArray, asdsf::Bool, ASDSF_f
         @async results[ind] = @fetchfrom default_worker_pool() f(list)
       end # if/else
     end # for
+    # assign a free worker the ASDSF computation
     if asdsf
       n_trees::Int64 = floor((last(lsts[1][3]) - lsts[1][4]) / ASDSF_freq)
-      @async ASDSF_results = @fetchfrom default_worker_pool() ASDSF(r_channels, n_trees,
-                                                             1:tree_dim, ASDSF_min_splits)
+      @async ASDSF_vals = @fetchfrom default_worker_pool() ASDSF(r_channels, n_trees, 1:tree_dim, ASDSF_min_splits)
     end # if
   end # begin
   close.(r_channels)
   if asdsf
-    stats = Array{Float64,2}(undef, length(ASDSF_results[1]), length(ASDSF_results))
-    for i = 1:length(ASDSF_results)
-      stats[:, i] = ASDSF_results[i]
+    stats = Array{Float64,2}(undef, length(ASDSF_vals[1]), length(ASDSF_vals))
+    for i = 1:length(ASDSF_vals)
+      stats[:, i] = ASDSF_vals[i]
     end # for
   else
     stats = zeros(Float64, 0, tree_dim)
