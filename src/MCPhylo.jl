@@ -441,7 +441,7 @@ export
   RWM, RWMVariate,
   Slice, SliceMultivariate, SliceUnivariate,
   SliceSimplex, SliceSimplexVariate,
-  DMH, DMHVariate
+  DMH, DMHVariate,
   PNUTS, PNUTSVariate,
   Empirical, EmpiricalVariate
 
