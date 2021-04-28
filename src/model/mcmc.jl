@@ -103,7 +103,7 @@ function mcmc_master!(m::Model, window::UnitRange{Int}, burnin::Integer,
   sims::Array{Chains}  = Chains[results[k][1] for k in 1:K]
   model::Model = results[1][2]
   model.states = ModelState[results[k][3] for k in sortperm(chains)]
-  statnames::Vector{AbstractString} = [string(x) for x in keys(sim.model, :block)[1:end-1]]
+  statnames::Vector{AbstractString} = ASDSF ? [string("asdsf_", string(x)) for x in keys(m, :block)[1:end-1]] : []
   ModelChains(cat(sims..., dims=3), model, stats, statnames)
 end
 
