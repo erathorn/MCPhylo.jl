@@ -128,7 +128,7 @@ starts parallel ASDSF - if possible and requested by the user.
 """
 function assign_mcmc_work(f::Function, lsts::AbstractArray, asdsf::Bool, ASDSF_freq::Int64,
                           ASDSF_min_splits::Float64
-                          )::Tuple{Vector{Tuple{Chains, Model, ModelState}}, Array{Float64, 2}}
+                          )::Tuple{Vector{Tuple{Chains, Model, ModelState}}, Array{Float64, 2}, Vector{AbstractString}}
   # count the number of trees per step per chain
   tree_dim::Int64 = 0
   for i in lsts[1][1].nodes
@@ -164,7 +164,8 @@ function assign_mcmc_work(f::Function, lsts::AbstractArray, asdsf::Bool, ASDSF_f
   else
     stats = zeros(Float64, 0, tree_dim)
   end # if/else
-  return [results[i] for i in 1:ll], stats
+  statnames::Vector{AbstractString} = asdsf ? [string("asdsf_", string(x)) for x in keys(lsts[1][1], :block)[1:end-1]] : []
+  return [results[i] for i in 1:ll], stats, statnames
 end # assign_mcmc_work
 
 ind2sub(dims, ind) = Tuple(CartesianIndices(dims)[ind])
