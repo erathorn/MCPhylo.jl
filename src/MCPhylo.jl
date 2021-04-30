@@ -213,6 +213,11 @@ struct ModelState
   tune::Vector{Any}
 end
 
+struct SimulationParameters
+  asdsf::Bool
+  freq::Float64
+  min_splits::Float64
+end
 
 mutable struct Model
   nodes::Dict{Symbol, Any}
@@ -223,6 +228,7 @@ mutable struct Model
   hasinputs::Bool
   hasinits::Bool
   likelihood::Float64
+  sim_params::SimulationParameters
 end
 
 
@@ -369,6 +375,7 @@ export
   ScalarLogical,
   ScalarStochastic,
   ScalarVariate,
+  SimulationParameters,
   Stochastic,
   VectorVariate
 
