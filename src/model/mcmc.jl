@@ -22,6 +22,8 @@ function mcmc(mc::ModelChains, iters::Integer; verbose::Bool=true,
     throw(ArgumentError("chain is missing its last iteration"))
 
   mm = deepcopy(mc.model)
+  # temporary fix
+  mm.sim_params.asdsf = false
   mc2 = mcmc_master!(mm, mm.iter .+ (1:iters), last(mc), thin, mc.chains,
                      verbose, trees)
   if mc2.names != mc.names
@@ -95,7 +97,7 @@ function mcmc_master!(m::Model, window::UnitRange{Int}, burnin::Integer,
     for k in chains
   ]
   results::Vector{Tuple{Chains, Model, ModelState}}, stats::Array{Float64, 2}, statnames::Vector{AbstractString} = assign_mcmc_work(mcmc_worker!, lsts)
-  
+
   sims::Array{Chains}  = Chains[results[k][1] for k in 1:K]
   model::Model = results[1][2]
   model.states = ModelState[results[k][3] for k in sortperm(chains)]
