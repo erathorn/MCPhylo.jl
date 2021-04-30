@@ -28,7 +28,8 @@ model =  Model(
     df2 = Stochastic(3, (mtree2, mypi) ->  PhyloDist(mtree2, mypi, [1.0], [1.0], Restriction), false, false),
     mypi = Stochastic(1, () -> Dirichlet(2,1)),
     mtree = Stochastic(Node(), () -> CompoundDirichlet(1.0, 1.0, 0.100, 1.0), true),
-    mtree2 = Stochastic(Node(), () -> CompoundDirichlet(1.0, 1.0, 0.100, 1.0), true)
+    mtree2 = Stochastic(Node(), () -> CompoundDirichlet(1.0, 1.0, 0.100, 1.0), true),
+    params = SimulationParameters(true, 50, 0.1)
      )
 # intial model values
 inits = [ Dict{Symbol, Union{Any, Real}}(
@@ -62,7 +63,7 @@ scheme = [MCPhylo.PNUTS(:mtree, target=0.7, targetNNI=1),
 
 setsamplers!(model, scheme)
 sim = mcmc(model, my_data, inits, 1000, burnin=100, thin=5, chains=2,
-           trees=true, ASDSF=true, ASDSF_freq=50)
+           trees=true)
 
 sim2 = mcmc(sim, 1000, trees=true)
 
