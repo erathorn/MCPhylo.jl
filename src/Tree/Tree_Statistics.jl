@@ -42,6 +42,24 @@ end # nodnums2names
 
 
 """
+    calculate_convergence(sm::SimulationParameters, args...)::Vector{Vector{Float64}}
+
+Function that checks which
+"""
+function calculate_convergence(sm::SimulationParameters, args...)::Vector{Vector{Float64}}
+    if sm.asdsf
+        ASDSF_vals = ASDSF(args..., sm.min_splits)
+    end
+    #=
+    if sm.psrf
+        calculate_psrf(args...)
+    end
+    =#
+    return ASDSF_vals
+end
+
+
+"""
     ASDSF(args::String...; freq::Int64=1, check_leaves::Bool=true,
           min_splits::Float64=0.1, show_progress::Bool=true)::Vector{Float64}
 
