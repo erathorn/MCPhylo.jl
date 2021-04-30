@@ -215,7 +215,7 @@ end
 
 struct SimulationParameters
   asdsf::Bool
-  freq::Float64
+  freq::Int64
   min_splits::Float64
 end
 
