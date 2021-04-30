@@ -15,8 +15,7 @@ This function simulates additional draws from a model.
 * `trees` indicates if the states of the model nodes describing tree structures should be stored as well.
 """
 function mcmc(mc::ModelChains, iters::Integer; verbose::Bool=true,
-              trees::Bool=false, ASDSF::Bool=false, ASDSF_freq::Int64=100,
-              ASDSF_min_splits::Float64=0.1)::ModelChains
+              trees::Bool=false)::ModelChains
 
   thin = step(mc)
   last(mc) == div(mc.model.iter, thin) * thin ||
@@ -24,7 +23,7 @@ function mcmc(mc::ModelChains, iters::Integer; verbose::Bool=true,
 
   mm = deepcopy(mc.model)
   mc2 = mcmc_master!(mm, mm.iter .+ (1:iters), last(mc), thin, mc.chains,
-                     verbose, trees, ASDSF, ASDSF_freq, ASDSF_min_splits)
+                     verbose, trees)
   if mc2.names != mc.names
     mc2 = mc2[:, mc.names, :]
   end
@@ -59,11 +58,10 @@ Simulate MCMC draws from the model `m`.
 function mcmc(m::Model, inputs::Dict{Symbol},
               inits::Vector{V} where V<:Dict{Symbol},
               iters::Integer; burnin::Integer=0, thin::Integer=1,
-              chains::Integer=1, verbose::Bool=true, trees::Bool=false,
-              ASDSF::Bool=false, ASDSF_freq::Int64=100,
-              ASDSF_min_splits::Float64=0.1)::ModelChains
+              chains::Integer=1, verbose::Bool=true, trees::Bool=false
+              )::ModelChains
 
-  ASDSF && !trees &&
+  m.sim_params.asdsf && !trees &&
    throw(ArgumentError("ASDSF can not be calculated without trees"))
   iters > burnin ||
     throw(ArgumentError("burnin is greater than or equal to iters"))
@@ -74,15 +72,13 @@ function mcmc(m::Model, inputs::Dict{Symbol},
   setinputs!(mm, inputs)
   setinits!(mm, inits[1:chains])
   mm.burnin = burnin
-  mcmc_master!(mm, 1:iters, burnin, thin, 1:chains, verbose, trees, ASDSF,
-               ASDSF_freq, ASDSF_min_splits)
+  mcmc_master!(mm, 1:iters, burnin, thin, 1:chains, verbose, trees)
 end
 
 
 function mcmc_master!(m::Model, window::UnitRange{Int}, burnin::Integer,
                       thin::Integer, chains::AbstractArray{Int}, verbose::Bool,
-                      trees::Bool, ASDSF::Bool, ASDSF_freq::Int64,
-                      ASDSF_min_splits::Float64)::ModelChains
+                      trees::Bool)::ModelChains
 
   states::Vector{ModelState} = m.states
   m.states = ModelState[]
@@ -98,8 +94,8 @@ function mcmc_master!(m::Model, window::UnitRange{Int}, burnin::Integer,
     Any[m, states[k], window, burnin, thin, ChainProgress(frame, k, N), trees]
     for k in chains
   ]
-  results::Vector{Tuple{Chains, Model, ModelState}}, stats::Array{Float64, 2}, statnames::Vector{AbstractString} = assign_mcmc_work(mcmc_worker!, lsts, ASDSF, ASDSF_freq, ASDSF_min_splits)
-
+  results::Vector{Tuple{Chains, Model, ModelState}}, stats::Array{Float64, 2}, statnames::Vector{AbstractString} = assign_mcmc_work(mcmc_worker!, lsts)
+  
   sims::Array{Chains}  = Chains[results[k][1] for k in 1:K]
   model::Model = results[1][2]
   model.states = ModelState[results[k][3] for k in sortperm(chains)]
