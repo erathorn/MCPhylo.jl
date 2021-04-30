@@ -143,29 +143,25 @@ function assign_mcmc_work(f::Function, lsts::AbstractArray, asdsf::Bool,
   # set up remote channels for communication across workers for ASDSF-on-the-fly
   r_channels = [RemoteChannel(()->Channel{Vector{AbstractString}}(100)) for x in 1:ll]
   ASDSF_vals::Vector{Vector{Float64}} = []
+  n_trees::Int64 = asdsf ? floor((last(lsts[1][3]) - lsts[1][4]) / ASDSF_freq) : 0
   results = Dict{Int64, Tuple{Chains, Model, ModelState}}()
-  if nworkers() > 0
+  if nworkers() > 1
     # @sync and @async asure parallel computation
     @sync begin
       # assign each chain a free worker
       for (ind, list) in enumerate(lsts)
-        @async results[ind] = asdsf ? @fetchfrom default_worker_pool() f(list, ASDSF_freq, r_channels[ind]) :
-                                      @fetchfrom default_worker_pool() f(list)
+        @async results[ind] = asdsf ? (@fetchfrom default_worker_pool() f(list, ASDSF_freq, r_channels[ind])) :
+                                      (@fetchfrom default_worker_pool() f(list))
       end # for
       # assign a free worker the ASDSF computation
-      if asdsf
-        n_trees::Int64 = floor((last(lsts[1][3]) - lsts[1][4]) / ASDSF_freq)
-        @async ASDSF_vals = @fetchfrom default_worker_pool() ASDSF(r_channels, n_trees, 1:tree_dim, ASDSF_min_splits)
-      end # if
+      @async asdsf && append!(ASDSF_vals, @fetchfrom default_worker_pool() ASDSF(r_channels, n_trees, 1:tree_dim, ASDSF_min_splits))
     end # begin
   else
     for (ind, list) in enumerate(lsts)
       results[ind] = asdsf ? f(list, ASDSF_freq, r_channels[ind]) : f(list)
     end # for
-    if asdsf
-      n_trees::Int64 = floor((last(lsts[1][3]) - lsts[1][4]) / ASDSF_freq)
-      ASDSF_vals = ASDSF(r_channels, n_trees, 1:tree_dim, ASDSF_min_splits)
-    end # if
+    asdsf && append!(ASDSF_vals, ASDSF(r_channels, n_trees, 1:tree_dim, ASDSF_min_splits))
+  end # if/else
   close.(r_channels)
   if asdsf
     stats = Array{Float64,2}(undef, length(ASDSF_vals[1]), length(ASDSF_vals))
