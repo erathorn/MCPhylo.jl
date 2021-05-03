@@ -54,7 +54,7 @@ function relistlength_sub(d::Distribution, s::AbstractTreeStochastic, x::T) wher
   relistlength(d, x)
 end
 
-function relistlength_sub(d::Distribution, s::AbstractTreeStochastic, x::AbstractArray) where T<:GeneralNode
+function relistlength_sub(d::Distribution, s::AbstractTreeStochastic, x::AbstractArray{T}) where T<:GeneralNode
   relistlength(d, x[1])
 end
 

@@ -219,17 +219,12 @@ function gradlogpdf!(m::Model, x::N, block::Integer=0,transform::Bool=false)::Tu
   targets = keys(m, :target, block)
   m[params] = relist(m, x, params, transform)
   lp = logpdf(m, setdiff(params, targets), transform)
-
-
-  # use thread parallelism
+  
   # likelihood
-  lik_res = @spawn gradlogpdf(m, targets)
+  v, grad = gradlogpdf(m, targets)
 
   # prior
   vp, gradp =  gradlogpdf(m[params[1]], x)
-
-  # get results from threads
-  v, grad = fetch(lik_res)
 
   vp+v, gradp.+grad
 end
