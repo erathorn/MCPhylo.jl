@@ -43,8 +43,9 @@ Recipe that handles plotting of MCPhylo Trees. Takes the root node as input.
     x, y = Float64[], Float64[]
     for node ∈ pre_order(root)
         if !node.root
-            push!(x, d[node.mother], d[node.mother], d[node], NaN)
-            push!(y, h[node.mother], h[node], h[node], NaN)
+            m = get_mother(node)
+            push!(x, d[m], d[m], d[node], NaN)
+            push!(y, h[m], h[node], h[node], NaN)
         end
     end
 

@@ -77,3 +77,11 @@ end
 
     @test_throws ArgumentError MCPhylo.check_leafsets(trees)
 end
+
+@testset "mother" begin
+    tree1 = MCPhylo.parsing_newick_string("(((A,B)F,C)G,(D,E)H)R;")
+    MCPhylo.number_nodes!(tree1)
+    MCPhylo.set_binary!(tree1)
+    @test_throws ArgumentError MCPhylo.get_mother(find_by_name(tree1, "R"))
+    @test MCPhylo.get_mother(find_by_name(tree1, "A")).name == "F"
+end

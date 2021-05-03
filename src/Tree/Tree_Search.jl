@@ -122,7 +122,7 @@ Returns reference to root Node of the tree.
 """
 function find_root(node::T)::T where T <: GeneralNode
     while node.root == false
-        node = node.mother
+        node = get_mother(node)
     end # while
     return node
 end

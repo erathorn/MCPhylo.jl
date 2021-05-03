@@ -89,7 +89,7 @@ function delete_node!(node::T)::Nothing where T<:GeneralNode
     if node.root == true
         throw(ArgumentError("Cannot remove root node"))
     end
-    mother = node.mother
+    mother = get_mother(node)
     for child in node.children
         add_child!(mother, child, findfirst(x -> x == node, mother.children))
     end
@@ -262,10 +262,11 @@ function force_ultrametric!(root::T) where T<:GeneralNode
     nblv = zeros(Float64,length(po))
     for node in level_order(root)
         if node.root != true
-            nv = (tl - node2dist[node.mother.num])/node2max_depth[node.num]
+            m = get_mother(node)
+            nv = (tl - node2dist[m.num])/node2max_depth[node.num]
 
             nblv[node.num] = nv
-            node2dist[node.num] = nv + node2dist[node.mother.num]
+            node2dist[node.num] = nv + node2dist[m.num]
         end # if
     end # for
 
@@ -369,7 +370,7 @@ function get_path(ancestor::T, descendant::T)::Vector{Int64} where T<:GeneralNod
     path::Vector{Int64} = []
     while descendant.num != ancestor.num
         push!(path, descendant.num)
-        descendant = descendant.mother
+        descendant = get_mohter(descendant)
     end
     path
 end
@@ -389,7 +390,7 @@ function path_length(ancestor::T, descendant::T)::Float64  where T<:GeneralNode
 
     while descendant != ancestor
         l += descendant.inc_length
-        descendant = descendant.mother
+        descendant = get_mother(descendant)
     end # while
     return l
 end #function path_length
@@ -402,7 +403,8 @@ This function gets the sister of `node`. It does so by looking for the respectiv
 binary representation of the sister.
 """
 @inline function get_sister(node::T)::T  where T<:GeneralNode
-    node.mother.children[findfirst(y-> y!=node, node.mother.children)]
+    m::T = get_mother(node)
+    m.children[findfirst(y-> y!=node, m.children)]
 end # function
 
 
@@ -413,6 +415,7 @@ This function gets the mother of `node`. It does so by looking for the respectiv
 binary representation of the mother node.
 """
 @inline function get_mother(node::T)::T  where T <: GeneralNode
+    ismissing(node.mother) && throw(ArgumentError("Node has no mother"))
     return node.mother
 end # function
 

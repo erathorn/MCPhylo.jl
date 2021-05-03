@@ -118,7 +118,7 @@ function fels_grad(tree_postorder::Vector{N}, data::Array{Float64,4},
     ptg::Array{Float64,2} = similar(mutationArray[:, :, 1, 1])
 
     @inbounds @views for node in reverse(tree_postorder)[2:end]
-           mother::N = node.mother
+           mother::N = get_mother(node)
            @inbounds @views for r in 1:Nrates
                pre_order_partial[:, :, r, node.num] .= pre_order_partial[:, :, r, mother.num]
                @inbounds @views for child in mother.children

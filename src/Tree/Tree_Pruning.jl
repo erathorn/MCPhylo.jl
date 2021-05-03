@@ -62,7 +62,7 @@ function prune_tree!(root::T, nodes::Vector{T})::Nothing where T<:GeneralNode
         throw(ArgumentError("trying to prune root, please set root to nothing instead"))
     else
         for node in nodes
-            remove_child!(node.mother, node)
+            remove_child!(get_mother(node), node)
         end
     end
 end

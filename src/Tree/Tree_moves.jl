@@ -268,7 +268,7 @@ function reroot(root::T, new_root::String)::T where T<:GeneralNode
     new_tree = deepcopy(root)
     root_node = find_by_name(new_tree, new_root)
 
-    mother = root_node.mother
+    mother = get_mother(root_node)
 
     recursive_invert(mother, root_node)
 
@@ -289,7 +289,7 @@ function recursive_invert(old_mother::T, old_daughter::T)::T where T
         add_child!(od, old_mother)
         return od
     end
-        od1 = recursive_invert(old_mother.mother, old_mother)
+        od1 = recursive_invert(get_mother(old_mother), old_mother)
         od = remove_child!(od1, old_daughter)
         add_child!(od, od1)
         return od
@@ -358,13 +358,13 @@ function perform_spr(root::T) where T <: GeneralNode
     available = [n.num for n in post_order(root)]
     n = rand(available)
     tn::T = find_num(root, n) #this is the root of the subtree which will be moved
-    while tn.root || tn.mother.root
+    while tn.root || get_mother(tn).root
         n = rand(available)
         tn = find_num(root, n) #this is the root of the subtree which will be moved
     end # while
-    tn_mother = tn.mother
+    tn_mother = get_mother(tn)
     tn_sister = get_sister(tn)
-    tn_gm = tn_mother.mother
+    tn_gm = get_mother(tn_mother)
     remove_child!(tn_gm, tn_mother)
     remove_child!(tn_mother, tn_sister)
     add_child!(tn_gm, tn_sister)
@@ -376,7 +376,7 @@ function perform_spr(root::T) where T <: GeneralNode
         n = rand(available)
         target = find_num(root, n)
     end # while
-    target_mother = target.mother
+    target_mother = get_mother(target)
     remove_child!(target_mother, target)
     add_child!(target_mother, tn_mother)
     add_child!(tn_mother, target)

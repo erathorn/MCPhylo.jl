@@ -312,7 +312,7 @@ function find_common_clusters(ref_tree::T, tree::T) where T<:GeneralNode
                                     append!(cluster, clusters[child])
             end # for
             clusters[ref_node] = cluster
-            if ref_node.root == true || ref_node == ref_node.mother.children[1]
+            if ref_node.root == true || ref_node == get_mother(ref_node).children[1]
                 last_index = leaves_dict[last(cluster)][1]
                 first_index = leaves_dict[first(cluster)][1]
                 cluster_dict[(first_index, last_index)] = last_index
@@ -489,8 +489,8 @@ function check_node!(ref_node::T, leaves::Vector{T},
             try marked_nodes[ref_node.num] = true catch; end # try
             return
         end # if
-        !xleft.root && delete!(left_path, node_depth(xleft.mother))
-        !xright.root && delete!(right_path, node_depth(xright.mother))
+        !xleft.root && delete!(left_path, node_depth(get_mother(xleft)))
+        !xright.root && delete!(right_path, node_depth(get_mother(xright)))
         depth_left = node_depth(xleft)
         depth_right = node_depth(xright)
         depth = depth_left >= depth_right
@@ -505,15 +505,15 @@ function check_node!(ref_node::T, leaves::Vector{T},
                 d = left_path[depth_right + 1]
                 e = right_path[depth_right + 1]
             end # if/else
-        elseif p1.mother == p2.mother
-            r = p1.mother
+        elseif get_mother(p1) == get_mother(p2)
+            r = get_mother(p1)
             depth ? d = p1 : d = p2
             depth ? e = p2 : e = p1
         else
             try marked_nodes[ref_node.num] = true catch; end # try
             return
         end # if/else
-        if !(node_depth(d.mother) <= node_depth(r) && node_depth(e.mother) <= node_depth(r))
+        if !(node_depth(get_mother(d)) <= node_depth(r) && node_depth(get_mother(e)) <= node_depth(r))
             try marked_nodes[ref_node.num] = true catch; return end # try
         else
             try marked_nodes[ref_node.num] = false
@@ -671,9 +671,9 @@ function x_left(node::T)::Tuple{T, Vector{T}} where T<:GeneralNode
         if node.root
             return node, path
         else
-            mother = node.mother
+            mother = get_mother(node)
             if mother.children[1] != node
-                push!(path, node.mother)
+                push!(path, mother)
                 return node, path
             end # if
         node = mother
@@ -696,9 +696,9 @@ function x_right(node::T)::Tuple{T, Vector{T}} where T<:GeneralNode
         if node.root
             return node, path
         else
-            mother = node.mother
+            mother = get_mother(node)
             if mother.children[end] != node
-                push!(path, node.mother)
+                push!(path, mother)
                 return node, path
             end # if
         node = mother
