@@ -80,6 +80,7 @@ function ASDSF(args::String...; freq::Int64=1, check_leaves::Bool=true,
     end # for
     iter = zip([eachline(arg) for arg in args]...)
     ASDF_vals = [zeros(Int(countlines(args[1]) / freq))]
+    # tree_dims is hardcoded to 1 because there are no multiple dims in files
     ASDSF_int(splitsQueue, splitsQueues, iter, 1, ASDF_vals, freq, check_leaves,
               min_splits, show_progress, basic=true)[1]
 end # ASDSF
@@ -106,6 +107,7 @@ function ASDSF(args::Vector{String}...; freq::Int64=1, check_leaves::Bool=true,
     end # for
     iter = zip(args...)
     ASDF_vals = [zeros(Int(length(iter) / freq))]
+    # tree_dims is hardcoded to 1 because there are no multiple dims in Vectors
     ASDSF_int(splitsQueue, splitsQueues, iter, 1, ASDF_vals, freq, check_leaves,
               min_splits, show_progress; basic=true)[1]
 end # ASDSF
