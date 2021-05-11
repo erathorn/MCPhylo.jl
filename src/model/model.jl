@@ -20,9 +20,7 @@ Returns a `Model` type object.
 
 """
 function Model(; iter::Integer=0, burnin::Integer=0,
-               samplers::Vector{Sampler}=Sampler[],
-               params::SimulationParameters=SimulationParameters(false, 0, 0.0),
-               nodes...)
+               samplers::Vector{Sampler}=Sampler[], nodes...)
 
   nodedict = Dict{Symbol, Any}()
   for (key, value) in nodes
@@ -32,7 +30,7 @@ function Model(; iter::Integer=0, burnin::Integer=0,
     node.symbol = key
     nodedict[key] = node
   end
-  m = Model(nodedict, Sampler[], ModelState[], iter, burnin, false, false, -Inf64, params)
+  m = Model(nodedict, Sampler[], ModelState[], iter, burnin, false, false, -Inf64)
   dag = ModelGraph(m)
   dependentkeys = keys(m, :dependent)
   terminalkeys = keys(m, :stochastic)

@@ -225,7 +225,6 @@ mutable struct Model
   hasinputs::Bool
   hasinits::Bool
   likelihood::Float64
-  sim_params::SimulationParameters
 end
 
 
@@ -254,6 +253,7 @@ struct ModelChains <: AbstractChains
   tree_names::Vector{AbstractString}
   stats::Array{Float64, 2}
   stat_names::Vector{AbstractString}
+  sim_params::SimulationParameters
 end
 
 
