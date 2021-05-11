@@ -104,3 +104,21 @@ function SimulationParameters(; asdsf::Bool=false, freq::Int64=50,
                               min_splits::Float64=0.1)
   SimulationParameters(asdsf, freq, min_splits)
 end
+
+
+"""
+    Base.show(io::IO, sp::SimulationParameters)
+
+Prints the parameters of the Simulation.
+
+* `io` : IO stream on which to print.
+
+* `sp` : simulation parameters to print.
+"""
+
+function Base.show(io::IO, sp::SimulationParameters; short::Bool=false)
+  !short && print(io, "Object of type \"SimulationParameters\"\n\n")
+  println(io, "ASDSF = $(sp.asdsf)")
+  println(io, "ASDSF Frequency = $(sp.freq)")
+  println(io, "ASDSF minimal splits threshold = $(sp.min_splits)")
+end
