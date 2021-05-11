@@ -13,7 +13,7 @@
 # These functions are safe, in the sense that they properly exit if the node is
 # not found.
 #"""
-for (sym, my_type) in [(:binary, :String), (:name, :String), (:root ,:Bool), (:num, :Int64)]
+for (sym, my_type) in [(:binary, :String), (:name, :AbstractString), (:root ,:Bool), (:num, :Int64)]
     # extend the list to look for more fields in the node
     @eval function $(Symbol(string("find_by_$sym")))(tree::T, identifier::$my_type)::T  where T<:GeneralNode
         # create each function and make it so it only accepts the correct type
