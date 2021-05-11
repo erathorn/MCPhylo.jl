@@ -27,8 +27,8 @@ function nodnums2names(bps::Vector{Tuple}, tree::GeneralNode
         bipartition = []
         for part in bipart
             myset = Set{String}()
-            for num in part
-                no = find_num(tree, num)
+            for str in part
+                no = find_lca(tree, split(str, ","))
                 if no.nchild == 0
                     push!(myset, no.name)
                 end # if
