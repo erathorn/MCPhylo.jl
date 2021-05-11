@@ -116,9 +116,9 @@ Prints the parameters of the Simulation.
 * `sp` : simulation parameters to print.
 """
 
-function Base.show(io::IO, sp::SimulationParameters)
-  print(io, "Object of type \"SimulationParameters\"\n\n")
-  println("ASDSF = $(sp.asdsf)")
-  println("ASDSF Frequency = $(sp.freq)")
-  println("ASDSF minimal splits threshold = $(sp.min_splits)")
+function Base.show(io::IO, sp::SimulationParameters; short::Bool=false)
+  !short && print(io, "Object of type \"SimulationParameters\"\n\n")
+  println(io, "ASDSF = $(sp.asdsf)")
+  println(io, "ASDSF Frequency = $(sp.freq)")
+  println(io, "ASDSF minimal splits threshold = $(sp.min_splits)")
 end
