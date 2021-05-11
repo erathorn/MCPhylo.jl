@@ -83,3 +83,24 @@ function setsamplers!(m::Model, samplers::Vector{V} where V<:Sampler)
   end
   m
 end
+
+
+"""
+    SimulationParameters(; asdsf::Bool=false, freq::Int64=50, min_splits::Float64=0.1)
+
+Construct a `SimulationParameters` object that defines the simulation parameters
+for a MCMC simulation.
+
+Returns a `SimulationParameters` type object.
+
+* `asdsf`: controls if ASDSF should be calculated
+
+* `freq`: at which interval trees are used for ASDSF
+
+* `min_splits`: controls the default minimal splits threshold
+
+"""
+function SimulationParameters(; asdsf::Bool=false, freq::Int64=50,
+                              min_splits::Float64=0.1)
+  SimulationParameters(asdsf, freq, min_splits)
+end
