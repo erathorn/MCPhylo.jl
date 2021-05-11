@@ -20,11 +20,8 @@ my_data = Dict{Symbol, Any}(
   :nsites => size(df)[2],
 );
 
-
-
 # model setup
 model =  Model(
-    params = SimulationParameters(true, 50, 0.1),
     df = Stochastic(3, (mtree, mypi) ->  PhyloDist(mtree, mypi, [1.0], [1.0], Restriction), false, false),
     df2 = Stochastic(3, (mtree2, mypi) ->  PhyloDist(mtree2, mypi, [1.0], [1.0], Restriction), false, false),
     mypi = Stochastic(1, () -> Dirichlet(2,1)),
@@ -61,9 +58,11 @@ scheme = [MCPhylo.PNUTS(:mtree, target=0.7, targetNNI=1),
            SliceSimplex(:mypi),
           ]
 
+params = SimulationParameters(asdsf=true)
+
 setsamplers!(model, scheme)
 sim = mcmc(model, my_data, inits, 1000, burnin=100, thin=5, chains=2,
-           trees=true)
+           trees=true, params)
 
 sim2 = mcmc(sim, 1000, trees=true)
 
