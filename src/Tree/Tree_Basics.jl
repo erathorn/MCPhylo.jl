@@ -619,11 +619,12 @@ function internal_external(root::T)::Vector{Int64}  where T<:GeneralNode
 end
 
 
-function find_lca(tree::T, node_l::Array{String, 1})::T  where T<:GeneralNode
+function find_lca(tree::T, node_l::Vector{S})::T  where {T<:GeneralNode, S<:AbstractString}
     find_lca(tree, [find_by_name(tree, i) for i in node_l])
 end
 
-function find_lca(tree::T, node_l::Array{T})::T  where T<:GeneralNode
+
+function find_lca(tree::T, node_l::Vector{T})::T  where T<:GeneralNode
     @assert length(node_l) > 0
     if length(node_l) === 1
         return node_l[1]
