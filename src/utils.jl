@@ -130,10 +130,11 @@ starts parallel ASDSF - if possible and requested by the user.
 function assign_mcmc_work(f::Function, lsts::AbstractArray
                           )::Tuple{Vector{Tuple{Chains, Model, ModelState}}, Array{Float64, 2}, Vector{AbstractString}}
 
-  # count the number of trees per step per chain
-  params = lsts[1][1].sim_params
+
+  params = lsts[1][end]
   ASDSF::Bool = params.asdsf
   statnames::Vector{AbstractString} = []
+  # count the number of trees per step per chain
   tree_dim::Int64 = 0
   for i in lsts[1][1].nodes
     if isa(i[2], TreeStochastic)
