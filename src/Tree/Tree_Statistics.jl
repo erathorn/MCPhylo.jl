@@ -12,35 +12,6 @@ function parse_and_number(treestring::S)::FNode where S<:AbstractString
     p_tree2
 end # parse_and_number
 
-
-"""
-    nodnums2names(bps::Vector{Tuple}, tree::GeneralNode)
-        ::Vector{Tuple{Set{String}, Set{String}}}
-
---- INTERNAL ---
-"""
-function nodnums2names(bps::Vector{Tuple}, tree::GeneralNode
-                      )::Vector{Tuple{Set{String}, Set{String}}}
-
-    treebps = Vector{Tuple{Set{String}, Set{String}}}()
-    for bipart in bps
-        bipartition = []
-        for part in bipart
-            myset = Set{String}()
-            for str in part
-                no = find_lca(tree, split(str, ","))
-                if no.nchild == 0
-                    push!(myset, no.name)
-                end # if
-            end # for
-            push!(bipartition, myset)
-        end # for
-        push!(treebps, Tuple(bipartition))
-    end # for
-    treebps
-end # nodnums2names
-
-
 """
     calculate_convergence(sm::SimulationParameters, args...)::Vector{Vector{Float64}}
 
@@ -209,15 +180,15 @@ function ASDSF_int(splitsQueue, splitsQueues, iter, tree_dims, ASDF_vals, freq,
                 trees = basic ? [parse_and_number(tree) for tree in line] :
                                 [parse_and_number(tree[td]) for tree in line]
                 check_leaves && check_leafsets(trees)
-                bps = [get_bipartitions(tree) for tree in trees]
-                named_bps = [nodnums2names(bp, tree) for (bp, tree) in zip(bps, trees)]
-                cmds = [countmap(named_bp) for named_bp in named_bps]
-                outer = 0.0
-                new_splits = union([keys(cmds[t]) for t in 1:length(trees)]...)
+                
+                # get all bipartitions
+                cmds = countmap.(get_bipartitions.(trees))
+                new_splits = union(keys.(cmds)...)
                 all_keys[td] = union(all_keys[td], new_splits)
                 for split in new_splits
                     inc!(splitsQueue[td], split)
                 end # for
+                outer = 0.0
                 for split in all_keys[td]
                     inner = 0.0
                     for (t, tree) in enumerate(trees)
