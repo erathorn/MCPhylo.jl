@@ -167,7 +167,7 @@ function assign_mcmc_work(f::Function, lsts::AbstractArray,
     ASDSF && append!(ASDSF_vals, calculate_convergence(params, r_channels,
                                                        n_trees, 1:tree_dim))
   end # if/else
-  close.(r_channels)
+  ASDSF && close.(r_channels)
   if ASDSF
     stats = Array{Float64,2}(undef, length(ASDSF_vals[1]), length(ASDSF_vals))
     for i = 1:length(ASDSF_vals)
