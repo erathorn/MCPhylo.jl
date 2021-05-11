@@ -127,11 +127,10 @@ end
 Starts the MCMC chain generation (on multiple workers if possible) and also
 starts parallel ASDSF - if possible and requested by the user.
 """
-function assign_mcmc_work(f::Function, lsts::AbstractArray
+function assign_mcmc_work(f::Function, lsts::AbstractArray,
+                          params::SimulationParameters
                           )::Tuple{Vector{Tuple{Chains, Model, ModelState}}, Array{Float64, 2}, Vector{AbstractString}}
 
-
-  params = lsts[1][end]
   ASDSF::Bool = params.asdsf
   statnames::Vector{AbstractString} = []
   # count the number of trees per step per chain
@@ -144,8 +143,10 @@ function assign_mcmc_work(f::Function, lsts::AbstractArray
   end # for
   ll::Int64 = length(lsts)
   # set up remote channels for communication across workers for ASDSF-on-the-fly
-  r_channels = [RemoteChannel(()->Channel{Vector{AbstractString}}(100)) for x in 1:ll]
-  ASDSF_vals::Vector{Vector{Float64}} = []
+  if ASDSF
+    r_channels = [RemoteChannel(()->Channel{Vector{AbstractString}}(100)) for x in 1:ll]
+    ASDSF_vals::Vector{Vector{Float64}} = []
+  end
   n_trees::Int64 = ASDSF ? floor((last(lsts[1][3]) - lsts[1][4]) / params.freq) : 0
   results = Dict{Int64, Tuple{Chains, Model, ModelState}}()
   if nworkers() > 1

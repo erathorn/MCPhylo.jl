@@ -101,10 +101,10 @@ function mcmc_master!(m::Model, window::UnitRange{Int}, burnin::Integer,
   )
 
   lsts = [
-    Any[m, states[k], window, burnin, thin, ChainProgress(frame, k, N), trees, params]
+    Any[m, states[k], window, burnin, thin, ChainProgress(frame, k, N), trees]
     for k in chains
   ]
-  results::Vector{Tuple{Chains, Model, ModelState}}, stats::Array{Float64, 2}, statnames::Vector{AbstractString} = assign_mcmc_work(mcmc_worker!, lsts)
+  results::Vector{Tuple{Chains, Model, ModelState}}, stats::Array{Float64, 2}, statnames::Vector{AbstractString} = assign_mcmc_work(mcmc_worker!, lsts, params)
 
   sims::Array{Chains}  = Chains[results[k][1] for k in 1:K]
   model::Model = results[1][2]

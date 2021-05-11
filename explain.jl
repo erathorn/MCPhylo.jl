@@ -62,7 +62,7 @@ params = SimulationParameters(asdsf=true)
 
 setsamplers!(model, scheme)
 sim = mcmc(model, my_data, inits, 1000, burnin=100, thin=5, chains=2,
-           trees=true, params)
+           trees=true, params=params)
 
 sim2 = mcmc(sim, 1000, trees=true)
 
