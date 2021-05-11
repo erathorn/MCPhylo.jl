@@ -23,11 +23,12 @@ function mcmc(mc::ModelChains, iters::Integer; verbose::Bool=true,
 
   mm = deepcopy(mc.model)
   mc2 = mcmc_master!(mm, mm.iter .+ (1:iters), last(mc), thin, mc.chains,
-                     verbose, trees)
+                     verbose, trees, mc.sim_params)
   if mc2.names != mc.names
     mc2 = mc2[:, mc.names, :]
   end
-  ModelChains(vcat(mc, mc2), mc2.model, cat(mc.stats, mc2.stats, dims=1), mc.stat_names)
+  ModelChains(vcat(mc, mc2), mc2.model, cat(mc.stats, mc2.stats, dims=1),
+              mc.stat_names, mc.sim_params)
 end
 
 
@@ -108,7 +109,7 @@ function mcmc_master!(m::Model, window::UnitRange{Int}, burnin::Integer,
   sims::Array{Chains}  = Chains[results[k][1] for k in 1:K]
   model::Model = results[1][2]
   model.states = ModelState[results[k][3] for k in sortperm(chains)]
-  ModelChains(cat(sims..., dims=3), model, stats, statnames)
+  ModelChains(cat(sims..., dims=3), model, stats, statnames, params)
 end
 
 
