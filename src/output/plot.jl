@@ -38,8 +38,9 @@ function plot(c::AbstractChains, ptype::Vector{Symbol}=[:trace, :density];
   else
     indeces = collect(1:length(c.names))
   end # if / else
+  isempty(indeces) && throw(ArgumentError("Input Variables not in Chain object. Exiting function."))
   ilength = length(indeces)
-  ilength > 20 && !force && throw(ArgumentError("Too many variables for plotting. Set force argument to 'true' to plot anyway")
+  ilength > 20 && !force && throw(ArgumentError("Too many variables for plotting. Set force argument to 'true' to plot anyway"))
   if :contour in ptype && ilength == 1
     filter!(e -> e ≠ :contour, ptype)
     if isempty(ptype)
@@ -95,7 +96,7 @@ variables. Only those variables are then plotted in the following steps.
 function check_vars(sim_names::Vector{AbstractString}, vars::Vector{String})::Vector{Int64}
     names = []
     for var in vars
-        if endswith(var, r"\[[0-9]*\]")
+        if endswith(var, r"\[[0-9]+\]")
             for sim_name in sim_names
                 if sim_name == var
                     push!(names, sim_name)
@@ -103,7 +104,7 @@ function check_vars(sim_names::Vector{AbstractString}, vars::Vector{String})::Ve
             end # for
         else
             for sim_name in sim_names
-                if sim_name == var || occursin(Regex(var * "\\[[0-9]+\\]"), sim_name)
+                if sim_name == var || occursin(Regex(var * "\\[\\w+\\]"), sim_name)
                   #(occursin(sim_name,r"\[[0-9]*\]") && sim_name[1 : findfirst("[", sim_name)[1]-1] == var))
                     push!(names, sim_name)
                 end # if
