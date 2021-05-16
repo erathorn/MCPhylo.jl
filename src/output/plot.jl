@@ -39,7 +39,7 @@ function plot(c::AbstractChains, ptype::Vector{Symbol}=[:trace, :density];
     indeces = collect(1:length(c.names))
   end # if / else
   ilength = length(indeces)
-  ilength > 20 && !force && @warn "Too many variables for plotting. Set force argument to 'true' to plot anyway"
+  ilength > 20 && !force && throw(ArgumentError("Too many variables for plotting. Set force argument to 'true' to plot anyway")
   if :contour in ptype && ilength == 1
     filter!(e -> e ≠ :contour, ptype)
     if isempty(ptype)
@@ -56,6 +56,7 @@ function plot(c::AbstractChains, ptype::Vector{Symbol}=[:trace, :density];
            ilength in [13, 15] ? (3, 5) : ilength in [14, 16] ? (4, 4) :
            ilength in [17, 18] ? (3, 6) : ilength in [19, 20] ? (4, 5) :
            (1, ilength)
+  ilength > 20 && !(:layout in keys(args)) && @warn "For plotting this many variables, it is suggested to pass a layout for better visibility"
   for i in 1:n
     ptype[i] == :bar ? p[i] = bar_int(c, indeces; args...) :
     ptype[i] == :mixeddensity ? p[i] = mixeddensityplot(c, indeces; args...) :
