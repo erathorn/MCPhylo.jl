@@ -50,9 +50,11 @@ function plot(c::AbstractChains, ptype::Vector{Symbol}=[:trace, :density];
   end # if
   n = length(ptype)
   p = Array{Plots.Plot}(undef, n)
-  layout = :layout in keys(args) ? args[:layout] : (ilength == 6) ? (2, 3) :
-           (ilength == 7) ? (2, 4) : (ilength == 9) ? (3, 3) :
-           (ilength == 10) ? (2, 5) : (ilength in [11, 12]) ? (3, 4) :
+  layout = :layout in keys(args) ? args[:layout] : ilength == 6 ? (2, 3) :
+           ilength in [7, 8] ? (2, 4) : ilength == 9 ? (3, 3) :
+           ilength == 10 ? (2, 5) : ilength in [11, 12] ? (3, 4) :
+           ilength in [13, 15] ? (3, 5) : ilength in [14, 16] ? (4, 4) :
+           ilength in [17, 18] ? (3, 6) : ilength in [19, 20] ? (4, 5) :
            (1, ilength)
   for i in 1:n
     ptype[i] == :bar ? p[i] = bar_int(c, indeces; args...) :
