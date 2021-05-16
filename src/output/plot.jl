@@ -10,6 +10,8 @@ density by default).
                                     are plotted
 - 'filename::String=""' : when given, the plots will be saved to a file
 - 'fmt::Symbol=:pdf' : Format of the output file
+- 'fuse::Bool=false' : Fuse all of the plots into one big plot, instead of
+                       displaying each of the different plot types separately
 - 'args...': This includes specific arguments for the different plot types
              , like the number of bins for the contourplot or if the barplots
              bars should be stacked or not. Check the specific plot functions
@@ -46,10 +48,12 @@ function plot(c::AbstractChains, ptype::Vector{Symbol}=[:trace, :density];
   end # if
   n = length(ptype)
   p = Array{Plots.Plot}(undef, n)
+  layout = :layout in keys(args) ? args[:layout] : (1, ilength)
+  !(:layout in keys(args)) && ilength > 5 && @warn "For better visibility it is suggested to pass a layout, when a lot of different variables are at play."
   for i in 1:n
     ptype[i] == :bar ? p[i] = bar_int(c, indeces; args...) :
     ptype[i] == :mixeddensity ? p[i] = mixeddensityplot(c, indeces; args...) :
-    p[i] = Plots.plot(c, indeces; ptype=ptype[i], size=(ilength * 500, 300), args...)
+    p[i] = Plots.plot(c, indeces; ptype=ptype[i], size=(ilength * 600 / layout[1], 400 * layout[1]), args...)
     if !fuse
       display(p[i])
       if n != 1 && i != n
@@ -60,7 +64,7 @@ function plot(c::AbstractChains, ptype::Vector{Symbol}=[:trace, :density];
   end # for
   if fuse
     isnothing(f_layout) && (f_layout = (n, 1))
-    fsize == (0, 0) && (fsize = (ilength * 500, n * 300))
+    fsize == (0, 0) && (fsize = (ilength * 600 / layout[1], n * 400 * layout[1]))
     allplots = Plots.plot(p..., layout=f_layout, size=fsize)
     display(allplots)
     filename != "" && check_filename(filename, fmt, allplots)
@@ -217,7 +221,7 @@ function bar_int(c::AbstractChains, indeces::Vector{Int64}; args...)::Plots.Plot
                                 group=repeat(c.chains, inner=[n]),
                                 title=c.names[i], args...)
   end # for
-  p = Plots.plot(bar_plots..., layout=(1, ilength), size=(ilength * 500, 300))
+  p = Plots.plot(bar_plots..., layout=(1, ilength), size=(ilength * 600, 400))
   return p
 end # function
 
@@ -359,10 +363,10 @@ function mixeddensityplot(c::AbstractChains, indeces::Vector{Int64};
     if discrete[i] == true
       plots[i] = bar_int(c, [indeces[i]]; args...)
     else
-      plots[i] = Plots.plot(c, [indeces[i]]; ptype=:density, size=(500, 300), args...)
+      plots[i] = Plots.plot(c, [indeces[i]]; ptype=:density, size=(600, 400), args...)
     end # if / else
   end # for
-  p = Plots.plot(plots..., layout=(1, ilength), size=(ilength * 500, 300))
+  p = Plots.plot(plots..., layout=(1, ilength), size=(ilength * 600, 400))
   return p
 end # function
 
