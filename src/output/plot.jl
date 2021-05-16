@@ -6,12 +6,13 @@ Function that takes a MCMC chain and creates various different plots (trace &
 density by default).
 
 # Arguments
-- 'vars::Vector{String}=String[]' : specifies the variables of the chain that
-                                    are plotted
-- 'filename::String=""' : when given, the plots will be saved to a file
-- 'fmt::Symbol=:pdf' : Format of the output file
-- 'fuse::Bool=false' : Fuse all of the plots into one big plot, instead of
+- 'vars::Vector{String}=String[]': specifies the variables of the chain that
+                                   are plotted
+- 'filename::String=""': when given, the plots will be saved to a file
+- 'fmt::Symbol=:pdf': Format of the output file
+- 'fuse::Bool=false': Fuse all of the plots into one big plot, instead of
                        displaying each of the different plot types separately
+- 'force::Bool=false': Force plotting of more than 20 variables.
 - 'args...': This includes specific arguments for the different plot types
              , like the number of bins for the contourplot or if the barplots
              bars should be stacked or not. Check the specific plot functions
@@ -30,7 +31,7 @@ density by default).
 function plot(c::AbstractChains, ptype::Vector{Symbol}=[:trace, :density];
               vars::Vector{String}=String[], filename::String="",
               fmt::Symbol=:pdf, fuse::Bool=false, f_layout=nothing,
-              fsize::Tuple{Number, Number}=(0, 0), args...
+              fsize::Tuple{Number, Number}=(0, 0), force::Bool=false, args...
               )::Union{Vector{Plots.Plot}, Tuple{Vector{Plots.Plot}, Plots.Plot}}
   if !isempty(vars)
     indeces = check_vars(c.names, vars)
@@ -38,6 +39,7 @@ function plot(c::AbstractChains, ptype::Vector{Symbol}=[:trace, :density];
     indeces = collect(1:length(c.names))
   end # if / else
   ilength = length(indeces)
+  ilength > 20 && !force && @warn "Too many variables for plotting. Set force argument to 'true' to plot anyway"
   if :contour in ptype && ilength == 1
     filter!(e -> e ≠ :contour, ptype)
     if isempty(ptype)
@@ -48,12 +50,16 @@ function plot(c::AbstractChains, ptype::Vector{Symbol}=[:trace, :density];
   end # if
   n = length(ptype)
   p = Array{Plots.Plot}(undef, n)
-  layout = :layout in keys(args) ? args[:layout] : (1, ilength)
-  !(:layout in keys(args)) && ilength > 5 && @warn "For better visibility it is suggested to pass a layout, when a lot of different variables are at play."
+  layout = :layout in keys(args) ? args[:layout] : (ilength == 6) ? (2, 3) :
+           (ilength == 7) ? (2, 4) : (ilength == 9) ? (3, 3) :
+           (ilength == 10) ? (2, 5) : (ilength in [11, 12]) ? (3, 4) :
+           (1, ilength)
   for i in 1:n
     ptype[i] == :bar ? p[i] = bar_int(c, indeces; args...) :
     ptype[i] == :mixeddensity ? p[i] = mixeddensityplot(c, indeces; args...) :
-    p[i] = Plots.plot(c, indeces; ptype=ptype[i], size=(ilength * 600 / layout[1], 400 * layout[1]), args...)
+    p[i] = Plots.plot(c, indeces; ptype=ptype[i],
+                      size=(ilength * 600 / layout[1], 400 * layout[1]),
+                      layout=layout, args...)
     if !fuse
       display(p[i])
       if n != 1 && i != n
