@@ -62,7 +62,6 @@ scheme = [MCPhylo.PNUTS(:mtree, target=0.7, targetNNI=1),
           ]
 
 params = SimulationParameters(burnin=100, thin=5, chains=2, asdsf=true, trees=true)
-show(params)
 
 setsamplers!(model, scheme)
 sim = mcmc(model, my_data, inits, 1000, burnin=100, thin=5, chains=2,
