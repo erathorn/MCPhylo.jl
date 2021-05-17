@@ -22,12 +22,14 @@ function mcmc(mc::ModelChains, iters::Integer; verbose::Bool=true,
     throw(ArgumentError("chain is missing its last iteration"))
 
   mm = deepcopy(mc.model)
-  mc2 = mcmc_master!(mm, mm.iter .+ (1:iters), mc.sim_params, burnin=last(mc))
+  mc2 = mcmc_master!(mm, mm.iter .+ (1:iters), mc.sim_params, burnin=last(mc),
+                     conv_storage=mc.conv_storage)
+
   if mc2.names != mc.names
     mc2 = mc2[:, mc.names, :]
   end
   ModelChains(vcat(mc, mc2), mc2.model, cat(mc.stats, mc2.stats, dims=1),
-              mc.stat_names, mc.sim_params)
+              mc.stat_names, mc.sim_params, mc2.conv_storage)
 end
 
 
@@ -98,7 +100,9 @@ Dispatchs parameters to corresponding functions to start the simulation and
 builds the ModelChain object from the chains it receives.
 """
 function mcmc_master!(m::Model, window::UnitRange{Int},
-                      sp::SimulationParameters; burnin::Int64=-1)::ModelChains
+                      sp::SimulationParameters; burnin::Int64=-1,
+                      conv_storage::Union{Nothing, ConvergenceStorage}=nothing
+                      )::ModelChains
 
   chains = 1:sp.chains
   states::Vector{ModelState} = m.states
@@ -118,12 +122,13 @@ function mcmc_master!(m::Model, window::UnitRange{Int},
         sp.trees] for k in chains
   ]
 
-  results::Vector{Tuple{Chains, Model, ModelState}}, stats::Array{Float64, 2}, statnames::Vector{AbstractString} = assign_mcmc_work(mcmc_worker!, lsts, sp)
+  results::Vector{Tuple{Chains, Model, ModelState}}, stats::Array{Float64, 2}, statnames::Vector{AbstractString}, conv_storage::ConvergenceStorage =
+    	assign_mcmc_work(mcmc_worker!, lsts, sp, conv_storage)
 
   sims::Array{Chains}  = Chains[results[k][1] for k in 1:K]
   model::Model = results[1][2]
   model.states = ModelState[results[k][3] for k in sortperm(chains)]
-  ModelChains(cat(sims..., dims=3), model, stats, statnames, sp)
+  ModelChains(cat(sims..., dims=3), model, stats, statnames, sp, conv_storage)
 end
 
 
