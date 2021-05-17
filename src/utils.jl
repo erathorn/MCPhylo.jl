@@ -128,8 +128,9 @@ Starts the MCMC chain generation (on multiple workers if possible) and also
 starts parallel ASDSF - if possible and requested by the user.
 """
 function assign_mcmc_work(f::Function, lsts::AbstractArray,
-                          sp::SimulationParameters
-                          )::Tuple{Vector{Tuple{Chains, Model, ModelState}}, Array{Float64, 2}, Vector{AbstractString}}
+                          sp::SimulationParameters,
+                          conv_storage::Union{Nothing, ConvergenceStorage}
+                          )::Tuple{Vector{Tuple{Chains, Model, ModelState}}, Array{Float64, 2}, Vector{AbstractString}, ConvergenceStorage}
 
   ASDSF::Bool = sp.asdsf
   statnames::Vector{AbstractString} = []
@@ -158,14 +159,23 @@ function assign_mcmc_work(f::Function, lsts::AbstractArray,
                                       (@fetchfrom default_worker_pool() f(list))
       end # for
       # assign a free worker the ASDSF computation
-      @async ASDSF && append!(ASDSF_vals, @fetchfrom default_worker_pool() calculate_convergence(sp, r_channels, n_trees, 1:tree_dim))
+      @async begin
+        if ASDSF
+          asdsf_results = @fetchfrom default_worker_pool() calculate_convergence(sp, conv_storage, r_channels, n_trees, 1:tree_dim)
+          append!(ASDSF_vals, asdsf_results[1])
+          conv_storage = asdsf_results[2]
+        end # if
+      end # begin
     end # begin
   else
     for (ind, list) in enumerate(lsts)
       results[ind] = ASDSF ? f(list, sp.freq, r_channels[ind]) : f(list)
     end # for
-    ASDSF && append!(ASDSF_vals, calculate_convergence(sp, r_channels,
-                                                       n_trees, 1:tree_dim))
+    if ASDSF
+      asdsf_results = calculate_convergence(sp, r_channels, n_trees, 1:tree_dim, conv_storage)
+      append!(ASDSF_vals, asdsf_results[1])
+      conv_storage = asdsf_results[2]
+    end # if
   end # if/else
   ASDSF && close.(r_channels)
   if ASDSF
@@ -176,7 +186,7 @@ function assign_mcmc_work(f::Function, lsts::AbstractArray,
   else
     stats = zeros(Float64, 0, tree_dim)
   end # if/else
-  return [results[i] for i in 1:ll], stats, statnames
+  return [results[i] for i in 1:ll], stats, statnames, conv_storage
 end # assign_mcmc_work
 
 
