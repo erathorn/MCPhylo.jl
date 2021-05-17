@@ -36,7 +36,8 @@ end
     mcmc(m::Model, inputs::Dict{Symbol},
               inits::Vector{V} where V<:Dict{Symbol},
               iters::Integer; burnin::Integer=0, thin::Integer=1,
-              chains::Integer=1, verbose::Bool=true, trees::Bool=false)
+              chains::Integer=1, verbose::Bool=true, trees::Bool=false,
+              params::SimulationParameters=SimulationParameters())
 
 Simulate MCMC draws from the model `m`.
 
@@ -55,6 +56,8 @@ Simulate MCMC draws from the model `m`.
 * `verbose` indicates whether the sampler progress should be printed at the console.
 
 * `trees` indicates if the states of the model nodes describing tree structures should be stored as well.
+
+* `params` pass one Struct to set all simulation parameters, instead of setting each individually
 """
 function mcmc(m::Model, inputs::Dict{Symbol},
               inits::Vector{V} where V<:Dict{Symbol},
@@ -63,33 +66,34 @@ function mcmc(m::Model, inputs::Dict{Symbol},
               params::SimulationParameters=SimulationParameters()
               )::ModelChains
 
-  params.asdsf && !trees &&
-   throw(ArgumentError("ASDSF can not be calculated without trees"))
+  burnin = burnin == 0 ? params.burnin : burnin
+  thin = thin == 1 ? params.thin : thin
+  chains = chains == 1 ? params.chains : chains
+  verbose = verbose == true ? params.verbose : verbose
+  trees = trees == false ? params.trees : trees
+  params = SimulationParameters(burnin, thin, chains, verbose, trees,
+                                params.asdsf, params.freq, params.min_splits)
 
-  #=
-  mutate!(burnin, thin, chains, verbose, trees, params)
-    burnin = burnin == 0 ? params.burnin : burnin
+  params.asdsf && !params.trees &&
+    throw(ArgumentError("ASDSF can not be calculated without trees"))
 
-    SimulationParameters(burnin, thin, chain, verbose, trees, params)
-  =#
-
-  iters > burnin ||
+  iters > params.burnin ||
     throw(ArgumentError("burnin is greater than or equal to iters"))
-  length(inits) >= chains ||
+  length(inits) >= params.chains ||
     throw(ArgumentError("fewer initial values than chains"))
 
   mm::Model = deepcopy(m)
   setinputs!(mm, inputs)
-  setinits!(mm, inits[1:chains])
+  setinits!(mm, inits[1:params.chains])
   mm.burnin = burnin
-  mcmc_master!(mm, 1:iters, burnin, thin, 1:chains, verbose, trees, params)
+  mcmc_master!(mm, 1:iters, params)
 end
 
 
-function mcmc_master!(m::Model, window::UnitRange{Int}, burnin::Integer,
-                      thin::Integer, chains::AbstractArray{Int}, verbose::Bool,
-                      trees::Bool, params::SimulationParameters)::ModelChains
+function mcmc_master!(m::Model, window::UnitRange{Int},
+                      sp::SimulationParameters)::ModelChains
 
+  chains = 1:sp.chains
   states::Vector{ModelState} = m.states
   m.states = ModelState[]
 
@@ -97,19 +101,20 @@ function mcmc_master!(m::Model, window::UnitRange{Int}, burnin::Integer,
   K = length(chains)
 
   frame::ChainProgressFrame = ChainProgressFrame(
-    "MCMC Simulation of $N Iterations x $K Chain" * "s"^(K > 1), verbose
+    "MCMC Simulation of $N Iterations x $K Chain" * "s"^(K > 1), sp.verbose
   )
 
   lsts = [
-    Any[m, states[k], window, burnin, thin, ChainProgress(frame, k, N), trees]
-    for k in chains
+    Any[m, states[k], window, sp.burnin, sp.thin, ChainProgress(frame, k, N),
+        sp.trees] for k in chains
   ]
-  results::Vector{Tuple{Chains, Model, ModelState}}, stats::Array{Float64, 2}, statnames::Vector{AbstractString} = assign_mcmc_work(mcmc_worker!, lsts, params)
+
+  results::Vector{Tuple{Chains, Model, ModelState}}, stats::Array{Float64, 2}, statnames::Vector{AbstractString} = assign_mcmc_work(mcmc_worker!, lsts, sp)
 
   sims::Array{Chains}  = Chains[results[k][1] for k in 1:K]
   model::Model = results[1][2]
   model.states = ModelState[results[k][3] for k in sortperm(chains)]
-  ModelChains(cat(sims..., dims=3), model, stats, statnames, params)
+  ModelChains(cat(sims..., dims=3), model, stats, statnames, sp)
 end
 
 
