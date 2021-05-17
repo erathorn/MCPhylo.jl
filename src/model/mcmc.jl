@@ -22,8 +22,7 @@ function mcmc(mc::ModelChains, iters::Integer; verbose::Bool=true,
     throw(ArgumentError("chain is missing its last iteration"))
 
   mm = deepcopy(mc.model)
-  mc2 = mcmc_master!(mm, mm.iter .+ (1:iters), last(mc), thin, mc.chains,
-                     verbose, trees, mc.sim_params)
+  mc2 = mcmc_master!(mm, mm.iter .+ (1:iters), mc.sim_params, burnin=last(mc))
   if mc2.names != mc.names
     mc2 = mc2[:, mc.names, :]
   end
@@ -90,8 +89,16 @@ function mcmc(m::Model, inputs::Dict{Symbol},
 end
 
 
+"""
+  mcmc_master!(m::Model, window::UnitRange{Int}, sp::SimulationParameters;
+               burnin::Int64=-1)::ModelChains
+
+--- INTERNAL ---
+Dispatchs parameters to corresponding functions to start the simulation and
+builds the ModelChain object from the chains it receives.
+"""
 function mcmc_master!(m::Model, window::UnitRange{Int},
-                      sp::SimulationParameters)::ModelChains
+                      sp::SimulationParameters; burnin::Int64=-1)::ModelChains
 
   chains = 1:sp.chains
   states::Vector{ModelState} = m.states
@@ -103,9 +110,11 @@ function mcmc_master!(m::Model, window::UnitRange{Int},
   frame::ChainProgressFrame = ChainProgressFrame(
     "MCMC Simulation of $N Iterations x $K Chain" * "s"^(K > 1), sp.verbose
   )
+  # this is necessary for additional draws from a model
+  burnin = burnin == -1 ? sp.burnin : burnin
 
   lsts = [
-    Any[m, states[k], window, sp.burnin, sp.thin, ChainProgress(frame, k, N),
+    Any[m, states[k], window, burnin, sp.thin, ChainProgress(frame, k, N),
         sp.trees] for k in chains
   ]
 
@@ -118,6 +127,14 @@ function mcmc_master!(m::Model, window::UnitRange{Int},
 end
 
 
+"""
+  mcmc_worker!(args::Vector, ASDSF_step::Int64=0,
+               rc::Union{Nothing, RemoteChannel}=nothing
+               )::Tuple{Chains, Model, ModelState}
+
+--- INTERNAL ---
+Each call to this function computes a chain for a ModelChains Object.
+"""
 function mcmc_worker!(args::Vector, ASDSF_step::Int64=0,
                       rc::Union{Nothing, RemoteChannel}=nothing
                       )::Tuple{Chains, Model, ModelState}
@@ -171,8 +188,14 @@ function mcmc_worker!(args::Vector, ASDSF_step::Int64=0,
 end # mcmc_worker!
 
 
-function track(i::Integer, burnin::Integer, thin::Integer,
-               sim::Chains, m::Model, store_trees::Bool, treeind::Integer, treenode)
+"""
+  track(i::Integer, burnin::Integer, thin::Integer, sim::Chains, m::Model,
+        store_trees::Bool, treeind::Integer, treenode)
+
+--- INTERNAL ---
+"""
+function track(i::Integer, burnin::Integer, thin::Integer, sim::Chains,
+               m::Model, store_trees::Bool, treeind::Integer, treenode)
   if i > burnin && (i - burnin) % thin == 0
     sim[i, :, 1] = unlist(m, true)
     if store_trees
