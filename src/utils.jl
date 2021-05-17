@@ -128,10 +128,10 @@ Starts the MCMC chain generation (on multiple workers if possible) and also
 starts parallel ASDSF - if possible and requested by the user.
 """
 function assign_mcmc_work(f::Function, lsts::AbstractArray,
-                          params::SimulationParameters
+                          sp::SimulationParameters
                           )::Tuple{Vector{Tuple{Chains, Model, ModelState}}, Array{Float64, 2}, Vector{AbstractString}}
 
-  ASDSF::Bool = params.asdsf
+  ASDSF::Bool = sp.asdsf
   statnames::Vector{AbstractString} = []
   # count the number of trees per step per chain
   tree_dim::Int64 = 0
@@ -147,24 +147,24 @@ function assign_mcmc_work(f::Function, lsts::AbstractArray,
     r_channels = [RemoteChannel(()->Channel{Vector{AbstractString}}(100)) for x in 1:ll]
     ASDSF_vals::Vector{Vector{Float64}} = []
   end
-  n_trees::Int64 = ASDSF ? floor((last(lsts[1][3]) - lsts[1][4]) / params.freq) : 0
+  n_trees::Int64 = ASDSF ? floor((last(lsts[1][3]) - lsts[1][4]) / sp.freq) : 0
   results = Dict{Int64, Tuple{Chains, Model, ModelState}}()
   if nworkers() > 1
     # @sync and @async asure parallel computation
     @sync begin
       # assign each chain a free worker
       for (ind, list) in enumerate(lsts)
-        @async results[ind] = ASDSF ? (@fetchfrom default_worker_pool() f(list, params.freq, r_channels[ind])) :
+        @async results[ind] = ASDSF ? (@fetchfrom default_worker_pool() f(list, sp.freq, r_channels[ind])) :
                                       (@fetchfrom default_worker_pool() f(list))
       end # for
       # assign a free worker the ASDSF computation
-      @async ASDSF && append!(ASDSF_vals, @fetchfrom default_worker_pool() calculate_convergence(params, r_channels, n_trees, 1:tree_dim))
+      @async ASDSF && append!(ASDSF_vals, @fetchfrom default_worker_pool() calculate_convergence(sp, r_channels, n_trees, 1:tree_dim))
     end # begin
   else
     for (ind, list) in enumerate(lsts)
-      results[ind] = ASDSF ? f(list, params.freq, r_channels[ind]) : f(list)
+      results[ind] = ASDSF ? f(list, sp.freq, r_channels[ind]) : f(list)
     end # for
-    ASDSF && append!(ASDSF_vals, calculate_convergence(params, r_channels,
+    ASDSF && append!(ASDSF_vals, calculate_convergence(sp, r_channels,
                                                        n_trees, 1:tree_dim))
   end # if/else
   ASDSF && close.(r_channels)
