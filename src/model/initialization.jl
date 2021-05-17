@@ -86,23 +86,39 @@ end
 
 
 """
-    SimulationParameters(; asdsf::Bool=false, freq::Int64=50, min_splits::Float64=0.1)
+    SimulationParameters(; burnin::Int64=0, thin::Int64=1, chains::Int64=1,
+                         verbose::Bool=true, trees::Bool=false,
+                         asdsf::Bool=false, freq::Int64=50,
+                         min_splits::Float64=0.1)::SimulationParameters
 
 Construct a `SimulationParameters` object that defines the simulation parameters
 for a MCMC simulation.
 
 Returns a `SimulationParameters` type object.
 
+* `burnin`: controls how many trees are discarded before saving
+
+* `thin`: controls thinning of saved trees
+
+* `chains`: controls how many chains there are
+
+* `verbose`: controls if sampler output is printed to the console
+
+* `trees`: controls if trees should be created during simulation
+
 * `asdsf`: controls if ASDSF should be calculated
 
-* `freq`: at which interval trees are used for ASDSF
+* `freq`: controls at which interval trees are used for ASDSF
 
 * `min_splits`: controls the default minimal splits threshold
 
 """
-function SimulationParameters(; asdsf::Bool=false, freq::Int64=50,
-                              min_splits::Float64=0.1)
-  SimulationParameters(asdsf, freq, min_splits)
+function SimulationParameters(; burnin::Int64=0, thin::Int64=1, chains::Int64=1,
+                              verbose::Bool=true, trees::Bool=false,
+                              asdsf::Bool=false, freq::Int64=50,
+                              min_splits::Float64=0.1)::SimulationParameters
+  SimulationParameters(burnin, thin, chains, verbose, trees, asdsf, freq,
+                       min_splits)
 end
 
 
@@ -117,8 +133,14 @@ Prints the parameters of the Simulation.
 """
 
 function Base.show(io::IO, sp::SimulationParameters; short::Bool=false)
-  !short && print(io, "Object of type \"SimulationParameters\"\n\n")
-  println(io, "ASDSF = $(sp.asdsf)")
-  println(io, "ASDSF Frequency = $(sp.freq)")
-  println(io, "ASDSF minimal splits threshold = $(sp.min_splits)")
+  if !short
+    print(io, "Object of type \"SimulationParameters\"\n\n")
+    println(io, "Thinning Interval = $(sp.thin)")
+    println(io, "Burnin = $(sp.burnin)")
+    println(io, "Number of Chains = $(sp.chains)")
+    println(io, "Verbose Setting = $(sp.verbose)")
+    println(io, "Trees = $(sp.trees)")
+  end # if
+  short && println(io, "Burnin = $(sp.burnin)")
+  sp.asdsf && println(io, "ASDSF Frequency = $(sp.freq)\nASDSF minimal splits threshold = $(sp.min_splits)")
 end
