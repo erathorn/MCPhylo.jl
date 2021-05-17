@@ -210,17 +210,6 @@ struct ModelState
   tune::Vector{Any}
 end
 
-struct SimulationParameters
-  burnin::Int64
-  thin::Int64
-  chains::Int64
-  verbose::Bool
-  trees::Bool
-  asdsf::Bool
-  freq::Int64
-  min_splits::Float64
-end
-
 mutable struct Model
   nodes::Dict{Symbol, Any}
   samplers::Vector{Sampler}
@@ -232,6 +221,25 @@ mutable struct Model
   likelihood::Float64
 end
 
+
+############## Additional Structs ################
+
+struct SimulationParameters
+  burnin::Int64
+  thin::Int64
+  chains::Int64
+  verbose::Bool
+  trees::Bool
+  asdsf::Bool
+  freq::Int64
+  min_splits::Float64
+end
+
+struct ConvergenceStorage
+  splitsQueue::Vector{Accumulator{Tuple{Set{String}, Set{String}}, Int64}}
+  splitsQueues::Vector{Vector{Accumulator{Tuple{Set{String}, Set{String}}, Int64}}}
+  run::Int64
+end
 
 #################### Chains Type ####################
 
@@ -259,8 +267,8 @@ struct ModelChains <: AbstractChains
   stats::Array{Float64, 2}
   stat_names::Vector{AbstractString}
   sim_params::SimulationParameters
+  conv_storage::ConvergenceStorage
 end
-
 
 #################### Includes ####################
 
@@ -360,6 +368,7 @@ export
   ArrayLogical,
   ArrayStochastic,
   ArrayVariate,
+  ConvergenceStorage,
   TreeLogical,
   TreeVariate,
   TreeStochastic,
