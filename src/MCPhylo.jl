@@ -211,6 +211,11 @@ struct ModelState
 end
 
 struct SimulationParameters
+  burnin::Int64
+  thin::Int64
+  chains::Int64
+  verbose::Bool
+  trees::Bool
   asdsf::Bool
   freq::Int64
   min_splits::Float64
