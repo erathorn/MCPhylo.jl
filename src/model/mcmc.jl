@@ -122,7 +122,7 @@ function mcmc_master!(m::Model, window::UnitRange{Int},
         sp.trees] for k in chains
   ]
 
-  results::Vector{Tuple{Chains, Model, ModelState}}, stats::Array{Float64, 2}, statnames::Vector{AbstractString}, conv_storage::ConvergenceStorage =
+  results::Vector{Tuple{Chains, Model, ModelState}}, stats::Array{Float64, 2}, statnames::Vector{AbstractString}, conv_storage::Union{Nothing, ConvergenceStorage} =
     	assign_mcmc_work(mcmc_worker!, lsts, sp, conv_storage)
 
   sims::Array{Chains}  = Chains[results[k][1] for k in 1:K]

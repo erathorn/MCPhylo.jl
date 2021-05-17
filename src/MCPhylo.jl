@@ -267,7 +267,7 @@ struct ModelChains <: AbstractChains
   stats::Array{Float64, 2}
   stat_names::Vector{AbstractString}
   sim_params::SimulationParameters
-  conv_storage::ConvergenceStorage
+  conv_storage::Union{Nothing, ConvergenceStorage}
 end
 
 #################### Includes ####################

@@ -130,7 +130,7 @@ starts parallel ASDSF - if possible and requested by the user.
 function assign_mcmc_work(f::Function, lsts::AbstractArray,
                           sp::SimulationParameters,
                           conv_storage::Union{Nothing, ConvergenceStorage}
-                          )::Tuple{Vector{Tuple{Chains, Model, ModelState}}, Array{Float64, 2}, Vector{AbstractString}, ConvergenceStorage}
+                          )::Tuple{Vector{Tuple{Chains, Model, ModelState}}, Array{Float64, 2}, Vector{AbstractString}, Union{Nothing, ConvergenceStorage}}
 
   ASDSF::Bool = sp.asdsf
   statnames::Vector{AbstractString} = []
