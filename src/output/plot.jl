@@ -12,7 +12,8 @@ density by default).
 - 'fmt::Symbol=:pdf': Format of the output file
 - 'fuse::Bool=false': Fuse all of the plots into one big plot, instead of
                       displaying each of the different plot types separately
-- 'fuse_layout::Tuple(Int64,Int64)': Layout for the fused plot.
+- 'fuse_layout=nothing': Layout for the fused plot.
+- 'fuse_size::Tuple(Number, Number)=(0,0)': Size of the fused plot.
 - 'force::Bool=false': Force plotting of more than 20 variables.
 - 'args...': This includes specific arguments for the different plot types
              , like the number of bins for the contourplot or if the barplots
@@ -32,7 +33,8 @@ density by default).
 function plot(c::AbstractChains, ptype::Vector{Symbol}=[:trace, :density];
               vars::Vector{String}=String[], filename::String="",
               fmt::Symbol=:pdf, fuse::Bool=false, fuse_layout=nothing,
-              fsize::Tuple{Number, Number}=(0, 0), force::Bool=false, args...
+              fuse_size::Tuple{Number, Number}=(0, 0),
+              force::Bool=false, args...
               )::Union{Vector{Plots.Plot}, Tuple{Vector{Plots.Plot}, Plots.Plot}}
   if !isempty(vars)
     indeces = check_vars(c.names, vars)
