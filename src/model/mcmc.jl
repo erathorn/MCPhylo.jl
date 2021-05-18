@@ -142,13 +142,4 @@ function mcmc_worker!(args::Vector)::Tuple{Chains, Model, ModelState}
   (sim, m, ModelState(unlist(m), gettune(m)))
 end
 
-function track(i::Integer, burnin::Integer, thin::Integer,
-               sim::Chains, m::Model, store_trees::Bool, treeind::Integer, treenode)
-  if i > burnin && (i - burnin) % thin == 0
-    sim[i, :, 1] = unlist(m, true)
-    if store_trees
-     sim.trees[treeind, 1, 1] = newick(m[treenode].value)
-     treeind +=1
-   end
-  end
-end
+

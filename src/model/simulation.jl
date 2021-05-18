@@ -349,7 +349,7 @@ function unlist(m::Model, monitoronly::Bool)
     lvalue = isa(node, AbstractTreeStochastic) ? unlist_tree(node) : unlist(node)
     monitoronly ? lvalue[node.monitor] : lvalue
   end
-  r = vcat(map(f, keys(m, :dependent))..., m.likelihood)
+  r = vcat(map(f, keys(m, :dependent))..., final_likelihood(m))
   r
 end
 """
