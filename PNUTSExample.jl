@@ -8,11 +8,13 @@ OPENBLAS_NUM_THREADS=5 JULIA_NUM_THREADS=5 /home/jo/Julia14/julia-1.4.2/bin/juli
 =#
 using Distributed
 addprocs(2)
-@everywhere include("./src/MCPhylo.jl")
-@everywhere using .MCPhylo
+@everywhere using Pkg
+@everywhere Pkg.activate(".")
+@everywhere using MCPhylo
 @everywhere using Random
 
-#@everywhere Random.seed!(42)
+@everywhere Random.seed!(42)
+
 #
 #@everywhere using LinearAlgebra
 #@everywhere BLAS.set_num_threads(10)
@@ -24,7 +26,7 @@ addprocs(2)
 
 
 #mt, df = make_tree_with_data("Example.nex", binary=true); # load your own nexus file
-mt, df = make_tree_with_data("notebook/Dravidian.cc.phy.nex"); # load your own nexus file
+mt, df = make_tree_with_data("untracked_files/Dravidian.cc.phy.nex"); # load your own nexus file
 
 
 
@@ -67,7 +69,7 @@ inits = [ Dict{Symbol, Union{Any, Real}}(
         )
     ]
 
-scheme = [PNUTS(:mtree, target=0.7, targetNNI=4),
+scheme = [PNUTS(:mtree, target=0.8, targetNNI=10),
            SliceSimplex(:mypi),
           ]
 
@@ -75,7 +77,7 @@ setsamplers!(model, scheme);
 
 # do the mcmc simmulation. if trees=true the trees are stored and can later be
 # flushed ot a file output.
-sim = mcmc(model, my_data, inits, 500000, burnin=250000,thin=50, chains=2, trees=true)
+sim = mcmc(model, my_data, inits, 1000, burnin=250,thin=10, chains=2, trees=true)
 
 # request more runs
 sim = mcmc(sim, 2500, trees=true)
