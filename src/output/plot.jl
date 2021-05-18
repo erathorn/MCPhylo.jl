@@ -81,8 +81,8 @@ function plot(c::AbstractChains, ptype::Vector{Symbol}=[:trace, :density];
   end # for
   if fuse
     isnothing(fuse_layout) && (fuse_layout = (n, 1))
-    fsize == (0, 0) && (fsize = (ilength * 400 / layout[1] * fuse_layout[2], fuse_layout[1] * 250 * layout[1]))
-    allplots = Plots.plot(p..., layout=fuse_layout, size=fsize)
+    fuse_size == (0, 0) && (fuse_size = (ilength * 400 / layout[1] * n / fuse_layout[1], fuse_layout[1] * 250 * layout[1]))
+    allplots = Plots.plot(p..., layout=fuse_layout, size=fuse_size)
     display(allplots)
     filename != "" && check_filename(filename, fmt, allplots)
     return (p, allplots)
@@ -158,6 +158,7 @@ end # check_filename
   legendtitle --> "Chain"
   legendtitlefonthalign := :left
   margin --> 5mm
+  ymirror --> true
 
   arr = []
   ptype == :autocor ? push!(arr, Autocor(c, indeces, maxlag)) :
