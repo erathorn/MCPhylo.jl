@@ -30,10 +30,11 @@ function get_bipartitions(tree::T)::Vector{Tuple} where T <:GeneralNode
     bt = Vector{Tuple}(undef, length(po_vect))
     for ind in eachindex(po_vect)
         elem = po_vect[ind]::T
-        inset = Set{Int64}()
-        outset = Set{Int64}()
+        inset = Set{String}()
+        outset = Set{String}()
         @simd for elem2 in po_vect
-            startswith(elem2.binary, elem.binary) ? push!(inset, elem2.num) : push!(outset, elem2.num)
+            ch::String = join([i.name for i in get_leaves(elem2)], ",")
+            startswith(elem2.binary, elem.binary) ? push!(inset, ch) : push!(outset, ch)
         end # for
         @inbounds bt[ind] = (inset, outset)
     end # for
