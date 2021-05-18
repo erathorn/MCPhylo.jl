@@ -184,7 +184,7 @@ function assign_mcmc_work(
         end # begin
     else
         for (ind, lst) in enumerate(lsts)
-            results[ind] = ASDSF ? f(lst, sp.freq, r_channels[ind]) : f(list)
+            results[ind] = ASDSF ? f(lst, sp.freq, r_channels[ind]) : f(lst)
         end # for
         if ASDSF
             asdsf_results =
