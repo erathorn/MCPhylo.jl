@@ -68,12 +68,12 @@ Base.setindex!(v::ArrayVariate, x, inds::Int...) =
 #################### I/O ####################
 
 function Base.show(io::IO, v::AbstractVariate)
-  print(io, "Object of type \"$(summary(v))\"\n")
+  print(io, "Object of type $(summary(v))\n")
   show(io, v.value)
 end
 
 
-function Base.summary(io::IO, d::N) where N <: TreeVariate
+function Base.summary(io::IO, d::N) where N<:TreeVariate
     summary(io, "Tree Variate")
 end
 

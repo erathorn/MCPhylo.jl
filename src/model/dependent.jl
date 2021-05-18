@@ -470,6 +470,12 @@ function relist(s::AbstractStochastic, x::AbstractArray, transform::Bool=false)
   relistlength(s, x, transform)[1]
 end
 
+
+function relistlength(s::ArrayStochastic, x::AbstractArray, transform::Bool=false)
+  value, n = relistlength_sub(s.distr, s, x)
+  (transform ? invlink_sub(s.distr, value) : value, n)
+end
+
 function relistlength(s::AbstractStochastic, x::AbstractArray,
                       transform::Bool=false)
   value, n = relistlength_sub(s.distr, s, x)

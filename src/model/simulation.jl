@@ -393,14 +393,11 @@ end
 """
 function relist(m::Model, x::AbstractArray{T},
                 nodekeys::Vector{Symbol}, transform::Bool=false) where {T<:Any}
-  values = Dict{Symbol,Union{Any, Real}}()
-
+  values = Dict{Symbol,Union{GeneralNode, AbstractArray, Real}}()
   N = length(x)
   offset = 0
   for key in nodekeys
-
     value, n = relistlength(m[key], view(x, (offset + 1):N), transform)
-
     values[key] = value
     offset += n
   end
