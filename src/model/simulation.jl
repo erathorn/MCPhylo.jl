@@ -218,8 +218,6 @@ function gradlogpdf!(m::Model, x::N, block::Integer=0,transform::Bool=false)::Tu
   params = keys(m, :block, block)
   targets = keys(m, :target, block)
   m[params] = relist(m, x, params, transform)
-  lp = logpdf(m, setdiff(params, targets), transform)
-
 
   # use thread parallelism
   # likelihood
@@ -281,10 +279,10 @@ function sample!(m::Model, block::Integer=0)
   isoneblock = block != 0
   blocks = isoneblock ? block : 1:length(m.samplers)
   for b in blocks
-    sampler = m.samplers[b]
-    value = sampler.eval(m::Model, b::Int)
-    if value != nothing
-      m[sampler.params] = value
+    sam = m.samplers[b]
+    value = sam.eval(m::Model, b::Int)
+    if !isnothing(value)
+      m[sam.params] = value
       update!(m, b)
     end
   end

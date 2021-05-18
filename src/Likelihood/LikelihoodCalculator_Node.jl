@@ -47,7 +47,7 @@ end # function
     sum(log.(sum(root .* pi_, dims=1))+rns)
 end
 
-function node_loop(node::N, mutationArray::Vector{Array{Float64, 2}})::Array{Float64,2} where {N<:GeneralNode, S<:Real}
+function node_loop(node::N, mutationArray::Vector{Array{Float64, 2}})::Array{Float64,2} where N<:GeneralNode
     # creating a new array is necessary because Zygote can not differentiate otherwise
     out = ones(size(node.data))
     @inbounds @views for child in node.children
