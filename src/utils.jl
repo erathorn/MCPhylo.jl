@@ -154,9 +154,9 @@ function assign_mcmc_work(f::Function, lsts::AbstractArray,
     # @sync and @async asure parallel computation
     @sync begin
       # assign each chain a free worker
-      for (ind, list) in enumerate(lsts)
-        @async results[ind] = ASDSF ? (@fetchfrom default_worker_pool() f(list, sp.freq, r_channels[ind])) :
-                                      (@fetchfrom default_worker_pool() f(list))
+      for (ind, lst) in enumerate(lsts)
+        @async results[ind] = ASDSF ? (@fetchfrom default_worker_pool() f(lst, sp.freq, r_channels[ind])) :
+                                      (@fetchfrom default_worker_pool() f(lst))
       end # for
       # assign a free worker the ASDSF computation
       @async begin
