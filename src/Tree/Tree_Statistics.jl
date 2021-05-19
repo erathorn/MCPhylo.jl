@@ -109,13 +109,13 @@ function ASDSF(model::ModelChains; freq::Int64=1, check_leaves::Bool=true,
     splitsQueue = [Accumulator{Tuple{Set{String}, Set{String}}, Int64}() for x in tree_dims]
     splitsQueues = [Vector{Accumulator{Tuple{Set{String}, Set{String}}, Int64}}() for x in tree_dims]
     nchains = size(model.trees, 3)
+    trees = Array{Vector{AbstractString}, 2}(undef, size(model.trees, 1), nchains)
     for i in 1:nchains
         for j in tree_dims
             push!(splitsQueues[j], Accumulator{Tuple{Set{String}, Set{String}}, Int64}())
         end # for
     end # for
     if length(tree_dims) > 1
-        trees = Array{Vector{AbstractString}, 2}(undef, size(model.trees, 1), nchains)
         for i in 1:size(model.trees, 1)
             for j in 1:nchains
                 trees[i, j] = model.trees[i,:,j]
