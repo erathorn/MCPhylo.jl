@@ -28,6 +28,7 @@ using Random
 using DataStructures
 using ProgressMeter
 using CUDA
+using Bijectors
 if has_cuda()
   using GPUArrays
 else
@@ -262,7 +263,7 @@ include("distributions/pdmatdistribution.jl")
 include("Likelihood/SubstitutionModels.jl")
 include("distributions/Phylodist.jl")
 include("distributions/TreeConstraints.jl")
-include("distributions/transformdistribution.jl")
+#include("distributions/transformdistribution.jl")
 
 include("model/dependent.jl")
 include("model/dependent_tree.jl")
@@ -395,9 +396,9 @@ export
   heideldiag,
   hpd,
   insupport,
-  invlink,
+  #invlink,
   invlogit,
-  link,
+  #link,
   logit,
   logpdf,
   logpdf!,

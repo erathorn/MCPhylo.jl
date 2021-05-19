@@ -225,3 +225,6 @@ function __logpdf(d::MultiplePhyloDist, x::AbstractArray)
     end
     res
 end
+
+
+const PhylogeneticDistribution = Union{PhyloDist, MultiplePhyloDist}
