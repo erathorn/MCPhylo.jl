@@ -27,8 +27,8 @@ end
 
 
 function max_psrf(sim::ModelChains)::Float64
-    bi = 1 + size(sim)[1] ÷ 2
-    gd = gelmandiag(sim[bi:end,:,:])
+    
+    gd = gelmandiag(sim)
     gd_values = gd.value
     indices = isnan.(gd_values)
     gd_values[indices] .= -1

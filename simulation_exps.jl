@@ -1,5 +1,5 @@
 using Distributed
-addprocs(2)
+addprocs(3)
 @everywhere using Pkg
 @everywhere Pkg.activate(".")
 @everywhere using MCPhylo
@@ -77,25 +77,30 @@ inits = [ Dict{Symbol, Union{Any, Real}}(
         )
     ]
 
-scheme = [PNUTS(:mtree, target=0.8, targetNNI=10),
+scheme = [PNUTS(:mtree, target=0.8, targetNNI=4),
            SliceSimplex(:mypi),
            Slice(:rates, 1.0)
           ]
 
 setsamplers!(model, scheme);
 
+sp = SimulationParameters(burnin=1250, thin=5, chains=2, trees=true, asdsf=true, freq=5)
+
 # do the mcmc simmulation. if trees=true the trees are stored and can later be
 # flushed ot a file output.
-sim = mcmc(model, my_data, inits, 100000, burnin=25000,thin=10, chains=2, trees=true)
+sim = mcmc(model, my_data, inits, 5000, params=sp)
 
 # request more runs
 psrf = max_psrf(sim)
 @show psrf
-while psrf > 1.1
+while psrf > 1.1 && sim.stats[end] > 0.01
     global sim, psrf#, bi, gd, gd_values, indices
-    @show psrf
+    @show psrf, sim.stats[end]
     sim = mcmc(sim, 25000)
     psrf = max_psrf(sim)
     to_file(sim, "simulation_")
 end
 
+io = open("asdsf_vals.log","w")
+join(io, sim.stats, "\n")
+close(io)
