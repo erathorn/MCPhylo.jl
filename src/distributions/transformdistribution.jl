@@ -93,4 +93,3 @@ function logpdf(d::UnitDistribution, x::Real, transform::Bool)
 end
 
 
-const PhylogeneticDistribution = Union{PhyloDist, MultiplePhyloDist}
