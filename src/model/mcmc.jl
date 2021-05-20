@@ -189,6 +189,7 @@ function mcmc_worker!(args::AbstractArray, ASDSF_step::Int64=0,
   end # for
   mv = samparas(m)
   sim.moves[1] = mv
+  println("Chain finished")
   (sim, m, ModelState(unlist(m), gettune(m)))
 end # mcmc_worker!
 
