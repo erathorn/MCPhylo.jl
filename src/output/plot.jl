@@ -158,7 +158,6 @@ end # check_filename
   legendtitle --> "Chain"
   legendtitlefonthalign := :left
   margin --> 5mm
-  ymirror --> true
 
   arr = []
   ptype == :autocor ? push!(arr, Autocor(c, indeces, maxlag)) :
