@@ -157,7 +157,10 @@ end # check_filename
   legend --> false
   legendtitle --> "Chain"
   legendtitlefonthalign := :left
-  margin --> 5mm
+  top_margin := 2mm
+  bottom_margin := 2mm
+  left_margin := 15mm
+  right_margin := 5mm
 
   arr = []
   ptype == :autocor ? push!(arr, Autocor(c, indeces, maxlag)) :
@@ -185,7 +188,7 @@ Recipe for Autocor plots
 """
 @recipe function f(acor::Autocor)
   xguide --> "Lag\n"
-  yguide --> "Autocorrelation\n"
+  yguide --> "Autocorrelation"
   xlims --> (0, +Inf)
   layout --> (1, length(acor.indeces))
 
@@ -295,7 +298,7 @@ Recipe for density plots
 """
 @recipe function f(dens::Density)
   xguide --> "Value\n"
-  yguide --> "Density\n"
+  yguide --> "Density"
   ylims --> (0.0, +Inf)
   layout --> (1, length(dens.indeces))
 
@@ -332,7 +335,7 @@ Recipe for mean plots
 """
 @recipe function f(mean::Mean)
   xguide --> "Iteration\n"
-  yguide --> "Mean\n"
+  yguide --> "Mean"
   layout --> (1, length(mean.indeces))
 
   nrows, nvars, nchains = size(mean.c.value)
@@ -396,7 +399,7 @@ Recipe for trace plots
 """
 @recipe function f(trace::Trace)
   xguide --> "Iteration\n"
-  yguide --> "Value\n"
+  yguide --> "Value"
   layout --> (1, length(trace.indeces))
   legendtitle --> "Chain"
   widen --> false
@@ -439,7 +442,7 @@ Recipe for a grouped bar plot.
 """
 @recipe function f(g::GroupBar; spacing=0)
     xguide --> "Value\n"
-    yguide --> "Density\n"
+    yguide --> "Density"
     grid --> :dash
     gridalpha --> 0.5
     legend --> false
