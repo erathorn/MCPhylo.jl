@@ -187,6 +187,19 @@ function assign_mcmc_work(
 end # assign_mcmc_work
 
 
+function mcmc_or_convergence(args::AbstractArray)
+    if isa(args[1], SimulationParameters)
+        calculate_convergence(args...)
+    else
+        if length(args) == 7
+            mcmc_worker!(args)
+        else
+            mcmc_worker!(args[1:end-2], args[end-1:end]...)
+        end # if/else
+    end # if/else
+end
+
+
 ind2sub(dims, ind) = Tuple(CartesianIndices(dims)[ind])
 
 showall(v) = showall(stdout, v)
