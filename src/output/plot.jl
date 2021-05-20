@@ -12,8 +12,8 @@ density by default).
 - 'fmt::Symbol=:pdf': Format of the output file
 - 'fuse::Bool=false': Fuse all of the plots into one big plot, instead of
                       displaying each of the different plot types separately
-- 'fuse_layout=nothing': Layout for the fused plot.
-- 'fuse_size::Tuple(Number, Number)=(0,0)': Size of the fused plot.
+- 'f_layout=nothing': Layout for the fused plot.
+- 'fsize::Tuple(Number, Number)=(0,0)': Size of the fused plot.
 - 'force::Bool=false': Force plotting of more than 20 variables.
 - 'args...': This includes specific arguments for the different plot types
              , like the number of bins for the contourplot or if the barplots
@@ -32,8 +32,8 @@ density by default).
 """
 function plot(c::AbstractChains, ptype::Vector{Symbol}=[:trace, :density];
               vars::Vector{String}=String[], filename::String="",
-              fmt::Symbol=:pdf, fuse::Bool=false, fuse_layout=nothing,
-              fuse_size::Tuple{Number, Number}=(0, 0),
+              fmt::Symbol=:pdf, fuse::Bool=false, f_layout=nothing,
+              fsize::Tuple{Number, Number}=(0, 0),
               force::Bool=false, args...
               )::Union{Vector{Plots.Plot}, Tuple{Vector{Plots.Plot}, Plots.Plot}}
   if !isempty(vars)
@@ -80,9 +80,9 @@ function plot(c::AbstractChains, ptype::Vector{Symbol}=[:trace, :density];
     end # if
   end # for
   if fuse
-    isnothing(fuse_layout) && (fuse_layout = (n, 1))
-    fuse_size == (0, 0) && (fuse_size = (ilength * 400 / layout[1] * n / fuse_layout[1], fuse_layout[1] * 250 * layout[1]))
-    allplots = Plots.plot(p..., layout=fuse_layout, size=fuse_size)
+    isnothing(f_layout) && (f_layout = (n, 1))
+    fsize == (0, 0) && (fsize = (ilength * 400 / layout[1] * n / f_layout[1], f_layout[1] * 250 * layout[1]))
+    allplots = Plots.plot(p..., layout=f_layout, size=fsize)
     display(allplots)
     filename != "" && check_filename(filename, fmt, allplots)
     return (p, allplots)
