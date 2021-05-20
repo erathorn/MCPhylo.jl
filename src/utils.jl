@@ -187,7 +187,21 @@ function assign_mcmc_work(
 end # assign_mcmc_work
 
 
-function mcmc_or_convergence(args::AbstractArray)
+"""
+  mcmc_or_convergence(args::AbstractArray)
+    ::Union{Tuple{Chains, Model, ModelState}},
+            Tuple{Vector{Vector{Float64}}, ConvergenceStorage}
+
+--- INTERNAL ---
+Used in pmap call in assign_mcmc_work to correctly dispatch arguments to either
+calculate convergence statistics or mcmc chains.
+"""
+function mcmc_or_convergence(args::AbstractArray
+                            )::Union{
+                            Tuple{Chains, Model, ModelState},
+                            Tuple{Vector{Vector{Float64}}, ConvergenceStorage}
+                            }
+
     if isa(args[1], SimulationParameters)
         calculate_convergence(args...)
     else
