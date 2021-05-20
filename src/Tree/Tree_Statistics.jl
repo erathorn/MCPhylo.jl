@@ -187,7 +187,6 @@ function ASDSF_int(splitsQueue, splitsQueues, iter, tree_dims, ASDF_vals, freq,
                    )::Tuple{Vector{Vector{Float64}}, ConvergenceStorage}
 
     all_keys = [Set{Tuple{String,String}}() for x in tree_dims]
-    @show show_progress, length(ASDF_vals[1])
     if show_progress
         p = Progress(length(ASDF_vals[1]))
     end # if
