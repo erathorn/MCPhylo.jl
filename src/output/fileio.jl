@@ -34,7 +34,7 @@ function Base.write(name::AbstractString, c::AbstractChains)
   open(file -> serialize(file, c), name, "w")
 end
 
-JSON.lower(c::AbstractChains) = [p.x, p.y]
+# JSON.lower(c::AbstractChains) = [p.x, p.y]
 """
     readcoda(output::AbstractString, index::AbstractString)
 
