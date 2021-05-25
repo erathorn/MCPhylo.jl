@@ -7,7 +7,11 @@ density by default).
 
 # Arguments
 - 'vars::Vector{String}=String[]': specifies the variables of the chain that
-                                   are plotted
+                                   are plotted. Trick: Instead of inputting
+                                   [varname[1], varname[2], varname[3], ...]
+                                   you can simply write [varname]. The function
+                                   will understand that you want all variables
+                                   with that name.
 - 'filename::String=""': when given, the plots will be saved to a file
 - 'fmt::Symbol=:pdf': Format of the output file
 - 'fuse::Bool=false': Fuse all of the plots into one big plot, instead of
