@@ -1,10 +1,13 @@
 using Revise
-using Distributed
-addprocs(3)
-@everywhere using Pkg
-@everywhere Pkg.activate(".")
-@everywhere using MCPhylo
-
+# using Distributed
+# addprocs(3)
+# @everywhere using Pkg
+using Pkg
+# @everywhere Pkg.activate(".")
+Pkg.activate(".")
+# @everywhere using MCPhylo
+using MCPhylo
+using JSON
 
 mt, df = make_tree_with_data("./Example.nex"); # load your own nexus file
 
@@ -59,7 +62,7 @@ scheme = [MCPhylo.PNUTS(:mtree, target=0.7, targetNNI=1),
            SliceSimplex(:mypi),
           ]
 
-params = SimulationParameters(asdsf=true)
+params = SimulationParameters()
 
 setsamplers!(model, scheme)
 sim = mcmc(model, my_data, inits, 1000, burnin=100, thin=5, chains=2,
