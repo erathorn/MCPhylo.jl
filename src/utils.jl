@@ -135,13 +135,17 @@ function assign_mcmc_work(
     Vector{Tuple{Chains,Model,ModelState}},
     Array{Float64,2},
     Vector{AbstractString},
-    Union{Nothing,ConvergenceStorage},
+    Union{Nothing,ConvergenceStorage}
 }
-
+    
     ASDSF::Bool = sp.asdsf
     statnames::Vector{AbstractString} = []
     # count the number of trees per step per chain
     tree_dim::Int64 = 0
+    stats = zeros(Float64, 0, tree_dim)
+    
+    return pmap2(f, lsts), stats, statnames, nothing
+    
     for i in lsts[1][1].nodes
         if isa(i[2], TreeStochastic)
             push!(statnames, string("asdsf_", string(i[1])))

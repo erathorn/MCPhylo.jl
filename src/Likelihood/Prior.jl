@@ -94,7 +94,7 @@ mutable struct exponentialBL <: ContinuousUnivariateDistribution
             new(scale, c)
 end
 
-function _logpdf(d::exponentialBL, x::FNode)
+function logpdf(d::exponentialBL, x::FNode)
     bl = get_branchlength_vector(x)
     sum(logpdf.(Exponential(d.scale), bl))
 end
