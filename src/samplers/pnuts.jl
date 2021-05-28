@@ -247,13 +247,13 @@ function ref_NNI(v::FNode, tmpB::Vector{Float64}, r::Vector{Float64}, epsilon::F
             set_branchlength_vector!(v, blv1)
 
             # use thread parallelism
-            res_before = @spawn logfgrad(v, sz, true, false) # still with molified branch length
-            # U_before_nni = logfgrad(v, sz, true, false) # still with molified branch length
+            #res_before = @spawn logfgrad(v, sz, true, false) # still with molified branch length
+            U_before_nni, _ = logfgrad(v, sz, true, false) # still with molified branch length
             v_copy = deepcopy(v)
             tmp_NNI_made = NNI!(v_copy, ref_index)
 
              # fetch the results from the parallel part
-            U_before_nni, _ = fetch(res_before)
+            #U_before_nni, _ = fetch(res_before)
             U_before_nni *= -1
 
             if tmp_NNI_made != 0
@@ -342,16 +342,17 @@ function nouturn(xminus::T, xplus::T,
                 rminus::Vector{Float64}, rplus::Vector{Float64}, gradminus::Vector{Float64},gradplus::Vector{Float64},
                 epsilon::Float64, logfgrad::Function, delta::Float64, sz::Int64, j::Int64)  where T <: GeneralNode
 
-    curr_l, curr_h = BHV_bounds(xminus, xplus)
+    _ , curr_h = BHV_bounds(xminus, xplus)
 
     # use thread parallelism to calculuate both directions at once
-    res_minus = Base.Threads.@spawn refraction(deepcopy(xminus), deepcopy(rminus), -1, gradminus, epsilon, logfgrad, delta, sz)
+    #res_minus = Base.Threads.@spawn 
+    xminus_bar, _, _, _, _ = refraction(deepcopy(xminus), deepcopy(rminus), -1, gradminus, epsilon, logfgrad, delta, sz)
     xplus_bar, _, _, _, _ = refraction(deepcopy(xplus), deepcopy(rplus), 1, gradplus, epsilon, logfgrad, delta, sz)
 
     # fetch the results
-    xminus_bar, _, _, _, _ = fetch(res_minus)
+    #xminus_bar, _, _, _, _ = fetch(res_minus)
 
-    curr_t_l, curr_t_h = BHV_bounds(xminus_bar, xplus_bar)
+    curr_t_l, _ = BHV_bounds(xminus_bar, xplus_bar)
     return curr_h < curr_t_l
 end
 

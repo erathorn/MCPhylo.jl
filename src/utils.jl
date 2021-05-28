@@ -144,7 +144,7 @@ function assign_mcmc_work(
     tree_dim::Int64 = 0
     stats = zeros(Float64, 0, tree_dim)
     
-    return pmap2(f, lsts), stats, statnames, nothing
+    #return pmap2(f, lsts), stats, statnames, nothing
     
     for i in lsts[1][1].nodes
         if isa(i[2], TreeStochastic)

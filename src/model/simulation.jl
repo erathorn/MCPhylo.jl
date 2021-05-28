@@ -221,13 +221,14 @@ function gradlogpdf!(m::Model, x::N, block::Integer=0,transform::Bool=false)::Tu
 
   # use thread parallelism
   # likelihood
-  lik_res = @spawn gradlogpdf(m, targets)
+  #lik_res = @spawn 
+  v, grad = gradlogpdf(m, targets)
 
   # prior
   vp, gradp =  gradlogpdf(m[params[1]], x)
 
   # get results from threads
-  v, grad = fetch(lik_res)
+  #v, grad = fetch(lik_res)
 
   vp+v, gradp.+grad
 end
