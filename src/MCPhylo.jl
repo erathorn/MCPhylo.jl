@@ -427,6 +427,7 @@ export
   mcmc,
   mcse,
   plot,
+  plot_asdsf,
   predict,
   quantile,
   rafterydiag,

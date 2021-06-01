@@ -58,9 +58,9 @@ function ASDSF(args::String...; freq::Int64=1, check_leaves::Bool=true,
         push!(splitsQueues[1], Accumulator{Tuple{Set{String}, Set{String}}, Int64}())
     end # for
     iter = zip([eachline(arg) for arg in args]...)
-    ASDF_vals = [zeros(Int(countlines(args[1]) / freq))]
+    ASDSF_vals = [zeros(Int(countlines(args[1]) / freq))]
     # tree_dims is hardcoded to 1 because there are no multiple dims in files
-    ASDSF_int(splitsQueue, splitsQueues, iter, 1, ASDF_vals, freq, check_leaves,
+    ASDSF_int(splitsQueue, splitsQueues, iter, 1, ASDSF_vals, freq, check_leaves,
               min_splits, show_progress, basic=true)[1]
 end # ASDSF
 
@@ -85,9 +85,9 @@ function ASDSF(args::Vector{String}...; freq::Int64=1, check_leaves::Bool=true,
         push!(splitsQueues[1], Accumulator{Tuple{Set{String}, Set{String}}, Int64}())
     end # for
     iter = zip(args...)
-    ASDF_vals = [zeros(Int(length(iter) / freq))]
+    ASDSF_vals = [zeros(Int(length(iter) / freq))]
     # tree_dims is hardcoded to 1 because there are no multiple dims in Vectors
-    ASDSF_int(splitsQueue, splitsQueues, iter, 1, ASDF_vals, freq, check_leaves,
+    ASDSF_int(splitsQueue, splitsQueues, iter, 1, ASDSF_vals, freq, check_leaves,
               min_splits, show_progress; basic=true)[1]
 end # ASDSF
 
@@ -123,8 +123,8 @@ function ASDSF(model::ModelChains; freq::Int64=1, check_leaves::Bool=true,
         end # for
     end # if
     iter = zip([trees[:,c] for c in 1:nchains]...)
-    ASDF_vals::Vector{Vector{Float64}} = [zeros(Int(floor(length(iter) / freq))) for x in tree_dims]
-    ASDSF_int(splitsQueue, splitsQueues, iter, tree_dims, ASDF_vals, freq,
+    ASDSF_vals::Vector{Vector{Float64}} = [zeros(Int(floor(length(iter) / freq))) for x in tree_dims]
+    ASDSF_int(splitsQueue, splitsQueues, iter, tree_dims, ASDSF_vals, freq,
               check_leaves, min_splits, show_progress)
 end # ASDSF
 
@@ -147,7 +147,7 @@ function ASDSF(r_channels::Vector{RemoteChannel{Channel{Array{AbstractString,1}}
                )::Tuple{Vector{Vector{Float64}}, ConvergenceStorage}
 
     iter = 1:n_trees
-    ASDF_vals::Vector{Vector{Float64}} = [zeros(Int(n_trees)) for x in tree_dims]
+    ASDSF_vals::Vector{Vector{Float64}} = [zeros(Int(n_trees)) for x in tree_dims]
     nchains = length(r_channels)
     if isnothing(cs)
         splitsQueue = [Accumulator{Tuple{Set{String}, Set{String}}, Int64}() for x in tree_dims]
@@ -157,13 +157,13 @@ function ASDSF(r_channels::Vector{RemoteChannel{Channel{Array{AbstractString,1}}
                 push!(splitsQueues[j], Accumulator{Tuple{Set{String}, Set{String}}, Int64}())
             end # for
         end # for
-        ASDSF_int(splitsQueue, splitsQueues, iter, tree_dims, ASDF_vals, 1, false,
+        ASDSF_int(splitsQueue, splitsQueues, iter, tree_dims, ASDSF_vals, 1, false,
                   min_splits, false; r_channels=r_channels)
     else
         splitsQueue = cs.splitsQueue
         splitsQueues = cs.splitsQueues
         run = cs.run
-        ASDSF_int(splitsQueue, splitsQueues, iter, tree_dims, ASDF_vals, 1,
+        ASDSF_int(splitsQueue, splitsQueues, iter, tree_dims, ASDSF_vals, 1,
                   false, min_splits, false; r_channels=r_channels,
                   total_runs=run)
     end # if/else
@@ -171,7 +171,7 @@ end # ASDSF
 
 
 """
-    ASDSF_int(splitsQueue, splitsQueues, iter, tree_dims, ASDF_vals, freq,
+    ASDSF_int(splitsQueue, splitsQueues, iter, tree_dims, ASDSF_vals, freq,
               check_leaves, min_splits, show_progress; r_channels=nothing,
               run::Int64=1, basic=false
               )::Tuple{Vector{Vector{Float64}}, ConvergenceStorage}
@@ -179,14 +179,14 @@ end # ASDSF
 --- INTERNAL ---
 Handles the computation of the Average Standard Deviation of Split Frequencies.
 """
-function ASDSF_int(splitsQueue, splitsQueues, iter, tree_dims, ASDF_vals, freq,
+function ASDSF_int(splitsQueue, splitsQueues, iter, tree_dims, ASDSF_vals, freq,
                    check_leaves, min_splits, show_progress; r_channels=nothing,
                    total_runs::Int64=1, basic=false
                    )::Tuple{Vector{Vector{Float64}}, ConvergenceStorage}
 
     all_keys = [Set{Tuple{Set{String},Set{String}}}() for x in tree_dims]
     if show_progress
-        p = Progress(length(ASDF_vals))
+        p = Progress(length(ASDSF_vals))
     end # if
     run = 1
     outer::Float64 = 0.0
@@ -223,7 +223,7 @@ function ASDSF_int(splitsQueue, splitsQueues, iter, tree_dims, ASDF_vals, freq,
                         outer += sqrt(inner)
                     end # if
                 end # for
-                ASDF_vals[td][run] = outer / length(splitsQueue[td])
+                ASDSF_vals[td][run] = outer / length(splitsQueue[td])
             end # for
             run += 1
             total_runs += 1
@@ -231,5 +231,5 @@ function ASDSF_int(splitsQueue, splitsQueues, iter, tree_dims, ASDF_vals, freq,
         end # if
     end # for
     conv_storage = ConvergenceStorage(splitsQueue, splitsQueues, total_runs)
-    ASDF_vals, conv_storage
+    ASDSF_vals, conv_storage
 end # ASDSF_int

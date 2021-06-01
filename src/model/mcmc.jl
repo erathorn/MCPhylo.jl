@@ -123,7 +123,7 @@ function mcmc_master!(m::Model, window::UnitRange{Int},
   ]
 
   results::Vector{Tuple{Chains, Model, ModelState}}, stats::Array{Float64, 2}, statnames::Vector{AbstractString}, conv_storage::Union{Nothing, ConvergenceStorage} =
-    	assign_mcmc_work(mcmc_worker!, lsts, sp, conv_storage)
+    	assign_mcmc_work(mcmc_or_convergence, lsts, sp, conv_storage)
 
   sims::Array{Chains}  = Chains[results[k][1] for k in 1:K]
   model::Model = results[1][2]
@@ -140,7 +140,7 @@ end
 --- INTERNAL ---
 Each call to this function computes a chain for a ModelChains Object.
 """
-function mcmc_worker!(args::Vector, ASDSF_step::Int64=0,
+function mcmc_worker!(args::AbstractArray, ASDSF_step::Int64=0,
                       rc::Union{Nothing, RemoteChannel}=nothing
                       )::Tuple{Chains, Model, ModelState}
   m::Model, state::ModelState, window::UnitRange{Int}, burnin::Integer, thin::Integer, meter::ChainProgress, store_trees::Bool = args

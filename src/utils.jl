@@ -148,53 +148,34 @@ function assign_mcmc_work(
             tree_dim += 1
         end # if
     end # for
-    ll::Int64 = length(lsts)
-    # set up remote channels for communication across workers for ASDSF-on-the-fly
-    if ASDSF
-        r_channels =
-            [RemoteChannel(() -> Channel{Vector{AbstractString}}(100)) for x = 1:ll]
-        ASDSF_vals::Vector{Vector{Float64}} = []
-    end
-    n_trees::Int64 = ASDSF ? floor((last(lsts[1][3]) - lsts[1][4]) / sp.freq) : 0
+    nchains::Int64 = length(lsts)
+    ntrees::Int64 = ASDSF ? floor((last(lsts[1][3]) - lsts[1][4]) / sp.freq) : 0
     results = Dict{Int64,Tuple{Chains,Model,ModelState}}()
-    if nworkers() > 1
-        # @sync and @async asure parallel computation
-        @sync begin
-            # assign each chain a free worker
-            for (ind, lst) in enumerate(lsts)
-                @async results[ind] =
-                    ASDSF ?
-                    (@fetchfrom default_worker_pool() f(lst, sp.freq, r_channels[ind])) :
-                    (@fetchfrom default_worker_pool() f(lst))
-            end # for
-            # assign a free worker the ASDSF computation
-            @async begin
-                if ASDSF
-                    asdsf_results = @fetchfrom default_worker_pool() calculate_convergence(
-                        sp,
-                        conv_storage,
-                        r_channels,
-                        n_trees,
-                        1:tree_dim,
-                    )
-                    append!(ASDSF_vals, asdsf_results[1])
-                    conv_storage = asdsf_results[2]
-                end # if
-            end # begin
-        end # begin
-    else
+    if ASDSF
+        # set up remote channels for communication across workers for ASDSF-on-the-fly
+        if nworkers() >= nchains + 1
+            r_channels =
+                [RemoteChannel(() -> Channel{Vector{AbstractString}}(100)) for x = 1:nchains]
+        else
+            r_channels =
+                [RemoteChannel(() -> Channel{Vector{AbstractString}}(ntrees)) for x = 1:nchains]
+        end # if / else
+        ASDSF_vals::Vector{Vector{Float64}} = []
         for (ind, lst) in enumerate(lsts)
-            results[ind] = ASDSF ? f(lst, sp.freq, r_channels[ind]) : f(lst)
+            append!(lst, [sp.freq, r_channels[ind]])
         end # for
-        if ASDSF
-            asdsf_results =
-                calculate_convergence(sp, r_channels, n_trees, 1:tree_dim, conv_storage)
-            append!(ASDSF_vals, asdsf_results[1])
-            conv_storage = asdsf_results[2]
-        end # if
+        push!(lsts, [sp, conv_storage, r_channels, ntrees, 1:tree_dim])
+    end # if
+    if nprocs() > 1
+        results_vec = pmap(f, lsts)
+    else
+        results_vec = map(f, lsts)
     end # if/else
     ASDSF && close.(r_channels)
     if ASDSF
+        asdsf_results = results_vec[end]
+        append!(ASDSF_vals, asdsf_results[1])
+        conv_storage = asdsf_results[2]
         stats = Array{Float64,2}(undef, length(ASDSF_vals[1]), length(ASDSF_vals))
         for i = 1:length(ASDSF_vals)
             stats[:, i] = ASDSF_vals[i]
@@ -202,8 +183,35 @@ function assign_mcmc_work(
     else
         stats = zeros(Float64, 0, tree_dim)
     end # if/else
-    return [results[i] for i = 1:ll], stats, statnames, conv_storage
+    return [results_vec[i] for i = 1:nchains], stats, statnames, conv_storage
 end # assign_mcmc_work
+
+
+"""
+  mcmc_or_convergence(args::AbstractArray)
+    ::Union{Tuple{Chains, Model, ModelState}},
+            Tuple{Vector{Vector{Float64}}, ConvergenceStorage}
+
+--- INTERNAL ---
+Used in pmap call in assign_mcmc_work to correctly dispatch arguments to either
+calculate convergence statistics or mcmc chains.
+"""
+function mcmc_or_convergence(args::AbstractArray
+                            )::Union{
+                            Tuple{Chains, Model, ModelState},
+                            Tuple{Vector{Vector{Float64}}, ConvergenceStorage}
+                            }
+
+    if isa(args[1], SimulationParameters)
+        calculate_convergence(args...)
+    else
+        if length(args) == 7
+            mcmc_worker!(args)
+        else
+            mcmc_worker!(args[1:end-2], args[end-1:end]...)
+        end # if/else
+    end # if/else
+end
 
 
 ind2sub(dims, ind) = Tuple(CartesianIndices(dims)[ind])
