@@ -161,15 +161,22 @@ end # check_filename
   legend --> false
   legendtitle --> "Chain"
 <<<<<<< HEAD
+<<<<<<< HEAD
   legendtitlefonthalign := :left
+=======
+  legendtitlefonthalign := :best
+>>>>>>> cc93531 (update margin)
   top_margin := 2mm
   bottom_margin := 2mm
   left_margin := 15mm
   right_margin := 5mm
+<<<<<<< HEAD
 =======
   legendtitlefonthalign --> :best
   margin --> 7mm
 >>>>>>> e276fa4 (add and import new plot_asdsf function; fix legend behaviour for ploting)
+=======
+>>>>>>> cc93531 (update margin)
 
   arr = []
   ptype == :autocor ? push!(arr, Autocor(c, indeces, maxlag)) :
