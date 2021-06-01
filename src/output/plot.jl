@@ -160,30 +160,11 @@ end # check_filename
   gridalpha --> 0.5
   legend --> false
   legendtitle --> "Chain"
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-  legendtitlefonthalign := :left
-=======
   legendtitlefonthalign := :best
->>>>>>> cc93531 (update margin)
-=======
-  legendtitlefonthalign := :best
->>>>>>> cc935314f10f5cb406c76575d2d10564f29dfc9b
   top_margin := 2mm
   bottom_margin := 2mm
   left_margin := 15mm
   right_margin := 5mm
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-  legendtitlefonthalign --> :best
-  margin --> 7mm
->>>>>>> e276fa4 (add and import new plot_asdsf function; fix legend behaviour for ploting)
-=======
->>>>>>> cc93531 (update margin)
-=======
->>>>>>> cc935314f10f5cb406c76575d2d10564f29dfc9b
 
   arr = []
   ptype == :autocor ? push!(arr, Autocor(c, indeces, maxlag)) :
