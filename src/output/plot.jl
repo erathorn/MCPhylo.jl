@@ -135,7 +135,7 @@ end # check_filename
   gridalpha --> 0.5
   legend --> false
   legendtitle --> "Chain"
-  legendtitlefonthalign := :left
+  legendtitlefonthalign --> :best
   margin --> 7mm
 
   arr = []
@@ -423,7 +423,7 @@ Recipe for a grouped bar plot.
     gridalpha --> 0.5
     legend --> false
     legendtitle --> "Chain"
-    legendtitlefonthalign := :left
+    legendtitlefonthalign := :best
     margin --> 7mm
     x, y = grouped_xy(g.args...)
 
@@ -518,3 +518,49 @@ function groupedbar_fillrange(y)
     end
     y, fr
 end
+
+
+"""
+  plot_asdsf(c::AbstractChains; args...)::Plots.Plot
+
+--- INTERNAL ---
+Plot the ASDSF values of an Abstract Chains object.
+"""
+function plot_asdsf(c::AbstractChains; args...)::Plots.Plot
+  size(c.stats, 1) == 0 && throw(ArgumentError("No ASDSF values have been computed on this simulation. Cannot plot them."))
+  freq = c.sim_params.freq
+  xvals = collect(c.sim_params.burnin + freq : freq :c.model.iter)
+  p = Plots.plot(ASDSF_trace(c.stats, xvals); args...)
+end # plot_asdsf
+
+# struct for asdsf recipe
+struct ASDSF_trace; yvals; xvals; end
+
+
+"""
+    f(vals::ASDSF_trace)
+
+--- INTERNAL ---
+Recipe for trace plots of ASDSF values
+"""
+@recipe function f(vals::ASDSF_trace)
+
+  xlims --> (vals.xvals[1], vals.xvals[end])
+  ylims --> (0, 1)
+  grid --> :dash
+  gridalpha --> 0.5
+  legend --> false
+  legendtitle --> "Tree Dimension"
+  legendtitlefonthalign --> :best
+  xguide --> "n-th Tree"
+  yguide --> "ASDSF Values"
+  margin --> 7mm
+
+  for i in 1:size(vals.yvals, 2)
+    @series begin
+      label --> string(i)
+      seriestype := :line
+      vals.xvals, vals.yvals[:, i]
+    end # series
+  end # for
+end # recipe
