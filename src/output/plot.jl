@@ -166,8 +166,6 @@ end # check_filename
   left_margin := 15mm
   right_margin := 5mm
 
-
-
   arr = []
   ptype == :autocor ? push!(arr, Autocor(c, indeces, maxlag)) :
   ptype == :contour ? push!(arr, Contour(c, indeces, bins)) :
