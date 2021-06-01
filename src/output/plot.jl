@@ -135,8 +135,11 @@ end # check_filename
   gridalpha --> 0.5
   legend --> false
   legendtitle --> "Chain"
-  legendtitlefonthalign --> :best
-  margin --> 7mm
+  legendtitlefonthalign := :best
+  top_margin := 2mm
+  bottom_margin := 2mm
+  left_margin := 15mm
+  right_margin := 5mm
 
   arr = []
   ptype == :autocor ? push!(arr, Autocor(c, indeces, maxlag)) :
