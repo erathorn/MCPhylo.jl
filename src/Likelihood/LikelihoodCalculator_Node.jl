@@ -159,9 +159,7 @@ function fels_ll(tree_postorder::Vector{N}, data::Array{Float64,4},
                     mutationArray[:, :, r, child.num] .= calculate_transition(substitutionModel, rates[r], mu, child.inc_length, U, Uinv, D, pi_)
                     BLAS.gemm!('N','N', 1.0, mutationArray[:, :, r, child.num], data[:, :, r, child.num], 0.0, Down[:, :, r, child.num])
                     data[:, :, r, node.num] .*= Down[:, :, r, child.num]
-
                 end
-
             end
 
             if !node.root
@@ -179,5 +177,4 @@ function fels_ll(tree_postorder::Vector{N}, data::Array{Float64,4},
     end
     ll
 end
-
 
