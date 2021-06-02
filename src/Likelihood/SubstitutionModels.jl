@@ -1,4 +1,5 @@
-
+const MCP_TIME_MIN = 1.0E-11
+const MCP_TIME_MAX = 100.0
 
 """
     Restriction(base_freq::Vector{Float64},
@@ -107,4 +108,81 @@ function setmatrix(vec_vals::Array{T,1})::Array{T,2} where T
     k = 0
     Q = [ i<j ? (k+=1; vec_vals[k]) : 0 for i=1:s, j=1:s ]
     Q.+transpose(Q)
+end
+
+
+### Calculate Transition Matrices
+
+function calculate_transition(f, rate::R, mu::R, time::R, U::A, Uinv::A, D::Vector, pi_::Vector)::Array{Float64,2} where {R<:Real, A<:AbstractArray{<:Real}}
+    return_mat = Array{Float64,2}(undef, length(pi_),length(pi_))
+    t = rate * mu * time
+    BLAS.gemm!('N', 'N', 1.0, BLAS.symm('R', 'L', diagm(exp.(D .* t)), U), Uinv, 0.0, return_mat)
+    return return_mat
+end
+
+function calculate_transition(f::typeof(JC), rate::R, mu::R, time::R, U::A, Uinv::A, D::Vector, pi_::Vector)::Array{Float64,2} where {R<:Real, A<:AbstractArray{<:Real}}
+    return_mat = similar(U)
+    t = rate * mu * time
+    if t < MCP_TIME_MIN
+        return_mat .= 0.0
+        return_mat[diagind(return_mat)] .= 1.0
+    elseif t > MCP_TIME_MAX
+        return_mat .= 1.0/length(pi_)
+    else
+        BLAS.gemm!('N', 'N', 1.0, BLAS.symm('R', 'L', diagm(exp.(D .* t)), U), Uinv, 0.0, return_mat)
+    end
+    return_mat
+end
+
+function calculate_transition(f::typeof(Restriction), rate::R, mu::R, time::R, U::A, Uinv::A, D::Vector, pi_::Vector)::Array{Float64,2} where {R<:Real, A<:AbstractArray{<:Real}}
+    return_mat = similar(U)
+    t = rate * mu * time
+    if t < MCP_TIME_MIN
+        return_mat .= 0.0
+        return_mat[diagind(return_mat)] .= 1.0
+    elseif t > MCP_TIME_MAX
+        return_mat .= reverse(pi_)
+        return_mat = collect(transpose(return_mat))
+    else
+        BLAS.gemm!('N', 'N', 1.0, BLAS.symm('R', 'L', diagm(exp.(D .* t)), U), Uinv, 0.0, return_mat)
+    end
+    return_mat
+end
+
+
+
+function calculate_transition(f, rate::R, mu::R, time::R, U::A, Uinv::A, D::Vector, pi_::Vector)::Array{Float64,2} where {R<:Real, A<:AbstractArray{<:Complex}}
+    return_mat = Array{Float64,2}(undef, length(pi_),length(pi_))
+    t = rate * mu * time
+    return_mat .= abs.(BLAS.gemm('N', 'N', 1.0, BLAS.symm('R', 'L', diagm(exp.(D .* t)), U), Uinv))
+    return return_mat
+end
+
+function calculate_transition(f::typeof(JC), rate::R, mu::R, time::R, U::A, Uinv::A, D::Vector, pi_::Vector)::Array{Float64,2} where {R<:Real, A<:AbstractArray{<:Complex}}
+    return_mat = similar(U)
+    t = rate * mu * time
+    if t < MCP_TIME_MIN
+        return_mat .= 0.0
+        return_mat[diagind(return_mat)] .= 1.0
+    elseif t > MCP_TIME_MAX
+        return_mat .= 1.0/length(pi_)
+    else
+        return_mat .= abs.(BLAS.gemm('N', 'N', 1.0, BLAS.symm('R', 'L', diagm(exp.(D .* t)), U), Uinv))
+    end
+    return_mat
+end
+
+function calculate_transition(f::typeof(Restriction), rate::R, mu::R, time::R, U::A, Uinv::A, D::Vector, pi_::Vector)::Array{Float64,2} where {R<:Real, A<:AbstractArray{<:Complex}}
+    return_mat = similar(U)
+    t = rate * mu * time
+    if t < MCP_TIME_MIN
+        return_mat .= 0.0
+        return_mat[diagind(return_mat)] .= 1.0
+    elseif t > MCP_TIME_MAX
+        return_mat .= reverse(pi_)
+        return_mat = collect(transpose(return_mat))
+    else
+        return_mat .= abs.(BLAS.gemm('N', 'N', 1.0, BLAS.symm('R', 'L', diagm(exp.(D .* t)), U), Uinv))
+    end
+    return_mat
 end

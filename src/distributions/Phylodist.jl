@@ -70,7 +70,7 @@ function __logpdf(d::PhyloDist, x::AbstractArray, gradient::Bool=false)
         data[:, :, i, :] .= x
     end
     U, D, Uinv, mu = d.substitution_model(d.base_freq, d.substitution_rates)
-    FelsensteinFunction(mt, d.base_freq, d.rates, U, D, Uinv, mu, data, gradient)
+    FelsensteinFunction(mt, d.base_freq, d.rates, U, D, Uinv, mu, data, d.substitution_model, gradient)
 end
 
 function gradlogpdf(d::PhyloDist, x::AbstractArray)
