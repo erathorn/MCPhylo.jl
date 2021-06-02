@@ -156,7 +156,10 @@ function fels_ll(tree_postorder::Vector{N}, data::Array{Float64,4},
             data[:, :, :, node.num] .= 1.0
             for child in node.children
                 @inbounds @views for r in 1:Nrates
-                    BLAS.gemm!('N', 'N', 1.0, BLAS.symm('R', 'L', diagm(exp.(D .* (rates[r]*mu*child.inc_length))), U), Uinv, 0.0, mutationArray[:, :, r, child.num])
+                    #BLAS.gemm!('N', 'N', 1.0, BLAS.symm('R', 'L', diagm(exp.(D .* (rates[r]*mu*child.inc_length))), U), Uinv, 0.0, mutationArray[:, :, r, child.num])
+                    calculate_transition(mutationArray, r, child.num, rates, mu, child.inc_length, U, Uinv, D)
+                    #@show mutationArray[:, :, r, child.num]
+                    #throw("wait")
                     BLAS.gemm!('N','N', 1.0, mutationArray[:, :, r, child.num], data[:, :, r, child.num], 0.0, Down[:, :, r, child.num])
                     data[:, :, r, node.num] .*= Down[:, :, r, child.num]
 
@@ -217,4 +220,20 @@ function fels_ll(tree_postorder::Vector{N}, data::Array{Float64,4},
         ll += sum(log.(sum(data[:, :, r, root_node.num] .* pi_, dims=1)))
     end
     ll
+end
+
+
+function calculate_transition(mutationArray,r, n, rates, mu, time, U, Uinv, D)
+    TIME_MIN = 1.0E-11
+    TIME_MAX = 100.0
+    t = rates[r] * mu * time
+    if t < TIME_MIN
+        mutationArray[:, :, r, n] .= 0.0
+        mutationArray[:, :, r, n][diagind(size(U))] .= 1.0
+    elseif t > TIME_MAX
+        mutationArray[:, :, r, n] .= 0.25
+    else
+        mutationArray[:, :,r,n] .= BLAS.gemm('N', 'N', 1.0, BLAS.symm('R', 'L', diagm(exp.(D .* t)), U), Uinv)
+    end
+    
 end

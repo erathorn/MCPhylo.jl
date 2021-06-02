@@ -42,7 +42,7 @@ function JC(base_freq::Vector{Float64}, SubstitutionRates::Vector{Float64})::Tup
     Q[diagind(Nbases,Nbases)] .= -diag
     D, U = eigen(Q)
     Uinv = inv(U)
-    mu = 1.0
+    mu = 1/sum(diag)
     return U, D, Uinv, mu
 end
 
