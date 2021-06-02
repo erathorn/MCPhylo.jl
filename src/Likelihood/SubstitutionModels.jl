@@ -13,11 +13,14 @@ The function returns the Eigenvectors, Eigenvalues, inverse of eigenvectors and
 function Restriction(base_freq::Vector{Float64}, SubstitutionRates::Vector{Float64})::Tuple{Array{Float64,2}, Array{Float64,1}, Array{Float64,2}, Float64}
     Nbases = length(base_freq)
     Q::Array{Float64,2} = ones(Nbases,Nbases)
-    Q[diagind(Nbases,Nbases)] .= -1
+    Q[diagind(Nbases,Nbases)] .= 0
     Q .*= reverse(base_freq)
+    dia = sum(Q,dims=1)
+    Q[diagind(Nbases,Nbases)] = -dia
+    Q = transpose(Q)
     D, U = eigen(Q)
     Uinv = inv(U)
-    mu::Float64 =  1.0 / (2.0 * prod(base_freq))
+    mu::Float64 =  1.0 / (1-dot(base_freq))
     return U, D, Uinv, mu
 end
 
