@@ -17,10 +17,11 @@ mutable struct PNUTSTune <: SamplerTune
     t0::Float64
     delta::Float64
     target::Float64
-    moves::Int
+    moves::Vector{Int}
     tree_depth::Int
-    nniprime::Int
+    nniprime::Float64
     targetNNI::Int
+    tree_depth_trace::Vector{Int}
 
 
     PNUTSTune() = new()
@@ -28,7 +29,7 @@ mutable struct PNUTSTune <: SamplerTune
     function PNUTSTune(x::Vector{T}, epsilon::Float64, logfgrad::Union{Function,Missing};
                     target::Real=0.6, tree_depth::Int=10, targetNNI::Int=5) where T <: GeneralNode
         new(logfgrad, false, 0.0, epsilon, 1.0, 0.05, 0.0, 0.75, 0, NaN, 0, 10.0,0.003,
-        target,0, tree_depth,0, targetNNI)
+        target,Int[], tree_depth,0, targetNNI,Int[])
     end
 end
 
@@ -100,11 +101,15 @@ function sample!(v::PNUTSVariate, logfgrad::Function; adapt::Bool=false)
         Ht = (tune.target - tune.alpha / tune.nalpha)
         avgnni = tune.targetNNI - tune.nniprime / tune.nalpha
         HT2 = - avgnni / (1 + abs(avgnni))
-        HT = (Ht + HT2) / 2
+        
         p = 1.0 / (tune.m + tune.t0)
+        
+        HT = (Ht + HT2)/2
+        
         tune.Hbar = (1.0 - p) * tune.Hbar +
                  p * HT
         tune.epsilon = exp(tune.mu - sqrt(tune.m) * tune.Hbar / tune.gamma)
+        
         p = tune.m^-tune.kappa
         tune.epsilonbar = exp(p * log(tune.epsilon) +
                            (1.0 - p) * log(tune.epsilonbar))
@@ -175,13 +180,16 @@ function nuts_sub!(v::PNUTSVariate, epsilon::Float64, logfgrad::Function)
             v.value[1] = xprime
         end
         j += 1
+        nni += nni1
         n += nprime
         s = sprime && nouturn(xminus, xplus, rminus, rplus, gradminus, gradplus, epsilon, logfgrad, delta, nl, j)
-        v.tune.alpha, v.tune.nalpha, v.tune.nniprime = alpha, nalpha, nniprime
-        nni += nni1
+        v.tune.alpha, v.tune.nalpha, v.tune.nniprime = alpha, nalpha, nni/j
+        
     end
   
-    v.tune.moves += nni
+    #v.tune.moves += nni
+    push!(v.tune.moves, nni)
+    push!(v.tune.tree_depth_trace, j)
     v
 end
 

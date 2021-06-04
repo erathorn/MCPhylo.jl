@@ -12,31 +12,6 @@ function parse_and_number(treestring::S)::FNode where S<:AbstractString
     p_tree2
 end # parse_and_number
 
-"""
-    calculate_convergence(sm::SimulationParameters, args...)::Vector{Vector{Float64}}
-
-Function that checks which
-"""
-function calculate_convergence(sm::SimulationParameters,
-                               conv_storage::Union{Nothing, ConvergenceStorage},
-                               args...
-                              )::Tuple{Vector{Vector{Float64}}, ConvergenceStorage}
-
-    if sm.asdsf
-        if isnothing(conv_storage)
-            ASDSF_vals, conv_storage = ASDSF(args..., sm.min_splits)
-        else
-            ASDSF_vals, conv_storage = ASDSF(args..., sm.min_splits, cs=conv_storage)
-        end # if/else
-    end
-    #=
-    if sm.psrf
-        calculate_psrf(args...)
-    end
-    =#
-    return ASDSF_vals, conv_storage
-end
-
 
 """
     ASDSF(args::String...; freq::Int64=1, check_leaves::Bool=true,
@@ -203,6 +178,7 @@ function ASDSF_int(splitsQueue, splitsQueues, iter, tree_dims, ASDSF_vals, freq,
 
                 # get all bipartitions
                 cmds = countmap.(get_bipartitions.(trees))
+                @show cmds
                 new_splits = union(keys.(cmds)...)
                 all_keys[td] = union(all_keys[td], new_splits)
                 for split in new_splits

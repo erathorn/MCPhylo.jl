@@ -292,6 +292,7 @@ include("model/initialization.jl")
 include("model/mcmc.jl")
 include("model/model.jl")
 include("model/simulation.jl")
+include("model/simulation_statistics.jl")
 
 include("output/chains.jl")
 include("output/chainsummary.jl")
