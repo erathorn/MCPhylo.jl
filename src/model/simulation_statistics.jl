@@ -15,13 +15,7 @@ function calculate_convergence(sm::SimulationParameters,
             ASDSF_vals, conv_storage = ASDSF(args..., sm.min_splits, cs=conv_storage)
         end # if/else
     end
-    if sm.NNI
-        monitor_NNI(args...)
-    end
-    if sm.tree_depth
-        monitor_treedepth(args...)
-    end
-
+    
     return ASDSF_vals, conv_storage
 end
 
