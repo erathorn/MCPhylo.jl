@@ -178,7 +178,6 @@ function ASDSF_int(splitsQueue, splitsQueues, iter, tree_dims, ASDSF_vals, freq,
 
                 # get all bipartitions
                 cmds = countmap.(get_bipartitions.(trees))
-                @show cmds
                 new_splits = union(keys.(cmds)...)
                 all_keys[td] = union(all_keys[td], new_splits)
                 for split in new_splits

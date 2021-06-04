@@ -96,10 +96,10 @@ function sample!(v::PNUTSVariate, logfgrad::Function; adapt::Bool=false)
     if tune.adapt
         tune.m += 1
         tune.nniprime = 0
-
+        
         nuts_sub!(v, tune.epsilon, logfgrad)
         Ht = (tune.target - tune.alpha / tune.nalpha)
-        avgnni = tune.targetNNI - tune.nniprime / tune.nalpha
+        avgnni = (tune.targetNNI - tune.nniprime)# / tune.nalpha)
         HT2 = - avgnni / (1 + abs(avgnni))
         
         p = 1.0 / (tune.m + tune.t0)
@@ -179,12 +179,12 @@ function nuts_sub!(v::PNUTSVariate, epsilon::Float64, logfgrad::Function)
         if sprime && rand() < nprime / n
             v.value[1] = xprime
         end
-        j += 1
+        
         nni += nni1
         n += nprime
         s = sprime && nouturn(xminus, xplus, rminus, rplus, gradminus, gradplus, epsilon, logfgrad, delta, nl, j)
-        v.tune.alpha, v.tune.nalpha, v.tune.nniprime = alpha, nalpha, nni/j
-        
+        v.tune.alpha, v.tune.nalpha, v.tune.nniprime = alpha, nalpha, nniprime
+        j += 1
     end
   
     #v.tune.moves += nni
@@ -359,6 +359,7 @@ function nouturn(xminus::T, xplus::T,
     xminus_bar, _, _, _, _ = refraction(deepcopy(xminus), deepcopy(rminus), -1, gradminus, epsilon, logfgrad, delta, sz)
 
     curr_t_l, curr_t_h = BHV_bounds(xminus_bar, xplus_bar)
+    
     return curr_h < curr_t_l
 end
 
