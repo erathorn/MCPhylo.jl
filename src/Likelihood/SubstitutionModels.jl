@@ -58,8 +58,8 @@ The function returns the Eigenvectors, Eigenvalues and inverse of eigenvectors.
 function JC(base_freq::Vector{Float64}, SubstitutionRates::Vector{Float64})::Tuple{Array{Float64,2}, Array{Float64,1}, Array{Float64,2}, Float64}
     Nbases = length(base_freq)
     Q::Array{Float64,2} = ones(Nbases,Nbases)
-    μ = SubstitutionRates[1]
-    off_diag = μ/Nbases
+    #μ = SubstitutionRates[1]
+    off_diag = 1.0/(Nbases-1)
     diag = off_diag * (Nbases-1)
     Q .= off_diag
     Q[diagind(Nbases,Nbases)] .= -diag
