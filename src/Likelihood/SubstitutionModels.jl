@@ -2,16 +2,16 @@ const MCP_TIME_MIN = 1.0E-11
 const MCP_TIME_MAX = 100.0
 
 """
-    Restriction(base_freq::Vector{Float64},
+    F81(base_freq::Vector{Float64},
                 SubstitutionRates::Vector{Float64})::Tuple{Array{Float64,2}, Array{Float64,1}, Array{Float64,2}}
 
-Calculate the eigenvalue decomposition of the Q matrix of the restriction site model.
+Calculate the eigenvalue decomposition of the Q matrix of the F81 model.
 The `SubstitutionRates` are ignored, and just for call stability.
 
 The function returns the Eigenvectors, Eigenvalues, inverse of eigenvectors and
     the scale factor for expected number changes per site
 """
-function Restriction(base_freq::Vector{Float64}, SubstitutionRates::Vector{Float64})::Tuple{Array{Float64,2}, Array{Float64,1}, Array{Float64,2}, Float64}
+function F81(base_freq::Vector{Float64}, SubstitutionRates::Vector{Float64})::Tuple{Array{Float64,2}, Array{Float64,1}, Array{Float64,2}, Float64}
     Nbases = length(base_freq)
     Q::Array{Float64,2} = ones(Nbases,Nbases)
     Q[diagind(Nbases,Nbases)] .= 0
@@ -25,6 +25,25 @@ function Restriction(base_freq::Vector{Float64}, SubstitutionRates::Vector{Float
     return U, D, Uinv, mu
 end
 
+"""
+    Restriction(base_freq::Vector{Float64},
+                SubstitutionRates::Vector{Float64})::Tuple{Array{Float64,2}, Array{Float64,1}, Array{Float64,2}}
+Calculate the eigenvalue decomposition of the Q matrix of the restriction site model.
+The `SubstitutionRates` are ignored, and just for call stability.
+
+The function returns the Eigenvectors, Eigenvalues, inverse of eigenvectors and
+    the scale factor for expected number changes per site
+"""
+function Restriction(base_freq::Vector{Float64}, SubstitutionRates::Vector{Float64})::Tuple{Array{Float64,2}, Array{Float64,1}, Array{Float64,2}, Float64}
+    Nbases = length(base_freq)
+    Q::Array{Float64,2} = ones(Nbases,Nbases)
+    Q[diagind(Nbases,Nbases)] .= -1
+    Q .*= reverse(base_freq)
+    D, U = eigen(Q)
+    Uinv = inv(U)
+    mu::Float64 =  1.0 / (2.0 * prod(base_freq))
+    return U, D, Uinv, mu
+end
 
 
 """
@@ -134,7 +153,7 @@ function calculate_transition(f::typeof(JC), rate::R, mu::R, time::R, U::A, Uinv
     return_mat
 end
 
-function calculate_transition(f::typeof(Restriction), rate::R, mu::R, time::R, U::A, Uinv::A, D::Vector, pi_::Vector)::Array{Float64,2} where {R<:Real, A<:AbstractArray{<:Real}}
+function calculate_transition(f::typeof(F81), rate::R, mu::R, time::R, U::A, Uinv::A, D::Vector, pi_::Vector)::Array{Float64,2} where {R<:Real, A<:AbstractArray{<:Real}}
     return_mat = similar(U)
     t = rate * mu * time
     if t < MCP_TIME_MIN

@@ -45,14 +45,15 @@ function PNUTS_monitor(sim::AbstractChains)
         Plots.plot!(1:sim.model.iter, tree_depths[ch])
     end
     display(p)
-    println("Summary Stats")
     println("Per Chain mean number of NNI moves per generation")
     mn = mean.(NNIs)
-    println("Chain 1: $(mn[1])")
-    println("Chain 2: $(mn[2])")
+    for i in 1:nchains
+        println("Chain $i: $(mn[i])")
+    end
     println("Per Chain mean search tree depths per generation")
     mn = mean.(tree_depths)
-    println("Chain 1: $(mn[1])")
-    println("Chain 2: $(mn[2])")
+    for i in 1:nchains
+        println("Chain $i: $(mn[i])")
+    end
     nothing
 end
