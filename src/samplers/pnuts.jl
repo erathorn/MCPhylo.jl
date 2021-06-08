@@ -99,7 +99,7 @@ function sample!(v::PNUTSVariate, logfgrad::Function; adapt::Bool=false)
         
         nuts_sub!(v, tune.epsilon, logfgrad)
         Ht = (tune.target - tune.alpha / tune.nalpha)
-        avgnni = (tune.targetNNI - tune.nniprime)# / tune.nalpha)
+        avgnni = (tune.targetNNI - tune.nniprime / tune.nalpha)
         HT2 = - avgnni / (1 + abs(avgnni))
         
         p = 1.0 / (tune.m + tune.t0)
@@ -183,7 +183,7 @@ function nuts_sub!(v::PNUTSVariate, epsilon::Float64, logfgrad::Function)
         nni += nni1
         n += nprime
         s = sprime && nouturn(xminus, xplus, rminus, rplus, gradminus, gradplus, epsilon, logfgrad, delta, nl, j)
-        v.tune.alpha, v.tune.nalpha, v.tune.nniprime = alpha, nalpha, nniprime
+        v.tune.alpha, v.tune.nalpha, v.tune.nniprime = alpha, nalpha, nni
         j += 1
     end
   
