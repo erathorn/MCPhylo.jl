@@ -182,7 +182,12 @@ function nuts_sub!(v::PNUTSVariate, epsilon::Float64, logfgrad::Function)
         
         nni += nni1
         n += nprime
-        s = sprime && nouturn(xminus, xplus, rminus, rplus, gradminus, gradplus, epsilon, logfgrad, delta, nl, j)
+        statement, xpm, xpb = nouturn(xminus, xplus, rminus, rplus, gradminus, gradplus, epsilon, logfgrad, delta, nl, j)
+        s = sprime && statement
+        if s
+            xplus = xpb
+            xminus = xpm
+        end
         v.tune.alpha, v.tune.nalpha, v.tune.nniprime = alpha, nalpha, nni
         j += 1
     end
@@ -334,7 +339,12 @@ function buildtree(x::FNode, r::Vector{Float64},
                 xprime = xprime2
             end
             nprime += nprime2
-            sprime = sprime2 && nouturn(xminus, xplus, rminus, rplus, gradminus, gradplus, epsilon, logfgrad, delta, sz, j)
+            statement, xpm, xpb = nouturn(xminus, xplus, rminus, rplus, gradminus, gradplus, epsilon, logfgrad, delta, sz, j)
+            sprime = sprime2 && statement
+            if sprime
+                xplus = xpb
+                xminus = xpm
+            end
             alphaprime += alphaprime2
             nalphaprime += nalphaprime2
             nniprime += nniprime2
@@ -353,14 +363,14 @@ function nouturn(xminus::T, xplus::T,
     curr_l, curr_h = BHV_bounds(xminus, xplus)
 
     # use thread parallelism to calculuate both directions at once
-    xplus_bar, _, _, _, _ = refraction(deepcopy(xplus), deepcopy(rplus), 1, gradplus, epsilon, logfgrad, delta, sz)
+    xplus_bar , _, _ , _, _ = refraction(deepcopy(xplus), deepcopy(rplus), 1, gradplus, epsilon, logfgrad, delta, sz)
 
     # fetch the results
     xminus_bar, _, _, _, _ = refraction(deepcopy(xminus), deepcopy(rminus), -1, gradminus, epsilon, logfgrad, delta, sz)
 
     curr_t_l, curr_t_h = BHV_bounds(xminus_bar, xplus_bar)
     
-    return curr_h < curr_t_l
+    return curr_h < curr_t_l, xminus_bar, xplus_bar
 end
 
 
