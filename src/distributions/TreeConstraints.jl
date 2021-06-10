@@ -1,3 +1,18 @@
+"""
+    generate_constraints(; mono::Vector{Vector{String}}=Vector{String}[],
+                         not_mono::Vector{Vector{String}}=Vector{String}[],
+                         exc::Vector{Vector{String}}=Vector{String}[]
+                         )::Dict{Symbol, Vector{Vector{String}}}
+
+Generate a dictionary of constraints based on the given arguments.
+Mono for all minophyletic groups. not_mono for leafs that are not allowed
+to form a monophletic group. And exc for a partial constraint, where one or more
+leafs are not allowed to be part of a specific clade. The excluded leafs are
+separated from the clade they are not a part of via a colon entry in the array.
+
+e.g.: generate_constraints(mono=[["a", "b"], ["a", "c"]],
+                           exc=["b", "c", ":", "d"])
+"""
 function generate_constraints(; mono::Vector{Vector{String}}=Vector{String}[],
                               not_mono::Vector{Vector{String}}=Vector{String}[],
                               exc::Vector{Vector{String}}=Vector{String}[]
@@ -12,6 +27,16 @@ function generate_constraints(; mono::Vector{Vector{String}}=Vector{String}[],
 end # generate_constraints
 
 
+"""
+    generate_constraints!(constraints::Dict;
+                        mono::Vector{Vector{String}}=Vector{String}[],
+                        not_mono::Vector{Vector{String}}=Vector{String}[],
+                        exc::Vector{Vector{String}}=Vector{String}[]
+                        )::Dict{Symbol, Vector{Vector{String}}}
+
+Function that adds further constraints to an existing dictionary of constraints.
+See basic generate_constraints function for more info.
+"""
 function generate_constraints!(constraints::Dict;
                                mono::Vector{Vector{String}}=Vector{String}[],
                                not_mono::Vector{Vector{String}}=Vector{String}[],
@@ -24,20 +49,48 @@ function generate_constraints!(constraints::Dict;
         constraints[key] = union(constraints[key], constraints2[key])
     end # for
     return constraints
-end
+end # generate_constraints
 
 
+"""
+    generate_constraints(filename::String)
+
+Function that creates a dictionary of constraints, based on a txt file with a
+specific format (each line one constraint), i.e.:
+
+mono        ,a,b,c
+mono        ,d,e
+not_mono    ,c,d
+exc         ,a,b,:,d
+
+See basic generate_constraints function for more info.
+"""
 function generate_constraints(filename::String)
     mono, not_mono, exc = parse_constraints(filename)
     generate_constraints(mono=mono, not_mono=not_mono, exc=exc)
-end
+end # generate_constraints
 
+
+"""
+    generate_constraints!(constraints::Dict{Symbol, Vector{Vector{String}}},
+                          filename::String)
+
+Function that adds further constraints to an existing dictionary of constraints,
+based on a txt file with a specific format (each line one constraint). See basic
+generate_constraints function on a file for more info.
+"""
 function generate_constraints!(constraints::Dict{Symbol, Vector{Vector{String}}}, filename::String)
     mono, not_mono, exc = parse_constraints(filename)
     generate_constraints!(constraints; mono=mono, not_mono=not_mono, exc=exc)
-end
+end # generate_constraints!
 
 
+"""
+    parse_constraints(filename::String)
+
+--- INTERNAL ---
+Helper function that reads constraints out of a file
+"""
 function parse_constraints(filename::String)
     mono, not_mono, exc = [Vector{String}[] for _ = 1:3]
     for line in eachline(filename)
