@@ -1,0 +1,4 @@
+mono        ,A,B,C,D,E
+not_mono    ,C,D,E,F
+exc         ,F,G,:,H A,B,C
+mono        ,F,G,I,H A,B,C
