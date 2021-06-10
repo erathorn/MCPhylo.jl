@@ -38,7 +38,7 @@ function Restriction(base_freq::Vector{Float64}, SubstitutionRates::Vector{Float
     Nbases = length(base_freq)
     Q::Array{Float64,2} = ones(Nbases,Nbases)
     Q[diagind(Nbases,Nbases)] .= -1
-    Q .*= transpose(base_freq)
+    Q .*= reverse(base_freq)
 
     D, U = eigen(Q)
     Uinv = inv(U)
@@ -60,8 +60,8 @@ function JC(base_freq::Vector{Float64}, SubstitutionRates::Vector{Float64})::Tup
     Nbases = length(base_freq)
     Q::Array{Float64,2} = ones(Nbases,Nbases)
     #μ = SubstitutionRates[1]
-    off_diag = 1.0/(Nbases)
-    diag = off_diag * (Nbases)
+    off_diag = 1.0/(Nbases-1)
+    diag = off_diag * (Nbases-1)
     Q .= off_diag
     Q[diagind(Nbases,Nbases)] .= -diag
     D, U = eigen(Q)
