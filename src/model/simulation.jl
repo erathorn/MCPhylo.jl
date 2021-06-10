@@ -217,7 +217,7 @@ Returns the resulting gradient vector. Method `gradlogpdf!()` additionally updat
 function gradlogpdf!(m::Model, x::N, block::Integer=0,transform::Bool=false)::Tuple{Float64, Vector{Float64}} where N<:GeneralNode
   params = keys(m, :block, block)
   targets = keys(m, :target, block)
-  m[params] = relist(m, x, params, transform)
+  #m[params] = relist(m, x, params, transform)
   
   # likelihood
   v, grad =  gradlogpdf(m, targets)
