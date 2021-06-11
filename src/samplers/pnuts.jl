@@ -188,10 +188,10 @@ function nuts_sub!(v::PNUTSVariate, epsilon::Float64, logfgrad::Function)
         n += nprime
         statement, xpm, xpb = nouturn(xminus, xplus, rminus, rplus, gradminus, gradplus, epsilon, logfgrad, delta, nl, j)
         s = sprime && statement
-        if s
-            xplus = xpb
-            xminus = xpm
-        end
+        #if s
+        #    xplus = xpb
+        #    xminus = xpm
+        #end
         v.tune.alpha, v.tune.nalpha, v.tune.nniprime = alpha, nalpha, nni
         j += 1
     end
@@ -337,10 +337,10 @@ function buildtree(x::FNode, r::Vector{Float64},
             statement, xpm, xpb = nouturn(xminus, xplus, rminus, rplus, gradminus, gradplus, epsilon, logfgrad, delta, sz, j)
             
             sprime = sprime2 && statement
-            if sprime
-                xplus = xpb
-                xminus = xpm
-            end
+            #if sprime
+            #    xplus = xpb
+            #    xminus = xpm
+            #end
             alphaprime += alphaprime2
             nalphaprime += nalphaprime2
             nniprime += nniprime2
