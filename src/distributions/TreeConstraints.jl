@@ -125,7 +125,7 @@ function topological(tree::N, constraints::Dict) where N<:GeneralNode
         for child in get_leaves(lca)
             !(child.name in leaves) && return false
         end # for
-    end
+    end # for
     for leaves in constraints[:not_mono]
         lca = find_lca(tree, leaves)
         length(get_leaves(lca)) == length(leaves) && return false
@@ -139,7 +139,7 @@ function topological(tree::N, constraints::Dict) where N<:GeneralNode
         end # for
     end # for
     true
-end
+end # topological
 
 # topological constraints fallback
 function topological(tree::N, constraints::Missing) where N<:GeneralNode
