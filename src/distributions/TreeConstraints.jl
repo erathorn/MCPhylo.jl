@@ -119,18 +119,18 @@ end # parse_constraints
 
 
 function topological(tree::N, constraints::Dict) where N<:GeneralNode
-    for leaves in constraints[mono]
+    for leaves in constraints[:mono]
         lca = find_lca(tree, leaves)
         lca.root && return false
         for child in get_leaves(lca)
             !(child.name in leaves) && return false
         end # for
     end
-    for leaves in constraints[not_mono]
+    for leaves in constraints[:not_mono]
         lca = find_lca(tree, leaves)
-        !lca.root && return false
+        length(get_leaves(lca)) == length(leaves) && return false
     end # for
-    for leaves in constraints[exc]
+    for leaves in constraints[:exc]
         lca = find_lca(tree, leaves[1])
         lca.root && return false
         for leaf in leaves[2]
