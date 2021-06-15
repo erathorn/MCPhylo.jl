@@ -105,6 +105,7 @@ threshold is 0.1. The progress bar is activated by default.
 function ASDSF(model::ModelChains; freq::Int64=1, check_leaves::Bool=true,
                min_splits::Float64=0.1, show_progress::Bool=true
                )::Vector{Vector{Float64}}
+               
     tree_dims::UnitRange{Int64} = 1:size(model.trees, 2)
     splitsQueue = [Accumulator{Tuple{String, String}, Int64}() for x in tree_dims]
     splitsQueues = [Vector{Accumulator{Tuple{String, String}, Int64}}() for x in tree_dims]
