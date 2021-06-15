@@ -35,10 +35,10 @@ const extensiontests = [
 const treetests = [
   "basics",
   "consensus",
+  "constraints",
   "ladderize",
   "pruning",
-  "spr",
-  "constraints"
+  "spr"
 ]
 
 const parsertests = [
