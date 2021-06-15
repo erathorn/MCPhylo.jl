@@ -91,16 +91,16 @@ end # generate_constraints!
 
 
 """
-    parse_constraints(filename::String)
+    parse_constraints(filename::S
+                     )::Tuple{Vector{Vector{S}}, Vector{Vector{S}}, Vector{Tuple{Vector{S}, Vector{S}}}} where S<:AbstractString
 
 --- INTERNAL ---
 Helper function that reads constraints out of a file
 """
-function parse_constraints(filename::String
-                          )::Tuple{Vector{Vector{S}}, Vector{Vector{S}}, Vector{Tuple{Vector{S}, Vector{S}}}} where S<:AbstractString
+function parse_constraints(filename::S)::Tuple{Vector{Vector{S}}, Vector{Vector{S}}, Vector{Tuple{Vector{S}, Vector{S}}}} where S<:AbstractString
 
-    exc = Vector{Tuple{Vector{AbstractString}, Vector{AbstractString}}}()
     mono, not_mono = [Vector{String}[] for _ = 1:2]
+    exc = Vector{Tuple{Vector{AbstractString}, Vector{AbstractString}}}()
     for line in eachline(filename)
         line = split(line,":")
         line = [split(x, ",") for x in line]
