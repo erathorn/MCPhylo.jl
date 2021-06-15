@@ -509,6 +509,7 @@ export
   check_leafsets,
   generate_constraints,
   generate_constraints!,
+  topological,
   neighbor_joining,
   upgma,
   prune_tree!, prune_tree,
