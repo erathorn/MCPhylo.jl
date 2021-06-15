@@ -119,13 +119,27 @@ end # parse_constraints
 
 
 function topological(tree::N, constraints::Dict) where N<:GeneralNode
-    for key in keys(constraints)
-        lca = find_lca(tree, constraints[key])
+    for leaves in constraints[mono]
+        lca = find_lca(tree, leaves)
         lca.root && return false
+        for child in get_leaves(lca)
+            !(child.name in leaves) && return false
+        end # for
     end
+    for leaves in constraints[not_mono]
+        lca = find_lca(tree, leaves)
+        !lca.root && return false
+    end # for
+    for leaves in constraints[exc]
+        lca = find_lca(tree, leaves[1])
+        lca.root && return false
+        for leaf in leaves[2]
+            leaf = find_by_name(tree, leaf)
+            (lca.binary == leaf.binary[1:length(lca.binary)]) && return false
+        end # for
+    end # for
     true
 end
-
 
 # topological constraints fallback
 function topological(tree::N, constraints::Missing) where N<:GeneralNode
