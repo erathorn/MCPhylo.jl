@@ -92,7 +92,11 @@ end # generate_constraints!
 
 """
     parse_constraints(filename::S
-                     )::Tuple{Vector{Vector{S}}, Vector{Vector{S}}, Vector{Tuple{Vector{S}, Vector{S}}}} where S<:AbstractString
+                     )::Tuple{
+                        Vector{Vector{S}},
+                        Vector{Vector{S}},
+                        Vector{Tuple{Vector{S}, Vector{S}}}
+                     } where S<:AbstractString
 
 --- INTERNAL ---
 Helper function that reads constraints out of a file
