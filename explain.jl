@@ -9,8 +9,8 @@ Pkg.activate(".")
 using MCPhylo
 
 ### Topology Testing ###
-con = MCPhylo.generate_constraints(mono=[["A", "B", "C", "D", "E"], ["a", "b", "c"], ["a", "d", "c"]])
-MCPhylo.generate_constraints!(con; exc=[["a", "b", "c"], ["a", "b", "c"], ["a", "d", "c"]])
+con = MCPhylo.generate_constraints(exc=[(["A", "B", "C", "D", "E"],["F", "G"]), (["a", "b"], ["c"])])
+MCPhylo.generate_constraints!(con; exc=[(["a", "b", "c"], ["e", "f"])])
 MCPhylo.generate_constraints("./topology.txt")
 MCPhylo.generate_constraints!(con, "./topology.txt")
 ### end Topology testing ###
