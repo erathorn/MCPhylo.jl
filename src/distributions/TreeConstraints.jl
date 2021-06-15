@@ -17,7 +17,7 @@ e.g.: generate_constraints(mono=[["a", "b"], ["a", "c"]],
 function generate_constraints(
     ; mono::Vector{Vector{S}}=Vector{String}[],
     not_mono::Vector{Vector{S}}=Vector{String}[],
-    exc::Vector{Tuple{Vector{S}, Vector{S}}}=Vector{Tuple{Vector{String}, Vector{String}}}[]
+    exc::Vector{Tuple{Vector{S}, Vector{S}}}=Tuple{Vector{String}, Vector{String}}[]
 )::Dict{
     Symbol, Union{Vector{Vector{S}}, Vector{Tuple{Vector{S}, Vector{S}}}}} where S<:AbstractString
 
