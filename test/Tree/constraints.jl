@@ -26,5 +26,25 @@ end
 
 
 @testset "topological" begin
-    tree = MCPhylo.parsing_newick_string("((A,B,(C,D,E)F)G,Z)H;")
+    tree = MCPhylo.parsing_newick_string("((A,B,(C,D,E)F)G,(H,I)J)K;")
+    constraint1 = generate_constraints(mono=[["A", "B", "C", "D", "E"], ["H", "I"]])
+    constraint2 = generate_constraints(mono=[["A", "B"]])
+    constraint3 = generate_constraints(not_mono=[["A", "B", "H"], ["C", "D"]])
+    constraint4 = generate_constraints(not_mono=[["H", "I"]])
+    constraint5 = generate_constraints(exc=[(["A", "B"], ["H"]), (["H", "I"], ["D"])])
+    constraint6 = generate_constraints(exc=[(["A", "B"], ["C"])])
+    constraint7 = generate_constraints(mono=[["A", "B", "C", "D", "E"], ["H", "I"]],
+                                       not_mono=[["A", "B", "H"], ["C", "D"]],
+                                       exc=[(["A", "B"], ["H"]), (["H", "I"], ["D"])])
+    constraint8 = generate_constraints(mono=[["A", "B"]],
+                                       not_mono=[["H", "I"]],
+                                       exc=[(["A", "B"], ["C"])])
+    @test topological(tree, constraint1)
+    @test !(topological(tree, constraint2))
+    @test topological(tree, constraint3)
+    @test !(topological(tree, constraint4))
+    @test topological(tree, constraint5)
+    @test !(topological(tree, constraint6))
+    @test topological(tree, constraint7)
+    @test !(topological(tree, constraint8))
 end
