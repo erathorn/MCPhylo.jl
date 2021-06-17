@@ -19,10 +19,26 @@ function generate_constraints(
     not_mono::Vector{Vector{S}}=Vector{String}[],
     exc::Vector{Tuple{Vector{S}, Vector{S}}}=Tuple{Vector{String}, Vector{String}}[]
 )::Dict{
-    Symbol, Union{Vector{Vector{S}}, Vector{Tuple{Vector{S}, Vector{S}}}}} where S<:AbstractString
+    Symbol, Union{Vector{Vector{S}}, Vector{Tuple{Vector{S}, Vector{S}}}}
+} where S<:AbstractString
 
     constraints_dict = Dict{Symbol, Union{Vector{Vector{S}}, Vector{Tuple{Vector{S}, Vector{S}}}}}()
     constrainttypes = [:mono, :not_mono, :exc]
+    lengths = [length(mono), length(not_mono), length(exc)]
+    # filter out trivial constraints...
+    filter!(x -> length(x) > 1, mono)
+    filter!(x -> length(x) > 1, not_mono)
+    filter!(x -> length(x[1]) > 1, exc)
+    filter!(x -> length(x[2]) > 0, exc)
+    # ... and inform the user about it
+    if (length(mono) < lengths[1]) || (length(not_mono) < lengths[2])
+        @warn "Some trivial 'mono' / 'not_mono' type constraints were removed.
+         A valid 'mono' / 'not_mono' constraint needs at least 2 elements."
+    end # if
+    if length(exc) < lengths[3]
+        @warn "Some trivial 'exc' type constraints were removed.
+         A non-trivial 'exc' constraints needs at least 2 elements in the first, and at least 1 in the second part of the tuple"
+    end # end
     constraints_dict[:mono] = unique(mono)
     constraints_dict[:not_mono] = unique(not_mono)
     constraints_dict[:exc] = unique(exc)
