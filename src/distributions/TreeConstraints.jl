@@ -128,7 +128,8 @@ function parse_constraints(filename::S)::Tuple{Vector{Vector{S}}, Vector{Vector{
         line[1][1] == "mono" ? push!(mono, line[1][2:end]) :
         line[1][1] == "not_mono" ? push!(not_mono, line[1][2:end]) :
         line[1][1] == "exc" ? push!(exc, (line[1][2:end], line[2])) :
-        @warn "Unsupported constraint type $(line[1][1]). Allowed types are 'mono', 'not_mono' and 'exc'"
+        @warn "Skipped line with unsupported constraint type '$(line[1][1])'.
+         Allowed types are 'mono', 'not_mono' and 'exc'"
     end # for
     return (mono, not_mono, exc)
 end # parse_constraints
