@@ -22,6 +22,18 @@ using Test
                     (:exc, [(["C", "D"], ["E"]), (["E", "F"], ["G"])])])
     @test dict3 == result3
     @test dict4 == result4
+
+    @test_logs (:warn, "Skipped line with unsupported constraint type 'TEST'.
+         Allowed types are 'mono', 'not_mono' and 'exc'")
+         generate_constraints("./test/Tree/topology.txt")
+
+    @test_logs (:warn, "Some trivial 'mono' / 'not_mono' type constraints were removed.
+         A valid 'mono' / 'not_mono' constraint needs at least 2 elements.")
+        generate_constraints(mono=[["A"]])
+        
+     @test_logs (:warn, "Some trivial 'exc' type constraints were removed.
+      A non-trivial 'exc' constraints needs at least 2 elements in the first, and at least 1 in the second part of the tuple")
+        generate_constraints(exc=[(["A"], ["B"])])
 end
 
 
