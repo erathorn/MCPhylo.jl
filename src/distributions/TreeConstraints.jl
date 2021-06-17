@@ -44,7 +44,7 @@ See basic generate_constraints function for more info.
 function generate_constraints!(constraints::Dict;
                                mono::Vector{Vector{S}}=Vector{String}[],
                                not_mono::Vector{Vector{S}}=Vector{String}[],
-                               exc::Vector{Tuple{Vector{S}, Vector{S}}}=Vector{Tuple{Vector{String}, Vector{String}}}[]
+                               exc::Vector{Tuple{Vector{S}, Vector{S}}}=Tuple{Vector{String}, Vector{String}}[]
                                )::Dict{Symbol, Union{Vector{Vector{S}}, Vector{Tuple{Vector{S}, Vector{S}}}}} where S<:AbstractString
 
 
