@@ -205,7 +205,7 @@ function mcmc_or_convergence(args::AbstractArray
     if isa(args[1], SimulationParameters)
         calculate_convergence(args...)
     else
-        if length(args) == 7
+        if length(args) == 8
             mcmc_worker!(args)
         else
             mcmc_worker!(args[1:end-2], args[end-1:end]...)
