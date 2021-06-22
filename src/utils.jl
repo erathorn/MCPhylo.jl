@@ -161,16 +161,34 @@ function assign_mcmc_work(
                 [RemoteChannel(() -> Channel{Vector{AbstractString}}(ntrees)) for x = 1:nchains]
         end # if / else
         ASDSF_vals::Vector{Vector{Float64}} = []
+        # add necessary ASDSF related arguments to lsts for mcmc_worker function
         for (ind, lst) in enumerate(lsts)
             append!(lst, [sp.freq, r_channels[ind]])
         end # for
+        # add list to lsts array, that contains args for calculate_convergence
         push!(lsts, [sp, conv_storage, r_channels, ntrees, 1:tree_dim])
     end # if
-    if nprocs() > 1
-        results_vec = pmap(f, lsts)
-    else
-        results_vec = map(f, lsts)
-    end # if/else
+    channels = [RemoteChannel(() -> Channel{Bool}(1)) for x in 1:nchains]
+    meters = [Progress(lsts[1][3][end]; desc="Chain $c: ", enabled=sp.verbose) for c in 1:nchains]
+    for c in 1:nchains
+        insert!(lsts[c], 8, channels[c])
+    end # for
+    @sync begin
+        for i in 1:nchains
+            @async while take!(channels[i])
+                println("crazy")
+                next!(meters[i])
+            end # while
+        end # for
+        @async begin
+            if nprocs() > 1
+                @async results_vec = pmap(f, lsts)
+            else
+                @async results_vec = map(f, lsts)
+            end # if/else
+        end # @async
+        println(channels[1])
+    end # @sync
     ASDSF && close.(r_channels)
     if ASDSF
         asdsf_results = results_vec[end]
