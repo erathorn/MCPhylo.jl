@@ -8,15 +8,6 @@ addprocs(3)
 @everywhere using MCPhylo
 # using MCPhylo
 
-### Topology Testing ###
-con = generate_constraints(exc=[(["A", "B", "C", "D", "E"],["F", "G"]), (["a", "b"], String[])])
-con = generate_constraints(mono=[["A", "B", "C", "D", "E"], ["F"]])
-generate_constraints!(con; exc=[(["a", "b", "c"], ["e"])])
-generate_constraints!(con; mono=[["a", "b", "c"], ["e"]])
-generate_constraints("./topology.txt")
-generate_constraints!(con, "./topology.txt")
-### end Topology testing ###
-
 
 mt, df = make_tree_with_data("./Example.nex"); # load your own nexus file
 
@@ -69,7 +60,7 @@ scheme = [MCPhylo.PNUTS(:mtree, target=0.7, targetNNI=1),
            SliceSimplex(:mypi),
           ]
 
-params = SimulationParameters(asdsf=true, freq=25, verbose=true)
+params = SimulationParameters(asdsf=false, verbose=true)
 
 setsamplers!(model, scheme)
 sim = mcmc(model, my_data, inits, 1000, burnin=100, thin=5, chains=2,
@@ -79,6 +70,15 @@ MCPhylo.plot_asdsf(sim; legend=true, legendtitlefonthalign=:best, background=:bl
 sim2 = mcmc(sim, 1000, trees=true)
 MCPhylo.plot_asdsf(sim2)
 
+
+### Topology Testing ###
+con = generate_constraints(exc=[(["A", "B", "C", "D", "E"],["F", "G"]), (["a", "b"], String[])])
+con = generate_constraints(mono=[["A", "B", "C", "D", "E"], ["F"]])
+generate_constraints!(con; exc=[(["a", "b", "c"], ["e"])])
+generate_constraints!(con; mono=[["a", "b", "c"], ["e"]])
+generate_constraints("./topology.txt")
+generate_constraints!(con, "./topology.txt")
+### end Topology testing ###
 
 #=
 
