@@ -111,16 +111,10 @@ function mcmc_master!(m::Model, window::UnitRange{Int},
   N = length(window)
   K = length(chains)
 
-  frame::ChainProgressFrame = ChainProgressFrame(
-    "MCMC Simulation of $N Iterations x $K Chain" * "s"^(K > 1), sp.verbose
-  )
+  sp.verbose && println("MCMC Simulation of $N Iterations x $K Chain" * "s"^(K > 1) * "...")
   # this is necessary for additional draws from a model
   burnin = burnin == -1 ? sp.burnin : burnin
-
-  lsts = [
-    Any[m, states[k], window, burnin, sp.thin, ChainProgress(frame, k, N),
-        sp.trees] for k in chains
-  ]
+  lsts = [Any[m, states[k], window, burnin, sp.thin, sp.trees, sp.verbose, chains[k]] for k in chains]
 
   results::Vector{Tuple{Chains, Model, ModelState}}, stats::Array{Float64, 2}, statnames::Vector{AbstractString}, conv_storage::Union{Nothing, ConvergenceStorage} =
     	assign_mcmc_work(mcmc_or_convergence, lsts, sp, conv_storage)
@@ -143,7 +137,7 @@ Each call to this function computes a chain for a ModelChains Object.
 function mcmc_worker!(args::AbstractArray, ASDSF_step::Int64=0,
                       rc::Union{Nothing, RemoteChannel}=nothing
                       )::Tuple{Chains, Model, ModelState}
-  m::Model, state::ModelState, window::UnitRange{Int}, burnin::Integer, thin::Integer, meter::ChainProgress, store_trees::Bool = args
+  m::Model, state::ModelState, window::UnitRange{Int}, burnin::Integer, thin::Integer, store_trees::Bool, verbose::Bool, chain::Integer = args
   llname::AbstractString = "likelihood"
   treeind::Int64 = 1
   m.iter = first(window) - 1
@@ -162,7 +156,7 @@ function mcmc_worker!(args::AbstractArray, ASDSF_step::Int64=0,
   sim = Chains(last(window), length(pnames), start=burnin + thin, thin=thin,
                names=pnames, ntrees=length(treenodes), tree_names=treenodes)
 
-  reset!(meter)
+  meter = Progress(window[end]; desc="Chain $chain: ", enabled=verbose)
   for i in window
 
     sample!(m)
@@ -184,8 +178,7 @@ function mcmc_worker!(args::AbstractArray, ASDSF_step::Int64=0,
         put!(rc, trees)
       end # if
     end # if
-    next!(meter)
-
+    ProgressMeter.next!(meter)
   end # for
   mv = samparas(m)
   sim.moves[1] = mv
