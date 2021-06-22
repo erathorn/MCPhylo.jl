@@ -17,6 +17,7 @@ using Plots.PlotMeasures
 using StatsPlots
 @reexport using StatsPlots
 using RecipesBase
+import RecipesBase.plot
 using StatsBase
 using Zygote
 using FiniteDiff
