@@ -168,16 +168,16 @@ function assign_mcmc_work(
         # add list to lsts array, that contains args for calculate_convergence
         push!(lsts, [sp, conv_storage, r_channels, ntrees, 1:tree_dim])
     end # if
-    channels = [RemoteChannel(() -> Channel{Bool}(1)) for x in 1:nchains]
-    meters = [Progress(lsts[1][3][end]; desc="Chain $c: ", enabled=sp.verbose) for c in 1:nchains]
+    channels = [RemoteChannel(() -> Channel{Bool}(1)) for c in 1:nchains]
+    meters = [Progress(lsts[1][3][end]; desc="Chain $c: ", enabled=sp.verbose, offset=c) for c in 1:nchains]
     for c in 1:nchains
         insert!(lsts[c], 8, channels[c])
     end # for
+    results_vec = []
     @sync begin
         for i in 1:nchains
             @async while take!(channels[i])
-                println("crazy")
-                next!(meters[i])
+                ProgressMeter.next!(meters[i])
             end # while
         end # for
         @async begin

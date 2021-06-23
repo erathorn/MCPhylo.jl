@@ -178,7 +178,6 @@ function mcmc_worker!(args::AbstractArray, ASDSF_step::Int64=0,
         put!(rc, trees)
       end # if
     end # if
-    println("before putting")
     put!(channel, true)
   end # for
   put!(channel, false)
