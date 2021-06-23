@@ -1,4 +1,5 @@
-mono        ,A,B
-not_mono    ,C,D
-exc         ,E,F:G
-TEST        ,A,B
+mono:        A,B;
+# this line will be ignored, throws no warning
+not_mono:    C,D,E;
+exc:         E,F!G;
+TEST:        A,B;
