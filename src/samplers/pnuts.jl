@@ -157,52 +157,43 @@ function nuts_sub!(v::PNUTSVariate, epsilon::Float64, logfgrad::Function)
     j = 0
     n = 1
     s = true
-    lsw = 0.0
+
     while s && j < v.tune.tree_depth
-        wls = -Inf
+
         pm = 2 * (rand() > 0.5) - 1
         
         if pm == -1
 
-            xminus, rminus, gradminus, _, _, _, xprime, nprime, sprime, alpha, nalpha, nni1, lpp, nniprime, wls = 
+            xminus, rminus, gradminus, _, _, _, xprime, nprime, sprime, alpha, nalpha, nni1, lpp, nniprime = 
                 buildtree(xminus, rminus, gradminus, pm, j, epsilon, logfgrad,
-                           logp0, logu0, delta, nl,lu, wls)
+                           logp0, logu0, delta, nl,lu)
 
         else
 
-            _, _, _, xplus, rplus, gradplus, xprime, nprime, sprime, alpha, nalpha, nni1, lpp, nniprime, wls =
+            _, _, _, xplus, rplus, gradplus, xprime, nprime, sprime, alpha, nalpha, nni1, lpp, nniprime =
             buildtree(xplus, rplus, gradplus, pm, j, epsilon, logfgrad, logp0,
-                  logu0, delta, nl, lu,wls)
+                  logu0, delta, nl, lu)
 
         end# if pm
-        #@show wls
-        #book keeping for epsilon adaption
-        nni += nni1
-        v.tune.alpha, v.tune.nalpha, v.tune.nniprime = alpha, nalpha, nni
-
+        
         #p1 = 1/(j+1)
         #wprob = j < 1 ? rand() < nprime / n : (p1*rand()) < ((1-p1) * nprime / n)
-        if !sprime
-            # subtree is not valid and we can abort
-            break
-        end
-        if wls > lsw
-            v.value[1] = xprime
-        elseif rand() < exp(wls - lsw)
+        
+        if sprime && rand() < nprime / n
+            
             v.value[1] = xprime
         end
-        lsw = log(exp(lsw) + exp(wls))
-
-        #n += nprime
-        s, xpm, xpb = nouturn(xminus, xplus, rminus, rplus, gradminus, gradplus, epsilon, logfgrad, delta, nl, j)
-        # s = sprime && statement
+        
+        nni += nni1
+        n += nprime
+        statement, xpm, xpb = nouturn(xminus, xplus, rminus, rplus, gradminus, gradplus, epsilon, logfgrad, delta, nl, j)
+        s = sprime && statement
         #if s
         #    xplus = xpb
         #    xminus = xpm
         #end
-        
+        v.tune.alpha, v.tune.nalpha, v.tune.nniprime = alpha, nalpha, nni
         j += 1
-        #@show j
     end
     push!(v.tune.moves, nni)
     push!(v.tune.tree_depth_trace, j)
@@ -301,7 +292,7 @@ end
 function buildtree(x::FNode, r::Vector{Float64},
                    grad::Vector{Float64}, pm::Int64, j::Integer,
                    epsilon::Float64, logfgrad::Function, logp0::Real, logu0::Real,
-                   delta::Float64, sz::Int64, lu::Float64, wls::Float64)
+                   delta::Float64, sz::Int64, lu::Float64)
 
 
     if j == 0
@@ -310,7 +301,7 @@ function buildtree(x::FNode, r::Vector{Float64},
                                           logfgrad, delta, sz)
 
         logpprime = logfprime - 0.5 * dot(rprime)
-        wls = log(exp(wls) + exp(logu0 - logpprime))
+
         nprime = Int(logu0 < logpprime)
         sprime = logu0 < logpprime + 1000.0
         xminus = xplus = xprime
@@ -321,23 +312,22 @@ function buildtree(x::FNode, r::Vector{Float64},
         nalphaprime = 1
 
     else
-        
         xminus, rminus, gradminus, xplus, rplus, gradplus, xprime, nprime, sprime,
-        alphaprime, nalphaprime, nni, logpprime, nniprime, wls = buildtree(x, r, grad, pm, j - 1, epsilon,
-                                          logfgrad, logp0, logu0, delta,  sz, lu, wls)
+      alphaprime, nalphaprime, nni, logpprime, nniprime = buildtree(x, r, grad, pm, j - 1, epsilon,
+                                          logfgrad, logp0, logu0, delta,  sz, lu)
         if sprime
-        
+
             if pm == -1
 
                 xminus, rminus, gradminus, _, _, _, xprime2, nprime2, sprime2,
-          alphaprime2, nalphaprime2, nni, logpprime, nniprime2, wls = buildtree(xminus, rminus, gradminus, pm,
+          alphaprime2, nalphaprime2, nni, logpprime, nniprime2 = buildtree(xminus, rminus, gradminus, pm,
                                                 j - 1, epsilon, logfgrad, logp0,
-                                                logu0, delta,  sz, lu, wls)
+                                                logu0, delta,  sz, lu)
             else
                 _, _, _, xplus, rplus, gradplus, xprime2, nprime2, sprime2,
-          alphaprime2, nalphaprime2, nni, logpprime, nniprime2, wls = buildtree(xplus, rplus, gradplus, pm,
+          alphaprime2, nalphaprime2, nni, logpprime, nniprime2 = buildtree(xplus, rplus, gradplus, pm,
                                                 j - 1, epsilon, logfgrad, logp0,
-                                                logu0, delta, sz,lu, wls)
+                                                logu0, delta, sz,lu)
             end # if pm
 
             if rand() < nprime2 / (nprime + nprime2)
@@ -358,7 +348,7 @@ function buildtree(x::FNode, r::Vector{Float64},
     end # if j
 
     xminus, rminus, gradminus, xplus, rplus, gradplus, xprime, nprime, sprime,
-    alphaprime, nalphaprime, nni, logpprime, nniprime, wls
+    alphaprime, nalphaprime, nni, logpprime, nniprime
 end
 
 
