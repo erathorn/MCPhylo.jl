@@ -165,16 +165,18 @@ function assign_mcmc_work(
         for (ind, lst) in enumerate(lsts)
             append!(lst, [sp.freq, r_channels[ind]])
         end # for
-        # add list to lsts array, that contains args for calculate_convergence
+        # add a list to lsts array, that contains args for calculate_convergence
         push!(lsts, [sp, conv_storage, r_channels, ntrees, 1:tree_dim])
     end # if
+    # set up RemoteChannels to update the ProgressMeters for each chain
     channels = [RemoteChannel(() -> Channel{Bool}(1)) for c in 1:nchains]
-    meters = [Progress(lsts[1][3][end]; desc="Chain $c: ", enabled=sp.verbose, offset=c, showspeed=true) for c in 1:nchains]
+    meters = [Progress(lsts[1][3][end] - lsts[1][3][1] + 1; dt=0.5, desc="Chain $c: ", enabled=sp.verbose, offset=c-1, showspeed=true) for c in 1:nchains]
     for c in 1:nchains
         insert!(lsts[c], 8, channels[c])
     end # for
     results_vec = []
     @sync begin
+        # check RemoteChannels for new entries and updates the ProgressMeters
         for i in 1:nchains
             @async while take!(channels[i])
                 ProgressMeter.next!(meters[i])
