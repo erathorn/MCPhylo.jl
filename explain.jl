@@ -60,11 +60,12 @@ scheme = [MCPhylo.PNUTS(:mtree, target=0.7, targetNNI=1),
            SliceSimplex(:mypi),
           ]
 
-params = SimulationParameters(asdsf=false, verbose=true)
+params = SimulationParameters(asdsf=true, freq=50, verbose=true)
 
 setsamplers!(model, scheme)
 sim = mcmc(model, my_data, inits, 1000, burnin=100, thin=5, chains=2,
            trees=true, params=params)
+sim
 MCPhylo.plot_asdsf(sim; legend=true, legendtitlefonthalign=:best, background=:blue)
 
 sim2 = mcmc(sim, 1000, trees=true)
