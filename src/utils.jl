@@ -180,14 +180,7 @@ function assign_mcmc_work(
                 ProgressMeter.next!(meters[i])
             end # while
         end # for
-        @async begin
-            if nprocs() > 1
-                @async results_vec = pmap(f, lsts)
-            else
-                @async results_vec = map(f, lsts)
-            end # if/else
-        end # @async
-        println(channels[1])
+        @async results_vec = pmap2(f, lsts)
     end # @sync
     ASDSF && close.(r_channels)
     if ASDSF
