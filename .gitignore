@@ -1,4 +1,5 @@
 doc/_build/
+docs/build/
 doc/make.bat
 Manifest.toml
 *params.csv
