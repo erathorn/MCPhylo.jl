@@ -16,6 +16,8 @@ jobs:
       - uses: julia-actions/julia-buildpkg@v1
         with:
           version: '1.6'
+      - name: Explicitly installing Distributions
+        run: julia --project=docs/ -e `import Pkg; Pkg.add("Distributions")`
       - name: Explicitly installing reexport
         run: julia --project=docs/ -e 'import Pkg; Pkg.add("Reexport")'
       - name: Install dependencies
