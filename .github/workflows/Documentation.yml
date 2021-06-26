@@ -15,8 +15,9 @@ jobs:
       - uses: julia-actions/setup-julia@latest
         with:
           version: '1.6'
-      - name: Install dependencies
+      - name: Explicitly installing reexport
         run: julia --project=docs/ -e 'import Pkg; Pkg.add("Reexport")'
+      - name: Install dependencies
         run: julia --project=docs/ -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
       - name: Build and deploy
         env:
