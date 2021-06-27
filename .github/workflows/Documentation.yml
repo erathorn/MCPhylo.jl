@@ -13,15 +13,18 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: julia-actions/setup-julia@latest
-      - uses: julia-actions/julia-buildpkg@v1
+#     - uses: julia-actions/julia-buildpkg@v1
         with:
           version: '1.6'
-      - name: Explicitly installing distributions
-        run: julia --project=docs/ -e 'import Pkg; Pkg.add("Distributions")'
-      - name: Explicitly installing reexport
-        run: julia --project=docs/ -e 'import Pkg; Pkg.add("Reexport")'
+#       - name: Explicitly installing distributions
+#         run: julia --project=docs/ -e 'import Pkg; Pkg.add("Distributions")'
+#       - name: Explicitly installing reexport
+#         run: julia --project=docs/ -e 'import Pkg; Pkg.add("Reexport")'
       - name: Install dependencies
-        run: julia --project=docs/ -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
+        run: julia --project=docs/ -e '
+          using Pkg
+          Pkg.develop(PackageSpec(path=pwd()))
+          Pkg.instantiate()'
       - name: Build and deploy
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # If authenticating with GitHub Actions token
