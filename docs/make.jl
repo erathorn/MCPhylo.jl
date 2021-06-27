@@ -23,5 +23,5 @@ makedocs(build   = "build",
    
    deploydocs(
        repo = "github.com/github.com/erathorn/MCPhylo.jl.git",
-       versions="v#.#.#"
+       target = "build"
    )
