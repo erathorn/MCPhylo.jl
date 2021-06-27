@@ -1,5 +1,5 @@
-include("./src/MCPhylo.jl")
-using .MCPhylo
+#include("./src/MCPhylo.jl")
+using MCPhylo
 using Documenter
 
 makedocs(root="./",
