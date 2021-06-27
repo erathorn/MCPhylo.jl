@@ -2,8 +2,7 @@
 using MCPhylo
 using Documenter
 
-makedocs(source  = "src",
-    build   = "build",
+makedocs(build   = "build",
     clean   = true,
     doctest = true,
     modules = Module[MCPhylo],
