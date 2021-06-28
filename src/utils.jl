@@ -168,7 +168,8 @@ function assign_mcmc_work(
         # add a list to lsts array, that contains args for calculate_convergence
         push!(lsts, [sp, conv_storage, r_channels, ntrees, 1:tree_dim])
     end # if
-    # set up RemoteChannels to update the ProgressMeters for each chain
+
+    # set up 1 RemoteChannel & a ProgressMeter for each chain
     channel = RemoteChannel(() -> Channel{Integer}(1))
     meters = [Progress(lsts[1][3][end] - lsts[1][3][1] + 1; desc="Chain $c: ", enabled=sp.verbose, offset=c-1, showspeed=true) for c in 1:nchains]
     for c in 1:nchains
@@ -176,15 +177,11 @@ function assign_mcmc_work(
     end # for
     results_vec = []
     @sync begin
-        # check RemoteChannels for new entries and updates the ProgressMeters
+        # check RemoteChannel for new entries and updates the ProgressMeters
         finished_chains = 0
         @async while finished_chains < nchains
             chain = take!(channel)
-            if chain > 0
-                ProgressMeter.next!(meters[chain])
-            else
-                finished_chains += 1
-            end # if/else
+            chain > 0 ? ProgressMeter.next!(meters[chain]) : finished_chains += 1
         end # while
         @async results_vec = pmap2(f, lsts)
     end # @sync
