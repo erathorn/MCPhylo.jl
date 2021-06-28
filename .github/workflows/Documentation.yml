@@ -13,13 +13,8 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: julia-actions/setup-julia@latest
-#     - uses: julia-actions/julia-buildpkg@v1
         with:
           version: '1.6'
-#       - name: Explicitly installing distributions
-#         run: julia --project=docs/ -e 'import Pkg; Pkg.add("Distributions")'
-#       - name: Explicitly installing reexport
-#         run: julia --project=docs/ -e 'import Pkg; Pkg.add("Reexport")'
       - name: Install dependencies
         run: julia --project=docs/ -e '
           using Pkg;
