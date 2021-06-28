@@ -189,7 +189,7 @@ function nuts_sub!(v::PNUTSVariate, epsilon::Float64, logfgrad::Function)
         v.tune.alpha, v.tune.nalpha = alpha, nalpha
         j += 1
     end
-    v.tune.nniprime /= j
+    
     push!(v.tune.moves, nni)
     push!(v.tune.tree_depth_trace, j)
     v
