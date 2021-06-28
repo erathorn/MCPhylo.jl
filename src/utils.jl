@@ -170,7 +170,7 @@ function assign_mcmc_work(
     end # if
     # set up RemoteChannels to update the ProgressMeters for each chain
     channels = [RemoteChannel(() -> Channel{Bool}(1)) for c in 1:nchains]
-    meters = [Progress(lsts[1][3][end] - lsts[1][3][1] + 1; dt=0.5, desc="Chain $c: ", enabled=sp.verbose, offset=c-1, showspeed=true) for c in 1:nchains]
+    meters = [Progress(lsts[1][3][end] - lsts[1][3][1] + 1; desc="Chain $c: ", enabled=sp.verbose, offset=c-1, showspeed=true) for c in 1:nchains]
     for c in 1:nchains
         insert!(lsts[c], 8, channels[c])
     end # for
