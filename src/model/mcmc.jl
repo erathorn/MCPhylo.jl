@@ -111,7 +111,7 @@ function mcmc_master!(m::Model, window::UnitRange{Int},
   N = length(window)
   K = length(chains)
 
-  sp.verbose && println("\nMCMC Simulation of $N Iterations x $K Chain" * "s"^(K > 1) * "...")
+  sp.verbose && println("MCMC Simulation of $N Iterations x $K Chain" * "s"^(K > 1) * "...")
   # this is necessary for additional draws from a model
   burnin = burnin == -1 ? sp.burnin : burnin
   lsts = [Any[m, states[k], window, burnin, sp.thin, sp.trees, sp.verbose] for k in chains]

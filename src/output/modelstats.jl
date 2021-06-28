@@ -68,7 +68,7 @@ function logpdf(mc::ModelChains,
   relistkeys = union(relistkeys, intersect(nodekeys, keys(mc.model, :block)))
   inds = names2inds(mc, relistkeys)
 
-  println("\nMCMC Processing of $N Iterations x $K Chain" * "s"^(K > 1) * "...")
+  println("MCMC Processing of $N Iterations x $K Chain" * "s"^(K > 1) * "...")
 
   # set up 1 RemoteChannel & a ProgressMeter for each Chain
   channel = RemoteChannel(() -> Channel{Integer}(1))
