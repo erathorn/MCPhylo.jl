@@ -169,19 +169,23 @@ function assign_mcmc_work(
         push!(lsts, [sp, conv_storage, r_channels, ntrees, 1:tree_dim])
     end # if
     # set up RemoteChannels to update the ProgressMeters for each chain
-    channels = [RemoteChannel(() -> Channel{Bool}(1)) for c in 1:nchains]
+    channel = RemoteChannel(() -> Channel{Integer}(1))
     meters = [Progress(lsts[1][3][end] - lsts[1][3][1] + 1; desc="Chain $c: ", enabled=sp.verbose, offset=c-1, showspeed=true) for c in 1:nchains]
     for c in 1:nchains
-        insert!(lsts[c], 8, channels[c])
+        insert!(lsts[c], 8, (channel, c))
     end # for
     results_vec = []
     @sync begin
         # check RemoteChannels for new entries and updates the ProgressMeters
-        for i in 1:nchains
-            @async while take!(channels[i])
-                ProgressMeter.next!(meters[i])
-            end # while
-        end # for
+        finished_chains = 0
+        @async while finished_chains < nchains
+            chain = take!(channel)
+            if chain > 0
+                ProgressMeter.next!(meters[chain])
+            else
+                finished_chains += 1
+            end # if/else
+        end # while
         @async results_vec = pmap2(f, lsts)
     end # @sync
     ASDSF && close.(r_channels)
