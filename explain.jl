@@ -6,6 +6,7 @@ addprocs(3)
 @everywhere Pkg.activate(".")
 # Pkg.activate(".")
 @everywhere using MCPhylo
+# @everywhere using ProgressMeter
 # using MCPhylo
 
 
