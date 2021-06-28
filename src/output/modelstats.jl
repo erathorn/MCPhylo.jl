@@ -68,26 +68,31 @@ function logpdf(mc::ModelChains,
   relistkeys = union(relistkeys, intersect(nodekeys, keys(mc.model, :block)))
   inds = names2inds(mc, relistkeys)
 
-  println("MCMC Processing of $N Iterations x $K Chain" * "s"^(K > 1) * "...")
+  println("\nMCMC Processing of $N Iterations x $K Chain" * "s"^(K > 1) * "...")
 
-  channels = [RemoteChannel(() -> Channel{Bool}(1)) for c in 1:nchains]
+  # set up 1 RemoteChannel & a ProgressMeter for each Chain
+  channel = RemoteChannel(() -> Channel{Integer}(1))
+  meters = [Progress(mc.model.iter; dt=0.5, desc="Chain $k: ", enabled=true, offset=k-1, showspeed=true) for k in 1:K]
 
   lsts = [
     Any[mc[:, :, [k]], nodekeys, relistkeys, inds, updatekeys, channel[k]]
     for k in 1:K
   ]
 
-  meters = [Progress(mc.model.iter; dt=0.5, desc="Chain $k: ", enabled=true, offset=k-1, showspeed=true) for k in 1:K]
   sims::Vector{ModelChains} = []
   @sync begin
-        for k in 1:K
-            @async while take!(channels[k])
-                ProgressMeter.next!(meters[k])
-            end # while
-        end # for
+        # check RemoteChannel for new entries and updates the ProgressMeters
+        finished_chains = 0
+        @async while finished_chains < K
+            chain = take!(channel)
+            if chain > 0
+                ProgressMeter.next!(meters[chain])
+            else
+                finished_chains += 1
+            end # if/else
+        end # while
         @async sims = pmap2(logpdf_modelchains_worker, lsts)
-  end # @sync
-
+    end # @sync
   ModelChains(cat(sims..., dims=3), mc.model, mc.stats, mc.stat_names)
 end
 
