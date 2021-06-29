@@ -100,7 +100,7 @@ function sample!(v::PNUTSVariate, logfgrad::Function; adapt::Bool=false)
         nuts_sub!(v, tune.epsilon, logfgrad)
         Ht = (tune.target - tune.alpha / tune.nalpha)
         
-        avgnni = tune.targetNNI - tune.nniprime 
+        avgnni = tune.targetNNI - tune.nniprime / tune.nalpha
         
         HT2 = - avgnni / (1 + abs(avgnni))
         p = 1.0 / (tune.m + tune.t0)
@@ -135,7 +135,7 @@ end
 
 
 function nuts_sub!(v::PNUTSVariate, epsilon::Float64, logfgrad::Function)
-    # @show epsilon
+    #@show epsilon
     mt = v.value[1]
     nl = size(mt)[1] - 1
     delta = v.tune.delta
