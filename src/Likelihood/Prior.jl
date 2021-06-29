@@ -54,7 +54,10 @@ end
 function gradlogpdf(d::CompoundDirichlet, x::T) where T <: GeneralNode
     int_ext = internal_external(x)
     blv = get_branchlength_vector(x)
-    f(y) =  internal_logpdf(d, y, int_ext)
+
+    f = let d=d, int_ext=int_ext
+        y -> internal_logpdf(d, y, int_ext)
+    end 
     r = Zygote.pullback(f, blv)
     return r[1],r[2](1.0)[1]
 end

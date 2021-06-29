@@ -63,7 +63,10 @@ Returns a `Sampler{PNUTSTune}` type object.
 function PNUTS(params::ElementOrVector{Symbol}; args...)
     samplerfx = function (model::Model, block::Integer)
         block = SamplingBlock(model, block, true)
-        f = (x, sz, ll, gr) -> mlogpdfgrad!(block, x, sz, ll, gr)
+        
+        f = let block = block
+            (x, sz, ll, gr) -> mlogpdfgrad!(block, x, sz, ll, gr)
+        end
         v = SamplerVariate(block, f, NullFunction(); args...)
 
         sample!(v::PNUTSVariate, f, adapt=model.iter <= model.burnin)

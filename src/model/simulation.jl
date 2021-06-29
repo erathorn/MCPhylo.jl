@@ -363,7 +363,10 @@ Returns vectors of concatenated node values.
 * `transform` : whether to apply a link transformation in the conversion.
 """
 function unlist(m::Model, nodekeys::Vector{Symbol}, transform::Bool=false)
-  vcat(map(key -> unlist(m[key], transform), nodekeys)...)
+  f = let m=m, transform=transform
+    key -> unlist(m[key] ,transform)
+  end
+  vcat(map(f, nodekeys)...)
 end
 
 """
