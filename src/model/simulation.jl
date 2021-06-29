@@ -278,7 +278,7 @@ function sample!(m::Model, block::Integer=0)
   for b in blocks
     sampler = m.samplers[b]
     value = sampler.eval(m::Model, b::Int)
-    if value != nothing
+    if value !== nothing
       m[sampler.params] = value
       update!(m, b)
     end
@@ -339,10 +339,12 @@ end
     unlist(m::Model, monitoronly::Bool)
 """
 function unlist(m::Model, monitoronly::Bool)
-  f = function(key)
-    node = m[key]
-    lvalue = isa(node, AbstractTreeStochastic) ? unlist_tree(node) : unlist(node)
-    monitoronly ? lvalue[node.monitor] : lvalue
+  f = let m = m, monitoronly = monitoronly
+    key -> begin
+      node = m[key]
+      lvalue = isa(node, AbstractTreeStochastic) ? unlist_tree(node) : unlist(node)
+      monitoronly ? lvalue[node.monitor] : lvalue
+    end
   end
   r = vcat(map(f, keys(m, :dependent))..., m.likelihood)
   r
