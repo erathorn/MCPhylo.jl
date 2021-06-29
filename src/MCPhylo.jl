@@ -29,6 +29,9 @@ using Random
 using DataStructures
 using ProgressMeter
 using CUDA
+using JSON3
+using StructTypes
+
 if has_cuda()
   using GPUArrays
 else
