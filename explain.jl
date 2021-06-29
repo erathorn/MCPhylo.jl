@@ -1,12 +1,39 @@
 using Revise
-using Distributed
-addprocs(3)
-@everywhere using Pkg
-# using Pkg
-@everywhere Pkg.activate(".")
-# Pkg.activate(".")
-@everywhere using MCPhylo
-# using MCPhylo
+# using Distributed
+# addprocs(3)
+# @everywhere using Pkg
+using Pkg
+# @everywhere Pkg.activate(".")
+Pkg.activate(".")
+# @everywhere using MCPhylo
+using MCPhylo
+
+using DataStructures
+
+using JSON3
+s = JSON3.write(sim.conv_storage.splitsQueue[1])
+println("\n" * s)
+acc = JSON3.read(s, Dict{Tuple{String,String}, Int64})
+
+DataStructures.Accumulator(acc)
+
+sim.conv_storage
+s = JSON3.write(sim.sim_params)
+t = JSON3.read(s, SimulationParameters)
+
+x = JSON3.write([1,2,3,4])
+y = JSON3.read(x)
+
+
+
+
+
+
+
+
+
+
+
 
 
 mt, df = make_tree_with_data("./Example.nex"); # load your own nexus file
@@ -63,7 +90,7 @@ scheme = [MCPhylo.PNUTS(:mtree, target=0.7, targetNNI=1),
 params = SimulationParameters(asdsf=true, freq=50, verbose=true)
 
 setsamplers!(model, scheme)
-sim = mcmc(model, my_data, inits, 1000, burnin=100, thin=5, chains=2,
+sim = mcmc(model, my_data, inits, 100, burnin=50, thin=5, chains=2,
            trees=true, params=params)
 sim
 MCPhylo.plot_asdsf(sim; legend=true, legendtitlefonthalign=:best, background=:blue)

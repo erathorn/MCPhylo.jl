@@ -239,12 +239,16 @@ struct SimulationParameters
   min_splits::Float64
 end
 
+StructTypes.StructType(::Type{SimulationParameters}) = StructTypes.Struct()
+
+
 struct ConvergenceStorage
   splitsQueue::Vector{Accumulator{Tuple{String, String}, Int64}}
   splitsQueues::Vector{Vector{Accumulator{Tuple{String, String}, Int64}}}
   run::Int64
 end
 
+StructTypes.StructType(::Type{ConvergenceStorage}) = StructTypes.Struct()
 #################### Chains Type ####################
 
 abstract type AbstractChains end
