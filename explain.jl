@@ -13,9 +13,9 @@ using DataStructures
 using JSON3
 s = JSON3.write(sim.conv_storage.splitsQueue[1])
 println("\n" * s)
-acc = JSON3.read(s, Dict{Tuple{String,String}, Int64})
+acc = JSON3.read(s, Dict{Tuple{String, String}, Int64})
 
-DataStructures.Accumulator(acc)
+DataStructures.Accumulator(acc[:map])
 
 sim.conv_storage
 s = JSON3.write(sim.sim_params)

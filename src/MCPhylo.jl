@@ -248,6 +248,7 @@ struct ConvergenceStorage
   run::Int64
 end
 
+# StructTypes.StructType(::Type{Accumulator{Tuple{String, String}, Int64}}) = StructTypes.Struct()
 StructTypes.StructType(::Type{ConvergenceStorage}) = StructTypes.Struct()
 #################### Chains Type ####################
 
