@@ -44,7 +44,7 @@ function logpdf(mc::ModelChains, f::Function, nodekeys::Vector{Symbol})
   relistkeys = union(relistkeys, intersect(nodekeys, keys(m, :block)))
   inds = names2inds(mc, relistkeys)
   for key in relistkeys
-    isa(m[key], TreeStochastic) && throw("not possible with tree objects")
+      isa(m[key], TreeStochastic) && throw("not possible with tree objects")
   end
 
   m[relistkeys] = relist(m, map(i -> f(mc.value[:, i, :]), inds), relistkeys)
@@ -56,7 +56,7 @@ end
 logpdf(mc::ModelChains, nodekey::Symbol) = logpdf(mc, [nodekey])
 """
     logpdf(mc::ModelChains,
-            nodekeys::Vector{Symbol}=keys(mc.model, :stochastic))
+           nodekeys::Vector{Symbol}=keys(mc.model, :stochastic))
 
 """
 function logpdf(mc::ModelChains,
@@ -81,18 +81,14 @@ function logpdf(mc::ModelChains,
 
   sims::Vector{ModelChains} = []
   @sync begin
-        # check RemoteChannel for new entries and updates the ProgressMeters
-        finished_chains = 0
-        @async while finished_chains < K
-            chain = take!(channel)
-            if chain > 0
-                ProgressMeter.next!(meters[chain])
-            else
-                finished_chains += 1
-            end # if/else
-        end # while
-        @async sims = pmap2(logpdf_modelchains_worker, lsts)
-    end # @sync
+      # check RemoteChannel for new entries and updates the ProgressMeters
+      finished_chains = 0
+      @async while finished_chains < K
+          chain = take!(channel)
+          chain > 0 ? ProgressMeter.next!(meters[chain]) : finished_chains += 1
+      end # while
+      @async sims = pmap2(logpdf_modelchains_worker, lsts)
+  end # @sync
   ModelChains(cat(sims..., dims=3), mc.model, mc.stats, mc.stat_names)
 end
 
@@ -104,10 +100,10 @@ function logpdf_modelchains_worker(args::Vector)
   sim = Chains(size(mc, 1), 1, start=first(mc), thin=step(mc), names=["logpdf"])
 
   for i in 1:size(mc.value, 1)
-    m[relistkeys] = relist(m, mc.value[i, inds, 1], relistkeys)
-    update!(m, updatekeys)
-    sim.value[i, 1, 1] = mapreduce(key -> logpdf(m[key]), +, nodekeys)
-    next!(meter)
+      m[relistkeys] = relist(m, mc.value[i, inds, 1], relistkeys)
+      update!(m, updatekeys)
+      sim.value[i, 1, 1] = mapreduce(key -> logpdf(m[key]), +, nodekeys)
+      next!(meter)
   end
 
   sim
