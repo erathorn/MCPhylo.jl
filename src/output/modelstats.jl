@@ -84,11 +84,14 @@ function logpdf(mc::ModelChains,
       # check RemoteChannel for new entries and updates the ProgressMeters
       finished_chains = 0
       @async while finished_chains < K
+          println("waiting to take")
           chain = take!(channel)
+          println("took")
           chain > 0 ? ProgressMeter.next!(meters[chain]) : finished_chains += 1
       end # while
       @async sims = pmap2(logpdf_modelchains_worker, lsts)
   end # @sync
+  println("\n")
   ModelChains(cat(sims..., dims=3), mc.model, mc.stats, mc.stat_names)
 end
 
@@ -104,6 +107,7 @@ function logpdf_modelchains_worker(args::Vector)
       update!(m, updatekeys)
       sim.value[i, 1, 1] = mapreduce(key -> logpdf(m[key]), +, nodekeys)
       put!(channel[1], channel[2])
+      println("put something")
   end
   put!(channel[1], -1)
   sim
