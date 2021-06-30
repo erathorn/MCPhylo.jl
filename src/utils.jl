@@ -197,6 +197,7 @@ function assign_mcmc_work(
     else
         stats = zeros(Float64, 0, tree_dim)
     end # if/else
+    println("\n")
     return [results_vec[i] for i = 1:nchains], stats, statnames, conv_storage
 end # assign_mcmc_work
 
