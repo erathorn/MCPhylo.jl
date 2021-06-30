@@ -90,7 +90,7 @@ plot1 = Plots.plot(trees[1])
 plot2 = Plots.plot(trees[1], treetype=:fan, msc=:blue, mc=:yellow, lc=:white,
            bg=:black, tipfont=(7, :lightgreen))
 """
-
+=#
 data = rand(Normal(0,1), 5000)
 
 my_data=Dict(:data=>data)
@@ -114,7 +114,9 @@ samplers = [NUTS(:μ),
 setsamplers!(model, samplers)
 
 sim = mcmc(model, my_data, inits, 1000, burnin=500, thin=5, chains=2, trees=true)
+logpdf(sim)
 
+#=
 # default "inner" layout puts plots in a row
 pv = plot(sim, [:mean])
 # "inner" layout can be manipulated, but usually size has to be adjusted as well
