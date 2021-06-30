@@ -137,7 +137,7 @@ Each call to this function computes a chain for a ModelChains Object.
 function mcmc_worker!(args::AbstractArray, ASDSF_step::Int64=0,
                       rc::Union{Nothing, RemoteChannel}=nothing
                       )::Tuple{Chains, Model, ModelState}
-  m::Model, state::ModelState, window::UnitRange{Int}, burnin::Integer, thin::Integer, store_trees::Bool, verbose::Bool, channel::Tuple{RemoteChannel, Integer} = args
+  m::Model, state::ModelState, window::UnitRange{Int}, burnin::Integer, thin::Integer, store_trees::Bool, verbose::Bool, channel::Tuple{RemoteChannel, Int} = args
   llname::AbstractString = "likelihood"
   treeind::Int64 = 1
   m.iter = first(window) - 1
