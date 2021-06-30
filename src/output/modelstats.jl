@@ -75,7 +75,7 @@ function logpdf(mc::ModelChains,
   meters = [Progress(mc.model.iter; dt=0.5, desc="Chain $k: ", enabled=true, offset=k-1, showspeed=true) for k in 1:K]
 
   lsts = [
-    Any[mc[:, :, [k]], nodekeys, relistkeys, inds, updatekeys, channel[k]]
+    Any[mc[:, :, [k]], nodekeys, relistkeys, inds, updatekeys, (channel, k)]
     for k in 1:K
   ]
 
@@ -94,7 +94,7 @@ end
 
 
 function logpdf_modelchains_worker(args::Vector)
-  mc, nodekeys, relistkeys, inds, updatekeys, channel = args
+  mc::Chains, nodekeys::Vector{Symbol}, relistkeys::Vector{Symbol}, inds::Vector{Int}, updatekeys::Vector{Symbol}, channel::Tuple{RemoteChannel, Integer} = args
   m = mc.model
 
   sim = Chains(size(mc, 1), 1, start=first(mc), thin=step(mc), names=["logpdf"])
@@ -103,9 +103,9 @@ function logpdf_modelchains_worker(args::Vector)
       m[relistkeys] = relist(m, mc.value[i, inds, 1], relistkeys)
       update!(m, updatekeys)
       sim.value[i, 1, 1] = mapreduce(key -> logpdf(m[key]), +, nodekeys)
-      next!(meter)
+      put!(channel[1], channel[2])
   end
-
+  put!(channel[1], -1)
   sim
 end
 
@@ -165,7 +165,9 @@ end
 
 #################### Auxiliary Functions ####################
 
-function getsimkeys(mc::ModelChains, nodekeys::Vector{Symbol})
+function getsimkeys(mc::ModelChains, nodekeys::Vector{Symbol}
+                   )::Tuple{Vector{Symbol}, Vector{Symbol}}
+
   relistkeys = Symbol[]
   updatekeys = Symbol[]
 
