@@ -113,7 +113,7 @@ samplers = [NUTS(:μ),
 
 setsamplers!(model, samplers)
 
-sim = mcmc(model, my_data, inits, 1000, burnin=500, thin=5, chains=2, trees=true)
+sim = mcmc(model, my_data, inits, 5000, burnin=500, thin=5, chains=2, trees=true)
 logpdf(sim)
 
 #=

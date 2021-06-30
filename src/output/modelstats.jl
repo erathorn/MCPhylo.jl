@@ -72,32 +72,31 @@ function logpdf(mc::ModelChains,
 
   # set up 1 RemoteChannel & a ProgressMeter for each Chain
   channel = RemoteChannel(() -> Channel{Integer}(1))
-  meters = [Progress(mc.model.iter; dt=0.5, desc="Chain $k: ", enabled=true, offset=k-1, showspeed=true) for k in 1:K]
+  meters = [Progress(size(mc.value, 1); dt=0.5, desc="Chain $k: ", enabled=true, offset=k-1, showspeed=true) for k in 1:K]
 
   lsts = [
     Any[mc[:, :, [k]], nodekeys, relistkeys, inds, updatekeys, (channel, k)]
     for k in 1:K
   ]
 
-  sims::Vector{ModelChains} = []
+  sims::Vector{Chains} = []
   @sync begin
       # check RemoteChannel for new entries and updates the ProgressMeters
       finished_chains = 0
       @async while finished_chains < K
-          println("waiting to take")
           chain = take!(channel)
-          println("took")
           chain > 0 ? ProgressMeter.next!(meters[chain]) : finished_chains += 1
       end # while
       @async sims = pmap2(logpdf_modelchains_worker, lsts)
   end # @sync
   println("\n")
-  ModelChains(cat(sims..., dims=3), mc.model, mc.stats, mc.stat_names)
+  ModelChains(cat(sims..., dims=3), mc.model, mc.stats, mc.stat_names,
+              mc.sim_params, mc.conv_storage)
 end
 
 
 function logpdf_modelchains_worker(args::Vector)
-  mc::Chains, nodekeys::Vector{Symbol}, relistkeys::Vector{Symbol}, inds::Vector{Int}, updatekeys::Vector{Symbol}, channel::Tuple{RemoteChannel, Integer} = args
+  mc::ModelChains, nodekeys::Vector{Symbol}, relistkeys::Vector{Symbol}, inds::Vector{Int}, updatekeys::Vector{Symbol}, channel::Tuple{RemoteChannel, Integer} = args
   m = mc.model
 
   sim = Chains(size(mc, 1), 1, start=first(mc), thin=step(mc), names=["logpdf"])
@@ -107,7 +106,6 @@ function logpdf_modelchains_worker(args::Vector)
       update!(m, updatekeys)
       sim.value[i, 1, 1] = mapreduce(key -> logpdf(m[key]), +, nodekeys)
       put!(channel[1], channel[2])
-      println("put something")
   end
   put!(channel[1], -1)
   sim
