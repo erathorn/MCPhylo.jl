@@ -149,7 +149,6 @@ function calculate_transition(f::typeof(JC), rate::R, mu::R, time::R, U::A, Uinv
     elseif t > MCP_TIME_MAX
         return_mat .= 1.0/length(pi_)
     else
-        t *= mu
         BLAS.gemm!('N', 'N', 1.0, BLAS.symm('R', 'L', diagm(exp.(D .* t)), U), Uinv, 0.0, return_mat)
     end
     return_mat
@@ -178,9 +177,7 @@ function calculate_transition(f::typeof(Restriction), rate::R, mu::R, time::R, U
         return_mat .= 0.0
         return_mat[diagind(return_mat)] .= 1.0
     elseif t > MCP_TIME_MAX
-        @show t
         return_mat .= reverse(pi_)
-        #return_mat = collect(transpose(return_mat))
     else
         t *= mu
         BLAS.gemm!('N', 'N', 1.0, BLAS.symm('R', 'L', diagm(exp.(D .* t)), U), Uinv, 0.0, return_mat)
@@ -206,7 +203,6 @@ function calculate_transition(f::typeof(JC), rate::R, mu::R, time::R, U::A, Uinv
     elseif t > MCP_TIME_MAX
         return_mat .= 1.0/length(pi_)
     else
-        t *= mu
         return_mat .= abs.(BLAS.gemm('N', 'N', 1.0, BLAS.symm('R', 'L', diagm(exp.(D .* t)), U), Uinv))
     end
     return_mat
@@ -220,7 +216,6 @@ function calculate_transition(f::typeof(Restriction), rate::R, mu::R, time::R, U
         return_mat[diagind(return_mat)] .= 1.0
     elseif t > MCP_TIME_MAX
         return_mat .= reverse(pi_)
-        return_mat = collect(transpose(return_mat))
     else
         t *= mu
         return_mat .= abs.(BLAS.gemm('N', 'N', 1.0, BLAS.symm('R', 'L', diagm(exp.(D .* t)), U), Uinv))
