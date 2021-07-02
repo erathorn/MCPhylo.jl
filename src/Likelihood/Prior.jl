@@ -54,7 +54,7 @@ end
 function gradlogpdf(d::CompoundDirichlet, x::T) where T <: GeneralNode
     int_ext = internal_external(x)
     blv = get_branchlength_vector(x)
-
+    # use let block for proper capturing of variables
     f = let d=d, int_ext=int_ext
         y -> internal_logpdf(d, y, int_ext)
     end 
@@ -79,7 +79,6 @@ end
 
 function relistlength(d::CompoundDirichlet, x::AbstractArray)
   n = length(x)
-
   (Array(x), n)
 end
 

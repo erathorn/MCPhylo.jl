@@ -102,16 +102,14 @@ function sample!(v::PNUTSVariate, logfgrad::Function; adapt::Bool=false)
         tune.nniprime = 0
         nuts_sub!(v, tune.epsilon, logfgrad)
         Ht = (tune.target - tune.alpha / tune.nalpha)
-        
         avgnni = tune.targetNNI - tune.nniprime / tune.nalpha
-        
         HT2 = - avgnni / (1 + abs(avgnni))
+
         p = 1.0 / (tune.m + tune.t0)
-        
         HT = (Ht + HT2) / 2
-        
         tune.Hbar = (1.0 - p) * tune.Hbar +
                  p * HT
+
         tune.epsilon = exp(tune.mu - sqrt(tune.m) * tune.Hbar / tune.gamma)
         
         p = tune.m^-tune.kappa
@@ -138,7 +136,7 @@ end
 
 
 function nuts_sub!(v::PNUTSVariate, epsilon::Float64, logfgrad::Function)
-    #@show epsilon
+    
     mt = v.value[1]
     nl = size(mt)[1] - 1
     delta = v.tune.delta
@@ -223,7 +221,6 @@ function refraction(v::FNode, r::Vector{Float64}, pm::Int64,
     blenvec = molifier.(tmpB, delta)
     set_branchlength_vector!(v1, blenvec)
 
-
     logf, grad = logfgrad(v1, sz, true, true)
 
     fac = scale_fac.(blenvec, delta)
@@ -253,12 +250,11 @@ function ref_NNI(v::FNode, tmpB::Vector{Float64}, r::Vector{Float64}, epsilon::F
         r[ref_index] *= -1.0
 
         if intext[ref_index] == 1
-
+            
             blv1 = molifier.(blv, delta)
-            set_branchlength_vector!(v, blv1)
-
-               
+            set_branchlength_vector!(v, blv1)               
             U_before_nni, _ = logfgrad(v, sz, true, false) # still with molified branch length
+
             v_copy = deepcopy(v)
             tmp_NNI_made = NNI!(v_copy, ref_index)
             U_before_nni *= -1
@@ -343,7 +339,7 @@ function buildtree(x::FNode, r::Vector{Float64},
     end # if j
 
     xminus, rminus, gradminus, xplus, rplus, gradplus, xprime, nprime, sprime,
-    alphaprime, nalphaprime, nni, logpprime, nniprime / nalphaprime
+    alphaprime, nalphaprime, nni, logpprime, nniprime
 end
 
 
@@ -373,8 +369,7 @@ function nutsepsilon(x::FNode, logfgrad::Function, delta::Float64)
 
     x0 = deepcopy(x)
     n = size(x)[1] - 1
-    
-    
+        
     _, r0, logf0, grad0, _ = refraction(x0, randn(n), 1, zeros(n), 0.0, logfgrad, delta, n)
 
     x0 = deepcopy(x)
@@ -384,7 +379,7 @@ function nutsepsilon(x::FNode, logfgrad::Function, delta::Float64)
     prob = logfprime - logf0 - 0.5 * (dot(rprime) - dot(r0))
 
     pm = 2 * (prob > 0.5) - 1
-    while prob * pm > log(0.5^pm)
+    while prob ^ pm > log(0.5^pm)
         epsilon *= 2.0^pm
         x0 = deepcopy(x)
         _, rprime, logfprime, _, _ = refraction(x0, r0, 1, grad0, epsilon, logfgrad, delta, n)

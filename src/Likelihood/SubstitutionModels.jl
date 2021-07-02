@@ -39,7 +39,6 @@ function Restriction(base_freq::Vector{Float64}, SubstitutionRates::Vector{Float
     Q::Array{Float64,2} = ones(Nbases,Nbases)
     Q[diagind(Nbases,Nbases)] .= -1
     Q .*= reverse(base_freq)
-    
     D, U = eigen(Q)
     Uinv = inv(U)
     mu::Float64 =  1.0 / (2.0 * prod(base_freq))
@@ -59,7 +58,6 @@ The function returns the Eigenvectors, Eigenvalues and inverse of eigenvectors.
 function JC(base_freq::Vector{Float64}, SubstitutionRates::Vector{Float64})::Tuple{Array{Float64,2}, Array{Float64,1}, Array{Float64,2}, Float64}
     Nbases = length(base_freq)
     Q::Array{Float64,2} = ones(Nbases,Nbases)
-    #μ = SubstitutionRates[1]
     off_diag = 1.0/(Nbases-1)
     diag = off_diag * (Nbases-1)
     Q .= off_diag
