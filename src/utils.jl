@@ -169,9 +169,10 @@ function assign_mcmc_work(
         push!(lsts, [sp, conv_storage, r_channels, ntrees, 1:tree_dim])
     end # if
 
-    # set up a ProgressMeter for each chain & one RemoteChannel that will be used to communicate the updates of the progress bar across parallel functions
-    channel = RemoteChannel(() -> Channel{Integer}(1))
+    # set up a ProgressMeter for each chain...
     meters = [Progress(lsts[1][3][end] - lsts[1][3][1] + 1; desc="Chain $c: ", enabled=sp.verbose, offset=c-1, showspeed=true) for c in 1:nchains]
+    # ... & one RemoteChannel that will be used to communicate the updates of the progress bar across parallel functions
+    channel = RemoteChannel(() -> Channel{Integer}(1))
     # add the RemoteChannels to the lists that are later passed to the mcmc_worker
     for c in 1:nchains
         insert!(lsts[c], 8, (channel, c))
