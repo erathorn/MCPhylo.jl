@@ -327,6 +327,7 @@ include("samplers/mala.jl")
 include("samplers/miss.jl")
 include("samplers/nuts.jl")
 include("samplers/pnuts.jl")
+include("samplers/pphmc.jl")
 include("samplers/rwm.jl")
 include("samplers/rwmc.jl")
 include("samplers/slice.jl")
@@ -468,6 +469,7 @@ export
   SliceSimplex, SliceSimplexVariate,
   DMH, DMHVariate,
   PNUTS, PNUTSVariate,
+  PPHMC, PPHMCVariate,
   Empirical, EmpiricalVariate
 
 export

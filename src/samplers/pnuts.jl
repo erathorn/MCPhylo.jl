@@ -27,8 +27,8 @@ mutable struct PNUTSTune <: SamplerTune
     PNUTSTune() = new()
 
     function PNUTSTune(x::Vector{T}, epsilon::Float64, logfgrad::Union{Function,Missing};
-                    target::Real=0.6, tree_depth::Int=10, targetNNI::Int=5) where T <: GeneralNode
-        new(logfgrad, false, 0.0, epsilon, 1.0, 0.05, 0.0, 0.75, 0, NaN, 0, 10.0,0.003,
+                    target::Real=0.6, tree_depth::Int=10, targetNNI::Int=5, delta::Float64=0.003) where T <: GeneralNode
+        new(logfgrad, false, 0.0, epsilon, 1.0, 0.05, 0.0, 0.75, 0, NaN, 0, 10.0,delta,
         target,Int[], tree_depth,0, targetNNI,Int[])
     end
 end
@@ -40,7 +40,7 @@ PNUTSTune(x::Vector{T}, logfgrad::Function, delta::Float64; args...) where T <: 
   PNUTSTune(x, nutsepsilon(x[1], logfgrad, delta), logfgrad; args...)
 
 PNUTSTune(x::Vector; epsilon::Real, args...) =
-    NUTSTune(x, epsilon, missing, args...)
+    PNUTSTune(x, epsilon, missing, args...)
 
 const PNUTSVariate = SamplerVariate{PNUTSTune}
 
@@ -86,7 +86,7 @@ function mlogpdfgrad!(block::SamplingBlock, x::FNode, sz::Int64, ll::Bool=false,
     if gr
         lp, grad = gradlogpdf!(block, x)::Tuple{Float64,Vector{Float64}}
     elseif ll
-    lp = logpdf!(block, x)::Float64
+        lp = logpdf!(block, x)::Float64
     end
     lp, grad
 end
@@ -142,8 +142,8 @@ function nuts_sub!(v::PNUTSVariate, epsilon::Float64, logfgrad::Function)
     delta = v.tune.delta
 
     r = randn(nl)
+    #_, g = logfgrad(mt, nl, true, true)
     g = zeros(nl)
-
     x, r, logf, grad, nni = refraction(mt, r, 1, g, epsilon, logfgrad, delta, nl)
 
     lu = log(rand())
@@ -257,12 +257,9 @@ function ref_NNI(v::FNode, tmpB::Vector{Float64}, r::Vector{Float64}, epsilon::F
 
             v_copy = deepcopy(v)
             tmp_NNI_made = NNI!(v_copy, ref_index)
-            U_before_nni *= -1
-            
+                        
             if tmp_NNI_made != 0
-
-                U_after_nni, _ = logfgrad(v_copy, sz, true, false)
-                U_after_nni *= -1
+                U_after_nni, _ = logfgrad(v_copy, sz, true, false)    
                 delta_U::Float64 = 2.0 * (U_after_nni - U_before_nni)
                 my_v::Float64 = r[ref_index]^2
                 if my_v > delta_U
