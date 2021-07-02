@@ -81,8 +81,9 @@ function logpdf(mc::ModelChains,
 
   sims::Vector{Chains} = []
   @sync begin
-      # check RemoteChannel for new entries and updates the ProgressMeters
+      # check RemoteChannel for new entries and update the ProgressMeters
       finished_chains = 0
+      # loop until all ProgressMeters are finished
       @async while finished_chains < K
           chain = take!(channel)
           chain > 0 ? ProgressMeter.next!(meters[chain]) : finished_chains += 1
@@ -105,8 +106,10 @@ function logpdf_modelchains_worker(args::Vector)
       m[relistkeys] = relist(m, mc.value[i, inds, 1], relistkeys)
       update!(m, updatekeys)
       sim.value[i, 1, 1] = mapreduce(key -> logpdf(m[key]), +, nodekeys)
+      # send update to RemoteChannel so that the ProgressMeter can be updated in logpdf
       put!(channel[1], channel[2])
   end
+  # signal to the logpdf function, that this chain is finished
   put!(channel[1], -1)
   sim
 end

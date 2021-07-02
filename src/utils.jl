@@ -169,9 +169,10 @@ function assign_mcmc_work(
         push!(lsts, [sp, conv_storage, r_channels, ntrees, 1:tree_dim])
     end # if
 
-    # set up 1 RemoteChannel & a ProgressMeter for each chain
+    # set up a ProgressMeter for each chain & one RemoteChannel that will be used to communicate the updates of the progress bar across parallel functions
     channel = RemoteChannel(() -> Channel{Integer}(1))
     meters = [Progress(lsts[1][3][end] - lsts[1][3][1] + 1; desc="Chain $c: ", enabled=sp.verbose, offset=c-1, showspeed=true) for c in 1:nchains]
+    # add the RemoteChannels to the lists that are later passed to the mcmc_worker
     for c in 1:nchains
         insert!(lsts[c], 8, (channel, c))
     end # for
@@ -216,12 +217,16 @@ function mcmc_or_convergence(args::AbstractArray
                             Tuple{Chains, Model, ModelState},
                             Tuple{Vector{Vector{Float64}}, ConvergenceStorage}
                             }
-
+    # depending on the elements of the args array either start calculate_convergence or...
     if isa(args[1], SimulationParameters)
         calculate_convergence(args...)
+    # ...mcmc_worker
     else
+        # if no convergence statistics are wanted, then the mcmc_worker will be called with exactly 8 elements in args...
         if length(args) == 8
             mcmc_worker!(args)
+        # ...but with on-the-fly convergence statistics, we have 2 more elements (the step range & the remote channel), 
+        # that we need to dispatch correctly to the mcmc_worker
         else
             mcmc_worker!(args[1:end-2], args[end-1:end]...)
         end # if/else

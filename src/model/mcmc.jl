@@ -156,7 +156,6 @@ function mcmc_worker!(args::AbstractArray, ASDSF_step::Int64=0,
   sim = Chains(last(window), length(pnames), start=burnin + thin, thin=thin,
                names=pnames, ntrees=length(treenodes), tree_names=treenodes)
 
-  # meter = Progress(window[end]; desc="Chain $chain: ", enabled=verbose)
   for i in window
 
     sample!(m)
@@ -175,11 +174,14 @@ function mcmc_worker!(args::AbstractArray, ASDSF_step::Int64=0,
         for (ind, tree_node) in enumerate(treenodes)
           push!(trees, newick(m[tree_node].value))
         end # for
+        # send trees to a RemoteChannel, so that convergence statistics can be calculated on a different worker 
         put!(rc, trees)
       end # if
     end # if
+    # send update to RemoteChannel --> while loop in logpdf function updates the ProgressMeter of this chain
     put!(channel[1], channel[2])
   end # for
+  # signal to the assign_mcmc_work function, that this chain is finished
   put!(channel[1], -1)
   mv = samparas(m)
   sim.moves[1] = mv
