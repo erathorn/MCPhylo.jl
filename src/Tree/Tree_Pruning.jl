@@ -65,4 +65,5 @@ function prune_tree!(root::T, nodes::Vector{T})::Nothing where T<:GeneralNode
             remove_child!(node.mother, node)
         end
     end
+    number_nodes!(root)
 end

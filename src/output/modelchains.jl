@@ -26,7 +26,7 @@ end
 
 names2inds(mc::ModelChains, nodekey::Symbol) = names2inds(mc, [nodekey])
 
-function names2inds(mc::ModelChains, nodekeys::Vector{Symbol})
+function names2inds(mc::ModelChains, nodekeys::Vector{Symbol})::Vector{Int}
   inds = Int[]
   missing = Symbol[]
   for key in nodekeys
