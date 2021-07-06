@@ -22,14 +22,16 @@ mutable struct PNUTSTune <: SamplerTune
     nniprime::Float64
     targetNNI::Int
     tree_depth_trace::Vector{Int}
+    jitter::Float64
 
 
     PNUTSTune() = new()
 
     function PNUTSTune(x::Vector{T}, epsilon::Float64, logfgrad::Union{Function,Missing};
-                    target::Real=0.6, tree_depth::Int=10, targetNNI::Int=5, delta::Float64=0.003) where T <: GeneralNode
+                    target::Real=0.6, tree_depth::Int=10, targetNNI::Int=5, delta::Float64=0.003, jitter::Float64=0.0) where T <: GeneralNode
+        
         new(logfgrad, false, 0.0, epsilon, 1.0, 0.05, 0.0, 0.75, 0, NaN, 0, 10.0,delta,
-        target,Int[], tree_depth,0, targetNNI,Int[])
+        target,Int[], tree_depth,0, targetNNI,Int[], jitter)
     end
 end
 
@@ -100,7 +102,7 @@ function sample!(v::PNUTSVariate, logfgrad::Function; adapt::Bool=false)
         
         tune.m += 1
         tune.nniprime = 0
-        tune.epsilon = rand(Uniform(0,2*tune.epsilon))
+        tune.epsilon *= 1.0 + tune.jitter * (2 * rand() - 1)
         nuts_sub!(v, tune.epsilon, logfgrad)
         Ht = (tune.target - tune.alpha / tune.nalpha)
         avgnni = tune.targetNNI - tune.nniprime / tune.nalpha
@@ -108,6 +110,7 @@ function sample!(v::PNUTSVariate, logfgrad::Function; adapt::Bool=false)
 
         p = 1.0 / (tune.m + tune.t0)
         HT = (Ht + HT2) / 2
+        HT = HT > 1 ? 1 : HT
         tune.Hbar = (1.0 - p) * tune.Hbar +
                  p * HT
 
@@ -118,8 +121,8 @@ function sample!(v::PNUTSVariate, logfgrad::Function; adapt::Bool=false)
                            (1.0 - p) * log(tune.epsilonbar))
     else
         if (tune.m > 0) tune.epsilon = tune.epsilonbar end
-        epsi = rand(Uniform(0, 2*tune.epsilon))
-        nuts_sub!(v, epsi, logfgrad)
+        #epsi = rand(Uniform(0, 2*tune.epsilon))
+        nuts_sub!(v, tune.epsilon, logfgrad)
     end
     v
 end

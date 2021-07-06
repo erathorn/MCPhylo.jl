@@ -10,11 +10,16 @@ mutable struct PhyloDist <: DiscreteMatrixDistribution
     substitution_model::Function
     nbase::Int64
     nnodes::Int64
+    U::Array{<: Number, 2}
+    D::Vector{<: Number}
+    Uinv::Array{<: Number, 2}
+    mu::Float64
 
     function PhyloDist(tree::T, base_freq::Array{Float64}, substitution_rates::Array{Float64},
                        rates::Array{Float64}, substitution_model::Function) where {T <: GeneralNode}
+        U, D, Uinv, mu = substitution_model(base_freq, substitution_rates)
         new(tree, base_freq, substitution_rates,rates, substitution_model,
-            length(base_freq), length(post_order(tree)))
+            length(base_freq), length(post_order(tree)), U, D, Uinv, mu)
     end
 
 end
@@ -69,8 +74,8 @@ function __logpdf(d::PhyloDist, x::AbstractArray, gradient::Bool=false)
     @inbounds for i in 1:length(d.rates)
         data[:, :, i, :] .= x
     end
-    U, D, Uinv, mu = d.substitution_model(d.base_freq, d.substitution_rates)
-    FelsensteinFunction(mt, d.base_freq, d.rates, U, D, Uinv, mu, data, d.substitution_model, gradient)
+    #U, D, Uinv, mu = d.substitution_model(d.base_freq, d.substitution_rates)
+    FelsensteinFunction(mt, d.base_freq, d.rates, d.U, d.D, d.Uinv, d.mu, data, d.substitution_model, gradient)
 end
 
 function gradlogpdf(d::PhyloDist, x::AbstractArray)
