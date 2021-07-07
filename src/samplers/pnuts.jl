@@ -22,14 +22,16 @@ mutable struct PNUTSTune <: SamplerTune
     nniprime::Float64
     targetNNI::Int
     tree_depth_trace::Vector{Int}
+    jitter::Float64
 
 
     PNUTSTune() = new()
 
     function PNUTSTune(x::Vector{T}, epsilon::Float64, logfgrad::Union{Function,Missing};
-                    target::Real=0.6, tree_depth::Int=10, targetNNI::Int=5, delta::Float64=0.003) where T <: GeneralNode
+                    target::Real=0.6, tree_depth::Int=10, targetNNI::Int=5, delta::Float64=0.003, jitter::Float64=0.0) where T <: GeneralNode
+        
         new(logfgrad, false, 0.0, epsilon, 1.0, 0.05, 0.0, 0.75, 0, NaN, 0, 10.0,delta,
-        target,Int[], tree_depth,0, targetNNI,Int[])
+        target,Int[], tree_depth,0, targetNNI,Int[], jitter)
     end
 end
 
@@ -100,12 +102,14 @@ function sample!(v::PNUTSVariate, logfgrad::Function; adapt::Bool=false)
         
         tune.m += 1
         tune.nniprime = 0
-        tune.epsilon = rand(Uniform(0,2*tune.epsilon))
+    
         nuts_sub!(v, tune.epsilon, logfgrad)
-        Ht = (tune.target - tune.alpha / tune.nalpha)
+        adapt_stat = tune.alpha / tune.nalpha
+        adapt_stat = adapt_stat > 1 ? 1 : adapt_stat
+        Ht = (tune.target - adapt_stat)
         avgnni = tune.targetNNI - tune.nniprime / tune.nalpha
+        avgnni = avgnni < 0 ? 0 : avgnni
         HT2 = - avgnni / (1 + abs(avgnni))
-
         p = 1.0 / (tune.m + tune.t0)
         HT = (Ht + HT2) / 2
         tune.Hbar = (1.0 - p) * tune.Hbar +
@@ -118,8 +122,8 @@ function sample!(v::PNUTSVariate, logfgrad::Function; adapt::Bool=false)
                            (1.0 - p) * log(tune.epsilonbar))
     else
         if (tune.m > 0) tune.epsilon = tune.epsilonbar end
-        epsi = rand(Uniform(0, 2*tune.epsilon))
-        nuts_sub!(v, epsi, logfgrad)
+        #epsi = rand(Uniform(0, 2*tune.epsilon))
+        nuts_sub!(v, tune.epsilon, logfgrad)
     end
     v
 end
@@ -379,7 +383,6 @@ function nutsepsilon(x::FNode, logfgrad::Function, delta::Float64)
     _, rprime, logfprime, _ , _ = refraction(x0, r0, 1, gr, epsilon, logfgrad, delta, n)
 
     prob = logfprime - logf0 - 0.5 * (dot(rprime) - dot(r0))
-
     pm = 2 * (prob > 0.5) - 1
     while prob ^ pm > log(0.5^pm)
         epsilon *= 2.0^pm
