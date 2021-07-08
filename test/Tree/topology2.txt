@@ -1,0 +1,2 @@
+exc :   E,F,G;
+# test error throwing on missing exlamation mark
