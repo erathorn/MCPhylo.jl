@@ -14,11 +14,11 @@ using Test
 
     dict3 = generate_constraints("./test/Tree/topology.txt")
     dict4 = generate_constraints!(dict, "./test/Tree/topology.txt")
-    result3 = Dict([(:mono, [["A","B"]]),
-                    (:not_mono, [["C","D"]]),
+    result3 = Dict([(:mono, [["A","B"], ["C", "D"]]),
+                    (:not_mono, [["C","D", "E"]]),
                     (:exc, [(["E", "F"], ["G"])])])
-    result4 = Dict([(:mono, [["A","B"]]),
-                    (:not_mono, [["B","C"], ["C", "D"]]),
+    result4 = Dict([(:mono, [["A","B"], ["C", "D"]]),
+                    (:not_mono, [["B","C"], ["C", "D", "E"]]),
                     (:exc, [(["C", "D"], ["E"]), (["E", "F"], ["G"])])])
     @test dict3 == result3
     @test dict4 == result4
@@ -30,10 +30,13 @@ using Test
     @test_logs (:warn, "Some trivial 'mono' / 'not_mono' type constraints were removed.
          A valid 'mono' / 'not_mono' constraint needs at least 2 elements.")
         generate_constraints(mono=[["A"]])
-        
+
      @test_logs (:warn, "Some trivial 'exc' type constraints were removed.
       A non-trivial 'exc' constraints needs at least 2 elements in the first, and at least 1 in the second part of the tuple")
         generate_constraints(exc=[(["A"], ["B"])])
+
+    @test_throws FileSyntaxError generate_constraints("./test/Tree/topology2.txt")
+    @test_throws FileSyntaxError generate_constraints("./test/Tree/topology3.txt")
 end
 
 
