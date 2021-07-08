@@ -620,7 +620,7 @@ end
 
 
 function find_lca(tree::T, node_l::Vector{S})::T  where {T<:GeneralNode, S<:AbstractString}
-    find_lca(tree, [find_by_name(tree, i) for i in node_l])
+    find_lca(tree, [find_name(tree, i) for i in node_l])
 end
 
 
