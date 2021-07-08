@@ -122,14 +122,34 @@ function parse_constraints(filename::S)::Tuple{Vector{Vector{S}}, Vector{Vector{
     mono, not_mono = [Vector{String}[] for _ = 1:2]
     exc = Vector{Tuple{Vector{AbstractString}, Vector{AbstractString}}}()
     for line in eachline(filename)
-        line = split(line,":")
-        line = [split(x, ",") for x in line]
-        line[1][1] = strip(line[1][1])
-        line[1][1] == "mono" ? push!(mono, line[1][2:end]) :
-        line[1][1] == "not_mono" ? push!(not_mono, line[1][2:end]) :
-        line[1][1] == "exc" ? push!(exc, (line[1][2:end], line[2])) :
-        @warn "Skipped line with unsupported constraint type '$(line[1][1])'.
-         Allowed types are 'mono', 'not_mono' and 'exc'"
+        line = filter(x -> !isspace(x), line)
+        # skip comment lines
+        startswith(line, "#") && continue
+        split_l::Vector{AbstractString} = split(line,":")
+        length(split_l) != 2 && throw(FileSyntaxError("There should be exactly one colon in each non-comment line."))
+        constraints::Vector{AbstractString} = split(split_l[2], ";")
+        if split_l[1] == "mono"
+            for constraint in constraints
+                constraint == "" && continue
+                push!(mono, split(constraint, ","))
+            end # for
+        elseif split_l[1] == "not_mono"
+            for constraint in constraints
+                constraint == "" && continue
+                push!(not_mono, split(constraint, ","))
+            end # for
+        elseif split_l[1] == "exc"
+            for constraint in constraints
+                constraint == "" && continue
+                exc_constraint::Vector{AbstractString} = split(constraint, "!")
+                length(exc_constraint) != 2 && throw(FileSyntaxError("There should be exactly one exclamation mark in each 'exc' type constraint."))
+                push!(exc, (split(exc_constraint[1], ","),
+                            split(exc_constraint[2], ",")))
+            end # for
+        else
+            @warn "Skipped line with unsupported constraint type '$split_l[1]'.
+             Allowed types are 'mono', 'not_mono' and 'exc'"
+        end # if/else
     end # for
     return (mono, not_mono, exc)
 end # parse_constraints
