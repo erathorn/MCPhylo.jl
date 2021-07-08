@@ -151,7 +151,7 @@ function topological(tree::N, constraints::Dict) where N<:GeneralNode
         lca = find_lca(tree, leaves[1])
         lca.root && return false
         for leaf in leaves[2]
-            leaf = find_by_name(tree, leaf)
+            leaf = find_name(tree, leaf)
             (lca.binary == leaf.binary[1:length(lca.binary)]) && return false
         end # for
     end # for
