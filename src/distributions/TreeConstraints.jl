@@ -122,6 +122,7 @@ function parse_constraints(filename::S)::Tuple{Vector{Vector{S}}, Vector{Vector{
     mono, not_mono = [Vector{String}[] for _ = 1:2]
     exc = Vector{Tuple{Vector{AbstractString}, Vector{AbstractString}}}()
     for line in eachline(filename)
+        # remove whitespace
         line = filter(x -> !isspace(x), line)
         # skip comment lines
         startswith(line, "#") && continue
@@ -130,6 +131,7 @@ function parse_constraints(filename::S)::Tuple{Vector{Vector{S}}, Vector{Vector{
         constraints::Vector{AbstractString} = split(split_l[2], ";")
         if split_l[1] == "mono"
             for constraint in constraints
+                # makes sure that parsing works with & without trailing semicolon
                 constraint == "" && continue
                 push!(mono, split(constraint, ","))
             end # for
