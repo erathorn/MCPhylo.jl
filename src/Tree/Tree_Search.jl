@@ -88,6 +88,59 @@ function find_num(root::T, num::I, rn::Vector{T})::Bool  where {T<:GeneralNode, 
     return found
 end
 
+
+"""
+    find_name(root::T, name::S)::T  where {T<:GeneralNode, S<:AbstractString}
+
+Find a node by its name. Returns reference to Node.
+
+* `root` : root Node of tree to be searched.
+
+* `name` : name of desired Node.
+"""
+function find_name(root::T, name::S)::T  where {T<:GeneralNode, S<:AbstractString}
+    store = T[]
+    found = find_name(root, name, store)
+    if length(store) == 0
+        throw(ArgumentError("Node not found"))
+    else
+        return store[1]
+    end
+end
+
+
+"""
+    find_name(root::T, name::S, rn::Vector{T})::Bool where {T<:GeneralNode, S<:AbstractString}
+
+Do a post order traversal to find the node corresponding to the `name`.
+
+Returns true if node is found, false otherwise. Desired Node is pushed to rn.
+
+* `root` : root Node of tree to be searched.
+
+* `name` : name of desired Node.
+
+* `rn` : Vector of Nodes; desired Node is pushed to this vector when found.
+"""
+function find_name(root::T, name::S, rn::Vector{T})::Bool where {T<:GeneralNode, S<:AbstractString}
+    # if the current node is the correct one store it in rn
+    if root.name === name
+        push!(rn, root)
+        found = true
+    else
+        found = false
+    end
+
+    if !found
+        # if the node is not yet found continue
+        for child in root.children
+            found = find_name(child, name,  rn)
+        end
+    end # if
+    return found
+end
+
+
 """
     find_binary(root::T, bin::String)::T where T<:GeneralNode
 
