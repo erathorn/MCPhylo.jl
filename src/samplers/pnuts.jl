@@ -35,11 +35,11 @@ mutable struct PNUTSTune <: SamplerTune
     end
 end
 
-PNUTSTune(x::Vector{T}, logfgrad::Function, ::NullFunction, delta::Float64=0.003; args...) where T <: GeneralNode =
-  PNUTSTune(x, nutsepsilon(x[1], logfgrad, delta), logfgrad; args...)
+PNUTSTune(x::Vector{T}, logfgrad::Function, ::NullFunction, delta::Float64=0.003, target::Real=0.6; args...) where T <: GeneralNode =
+  PNUTSTune(x, nutsepsilon(x[1], logfgrad, delta, target), logfgrad; args...)
 
-PNUTSTune(x::Vector{T}, logfgrad::Function, delta::Float64; args...) where T <: GeneralNode =
-  PNUTSTune(x, nutsepsilon(x[1], logfgrad, delta), logfgrad; args...)
+PNUTSTune(x::Vector{T}, logfgrad::Function, delta::Float64, target::Real; args...) where T <: GeneralNode =
+  PNUTSTune(x, nutsepsilon(x[1], logfgrad, delta, target), logfgrad; args...)
 
 PNUTSTune(x::Vector; epsilon::Real, args...) =
     PNUTSTune(x, epsilon, missing, args...)
@@ -373,7 +373,7 @@ end
 
 #################### Auxilliary Functions ####################
 
-function nutsepsilon(x::FNode, logfgrad::Function, delta::Float64)
+function nutsepsilon(x::FNode, logfgrad::Function, delta::Float64, target::Float64)
 
     x0 = deepcopy(x)
     n = size(x)[1] - 1
@@ -381,14 +381,20 @@ function nutsepsilon(x::FNode, logfgrad::Function, delta::Float64)
     r0 = randn(n)
     epsilon = 1.0
     _, rprime, logfprime, _ , _ = refraction(x0, r0, 1, gr, epsilon, logfgrad, delta, n)
-
-    prob = logfprime - logf0 - 0.5 * (dot(rprime) - dot(r0))
-    pm = 2 * (prob > 0.5) - 1
-    while prob ^ pm > log(0.5^pm)
-        epsilon *= 2.0^pm
+    Hp = logfprime - 0.5 * dot(rprime)
+    H0 = logf0 - 0.5 * dot(r0)
+    prob = Hp - H0 #logfprime - logf0 - 0.5 * (dot(rprime) - dot(r0))
+    #@show prob
+    direction = prob > target ? 1 : -1
+    
+    while direction == 1 ? prob > target : prob < target
+        epsilon = direction == 1 ? 2 * epsilon : 0.5 * epsilon
+       
         _, rprime, logfprime, _, _ = refraction(x0, r0, 1, gr, epsilon, logfgrad, delta, n)
-        prob = logfprime - logf0 - 0.5 * (dot(rprime) - dot(r0))
+        Hp = logfprime - 0.5 * dot(rprime)
+        prob = Hp - H0 
     end
+    @show epsilon
     epsilon
 end
 
