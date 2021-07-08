@@ -6,10 +6,10 @@ using Test
     tree2 = MCPhylo.parsing_newick_string("((G,(C,(A,(F,E)))),(B,(D,H)));")
     MCPhylo.number_nodes!.([ref_tree, tree2])
     MCPhylo.set_binary!.([ref_tree, tree2])
-    A, B, C, D, E, F, G, H = MCPhylo.find_by_name(tree2, "A"), MCPhylo.find_by_name(tree2, "B"),
-                             MCPhylo.find_by_name(tree2, "C"), MCPhylo.find_by_name(tree2, "D"),
-                             MCPhylo.find_by_name(tree2, "E"), MCPhylo.find_by_name(tree2, "F"),
-                             MCPhylo.find_by_name(tree2, "G"), MCPhylo.find_by_name(tree2, "H")
+    A, B, C, D, E, F, G, H = MCPhylo.find_name(tree2, "A"), MCPhylo.find_name(tree2, "B"),
+                             MCPhylo.find_name(tree2, "C"), MCPhylo.find_name(tree2, "D"),
+                             MCPhylo.find_name(tree2, "E"), MCPhylo.find_name(tree2, "F"),
+                             MCPhylo.find_name(tree2, "G"), MCPhylo.find_name(tree2, "H")
      expected_dict = Dict{Int64,Tuple{Bool,Union{Missing, Float64}}}([(D.mother.num, (false, missing)), (C.mother.num, (false, missing)), (B.mother.num, (false, missing)),
                            (A.mother.num, (false, missing)), (G.mother.num, (false, missing)), (F.mother.num, (false, missing)),
                            (G.mother.mother.num, (true, 1.0)), (A.num, (true, 1.0)), (B.num, (true, 1.0)), (C.num, (true, 1.0)),
@@ -19,10 +19,10 @@ using Test
     tree3 = MCPhylo.parsing_newick_string("((A,(C,(D,(B,E)))),(G,(F,H)));")
     MCPhylo.number_nodes!(tree3)
     MCPhylo.set_binary!(tree3)
-    A, B, C, D, E, F, G, H = MCPhylo.find_by_name(tree3, "A"), MCPhylo.find_by_name(tree3, "B"),
-                             MCPhylo.find_by_name(tree3, "C"), MCPhylo.find_by_name(tree3, "D"),
-                             MCPhylo.find_by_name(tree3, "E"), MCPhylo.find_by_name(tree3, "F"),
-                             MCPhylo.find_by_name(tree3, "G"), MCPhylo.find_by_name(tree3, "H")
+    A, B, C, D, E, F, G, H = MCPhylo.find_name(tree3, "A"), MCPhylo.find_name(tree3, "B"),
+                             MCPhylo.find_name(tree3, "C"), MCPhylo.find_name(tree3, "D"),
+                             MCPhylo.find_name(tree3, "E"), MCPhylo.find_name(tree3, "F"),
+                             MCPhylo.find_name(tree3, "G"), MCPhylo.find_name(tree3, "H")
      expected_dict = Dict([(D.mother.num, (false, missing)), (C.mother.num, (true, 1.0)), (B.mother.num, (false, missing)),
                            (A.mother.num, (true, 1.0)), (G.mother.num, (true, 1.0)), (F.mother.num, (false, missing)),
                            (A.mother.mother.num, (true, 1.0)), (A.num, (true, 1.0)), (B.num, (true, 1.0)), (C.num, (true, 1.0)),
@@ -32,10 +32,10 @@ using Test
     tree4 = MCPhylo.parsing_newick_string("((A,(B,(C,(D,E)))),(F,(G,H)));")
     MCPhylo.number_nodes!(tree4)
     MCPhylo.set_binary!(tree4)
-    A, B, C, D, E, F, G, H = MCPhylo.find_by_name(tree4, "A"), MCPhylo.find_by_name(tree4, "B"),
-                             MCPhylo.find_by_name(tree4, "C"), MCPhylo.find_by_name(tree4, "D"),
-                             MCPhylo.find_by_name(tree4, "E"), MCPhylo.find_by_name(tree4, "F"),
-                             MCPhylo.find_by_name(tree4, "G"), MCPhylo.find_by_name(tree4, "H")
+    A, B, C, D, E, F, G, H = MCPhylo.find_name(tree4, "A"), MCPhylo.find_name(tree4, "B"),
+                             MCPhylo.find_name(tree4, "C"), MCPhylo.find_name(tree4, "D"),
+                             MCPhylo.find_name(tree4, "E"), MCPhylo.find_name(tree4, "F"),
+                             MCPhylo.find_name(tree4, "G"), MCPhylo.find_name(tree4, "H")
     expected_dict = Dict([(D.mother.num, (true, 1.0)), (C.mother.num, (true, 1.0)), (B.mother.num, (true, 1.0)),
                           (A.mother.num, (true, 1.0)), (G.mother.num, (true, 1.0)), (F.mother.num, (true, 1.0)),
                           (A.mother.mother.num, (true, 1.0)), (A.num, (true, 1.0)), (B.num, (true, 1.0)), (C.num, (true, 1.0)),
@@ -46,7 +46,7 @@ using Test
     MCPhylo.number_nodes!(tree5)
     MCPhylo.set_binary!(tree5)
     @test_throws ArgumentError MCPhylo.find_common_clusters(ref_tree, tree5)
-    
+
     tree6 = MCPhylo.parsing_newick_string("(X,(G,(C,(A,(F,E)))),(B,(D,H)));")
     MCPhylo.number_nodes!(tree5)
     MCPhylo.set_binary!(tree5)
@@ -74,10 +74,10 @@ end
     tree = MCPhylo.parsing_newick_string("(A,B,(C,(D,E)F)G)H;")
     MCPhylo.number_nodes!(tree)
     MCPhylo.set_binary!(tree)
-    A, B, C, D, E, F, G, H = MCPhylo.find_by_name(tree, "A"), MCPhylo.find_by_name(tree, "B"),
-                             MCPhylo.find_by_name(tree, "C"), MCPhylo.find_by_name(tree, "D"),
-                             MCPhylo.find_by_name(tree, "E"), MCPhylo.find_by_name(tree, "F"),
-                             MCPhylo.find_by_name(tree, "G"), MCPhylo.find_by_name(tree, "H")
+    A, B, C, D, E, F, G, H = MCPhylo.find_name(tree, "A"), MCPhylo.find_name(tree, "B"),
+                             MCPhylo.find_name(tree, "C"), MCPhylo.find_name(tree, "D"),
+                             MCPhylo.find_name(tree, "E"), MCPhylo.find_name(tree, "F"),
+                             MCPhylo.find_name(tree, "G"), MCPhylo.find_name(tree, "H")
     cluster_start_indeces = Dict([(A, 3), (B, 7), (C, 2), (D, 8),
                                   (E, 5), (F, 1), (G, 4), (H, 6)])
     ordered_tree = MCPhylo.parsing_newick_string("(A,((E,D)F,C)G,B)H;")
@@ -91,8 +91,8 @@ end
 
 @testset "max/min_leaf_rank" begin
     tree = MCPhylo.parsing_newick_string("(A,B,(C,(D,E)F)G)H;")
-    F, G, H, A = MCPhylo.find_by_name(tree, "F"), MCPhylo.find_by_name(tree, "G"),
-                 MCPhylo.find_by_name(tree, "H"), MCPhylo.find_by_name(tree, "A")
+    F, G, H, A = MCPhylo.find_name(tree, "F"), MCPhylo.find_name(tree, "G"),
+                 MCPhylo.find_name(tree, "H"), MCPhylo.find_name(tree, "A")
     leaf_ranks = Dict([("A", 1), ("B", 5), ("C", 2), ("D", 4), ("E", 3)])
 
     @testset "min_leaf_rank" begin
@@ -114,10 +114,10 @@ end
     tree = MCPhylo.parsing_newick_string("(A,B,(C,(D,E)F)G)H;")
     MCPhylo.set_binary!(tree)
     MCPhylo.number_nodes!(tree)
-    A, B, C, D, E, F, G, H = MCPhylo.find_by_name(tree, "A"), MCPhylo.find_by_name(tree, "B"),
-                             MCPhylo.find_by_name(tree, "C"), MCPhylo.find_by_name(tree, "D"),
-                             MCPhylo.find_by_name(tree, "E"), MCPhylo.find_by_name(tree, "F"),
-                             MCPhylo.find_by_name(tree, "G"), MCPhylo.find_by_name(tree, "H")
+    A, B, C, D, E, F, G, H = MCPhylo.find_name(tree, "A"), MCPhylo.find_name(tree, "B"),
+                             MCPhylo.find_name(tree, "C"), MCPhylo.find_name(tree, "D"),
+                             MCPhylo.find_name(tree, "E"), MCPhylo.find_name(tree, "F"),
+                             MCPhylo.find_name(tree, "G"), MCPhylo.find_name(tree, "H")
 
     @testset "x_left" begin
         @test MCPhylo.x_left(A) == (H, [A,H])
