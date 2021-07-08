@@ -503,7 +503,6 @@ export
   find_lca,
   find_by_binary,
   find_by_name,
-  find_by_num,
   find_num,
   find_name,
   find_root,
