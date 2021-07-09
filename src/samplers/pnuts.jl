@@ -9,7 +9,8 @@ mutable struct PNUTSTune <: SamplerTune
     epsilon::Float64
     epsilonbar::Float64
     gamma::Float64
-    Hbar::Float64
+    Hbar_acc::Float64
+    Hbar_nni::Float64
     kappa::Float64
     m::Int
     mu::Float64
@@ -30,7 +31,7 @@ mutable struct PNUTSTune <: SamplerTune
     function PNUTSTune(x::Vector{T}, epsilon::Float64, logfgrad::Union{Function,Missing};
                     target::Real=0.6, tree_depth::Int=10, targetNNI::Int=5, delta::Float64=0.003, jitter::Float64=0.0) where T <: GeneralNode
         
-        new(logfgrad, false, 0.0, epsilon, 1.0, 0.05, 0.0, 0.75, 0, NaN, 0, 10.0,delta,
+        new(logfgrad, false, 0.0, epsilon, 1.0, 0.05, 0.0, 0.0, 0.75, 0, NaN, 0, 10.0,delta,
         target,Int[], tree_depth,0, targetNNI,Int[], jitter)
     end
 end
@@ -106,16 +107,17 @@ function sample!(v::PNUTSVariate, logfgrad::Function; adapt::Bool=false)
         nuts_sub!(v, tune.epsilon, logfgrad)
         adapt_stat = tune.alpha / tune.nalpha
         adapt_stat = adapt_stat > 1 ? 1 : adapt_stat
-        Ht = (tune.target - adapt_stat)
-        avgnni = tune.targetNNI - tune.nniprime / tune.nalpha
-        avgnni = avgnni < 0 ? 0 : avgnni
-        HT2 = - avgnni / (1 + abs(avgnni))
-        p = 1.0 / (tune.m + tune.t0)
-        HT = (Ht + HT2) / 2
-        tune.Hbar = (1.0 - p) * tune.Hbar +
-                 p * HT
-
-        tune.epsilon = exp(tune.mu - sqrt(tune.m) * tune.Hbar / tune.gamma)
+        Ht = tune.target - adapt_stat
+        
+        avgnni = tune.nniprime / tune.nalpha
+        
+        HT2 = abs_transform(avgnni) - abs_transform(tune.targetNNI)
+        
+        Ht = (Ht + HT2)/2
+        HT = HT2 == 0 ? Ht : Ht == 0 ? HT2 : (Ht+HT2)/2
+        
+        tune.epsilon, nhb = adapter_function(tune, HT, tune.Hbar_acc)
+        tune.Hbar_acc = nhb
         
         p = tune.m^-tune.kappa
         tune.epsilonbar = exp(p * log(tune.epsilon) +
@@ -128,6 +130,15 @@ function sample!(v::PNUTSVariate, logfgrad::Function; adapt::Bool=false)
     v
 end
 
+function abs_transform(x::R)::Float64 where R <: Real
+    x / (1+abs(x))
+end
+
+function adapter_function(tune, HT, Hbar)
+    p = 1.0 / (tune.m + tune.t0)
+    Hbar = (1.0 - p) * Hbar + p * HT
+    exp(tune.mu - sqrt(tune.m) * Hbar / tune.gamma), Hbar
+end
 
 function setadapt!(v::PNUTSVariate, adapt::Bool)
     tune = v.tune
@@ -166,7 +177,7 @@ function nuts_sub!(v::PNUTSVariate, epsilon::Float64, logfgrad::Function)
     while s && j < v.tune.tree_depth
 
         pm = 2 * (rand() > 0.5) - 1
-        #@show pm
+        
         if pm == -1
 
             xminus, rminus, gradminus, _, _, _, xprime, nprime, sprime, alpha, nalpha, nni1, lpp, nniprime = 
@@ -180,12 +191,9 @@ function nuts_sub!(v::PNUTSVariate, epsilon::Float64, logfgrad::Function)
                   logu0, delta, nl, lu)
 
         end# if pm
-        #@show sprime,  nprime, n
-        nni += nni1
-        n += nprime
-        v.tune.nniprime = nniprime
+        
         v.tune.alpha, v.tune.nalpha = alpha, nalpha
-        j += 1
+        v.tune.nniprime = nniprime
         if !sprime
             break
         end
@@ -193,8 +201,12 @@ function nuts_sub!(v::PNUTSVariate, epsilon::Float64, logfgrad::Function)
         if rand() < nprime / n
             v.value[1] = xprime
         end
+        n += nprime
+        nni += nni1
         
         
+        
+        j += 1
         s, _ = nouturn(xminus, xplus, rminus, rplus, gradminus, gradplus, epsilon, logfgrad, delta, nl, j)
         #@show s
         #s = sprime && statement
