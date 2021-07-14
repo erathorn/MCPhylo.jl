@@ -223,12 +223,6 @@ end
 
 
 ############## Additional Structs ################
-struct FileSyntaxError <: Exception
-  info::String
-end
-
-Base.showerror(io::IO, e::FileSyntaxError) = print(io, "FileSyntaxError: ", e.info)
-
 struct SimulationParameters
   burnin::Int64
   thin::Int64
@@ -277,6 +271,7 @@ end
 
 #################### Includes ####################
 
+include("customerrors.jl")
 include("progress.jl")
 include("utils.jl")
 include("variate.jl")
