@@ -543,13 +543,9 @@ function logpdf(s::AbstractStochastic, x::AbstractArray, transform::Bool=false)
   logpdf_sub(s.distr, x, transform)
 end
 
-
-
 function logpdf(s::AbstractStochastic, x::Real, transform::Bool=false)
   logpdf_sub(s.distr, x, transform)
 end
-
-
 
 function logpdf(s::AbstractTreeStochastic, x::N, transform::Bool=false) where N<:GeneralNode
   logpdf_sub(s.distr, x, transform)

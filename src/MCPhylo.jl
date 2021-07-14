@@ -28,6 +28,8 @@ using Markdown
 using Random
 using DataStructures
 using ProgressMeter
+using StaticArrays
+using LoopVectorization
 using CUDA
 if has_cuda()
   using GPUArrays
