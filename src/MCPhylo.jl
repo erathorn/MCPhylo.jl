@@ -224,12 +224,6 @@ end
 
 
 ############## Additional Structs ################
-struct FileSyntaxError <: Exception
-  info::String
-end
-
-Base.showerror(io::IO, e::FileSyntaxError) = print(io, "FileSyntaxError: ", e.info)
-
 struct SimulationParameters
   burnin::Int64
   thin::Int64
