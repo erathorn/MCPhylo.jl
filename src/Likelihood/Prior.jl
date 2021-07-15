@@ -52,6 +52,9 @@ function logpdf(d::CompoundDirichlet, x::T) where T <: GeneralNode
     internal_logpdf(d, get_branchlength_vector(x), internal_external(x))
 end
 
+function logpdf(t::Union{TopologyDistribution, Missing}, x::T) where T <: GeneralNode
+    0.0
+end
 function insupport(l::LengthDistribution, x::T) where T <: GeneralNode
     bl = get_branchlength_vector(x)
     all(isfinite.(bl)) && all(0.0 .< bl) && topo_placeholder(x, l) && !any(isnan.(bl))
