@@ -46,8 +46,14 @@ mutable struct TreeDistribution <: ContinuousUnivariateDistribution
     length_distr::LengthDistribution
     topology_distr::TopologyDistribution
 
-    length_distr
-    topology_distr
+    TreeDistribution(l::Union{CompoundDirichlet, exponentialBL}, c::Dict) =
+        new(LengthDistribution(l), TopologyDistribution(c))
+    TreeDistribution(l::Union{CompoundDirichlet, exponentialBL}) =
+        new(LengthDistribution(l), TopologyDistribution(missing))
+    TreeDistribution(c::Dict) =
+        new(LengthDistribution(missing), TopologyDistribution(c))
+    TreeDistribution() = 
+        new(LengthDistribution(missing), TopologyDistribution(missing))
 end
 
 function insupport(d::TreeDistribution, x::T) where T <: GeneralNode
