@@ -1,6 +1,6 @@
 function internal_logpdf(d::CompoundDirichlet, b_lens::Array{Float64},
                          int_leave_map::Vector{Int64})
-                         
+
     blen_int = 0.0
     blen_leave = 0.0
     blen_int_log = 0.0
@@ -27,7 +27,7 @@ function internal_logpdf(d::CompoundDirichlet, b_lens::Array{Float64},
     third = blen_leave_log*(d.a-1.0) + blen_int_log*(d.a*d.c-1.0)
     fourth = (d.alpha-d.a*nterm-d.a*d.c*n_int)*log(t_l)
 
-    r2 = first + second +third+fourth
+    r2 = first + second + third + fourth
 
     return r2
 
@@ -75,7 +75,6 @@ end
 
 function relistlength(d::CompoundDirichlet, x::AbstractArray)
   n = length(x)
-
   (Array(x), n)
 end
 
@@ -115,7 +114,8 @@ function insupport(d::BirthDeath, t::AbstractVector{T}) where {T<:Real}
 end # function
 
 function _logpdf(d::BirthDeath, t::AbstractVector{T}) where {T<:Real}
-    numerator::Float64 = (d.rho*(d.lambd-d.mu))/(d.rho*d.lambd + (d.lambd*(1.0-d.rho)-d.mu)*exp(d.mu-d.lambd))
+    numerator::Float64 = (d.rho*(d.lambd-d.mu))/(d.rho*d.lambd + 
+                         (d.lambd*(1.0-d.rho)-d.mu)*exp(d.mu-d.lambd))
     denum::Float64 = d.rho*(d.lambd-d.mu)
     vt1::Float64 = log(1.0-((denum*exp(d.mu-d.lambd))/(d.rho * numerator)))
     f::Float64 = log((2.0^(s-1.0))/(factorial(s)*(s-1.0)))
@@ -145,7 +145,8 @@ end # function
 function _logpdf(d::BirthDeathSimplified, t::AbstractVector{T}) where {T<:Real}
 
     f::Float64 = log(2.0)*(d.s-1.0)+log(d.mu)*(d.s-2.0)
-    p0::Float = (d.s-2.0)*log((d.mu*(1.0-exp(-(d.lambd-d.mu))))/(d.lambd-d.mu*exp(-(d.lambd-d.mu))))
+    p0::Float = (d.s-2.0)*log((d.mu*(1.0-exp(-(d.lambd-d.mu)))) /
+                (d.lambd-d.mu*exp(-(d.lambd-d.mu))))
     p0 += log(factorial(d.s)*(d.s-1.0))
     f -= po
 
