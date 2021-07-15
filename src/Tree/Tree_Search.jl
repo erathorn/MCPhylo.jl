@@ -38,7 +38,7 @@ for (sym, my_type) in [(:binary, :String), (:name, :AbstractString), (:root ,:Bo
 end # for
 
 
-#################### Unsafe searches ####################
+#################### Searches ####################
 
 """
     find_num(root::T, num::Int64)  where T<:GeneralNode
@@ -86,6 +86,7 @@ function find_num(root::T, num::I, rn::Vector{T})::Bool  where {T<:GeneralNode, 
         # if the node is not yet found continue
         for child in root.children
             found = find_num(child, num,  rn)
+            found && break
         end
     end # if
     return found
@@ -138,6 +139,7 @@ function find_name(root::T, name::S, rn::Vector{T})::Bool where {T<:GeneralNode,
         # if the node is not yet found continue
         for child in root.children
             found = find_name(child, name,  rn)
+            found && break
         end
     end # if
     return found
