@@ -17,11 +17,11 @@ for (sym, my_type) in [(:binary, :String), (:name, :AbstractString), (:root ,:Bo
     # extend the list to look for more fields in the node
     @eval function $(Symbol(string("find_by_$sym")))(tree::T, identifier::$my_type)::T  where T<:GeneralNode
         # create each function and make it so it only accepts the correct type
-        if sym == :name
+        if $sym == "name"
             return find_name(tree, identifier)
-        elseif sym == :num
+        elseif $sym == "num"
             return find_num(tree, identifier)
-        elseif sym == :root
+        elseif $sym == "root"
             return find_root(tree)
         else 
             local all_nodes = post_order(tree) # make sure all_nodes only belongs to this function
