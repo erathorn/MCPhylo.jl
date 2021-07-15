@@ -55,6 +55,11 @@ end
 function logpdf(t::Union{TopologyDistribution, Missing}, x::T) where T <: GeneralNode
     0.0
 end
+
+function logpdf(ex::exponentialBL, x::T) where T <: GeneralNode
+    _logpdf(ex, x)
+end
+
 function insupport(l::LengthDistribution, x::T) where T <: GeneralNode
     bl = get_branchlength_vector(x)
     all(isfinite.(bl)) && all(0.0 .< bl) && topo_placeholder(x, l) && !any(isnan.(bl))
