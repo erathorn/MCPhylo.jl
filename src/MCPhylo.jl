@@ -283,6 +283,7 @@ include("distributions/pdmatdistribution.jl")
 include("Likelihood/SubstitutionModels.jl")
 include("distributions/Phylodist.jl")
 include("distributions/TreeConstraints.jl")
+include("distributions/TreeDistribution.jl")
 include("distributions/transformdistribution.jl")
 
 include("model/dependent.jl")
