@@ -88,14 +88,6 @@ function _logpdf(d::exponentialBL, x::FNode)
     sum(logpdf.(Exponential(d.scale), bl))
 end
 
-function insupport(d::exponentialBL, x::FNode)
-    bl = get_branchlength_vector(x)
-    res = all(isfinite.(bl)) && all(0 .< bl) && topological(x, d.constraints) && !any(isnan.(bl))
-
-    res
-end # function insupport
-
-
 function gradlogpdf(d::exponentialBL, x::FNode)
     bl = get_branchlength_vector(x)
     g(y) = sum(logpdf.(Exponential(d.scale), y))
