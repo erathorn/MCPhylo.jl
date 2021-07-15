@@ -70,7 +70,7 @@ function insupport(t::TopologyDistribution, x::T)::Bool where T <: GeneralNode
 end
 
 function logpdf_sub(d::CompoundDirichlet, x::T, transform::Bool) where T <: GeneralNode
-    insupport(d, x) ? logpdf(d, x) : -Inf
+    insupport(LengthDistribution(d), x) ? logpdf(d, x) : -Inf
 end
 
 function relistlength(d::CompoundDirichlet, x::AbstractArray)
