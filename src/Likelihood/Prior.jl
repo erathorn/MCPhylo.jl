@@ -80,18 +80,8 @@ function relistlength(d::CompoundDirichlet, x::AbstractArray)
   (Array(x), n)
 end
 
-"""
-    exponentialBL(scale::Float64) <: ContinuousUnivariateDistribution
-This structure implememts an exponential prior on the branch lengths of a tree.
-"""
-mutable struct exponentialBL <: ContinuousUnivariateDistribution
-    scale::Float64
-    constraints::Union{Dict, Missing}
-
-    exponentialBL(scale::Float64) =
-        new(scale, missing)
-    exponentialBL(scale::Float64, c) =
-            new(scale, c)
+function topo_placeholder(x::N , l::LengthDistribution) where N<:GeneralNode
+    true
 end
 
 function _logpdf(d::exponentialBL, x::FNode)
