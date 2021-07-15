@@ -273,7 +273,6 @@ end
 #################### Includes ####################
 
 include("customerrors.jl")
-include("progress.jl")
 include("utils.jl")
 include("variate.jl")
 
