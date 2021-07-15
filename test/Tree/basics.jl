@@ -9,9 +9,9 @@ using Test
     insert_tree_newick2 = newick(insert_tree2)
     MCPhylo.number_nodes!(tree)
 
-    children = [find_name(tree, "C"), find_name(tree, "D"),
-                find_name(tree, "E")]
-    mother = find_name(tree, "F")
+    children = [find_by_name(tree, "C"), find_by_name(tree, "D"),
+                find_by_name(tree, "E")]
+    mother = find_by_name(tree, "F")
     inserted_node = insert_node!(mother, children)
     @test newick(tree) == insert_tree_newick
 
@@ -32,11 +32,11 @@ using Test
     remove_tree2 = MCPhylo.parsing_newick_string("(B,C,D)F;")
     remove_tree2_newick = newick(remove_tree2)
 
-    delete_node!(find_name(tree, "E"))
+    delete_node!(find_by_name(tree, "E"))
     @test newick(tree) == remove_tree_newick
-    delete_node!(find_name(tree, "A"))
+    delete_node!(find_by_name(tree, "A"))
     @test newick(tree) == remove_tree2_newick
-    @test_throws ArgumentError delete_node!(find_name(tree, "F"))
+    @test_throws ArgumentError delete_node!(find_by_name(tree, "F"))
 end
 
 @testset "find_lca" begin
@@ -45,22 +45,22 @@ end
 
     @testset "find_lca by name" begin
         @test find_lca(tree, ["A","C"]) == tree
-        @test find_lca(tree, ["D", "E"]) == find_name(tree, "F")
-        @test find_lca(tree, ["D", "F"]) == find_name(tree, "F")
-        @test find_lca(tree, ["C", "D"]) == find_name(tree, "G")
+        @test find_lca(tree, ["D", "E"]) == find_by_name(tree, "F")
+        @test find_lca(tree, ["D", "F"]) == find_by_name(tree, "F")
+        @test find_lca(tree, ["C", "D"]) == find_by_name(tree, "G")
         @test find_lca(tree, ["A","B","C"]) == tree
-        @test find_lca(tree, ["D", "E", "F", "G"]) == find_name(tree, "G")
-        @test find_lca(tree, ["D", "E", "C"]) == find_name(tree, "G")
+        @test find_lca(tree, ["D", "E", "F", "G"]) == find_by_name(tree, "G")
+        @test find_lca(tree, ["D", "E", "C"]) == find_by_name(tree, "G")
     end # find_lca by name
 
     @testset "find_lca by nodes" begin
-        nodes = [find_name(tree, "A"), find_name(tree, "B"),
-                 find_name(tree, "C")]
+        nodes = [find_by_name(tree, "A"), find_by_name(tree, "B"),
+                 find_by_name(tree, "C")]
         @test find_lca(tree, nodes) == tree
 
-        nodes = [find_name(tree, "D"), find_name(tree, "E"),
-                 find_name(tree, "F"), find_name(tree, "G")]
-        @test find_lca(tree, nodes) == find_name(tree, "G")
+        nodes = [find_by_name(tree, "D"), find_by_name(tree, "E"),
+                 find_by_name(tree, "F"), find_by_name(tree, "G")]
+        @test find_lca(tree, nodes) == find_by_name(tree, "G")
     end # find_lca by nodes
 end
 
