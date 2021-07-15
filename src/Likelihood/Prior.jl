@@ -1,24 +1,6 @@
-
-"""
-    CompoundDirichlet(alpha::Float64, a::Float64, beta::Float64, c::Float64, nterm::Float64)
-This structure implememts the CompoundDirichlet distribution described
-in Zhang, Rannala and Yang 2012. (DOI:10.1093/sysbio/sys030)
-"""
-mutable struct CompoundDirichlet <: ContinuousUnivariateDistribution
-    alpha::Float64
-    a::Float64
-    beta::Float64
-    c::Float64
-    constraints::Union{Dict, Missing}
-
-    CompoundDirichlet(alpha::Float64, a::Float64, beta::Float64, c::Float64) =
-        new(alpha, a, beta, c, missing)
-    CompoundDirichlet(alpha::Float64, a::Float64, beta::Float64, c::Float64, constraints::Dict) =
-            new(alpha, a, beta, c, constraints)
-end # struct
-
 function internal_logpdf(d::CompoundDirichlet, b_lens::Array{Float64},
                          int_leave_map::Vector{Int64})
+                         
     blen_int = 0.0
     blen_leave = 0.0
     blen_int_log = 0.0
