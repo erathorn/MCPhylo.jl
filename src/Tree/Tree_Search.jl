@@ -146,6 +146,7 @@ function find_name(root::T, name::S, rn::Vector{T})::Bool where {T<:GeneralNode,
 end
 
 
+### UNSAFE Search ###
 """
     find_binary(root::T, bin::String)::T where T<:GeneralNode
 
