@@ -77,12 +77,15 @@ end # generate_constraints
     generate_constraints(filename::String)
 
 Function that creates a dictionary of constraints, based on a txt file with a
-specific format (each line one constraint), i.e.:
+specific format, i.e.:
 
-mono        ,a,b,c
-mono        ,d,e
-not_mono    ,c,d
-exc         ,a,b:d,e
+# lines starting with '#' will be ignored
+# multiple constraints per line allowed
+mono:        A,B; C,D;
+mono:        E,F;
+# final semicolon is optional
+not_mono:    C,D,E
+exc :        E,F!G;
 
 See basic generate_constraints function for more info.
 """
