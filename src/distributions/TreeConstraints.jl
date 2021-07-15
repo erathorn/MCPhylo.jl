@@ -7,7 +7,7 @@
         where S<:AbstractString
 
 Generate a dictionary of constraints based on the given arguments.
-Mono for all minophyletic groups. not_mono for leafs that are not allowed
+Mono for all monophyletic groups. not_mono for leafs that are not allowed
 to form a monophletic group. And exc for a partial constraint, where one or more
 leafs are not allowed to be part of a specific clade.
 
@@ -160,7 +160,7 @@ function parse_constraints(filename::S)::Tuple{Vector{Vector{S}}, Vector{Vector{
 end # parse_constraints
 
 
-function topological(tree::N, constraints::Dict) where N<:GeneralNode
+function topological(constraints::Dict, tree::N) where N<:GeneralNode
     for leaves in constraints[:mono]
         lca = find_lca(tree, leaves)
         lca.root && return false
@@ -184,6 +184,6 @@ function topological(tree::N, constraints::Dict) where N<:GeneralNode
 end # topological
 
 # topological constraints fallback
-function topological(tree::N, constraints::Missing) where N<:GeneralNode
+function topological(constraints::Missing, tree::N) where N<:GeneralNode
     true
 end
