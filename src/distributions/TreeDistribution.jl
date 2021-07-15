@@ -56,16 +56,17 @@ mutable struct TreeDistribution <: ContinuousUnivariateDistribution
         new(LengthDistribution(missing), TopologyDistribution(missing))
 end
 
+
 function insupport(d::TreeDistribution, x::T) where T <: GeneralNode
     insupport(d.length_distr, x) && insupport(d.topology_distr, x)
 end
 
 function logpdf(d::TreeDistribution, x::T) where T <: GeneralNode
-    logpdf(d.length_distr, x) + logpdf(d.topology_distr, x)
+    logpdf(d.length_distr.length_distr, x) + logpdf(d.topology_distr, x)
 end
 
 function gradlogpdf(d::TreeDistribution, x::T) where T <: GeneralNode
-    rl1, rl2 = gradlogpdf(d.length_distr, x)
+    rl1, rl2 = gradlogpdf(d.length_distr.length_distr, x)
     rt1, rt2 = gradlogpdf(d.topology_distr, x)
     return rl1+rt1, rl2+rt2
 end
