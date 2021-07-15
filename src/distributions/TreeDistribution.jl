@@ -31,8 +31,21 @@ mutable struct CompoundDirichlet <: ContinuousUnivariateDistribution
             new(alpha, a, beta, c, constraints)
 end # CompoundDirichlet
 
-"""
+
+mutable struct TopologyDistribution
+    constraint_dict::Union{Dict{Symbol, Union{Vector{Vector{S}}, Vector{Tuple{Vector{S}, Vector{S}}}}}  where S <: AbstractString, Missing}
+end
+
+
+mutable struct LengthDistribution
+    length_distr::Union{CompoundDirichlet, exponentialBL, Missing}
+end
+    
+
 mutable struct TreeDistribution <: ContinuousUnivariateDistribution
+    length_distr::LengthDistribution
+    topology_distr::TopologyDistribution
+
     length_distr
     topology_distr
 end
