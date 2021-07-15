@@ -24,15 +24,15 @@ for (sym, my_type) in [(:binary, :String), (:name, :AbstractString), (:root ,:Bo
         elseif sym == :root
             return find_root(tree)
         else 
-        local all_nodes = post_order(tree) # make sure all_nodes only belongs to this function
-        for node in all_nodes
-            if node.$sym == identifier
-                # return the node if it is found
-                return node
-            end # if
-        end # for
-        # the node is not found. Therefore throw an error!
-        throw("The node identified by $identifier is not in the tree.")
+            local all_nodes = post_order(tree) # make sure all_nodes only belongs to this function
+            for node in all_nodes
+                if node.$sym == identifier
+                    # return the node if it is found
+                    return node
+                end # if
+            end # for
+            # the node is not found. Therefore throw an error!
+            throw("The node identified by $identifier is not in the tree.")
         end # if/else
     end # function
 end # for
@@ -180,6 +180,7 @@ Returns reference to root Node of the tree.
 function find_root(node::T)::T where T <: GeneralNode
     while node.root == false
         node = node.mother
+        ismissing(node) && throw(ArgumentError("Root node not found"))
     end # while
     return node
 end
