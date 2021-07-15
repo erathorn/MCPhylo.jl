@@ -146,6 +146,24 @@ function find_name(root::T, name::S, rn::Vector{T})::Bool where {T<:GeneralNode,
 end
 
 
+"""
+    find_root(node::T)::T where T <: GeneralNode
+
+Finds the root of tree indicated by Node.
+
+Returns reference to root Node of the tree.
+
+* `node` : Node in Tree of interest.
+"""
+function find_root(node::T)::T where T <: GeneralNode
+    while node.root == false
+        node = node.mother
+        ismissing(node) && throw(ArgumentError("Root node not found"))
+    end # while
+    return node
+end
+
+
 ### UNSAFE Search ###
 """
     find_binary(root::T, bin::String)::T where T<:GeneralNode
@@ -167,21 +185,4 @@ function find_binary(root::T, bin::String)::T where T<:GeneralNode
         rv = rv.children[parse(Int64, i)+1]
     end
     rv
-end
-
-"""
-    find_root(node::T)::T where T <: GeneralNode
-
-Finds the root of tree indicated by Node.
-
-Returns reference to root Node of the tree.
-
-* `node` : Node in Tree of interest.
-"""
-function find_root(node::T)::T where T <: GeneralNode
-    while node.root == false
-        node = node.mother
-        ismissing(node) && throw(ArgumentError("Root node not found"))
-    end # while
-    return node
 end
