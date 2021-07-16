@@ -156,9 +156,8 @@ function sample!(v::PNUTSVariate, logfgrad::Function; adapt::Bool = false)
         Ht = tune.target - adaptstat
         avgnni = tune.nniprime / tune.nalpha
         
-        nni_adapt = avgnni / tune.targetNNI
-        nni_adapt = nni_adapt > 1 ? 1 : nni_adapt
-        HT2 = abs_adapter(nni_adapt) - abs_adapter(tune.targetNNI)
+        
+        HT2 = abs_adapter(avgnni) - abs_adapter(tune.targetNNI)
         HT = (Ht + HT2)/2
         
         p = 1.0 / (tune.m + tune.t0)
@@ -200,10 +199,10 @@ function nuts_sub!(v::PNUTSVariate, epsilon::Float64, logfgrad::Function)
     mt = v.value[1]
     nl = size(mt)[1] - 1
     delta = v.tune.delta
-
+    
     r = randn(nl)
     g = zeros(nl)
-
+    
     x, r, logf, grad, nni = refraction(mt, r, 1, g, epsilon, logfgrad, delta, nl)
 
     lu = log(rand())
@@ -220,7 +219,7 @@ function nuts_sub!(v::PNUTSVariate, epsilon::Float64, logfgrad::Function)
     s = true
     v.tune.nniprime = 0
     while s && j < v.tune.tree_depth
-
+        
         pm = 2 * (rand() > 0.5) - 1
 
         if pm == -1
@@ -362,6 +361,8 @@ function refraction(
 
     logf, grad = logfgrad(v1, sz, true, true)
 
+    # molified version is only for likelihood, not the real tree
+    set_branchlength_vector!(v1, tmpB)
     fac = scale_fac.(blenvec, delta)
     ref_r = @. ref_r + (epsilon * 0.5) * (grad * fac)
 
@@ -393,20 +394,18 @@ function ref_NNI(
 
         temp = epsilon - t + timelist[ref_index]
         blv = @. blv + (temp * r)
-
+        
         r[ref_index] *= -1.0
 
         if intext[ref_index] == 1
 
-            blv1 = molifier.(blv, delta)
+            blv1 = molifier.(blv, delta)            
             set_branchlength_vector!(v, blv1)
 
-            # use thread parallelism
-            #res_before = @spawn logfgrad(v, sz, true, false) # still with molified branch length
             U_before_nni, _ = logfgrad(v, sz, true, false) # still with molified branch length
             v_copy = deepcopy(v)
             tmp_NNI_made = NNI!(v_copy, ref_index)
-
+            #tmp_NNI_made = NNI!(v, ref_index)
             # fetch the results from the parallel part
             #U_before_nni, _ = fetch(res_before)
             #U_before_nni *= -1
@@ -423,6 +422,7 @@ function ref_NNI(
                     v = v_copy
                 end # if my_v
             end #if NNI
+            #set_branchlength_vector!(v, abs.(blv))
         end #non leave
         t = epsilon + timelist[ref_index]
 
@@ -658,7 +658,7 @@ function nutsepsilon(x::FNode, logfgrad::Function, delta::Float64, target::Float
 end
 
 @inline function scale_fac(x::T, delta::T) where {T<:Float64}
-    x < delta ? x / delta : 1.0
+    x
 end
 
 @inline function molifier(x::Float64, delta::Float64)::Float64
