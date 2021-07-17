@@ -10,7 +10,6 @@ mutable struct PNUTSTune <: SamplerTune
     epsilonbar::Float64
     gamma::Float64
     Hbar_acc::Float64
-    Hbar_nni::Float64
     kappa::Float64
     m::Int
     mu::Float64
@@ -23,7 +22,6 @@ mutable struct PNUTSTune <: SamplerTune
     nniprime::Float64
     targetNNI::Int
     tree_depth_trace::Vector{Int}
-    jitter::Float64
 
 
     PNUTSTune() = new()
@@ -47,7 +45,6 @@ mutable struct PNUTSTune <: SamplerTune
             1.0,
             0.05,
             0.0,
-            0.0,
             0.75,
             0,
             NaN,
@@ -60,7 +57,6 @@ mutable struct PNUTSTune <: SamplerTune
             0,
             targetNNI,
             Int[],
-            jitter,
         )
     end
 end
@@ -153,13 +149,11 @@ function sample!(v::PNUTSVariate, logfgrad::Function; adapt::Bool = false)
         nuts_sub!(v, tune.epsilon, logfgrad)
         adaptstat = tune.alpha / tune.nalpha
         adaptstat = adaptstat > 1 ? 1 : adaptstat
-        Ht = tune.target - adaptstat
-        avgnni = tune.nniprime / tune.nalpha
+        HT = tune.target - adaptstat
         
-        
-        HT2 = abs_adapter(avgnni) - abs_adapter(tune.targetNNI)
-        HT = (Ht + HT2)/2
-        
+        HT2 = tune.targetNNI - tune.nniprime / tune.nalpha
+        HT += abs_adapter(HT2)
+        HT /= 2
         p = 1.0 / (tune.m + tune.t0)
         tune.Hbar_acc = (1.0 - p) * tune.Hbar_acc + p * HT
         
@@ -362,7 +356,7 @@ function refraction(
     logf, grad = logfgrad(v1, sz, true, true)
 
     # molified version is only for likelihood, not the real tree
-    set_branchlength_vector!(v1, tmpB)
+    #set_branchlength_vector!(v1, tmpB)
     fac = scale_fac.(blenvec, delta)
     ref_r = @. ref_r + (epsilon * 0.5) * (grad * fac)
 
