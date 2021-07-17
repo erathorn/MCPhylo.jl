@@ -152,7 +152,7 @@ function sample!(v::PNUTSVariate, logfgrad::Function; adapt::Bool = false)
         HT = tune.target - adaptstat
         
         HT2 = tune.targetNNI - tune.nniprime / tune.nalpha
-        HT += abs_adapter(HT2)
+        HT -= abs_adapter(HT2)
         HT /= 2
         p = 1.0 / (tune.m + tune.t0)
         tune.Hbar_acc = (1.0 - p) * tune.Hbar_acc + p * HT
