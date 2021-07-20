@@ -32,13 +32,44 @@ mutable struct CompoundDirichlet <: ContinuousUnivariateDistribution
 end # CompoundDirichlet
 
 
-mutable struct TopologyDistribution
-    constraint_dict::Union{Dict{Symbol, Union{Vector{Vector{S}}, Vector{Tuple{Vector{S}, Vector{S}}}}}  where S <: AbstractString, Missing}
+"""
+    UniformLength()
+
+Fallback struct that is used when no length distribution is given 
+
+"""
+struct UniformLength end
+
+
+"""
+    LengthDistribution(length_distr::Union{CompoundDirichlet, exponentialBL, UniformLength}
+
+Wrapper struct for the length distribution. Contains a CompoundDirichlet, exponentialBL or
+a uniform length.
+"""
+mutable struct LengthDistribution
+    length_distr::Union{CompoundDirichlet, exponentialBL, UniformLength}
 end
 
 
-mutable struct LengthDistribution
-    length_distr::Union{CompoundDirichlet, exponentialBL, Missing}
+"""
+    TopologyDistribution(
+        constraint_dict::Dict{Symbol, 
+                              Union{Vector{Vector{S}}, Vector{Tuple{Vector{S}, Vector{S}}}}
+                              } where S <: AbstractString)
+
+Wrapper struct for the topology distribution. Contains a dictionary with constraints.
+Empty constructor results in an empty dictionary as a fallback.
+"""
+
+
+mutable struct TopologyDistribution
+    constraint_dict::Dict{Symbol, 
+                          Union{Vector{Vector{S}}, Vector{Tuple{Vector{S}, Vector{S}}}}
+                         } where S <: AbstractString
+
+    TopologyDistribution() = 
+        new(Dict{Symbol, Union{Vector{Vector{AbstractString}}, Vector{Tuple{Vector{AbstractString}, Vector{AbstractString}}}}}()) 
 end
     
 
