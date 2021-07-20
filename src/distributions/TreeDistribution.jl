@@ -1,5 +1,6 @@
 """
     exponentialBL(scale::Float64) <: ContinuousUnivariateDistribution
+
 This structure implememts an exponential prior on the branch lengths of a tree.
 """
 mutable struct exponentialBL <: ContinuousUnivariateDistribution
@@ -15,6 +16,7 @@ end
 
 """
     CompoundDirichlet(alpha::Float64, a::Float64, beta::Float64, c::Float64, nterm::Float64)
+
 This structure implememts the CompoundDirichlet distribution described
 in Zhang, Rannala and Yang 2012. (DOI:10.1093/sysbio/sys030)
 """
@@ -28,7 +30,7 @@ mutable struct CompoundDirichlet <: ContinuousUnivariateDistribution
     CompoundDirichlet(alpha::Float64, a::Float64, beta::Float64, c::Float64) =
         new(alpha, a, beta, c, missing)
     CompoundDirichlet(alpha::Float64, a::Float64, beta::Float64, c::Float64, constraints::Dict) =
-            new(alpha, a, beta, c, constraints)
+        new(alpha, a, beta, c, constraints)
 end # CompoundDirichlet
 
 
@@ -71,7 +73,7 @@ mutable struct TopologyDistribution
     TopologyDistribution() = 
         new(Dict{Symbol, Union{Vector{Vector{AbstractString}}, Vector{Tuple{Vector{AbstractString}, Vector{AbstractString}}}}}()) 
 end
-    
+   
 
 """
     TreeDistribution(length_distr::LengthDistribution, topology_distr::TopologyDistribution)
