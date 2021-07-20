@@ -41,7 +41,7 @@ function gradlogpdf(d::CompoundDirichlet, x::T) where T <: GeneralNode
     return r[1],r[2](1.0)[1]
 end
 
-function gradlogpdf(t::Union{Missing, TopologyDistribution}, x::T
+function gradlogpdf(t::Union{TopologyDistribution, UniformLength}, x::T
                    )::Tuple{Float64, Vector{Float64}} where T <: GeneralNode
 
     blv = get_branchlength_vector(x)
@@ -52,7 +52,7 @@ function logpdf(d::CompoundDirichlet, x::T) where T <: GeneralNode
     internal_logpdf(d, get_branchlength_vector(x), internal_external(x))
 end
 
-function logpdf(t::Union{TopologyDistribution, Missing}, x::T) where T <: GeneralNode
+function logpdf(t::Union{TopologyDistribution, UniformLength}, x::T) where T <: GeneralNode
     0.0
 end
 
