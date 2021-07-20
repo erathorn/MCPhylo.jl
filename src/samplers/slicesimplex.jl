@@ -138,7 +138,7 @@ end
 function shrinksimplex(bx::AbstractVector{Float64}, bc::AbstractVector{Float64},
                        cx::AbstractVector{Float64}, cc::AbstractVector{Float64},
                        vertices::AbstractMatrix{Float64})
-  for i in findall(bc .< bx)
+  @inbounds for i in findall(bc .< bx)
     inds = [1:(i - 1); (i + 1):size(vertices, 2)]
     vertices[:, inds] += bc[i] * (vertices[:, i] .- vertices[:, inds])
     bc = vertices \ cc

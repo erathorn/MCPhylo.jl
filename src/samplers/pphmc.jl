@@ -4,12 +4,15 @@ mutable struct PPHMCTune <: SamplerTune
     epsilon::Float64
     delta::Float64
     nleap::Int64
+    m::Int64
+    randomization::Bool
+    adapter::Float64
     moves::Vector{Int}
 
     PPHMCTune() = new()
 
     function PPHMCTune(x::Vector{T}, logfgrad::Union{Function,Missing}, epsilon::Float64, nleap::Int64, delta::Float64=0.003) where T <: GeneralNode
-        new(logfgrad, epsilon, delta, nleap, Int[])
+        new(logfgrad, epsilon, delta, nleap, 0, true, 0.4,Int[])
     end
 end
 
@@ -46,28 +49,41 @@ function PPHMC(params::ElementOrVector{Symbol}, epsilon::Float64, nleap::Int64, 
         end
         v = SamplerVariate(block, f, epsilon, nleap, delta)
 
-        sample!(v::PPHMCVariate, f)
+        sample!(v::PPHMCVariate, f, model.iter <= model.burnin, model.burnin)
 
         relist(block, v)
     end
     Sampler(params, samplerfx, PPHMCTune())
 end
 
-sample!(v::PPHMCVariate; args...) = sample!(v, v.tune.logfgrad)
+sample!(v::PPHMCVariate; args...) = sample!(v, v.tune.logfgrad, bi)
 
-function sample!(v::PPHMCVariate, logfgrad::Function)
+function sample!(v::PPHMCVariate, logfgrad::Function, adapt::Bool, bi::Int64)
     mt = v.value[1]
     nl = size(mt)[1] - 1
     delta = v.tune.delta
-
+    v.tune.m += 1
     r = randn(nl)
-    _, grad = logfgrad(mt, nl, true, true)
+    blv = get_branchlength_vector(mt)
+    set_branchlength_vector!(mt, molifier.(blv, delta))
+    CU, grad = logfgrad(mt, nl, true, true)
+    
+    currH = CU - 0.5 * dot(r)
     ovnni = 0
-    for i in 1:v.tune.nleap    
-        mt, r, logf, grad, nni = refraction(mt, r, 1, grad, v.tune.epsilon, logfgrad, delta, nl)
+    PU = 0.0
+    fac = adapt ? (1-v.tune.adapter)^(1-v.tune.m*1/bi) : 1
+    epsilon = v.tune.epsilon * fac
+    nl = v.tune.randomization ? rand(1:v.tune.nleap) : v.tune.nleap
+    for i in 1:nl
+        mt, r, PU, grad, nni = refraction(mt, r, grad, epsilon, logfgrad, delta, nl)
         ovnni += nni
     end
+
     push!(v.tune.moves, ovnni)
-    v.value[1] = mt
+    propH = PU - 0.5 * dot(r)
+    
+    if log(rand()) < propH -currH
+        v.value[1] = mt
+    end
     v
 end
