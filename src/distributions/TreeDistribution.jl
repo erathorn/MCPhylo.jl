@@ -73,6 +73,14 @@ mutable struct TopologyDistribution
 end
     
 
+"""
+    TreeDistribution(length_distr::LengthDistribution, topology_distr::TopologyDistribution)
+
+Wrapper struct for the TreeDistribution. Contains a length distribution and a topology
+distribution. Can be constructed with no arguments, one of the distributions, or both of 
+them. Fallbacks are the UniformLength for the length distribution & and an empty constraint
+dictionary for the topology distribution.
+"""
 mutable struct TreeDistribution <: ContinuousUnivariateDistribution
     length_distr::LengthDistribution
     topology_distr::TopologyDistribution
@@ -80,11 +88,11 @@ mutable struct TreeDistribution <: ContinuousUnivariateDistribution
     TreeDistribution(l::Union{CompoundDirichlet, exponentialBL}, c::Dict) =
         new(LengthDistribution(l), TopologyDistribution(c))
     TreeDistribution(l::Union{CompoundDirichlet, exponentialBL}) =
-        new(LengthDistribution(l), TopologyDistribution(missing))
+        new(LengthDistribution(l), TopologyDistribution())
     TreeDistribution(c::Dict) =
-        new(LengthDistribution(missing), TopologyDistribution(c))
+        new(LengthDistribution(UniformLength()), TopologyDistribution(c))
     TreeDistribution() = 
-        new(LengthDistribution(missing), TopologyDistribution(missing))
+        new(LengthDistribution(UniformLength()), TopologyDistribution())
 end
 
 
