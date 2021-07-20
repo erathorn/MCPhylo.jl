@@ -161,6 +161,7 @@ end # parse_constraints
 
 
 function topological(constraints::Dict, tree::N) where N<:GeneralNode
+    isempty(constraints) && return true 
     for leaves in constraints[:mono]
         lca = find_lca(tree, leaves)
         lca.root && return false
@@ -182,8 +183,3 @@ function topological(constraints::Dict, tree::N) where N<:GeneralNode
     end # for
     true
 end # topological
-
-# topological constraints fallback
-function topological(constraints::Missing, tree::N) where N<:GeneralNode
-    true
-end
