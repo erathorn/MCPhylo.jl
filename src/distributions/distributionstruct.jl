@@ -187,12 +187,6 @@ function gradlogpdf_sub(d::Distribution, x)
   gradlogpdf(d, x)
 end
 
-function gradlogpdf_sub(d::Distribution, x::AbstractArray)
-  gradlogpdf(d, x)
-end
-
-
-
 #################### Rand Fallbacks ####################
 
 rand_sub(d::Distribution, x) = rand(d)
