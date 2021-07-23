@@ -450,12 +450,9 @@ end
 
 #################### Distribution Methods ####################
 
-function unlist(s::AbstractStochastic, transform::Bool=false)
-  unlist(s, s.value, transform)
-end
-
-function unlist(s::AbstractStochastic, x::Real, transform::Bool=false)
-  unlist(s, [x], transform)
+function unlist(s::AbstractStochastic, x::Union{Nothing, Real}=nothing,
+                transform::Bool=false)
+  isnothing(x) ? unlist(s, s.value, transform) : unlist(s, [x], transform)
 end
 
 function unlist(s::AbstractStochastic, x::AbstractArray, transform::Bool=false)
@@ -468,13 +465,8 @@ function relist(s::AbstractStochastic, x::AbstractArray, transform::Bool=false)
 end
 
 function relistlength(s::Union{AbstractStochastic, AbstractTreeStochastic},
-                      x::AbstractArray, transform::Bool=false)
-  value, n = relistlength_sub(s.distr, s, x)
-  (transform ? invlink_sub(s.distr, value) : value, n)
-end
-
-function relistlength(s::AbstractTreeStochastic, x::N,
-                      transform::Bool=false) where N<:GeneralNode
+                      x::Union{AbstractArray, N}, transform::Bool=false
+                     ) where N <: GeneralNode
   value, n = relistlength_sub(s.distr, s, x)
   (transform ? invlink_sub(s.distr, value) : value, n)
 end
