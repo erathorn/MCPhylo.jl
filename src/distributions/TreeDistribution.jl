@@ -66,12 +66,10 @@ Empty constructor results in an empty dictionary as a fallback.
 
 
 mutable struct TopologyDistribution
-    constraint_dict::Dict{Symbol, 
-                          Union{Vector{Vector{S}}, Vector{Tuple{Vector{S}, Vector{S}}}}
-                         } where S <: AbstractString
+    constraint_dict::ConstraintDict
 
     TopologyDistribution() = 
-        new(Dict{Symbol, Union{Vector{Vector{AbstractString}}, Vector{Tuple{Vector{AbstractString}, Vector{AbstractString}}}}}()) 
+        new(ConstraintDict()) 
 end
    
 
