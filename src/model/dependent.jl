@@ -111,13 +111,10 @@ unlist(d::AbstractDependent, x::AbstractArray, transform::Bool=false) = vec(x)
 relist(d::AbstractDependent, x::AbstractArray, transform::Bool=false) =
   relistlength(d, x, transform)[1]
 
-logpdf(d::AbstractDependent, transform::Bool=false) = 0.0
+logpdf(d::AbstractDependent, x=nothing , transform::Bool=false) = 0.0
 
-logpdf(d::AbstractDependent, x, transform::Bool=false) = 0.0
+gradlogpdf(d::AbstractDependent, x=nothing, transform::Bool=false) = 0.0
 
-gradlogpdf(d::AbstractDependent, x, transform::Bool=false) = 0.0
-
-gradlogpdf(d::AbstractDependent, transform::Bool=false) = 0.0
 
 
 #################### Logical ####################
