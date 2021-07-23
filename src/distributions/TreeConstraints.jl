@@ -3,8 +3,7 @@
         ; mono::Vector{Vector{S}}=Vector{String}[],
         not_mono::Vector{Vector{S}}=Vector{String}[],
         exc::Vector{Tuple{Vector{S}, Vector{S}}}=Vector{Tuple{Vector{String}, Vector{String}}}[]
-    )::Dict{Symbol, Union{Vector{Vector{S}}, Vector{Tuple{Vector{S}, Vector{S}}}}}
-        where S<:AbstractString
+    )::ConstraintDict where S<:AbstractString
 
 Generate a dictionary of constraints based on the given arguments.
 Mono for all monophyletic groups. not_mono for leafs that are not allowed
@@ -18,12 +17,9 @@ function generate_constraints(
     ; mono::Vector{Vector{S}}=Vector{String}[],
     not_mono::Vector{Vector{S}}=Vector{String}[],
     exc::Vector{Tuple{Vector{S}, Vector{S}}}=Tuple{Vector{String}, Vector{String}}[]
-)::Dict{
-    Symbol, Union{Vector{Vector{S}}, Vector{Tuple{Vector{S}, Vector{S}}}}
-} where S<:AbstractString
+)::ConstraintDict where S<:AbstractString
 
-    constraints_dict = Dict{Symbol, Union{Vector{Vector{S}}, Vector{Tuple{Vector{S}, Vector{S}}}}}()
-    constrainttypes = [:mono, :not_mono, :exc]
+    constraints_dict = ConstraintDict()
     lengths = [length(mono), length(not_mono), length(exc)]
     # filter out trivial constraints...
     filter!(x -> length(x) > 1, mono)
@@ -52,16 +48,16 @@ end # generate_constraints
         mono::Vector{Vector{S}}=Vector{String}[],
         not_mono::Vector{Vector{S}}=Vector{String}[],
         exc::Vector{Tuple{Vector{S}, Vector{S}}}=Vector{Tuple{Vector{String}, Vector{String}}}[]
-    )::Dict{Symbol, Union{Vector{Vector{S}}, Vector{Tuple{Vector{S}, Vector{S}}}}} where S<:AbstractString
+    )::ConstraintDict where S<:AbstractString
 
 Function that adds further constraints to an existing dictionary of constraints.
 See basic generate_constraints function for more info.
 """
-function generate_constraints!(constraints::Dict;
+function generate_constraints!(constraints::ConstraintDict;
                                mono::Vector{Vector{S}}=Vector{String}[],
                                not_mono::Vector{Vector{S}}=Vector{String}[],
                                exc::Vector{Tuple{Vector{S}, Vector{S}}}=Tuple{Vector{String}, Vector{String}}[]
-                               )::Dict{Symbol, Union{Vector{Vector{S}}, Vector{Tuple{Vector{S}, Vector{S}}}}} where S<:AbstractString
+                               )::ConstraintDict where S<:AbstractString
 
 
     constraints2 = generate_constraints(mono=mono, not_mono=not_mono, exc=exc)
@@ -96,14 +92,13 @@ end # generate_constraints
 
 
 """
-    generate_constraints!(constraints::Dict{Symbol, Vector{Vector{String}}},
-                          filename::String)
+    generate_constraints!(constraints::ConstraintDict, filename::String)
 
 Function that adds further constraints to an existing dictionary of constraints,
 based on a txt file with a specific format (each line one constraint). See basic
 generate_constraints function on a file for more info.
 """
-function generate_constraints!(constraints::Dict, filename::String)
+function generate_constraints!(constraints::ConstraintDict, filename::String)
     mono, not_mono, exc = parse_constraints(filename)
     generate_constraints!(constraints; mono=mono, not_mono=not_mono, exc=exc)
 end # generate_constraints!
@@ -160,7 +155,7 @@ function parse_constraints(filename::S)::Tuple{Vector{Vector{S}}, Vector{Vector{
 end # parse_constraints
 
 
-function topological(constraints::Dict, tree::N) where N<:GeneralNode
+function topological(constraints::ConstraintDict, tree::N) where N<:GeneralNode
     isempty(constraints) && return true 
     for leaves in constraints[:mono]
         lca = find_lca(tree, leaves)
