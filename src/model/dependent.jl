@@ -508,7 +508,8 @@ function gradlogpdf(s::Union{AbstractStochastic, AbstractLogical})
   gradlogpdf(s, s.value)
 end
 
-function gradlogpdf(s::AbstractTreeStochastic, x::N, transform::Bool=false) where N<:GeneralNode
+function gradlogpdf(s::AbstractTreeStochastic, x::N, transform::Bool=false
+                   ) where N <: GeneralNode
   gradlogpdf(s.distr, x)
 end
 
