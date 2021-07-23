@@ -470,20 +470,11 @@ function relist(s::AbstractStochastic, x::AbstractArray, transform::Bool=false)
   relistlength(s, x, transform)[1]
 end
 
-function relistlength(s::AbstractStochastic, x::AbstractArray,
-                      transform::Bool=false)
+function relistlength(s::Union{AbstractStochastic, AbstractTreeStochastic},
+                      x::AbstractArray, transform::Bool=false)
   value, n = relistlength_sub(s.distr, s, x)
   (transform ? invlink_sub(s.distr, value) : value, n)
 end
-
-
-function relistlength(s::AbstractTreeStochastic, x::AbstractArray,
-                      transform::Bool=false)
-  value, n = relistlength_sub(s.distr, s, x)
-
-  (transform ? invlink_sub(s.distr, value) : value, n)
-end
-
 
 function relistlength(s::AbstractTreeStochastic, x::N,
                       transform::Bool=false) where N<:GeneralNode
@@ -491,12 +482,7 @@ function relistlength(s::AbstractTreeStochastic, x::N,
   (transform ? invlink_sub(s.distr, value) : value, n)
 end
 
-function logpdf(s::AbstractTreeStochastic, transform::Bool=false)
-  logpdf(s, s.value, transform)
-end
-
-
-function logpdf(s::AbstractStochastic, transform::Bool=false)
+function logpdf(s::Union{AbstractStochastic, AbstractTreeStochastic}, transform::Bool=false)
   logpdf(s, s.value, transform)
 end
 
@@ -509,11 +495,8 @@ function conditional_likelihood(s::AbstractStochastic, x::AbstractArray, args...
 end
 
 
-function pseudologpdf(s::AbstractStochastic, x::Real, transform::Bool=false)
-  logpdf(s, x, transform)
-end
-
-function pseudologpdf(s::AbstractStochastic, x::AbstractArray, transform::Bool=false)
+function pseudologpdf(s::AbstractStochastic, x::Union{Real, AbstractArray},
+                      transform::Bool=false)
   logpdf(s, x, transform)
 end
 
@@ -521,11 +504,7 @@ function rand(s::AbstractStochastic, x::Int64)
   rand(s.distr, x)
 end
 
-function gradlogpdf(s::AbstractStochastic)
-  gradlogpdf(s, s.value)
-end
-
-function gradlogpdf(s::AbstractLogical)
+function gradlogpdf(s::Union{AbstractStochastic, AbstractLogical})
   gradlogpdf(s, s.value)
 end
 
@@ -537,23 +516,9 @@ function gradlogpdf(s::AbstractStochastic, x::AbstractArray)
   gradlogpdf_sub(s.distr, x)
 end
 
-
-
-function logpdf(s::AbstractStochastic, x::AbstractArray, transform::Bool=false)
+function logpdf(s::AbstractStochastic, x::Union{AbstractArray, Real, N},
+                transform::Bool=false) where N <: GeneralNode
   logpdf_sub(s.distr, x, transform)
 end
-
-
-
-function logpdf(s::AbstractStochastic, x::Real, transform::Bool=false)
-  logpdf_sub(s.distr, x, transform)
-end
-
-
-
-function logpdf(s::AbstractTreeStochastic, x::N, transform::Bool=false) where N<:GeneralNode
-  logpdf_sub(s.distr, x, transform)
-end
-
 
 rand(s::AbstractStochastic) = rand_sub(s.distr, s.value)
