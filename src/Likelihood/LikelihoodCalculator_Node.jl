@@ -154,9 +154,9 @@ function fels_ll(tree_postorder::Vector{N}, data::Array{Float64,3},
             end
             
             if !node.root   
-                scaler = maximum(data[:, :, node.num], dims=1)
-                data[:, :, node.num] ./= scaler
-                ll += sum(log.(scaler))
+                ll += sum(log.(maximum(data[:, :, node.num], dims=1)))
+                data[:, :, node.num] ./= maximum(data[:, :, node.num], dims=1)
+                #ll += sum(log.(scaler))
             else
                 ll += sum(log.(sum(data[:, :, last(tree_postorder).num] .* pi_, dims=1)))
             end

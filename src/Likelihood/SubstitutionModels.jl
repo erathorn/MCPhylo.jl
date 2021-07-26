@@ -141,19 +141,23 @@ end
 # end
 
 function calculate_transition(f::typeof(JC), rate::R, mu::R, time::R, U::A, Uinv::A, D::T, pi_::Vector)::Array{Float64,2} where {R<:Real, A<:AbstractArray{<:Real}, T<:AbstractVector{<:Real}}
-    return_mat = similar(U)
+    
     t = rate * time
     if t < MCP_TIME_MIN
+        return_mat = similar(U)
         return_mat .= 0.0
         return_mat[diagind(return_mat)] .= 1.0
+        return return_mat
     elseif t > MCP_TIME_MAX
+        return_mat = similar(U)
         return_mat .= 1.0/length(pi_)
+        return return_mat
     else
         #BLAS.gemm!('N', 'N', 1.0, BLAS.symm('R', 'L', diagm(exp.(D .* t)), U), Uinv, 0.0, return_mat)
         #@show U * diagm(exp.(D .* t)) * Uinv
         return (U * diagm(exp.(D .* t))) * Uinv
     end
-    return_mat
+    #return_mat
 end
 
 function calculate_transition(f::typeof(F81), rate::R, mu::R, time::R, U::A, Uinv::A, D::Vector, pi_::Vector)::Array{Float64,2} where {R<:Real, A<:AbstractArray{<:Real}}
