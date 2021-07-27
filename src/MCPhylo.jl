@@ -164,7 +164,7 @@ const AbstractLogical = Union{ScalarLogical, ArrayLogical}
 const AbstractStochastic = Union{ScalarStochastic, ArrayStochastic}
 const AbstractTreeStochastic = Union{TreeLogical, TreeStochastic}
 const AbstractDependent = Union{AbstractLogical, AbstractStochastic, AbstractTreeStochastic}
-const ConstraintDict = Dict{Symbol, Union{Vector{Vector{S}}, Vector{Tuple{Vector{S}, Vector{S}}}} where S<:AbstractString} 
+const ConstraintDict{S} = Dict{Symbol, Union{Vector{Vector{S}}, Vector{Tuple{Vector{S}, Vector{S}}}} where S<:AbstractString} 
 
 
 #################### Sampler Types ####################
@@ -392,6 +392,7 @@ export
   ScalarVariate,
   SimulationParameters,
   Stochastic,
+  TreeDistribution,
   VectorVariate
 
 export
