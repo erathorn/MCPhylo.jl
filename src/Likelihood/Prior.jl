@@ -33,7 +33,7 @@ function internal_logpdf(d::CompoundDirichlet, b_lens::Array{Float64},
 
 end
 
-function gradlogpdf(d::CompoundDirichlet, x::T) where T <: GeneralNode
+function gradlogpdf(d::CompoundDirichlet, x::FNode)
     int_ext = internal_external(x)
     blv = get_branchlength_vector(x)
     f(y) =  internal_logpdf(d, y, int_ext)
@@ -41,45 +41,30 @@ function gradlogpdf(d::CompoundDirichlet, x::T) where T <: GeneralNode
     return r[1],r[2](1.0)[1]
 end
 
-function gradlogpdf(t::Union{TopologyDistribution, UniformLength}, x::T
-                   )::Tuple{Float64, Vector{Float64}} where T <: GeneralNode
+function gradlogpdf(d::exponentialBL, x::FNode)
+    bl = get_branchlength_vector(x)
+    g(y) = sum(logpdf.(Exponential(d.scale), y))
+    r = Zygote.pullback(g, bl)
+    r[1],r[2](1.0)[1]
+end
+
+function gradlogpdf(t::Union{UniformConstrained, UniformTopology, UniformBranchLength}, 
+                    x::FNode)::Tuple{Float64, Vector{Float64}}
 
     blv = get_branchlength_vector(x)
     0.0, zeros(length(blv))
 end
 
-function logpdf(d::CompoundDirichlet, x::T) where T <: GeneralNode
+function logpdf(d::CompoundDirichlet, x::FNode)
     internal_logpdf(d, get_branchlength_vector(x), internal_external(x))
 end
 
-function logpdf(t::Union{TopologyDistribution, UniformLength}, x::T) where T <: GeneralNode
+function logpdf(t::Union{UniformConstrained, UniformTopology, UniformBranchLength}, x::FNode)
     0.0
 end
 
-function logpdf(ex::exponentialBL, x::T) where T <: GeneralNode
+function logpdf(ex::exponentialBL, x::FNode)
     _logpdf(ex, x)
-end
-
-function insupport(l::LengthDistribution, x::T) where T <: GeneralNode
-    bl = get_branchlength_vector(x)
-    all(isfinite.(bl)) && all(0.0 .< bl) && topo_placeholder(x, l) && !any(isnan.(bl))
-end 
-
-function insupport(t::TopologyDistribution, x::T)::Bool where T <: GeneralNode
-    topological(t.constraint_dict, x)
-end
-
-function logpdf_sub(d::CompoundDirichlet, x::T, transform::Bool) where T <: GeneralNode
-    insupport(LengthDistribution(d), x) ? logpdf(d, x) : -Inf
-end
-
-function relistlength(d::CompoundDirichlet, x::AbstractArray)
-  n = length(x)
-  (Array(x), n)
-end
-
-function topo_placeholder(x::N , l::LengthDistribution) where N<:GeneralNode
-    true
 end
 
 function _logpdf(d::exponentialBL, x::FNode)
@@ -87,11 +72,30 @@ function _logpdf(d::exponentialBL, x::FNode)
     sum(logpdf.(Exponential(d.scale), bl))
 end
 
-function gradlogpdf(d::exponentialBL, x::FNode)
+function logpdf_sub(d::CompoundDirichlet, x::FNode, transform::Bool)
+    insupport(LengthDistribution(d), x) ? logpdf(d, x) : -Inf
+end
+
+function insupport(l::LengthDistribution, x::FNode)
     bl = get_branchlength_vector(x)
-    g(y) = sum(logpdf.(Exponential(d.scale), y))
-    r = Zygote.pullback(g, bl)
-    r[1],r[2](1.0)[1]
+    all(isfinite.(bl)) && all(0.0 .< bl) && topo_placeholder(x, l) && !any(isnan.(bl))
+end 
+
+function insupport(t::UniformConstrained, x::FNode)::Bool
+    topological.constraint_dict(t, x)
+end
+
+function insupport(t::UniformTopology, x::FNode)::Bool
+    true
+end
+
+function topo_placeholder(x::FNode , l::LengthDistribution)
+    true
+end
+
+function relistlength(d::CompoundDirichlet, x::AbstractArray)
+  n = length(x)
+  (Array(x), n)
 end
 
 
