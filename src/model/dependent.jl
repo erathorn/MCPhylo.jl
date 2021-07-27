@@ -514,8 +514,11 @@ function gradlogpdf(s::AbstractStochastic, x::AbstractArray)
   gradlogpdf_sub(s.distr, x)
 end
 
-function logpdf(s::AbstractStochastic, x::Union{AbstractArray, Real, N},
-                transform::Bool=false) where N <: GeneralNode
+function logpdf(s::AbstractStochastic, x::Union{AbstractArray, Real}, transform::Bool=false)
+  logpdf_sub(s.distr, x, transform)
+end
+
+function logpdf(s::AbstractTreeStochastic, x::FNode, transform::Bool=false)
   logpdf_sub(s.distr, x, transform)
 end
 
