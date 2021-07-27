@@ -89,7 +89,7 @@ mutable struct TreeDistribution <: ContinuousUnivariateDistribution
 
     TreeDistribution(l::LengthDistribution, c::ConstraintDict) =
         new(l, UniformConstrained(c))
-    TreeDistribution(l::Union{CompoundDirichlet, exponentialBL}) =
+    TreeDistribution(l::LengthDistribution) =
         new(l, UniformTopology())
     TreeDistribution(c::ConstraintDict) =
         new(UniformBranchLength(), UniformConstrained(c))
