@@ -450,9 +450,12 @@ end
 
 #################### Distribution Methods ####################
 
-function unlist(s::AbstractStochastic, x::Union{Nothing, Real}=nothing,
-                transform::Bool=false)
-  isnothing(x) ? unlist(s, s.value, transform) : unlist(s, [x], transform)
+function unlist(s::AbstractStochastic, transform::Bool=false)
+  unlist(s, s.value, transform)
+end
+
+function unlist(s::AbstractStochastic, x::Real, transform::Bool=false)
+  unlist(s, [x], transform)
 end
 
 function unlist(s::AbstractStochastic, x::AbstractArray, transform::Bool=false)
