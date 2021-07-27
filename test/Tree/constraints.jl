@@ -54,12 +54,12 @@ end
     constraint8 = generate_constraints(mono=[["A", "B"]],
                                        not_mono=[["H", "I"]],
                                        exc=[(["A", "B"], ["C"])])
-    @test topological(tree, constraint1)
-    @test !(topological(tree, constraint2))
-    @test topological(tree, constraint3)
-    @test !(topological(tree, constraint4))
-    @test topological(tree, constraint5)
-    @test !(topological(tree, constraint6))
-    @test topological(tree, constraint7)
-    @test !(topological(tree, constraint8))
+    @test topological(constraint1, tree)
+    @test !(topological(constraint2, tree))
+    @test topological(constraint3, tree)
+    @test !(topological(constraint4, tree))
+    @test topological(constraint5, tree)
+    @test !(topological(constraint6, tree))
+    @test topological(constraint7, tree)
+    @test !(topological(constraint8, tree))
 end
