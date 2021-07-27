@@ -1,3 +1,5 @@
+#################### LengthDistributions ####################
+
 """
     exponentialBL(scale::Float64) <: ContinuousUnivariateDistribution
 
@@ -35,27 +37,19 @@ end # CompoundDirichlet
 
 
 """
-    UniformLength()
+    UniformBranchLength()
 
 Fallback struct that is used when no length distribution is given 
 
 """
-struct UniformLength end
+struct UniformBranchLength <: ContinuousUnivariateDistribution end
 
+const LengthDistribution = Union{CompoundDirichlet, exponentialBL, UniformBranchLength}
 
-"""
-    LengthDistribution(length_distr::Union{CompoundDirichlet, exponentialBL, UniformLength}
-
-Wrapper struct for the length distribution. Contains a CompoundDirichlet, exponentialBL or
-a uniform length.
-"""
-mutable struct LengthDistribution
-    length_distr::Union{CompoundDirichlet, exponentialBL, UniformLength}
-end
-
+#################### TopologyDistributions ####################
 
 """
-    TopologyDistribution(
+    UniformConstrained(
         constraint_dict::Dict{Symbol, 
                               Union{Vector{Vector{S}}, Vector{Tuple{Vector{S}, Vector{S}}}}
                               } where S <: AbstractString)
@@ -63,36 +57,44 @@ end
 Wrapper struct for the topology distribution. Contains a dictionary with constraints.
 Empty constructor results in an empty dictionary as a fallback.
 """
-
-
-mutable struct TopologyDistribution
+mutable struct UniformConstrained <: ContinuousUnivariateDistribution
     constraint_dict::ConstraintDict
 
-    TopologyDistribution() = 
+    UniformConstrained() = 
         new(ConstraintDict()) 
 end
-   
+
+"""
+    UniformTopology()
+
+Fallback struct that is used when no topology distribution is given.
+
+"""
+struct UniformTopology <: ContinuousUnivariateDistribution end
+
+const TopologyDistribution = Union{UniformConstrained, UniformTopology}
+
 
 """
     TreeDistribution(length_distr::LengthDistribution, topology_distr::TopologyDistribution)
 
 Wrapper struct for the TreeDistribution. Contains a length distribution and a topology
 distribution. Can be constructed with no arguments, one of the distributions, or both of 
-them. Fallbacks are the UniformLength for the length distribution & and an empty constraint
-dictionary for the topology distribution.
+them. Fallbacks are UniformBranchLength for the length distribution & and UniformTopology
+for the topology distribution.
 """
 mutable struct TreeDistribution <: ContinuousUnivariateDistribution
     length_distr::LengthDistribution
     topology_distr::TopologyDistribution
 
-    TreeDistribution(l::Union{CompoundDirichlet, exponentialBL}, c::Dict) =
-        new(LengthDistribution(l), TopologyDistribution(c))
+    TreeDistribution(l::LengthDistribution, c::ConstraintDict) =
+        new(l, UniformConstrained(c))
     TreeDistribution(l::Union{CompoundDirichlet, exponentialBL}) =
-        new(LengthDistribution(l), TopologyDistribution())
-    TreeDistribution(c::Dict) =
-        new(LengthDistribution(UniformLength()), TopologyDistribution(c))
+        new(l, UniformTopology())
+    TreeDistribution(c::ConstraintDict) =
+        new(UniformBranchLength(), UniformConstrained(c))
     TreeDistribution() = 
-        new(LengthDistribution(UniformLength()), TopologyDistribution())
+        new(UniformBranchLength(), UniformTopology())
 end
 
 
