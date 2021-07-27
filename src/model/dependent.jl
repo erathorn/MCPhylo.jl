@@ -468,10 +468,15 @@ function relist(s::AbstractStochastic, x::AbstractArray, transform::Bool=false)
 end
 
 function relistlength(s::Union{AbstractStochastic, AbstractTreeStochastic},
-                      x::Union{AbstractArray, N}, transform::Bool=false
-                     ) where N <: GeneralNode
-  value, n = relistlength_sub(s.distr, s, x)
-  (transform ? invlink_sub(s.distr, value) : value, n)
+  x::AbstractArray, transform::Bool=false)
+value, n = relistlength_sub(s.distr, s, x)
+(transform ? invlink_sub(s.distr, value) : value, n)
+end
+
+function relistlength(s::AbstractTreeStochastic, x::N,
+  transform::Bool=false) where N<:GeneralNode
+value, n = relistlength_sub(s.distr, s, x)
+(transform ? invlink_sub(s.distr, value) : value, n)
 end
 
 function logpdf(s::Union{AbstractStochastic, AbstractTreeStochastic}, transform::Bool=false)
