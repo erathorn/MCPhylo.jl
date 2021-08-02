@@ -8,6 +8,7 @@ Pkg.activate(".")
 # @everywhere using MCPhylo
 using MCPhylo
 
+#=
 ### Topology Testing ###
 con = generate_constraints(exc=[(["A", "B", "C", "D", "E"],["F", "G"]), (["a", "b"], String[])])
 con = generate_constraints(mono=[["A", "B", "C", "D", "E"], ["F"]])
@@ -16,7 +17,7 @@ generate_constraints!(con; mono=[["a", "b", "c"], ["e"]])
 generate_constraints("./topology.txt")
 generate_constraints!(con, "./topology.txt")
 ### end Topology testing ###
-
+=#
 
 mt, df = make_tree_with_data("./Example.nex"); # load your own nexus file
 
