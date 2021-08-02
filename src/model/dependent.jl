@@ -479,7 +479,11 @@ value, n = relistlength_sub(s.distr, s, x)
 (transform ? invlink_sub(s.distr, value) : value, n)
 end
 
-function logpdf(s::Union{AbstractStochastic, AbstractTreeStochastic}, transform::Bool=false)
+function logpdf(s::AbstractStochastic, transform::Bool=false)
+  logpdf(s, s.value, transform)
+end
+
+function logpdf(s::AbstractTreeStochastic, transform::Bool=false)
   logpdf(s, s.value, transform)
 end
 
@@ -514,7 +518,11 @@ function gradlogpdf(s::AbstractStochastic, x::AbstractArray)
   gradlogpdf_sub(s.distr, x)
 end
 
-function logpdf(s::AbstractStochastic, x::Union{AbstractArray, Real}, transform::Bool=false)
+function logpdf(s::AbstractStochastic, x::AbstractArray, transform::Bool=false)
+  logpdf_sub(s.distr, x, transform)
+end
+
+function logpdf(s::AbstractStochastic, x::Real, transform::Bool=false)
   logpdf_sub(s.distr, x, transform)
 end
 
