@@ -37,6 +37,19 @@ end # CompoundDirichlet
 
 
 """
+Strict Molecular Clock - BirthDeath
+Implemented following Yang & Rannala 1997
+doi.org/10.1093/oxfordjournals.molbev.a025811
+"""
+mutable struct BirthDeath <: ContinuousMultivariateDistribution
+    s::Int64
+    rho::Float64
+    mu::Float64
+    lambd::Float64
+end # BirthDeath
+
+
+"""
     UniformBranchLength()
 
 Fallback struct that is used when no length distribution is given 
@@ -44,7 +57,7 @@ Fallback struct that is used when no length distribution is given
 """
 struct UniformBranchLength <: ContinuousUnivariateDistribution end
 
-const LengthDistribution = Union{CompoundDirichlet, exponentialBL, UniformBranchLength}
+const LengthDistribution = Union{CompoundDirichlet, exponentialBL, BirthDeath, UniformBranchLength}
 
 #################### TopologyDistributions ####################
 
