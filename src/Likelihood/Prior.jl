@@ -79,7 +79,13 @@ end
 function insupport(l::LengthDistribution, x::FNode)
     bl = get_branchlength_vector(x)
     all(isfinite.(bl)) && all(0.0 .< bl) && topo_placeholder(x, l) && !any(isnan.(bl))
-end 
+end
+
+#=
+function insupport(d::BirthDeath, t::AbstractVector{T}) where {T<:Real}
+    length(d) == length(t) && all(isfinite.(t)) && all(0 .< t)
+end # function
+=#
 
 function insupport(t::UniformConstrained, x::FNode)::Bool
     topological.constraint_dict(t, x)
@@ -99,25 +105,10 @@ function relistlength(d::CompoundDirichlet, x::AbstractArray)
 end
 
 
-"""
-Strict Molecular Clock - BirthDeath
-Implemented following Yang & Rannala 1997
-doi.org/10.1093/oxfordjournals.molbev.a025811
-"""
-mutable struct BirthDeath <: ContinuousMultivariateDistribution
-    s::Int64
-    rho::Float64
-    mu::Float64
-    lambd::Float64
-end # mutable struct
-
 length(d::BirthDeath) = d.s - 1
 
-function insupport(d::BirthDeath, t::AbstractVector{T}) where {T<:Real}
-    length(d) == length(t) && all(isfinite.(t)) && all(0 .< t)
-end # function
 
-function _logpdf(d::BirthDeath, t::AbstractVector{T}) where {T<:Real}
+function _logpdf(d::BirthDeath, x::FNode)
     numerator::Float64 = (d.rho*(d.lambd-d.mu))/(d.rho*d.lambd + 
                          (d.lambd*(1.0-d.rho)-d.mu)*exp(d.mu-d.lambd))
     denum::Float64 = d.rho*(d.lambd-d.mu)
@@ -128,6 +119,17 @@ function _logpdf(d::BirthDeath, t::AbstractVector{T}) where {T<:Real}
     end # for
     return f
 end # function
+
+
+
+
+
+
+
+
+
+
+
 
 """
 Strict Molecular Clock - Simplified Birth Death
