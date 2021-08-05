@@ -48,6 +48,7 @@ mutable struct BirthDeath <: ContinuousMultivariateDistribution
     lambd::Float64
 end # BirthDeath
 
+length(d::BirthDeath) = d.s - 1
 
 """
     UniformBranchLength()

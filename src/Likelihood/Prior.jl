@@ -105,22 +105,39 @@ function relistlength(d::CompoundDirichlet, x::AbstractArray)
 end
 
 
-length(d::BirthDeath) = d.s - 1
 
+"""
+Using formula 11.24 with 11.25 from the following paper:
+https://lukejharmon.github.io/pcm/chapter11_fitbd/#ref-FitzJohn2009-sg
 
-function _logpdf(d::BirthDeath, x::FNode)
-    numerator::Float64 = (d.rho*(d.lambd-d.mu))/(d.rho*d.lambd + 
-                         (d.lambd*(1.0-d.rho)-d.mu)*exp(d.mu-d.lambd))
-    denum::Float64 = d.rho*(d.lambd-d.mu)
-    vt1::Float64 = log(1.0-((denum*exp(d.mu-d.lambd))/(d.rho * numerator)))
-    f::Float64 = log((2.0^(s-1.0))/(factorial(s)*(s-1.0)))
-    for i in t
-        f += ((d.lambd+(1.0-d.rho)+2.0*(denum-numerator))+(d.mu-d.lambd)*i)-vt1
+"""
+function _logpdf(d::BirthDeath, x::FNode)::Float64
+    λ::Float64 = d.lambd
+    μ::Float64 = d.mu
+    f::Float64 = d.rho
+    n::Int64 = length(get_leaves(x))
+    h::Float64 = node_height(x)
+    
+    start::Float64 = λ ^ (n - 2)
+    for node in post_order(x)
+        node.root && continue
+        #= 
+        unsure about the t(k,t) & t(k,b) values in num & denum. The paper is not very clear 
+        about those numbers, i.e. we don't know if they are both supposed to be positive, 
+        negative or one positive & one negative
+        =#
+        num::Float64 = (f * λ - (μ - λ * (1 - f)) * exp((λ - μ) * 
+                       node_height(node))) ^ 2
+        denum::Float64 = (f * λ - (μ - λ * (1 - f)) * exp((λ - μ) *
+                         (h - node_height(node)))) ^ 2
+        value::Float64 = exp((λ - μ) * ((h - node_height(node)) - node_height(node))) *
+                         (num / denum)
+        start *= value
     end # for
-    return f
-end # function
-
-
+    denumerator::Float64 = (1 - (1 - ((λ - μ) /(λ - (λ - μ) * exp((λ - μ) *
+                           node_height(x)))))) ^ 2
+    THEFORMULA = factorial(n - 1) * start / denumerator
+end
 
 
 
