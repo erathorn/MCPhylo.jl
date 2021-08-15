@@ -139,12 +139,34 @@ function _logpdf(d::BirthDeath, x::FNode)::Float64
     THEFORMULA = factorial(n - 1) * start / denumerator
 end
 
+"""
+Fossilized Birth Death
+Implemented following Heath, Huelsenbeck and Stadler 2013
+DOI: 10.1073/pnas.1319091111
+"""
+mutable struct BirthDeathFossilized <: ContinuousMultivariateDistribution
+    rho::Float64
+    mu::Float64
+    lambd::Float64
+    psi::Float64
+end # mutable struct
 
+function _logpdf(d::FossilizedBirthDeath, x::FNode)::Float64
 
+λ::Float64 = d.lambd
+μ::Float64 = d.mu
+ρ::Float64 = d.rho
+ψ::Float64 = d.psi
 
+c1::Float64 = sqrt((λ - μ - ψ)^2 + 4 * λ * ψ)
+c2::Float64 = - ((λ - μ - 2 * λ *ρ - ψ )/ c1)
+qt::Float64 = 2 * (1- c2 ^2) + exp(-c1) # I am not sure how to integrate t yet, need to read more of the paper
+p0::Float64
+p0_past::Float64
+result::Float64 = 0.5 # placeholder
 
-
-
+return result
+end
 
 
 
