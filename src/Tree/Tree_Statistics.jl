@@ -12,31 +12,6 @@ function parse_and_number(treestring::S)::FNode where S<:AbstractString
     p_tree2
 end # parse_and_number
 
-"""
-    calculate_convergence(sm::SimulationParameters, args...)::Vector{Vector{Float64}}
-
-Function that checks which
-"""
-function calculate_convergence(sm::SimulationParameters,
-                               conv_storage::Union{Nothing, ConvergenceStorage},
-                               args...
-                              )::Tuple{Vector{Vector{Float64}}, ConvergenceStorage}
-
-    if sm.asdsf
-        if isnothing(conv_storage)
-            ASDSF_vals, conv_storage = ASDSF(args..., sm.min_splits)
-        else
-            ASDSF_vals, conv_storage = ASDSF(args..., sm.min_splits, cs=conv_storage)
-        end # if/else
-    end
-    #=
-    if sm.psrf
-        calculate_psrf(args...)
-    end
-    =#
-    return ASDSF_vals, conv_storage
-end
-
 
 """
     ASDSF(args::String...; freq::Int64=1, check_leaves::Bool=true,
@@ -58,10 +33,14 @@ function ASDSF(args::String...; freq::Int64=1, check_leaves::Bool=true,
         push!(splitsQueues[1], Accumulator{Tuple{Set{String}, Set{String}}, Int64}())
     end # for
     iter = zip([eachline(arg) for arg in args]...)
-    ASDSF_vals = [zeros(Int(countlines(args[1]) / freq))]
+    nsams = countlines(args[1]) / freq
+    asdsf_size = ceil(Int,nsams)
+    ASDSF_vals = [zeros(ceil(Int,asdsf_size))]
+
     # tree_dims is hardcoded to 1 because there are no multiple dims in files
-    ASDSF_int(splitsQueue, splitsQueues, iter, 1, ASDSF_vals, freq, check_leaves,
-              min_splits, show_progress, basic=true)[1]
+    res = ASDSF_int(splitsQueue, splitsQueues, iter, 1, ASDSF_vals, freq, check_leaves,
+              min_splits, show_progress, basic=true)[1][1]
+    asdsf_size > nsams ? res[1:end-1] : res
 end # ASDSF
 
 
@@ -114,6 +93,7 @@ function ASDSF(model::ModelChains; freq::Int64=1, check_leaves::Bool=true,
             push!(splitsQueues[j], Accumulator{Tuple{Set{String}, Set{String}}, Int64}())
         end # for
     end # for
+    trees = Array{Vector{AbstractString}, 2}(undef, size(model.trees, 1), nchains)
     if length(tree_dims) > 1
         trees = Array{Vector{AbstractString}, 2}(undef, size(model.trees, 1), nchains)
         for i in 1:size(model.trees, 1)
@@ -185,12 +165,12 @@ function ASDSF_int(splitsQueue, splitsQueues, iter, tree_dims, ASDSF_vals, freq,
                    )::Tuple{Vector{Vector{Float64}}, ConvergenceStorage}
 
     all_keys = [Set{Tuple{String,String}}() for x in tree_dims]
+    
     if show_progress
-        p = Progress(length(ASDSF_vals))
+        prog = ProgressMeter.Progress(length(ASDSF_vals[1]),"Computing ASDSF: ")
     end # if
-    run = 1
-    outer::Float64 = 0.0
-    inner::Float64 = 0.0
+    gen = 1
+    
     for (i, line) in enumerate(iter)
         if mod(i, freq) == 0
             if !isnothing(r_channels)
@@ -202,34 +182,42 @@ function ASDSF_int(splitsQueue, splitsQueues, iter, tree_dims, ASDSF_vals, freq,
                 check_leaves && check_leafsets(trees)
 
                 # get all bipartitions
-                cmds = countmap.(get_bipartitions.(trees))
-                new_splits = union(keys.(cmds)...)
-                all_keys[td] = union(all_keys[td], new_splits)
-                for split in new_splits
-                    inc!(splitsQueue[td], split)
-                end # for
-                outer = 0.0
+                cmds = Accumulator.(countmap.(get_bipartitions.(trees)))
+                
+                for (ind,acc) in enumerate(cmds)
+                    merge!(splitsQueues[td][ind], acc)
+                end
+                new_splits = merge(cmds...)
+                
+                all_keys[td] = union(all_keys[td], keys(new_splits))
+                merge!(splitsQueue[td], new_splits)
+                
+                tmp = 0.0
+                M = 0.0
                 for split in all_keys[td]
-                    inner = 0.0
-                    for (t, tree) in enumerate(trees)
-                        if haskey(cmds[t], split)
-                            inner += 1 / length(trees)
-                            inc!(splitsQueues[td][t], split)
-                        end # if
-                    end # for
-                    if any([x[split] / run > min_splits for x in splitsQueues[td]])
-                        fre = splitsQueue[td][split] / total_runs
-                        inner += (inner - fre) ^ 2
-                        outer += sqrt(inner)
-                    end # if
-                end # for
-                ASDSF_vals[td][run] = outer / length(splitsQueue[td])
+                    tmp_i = 0.0
+                    keep = false
+                    ova = splitsQueue[td][split]/(length(trees)*total_runs)
+                    for r in 1:length(trees)
+                        if splitsQueues[td][r][split]/total_runs > min_splits
+                            keep = true
+                        end
+                        tmp_i += (splitsQueues[td][r][split]/total_runs - ova)^2
+                        
+                    end
+                    tmp_i /= (length(trees)-1)
+                    tmp += keep ? sqrt(tmp_i) : 0.0
+                    M += keep ? 1 : 0    
+                end
+                ASDSF_vals[td][gen] = tmp / M
+
             end # for
-            run += 1
+            gen += 1
             total_runs += 1
-            show_progress && ProgressMeter.next!(p)
+            show_progress && ProgressMeter.next!(prog)
         end # if
     end # for
+    show_progress && ProgressMeter.finish!(prog)
     conv_storage = ConvergenceStorage(splitsQueue, splitsQueues, total_runs)
     ASDSF_vals, conv_storage
 end # ASDSF_int

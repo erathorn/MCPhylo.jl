@@ -77,7 +77,8 @@ function mcmc(m::Model, inputs::Dict{Symbol},
 
   params.asdsf && !params.trees &&
     throw(ArgumentError("ASDSF can not be calculated without trees"))
-
+  params.asdsf && chains < 2 &&
+    throw(ArgumentError("ASDSF can not be calculated one just one chain"))
   iters > params.burnin ||
     throw(ArgumentError("burnin is greater than or equal to iters"))
   length(inits) >= params.chains ||
@@ -184,7 +185,7 @@ function mcmc_worker!(args::AbstractArray, ASDSF_step::Int64=0,
   # signal to the assign_mcmc_work function, that this chain is finished
   put!(channel[1], -1)
   mv = samparas(m)
-  sim.moves[1] = mv
+  sim.moves[1] = sum(mv)
   (sim, m, ModelState(unlist(m), gettune(m)))
 end # mcmc_worker!
 

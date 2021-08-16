@@ -28,6 +28,8 @@ using Markdown
 using Random
 using DataStructures
 using ProgressMeter
+using StaticArrays
+using LoopVectorization
 using CUDA
 if has_cuda()
   using GPUArrays
@@ -292,6 +294,7 @@ include("model/initialization.jl")
 include("model/mcmc.jl")
 include("model/model.jl")
 include("model/simulation.jl")
+include("model/simulation_statistics.jl")
 
 include("output/chains.jl")
 include("output/chainsummary.jl")
@@ -325,11 +328,11 @@ include("samplers/mala.jl")
 include("samplers/miss.jl")
 include("samplers/nuts.jl")
 include("samplers/pnuts.jl")
+include("samplers/pphmc.jl")
 include("samplers/rwm.jl")
 include("samplers/rwmc.jl")
 include("samplers/slice.jl")
 include("samplers/slicesimplex.jl")
-
 
 include("Tree/Tree_Basics.jl")
 include("Tree/Converter.jl")
@@ -467,6 +470,7 @@ export
   SliceSimplex, SliceSimplexVariate,
   DMH, DMHVariate,
   PNUTS, PNUTSVariate,
+  PPHMC, PPHMCVariate,
   Empirical, EmpiricalVariate
 
 export

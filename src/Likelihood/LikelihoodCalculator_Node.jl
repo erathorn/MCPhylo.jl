@@ -30,28 +30,29 @@ function FelsensteinFunction(tree_postorder::Vector{N}, pi_::Array{Float64}, rat
 
     @views for node in tree_postorder
         if node.nchild > 0
-            res = node_loop(node, mutationArray)
+            res = node_loop(node, mutationArray, data)
+            #@show mutationArray[node.num]
             if !node.root
                 scaler::Array{Float64} = maximum(res, dims=1)
                 rns = rns .+ log.(scaler)
                 res = res ./ scaler
             end #if
-            node.data = res
+            
+            data[:,:,node.num] = res
         end #if
     end # for
-
-    return likelihood_root(root_node.data, pi_, rns)
+    return likelihood_root(data[:,:,root_node.num], pi_, rns)
 end # function
 
 @inline function likelihood_root(root::Array{Float64,2}, pi_::Array{Float64}, rns::Array{Float64,2})::Float64
     sum(log.(sum(root .* pi_, dims=1))+rns)
 end
 
-function node_loop(node::N, mutationArray::Vector{Array{Float64, 2}})::Array{Float64,2} where {N<:GeneralNode, S<:Real}
+function node_loop(node::N, mutationArray::Vector{Array{Float64, 2}}, data)::Array{Float64,2} where {N<:GeneralNode, S<:Real}
     # creating a new array is necessary because Zygote can not differentiate otherwise
-    out = ones(size(node.data))
+    out = ones(size(data[:,:,node.num]))
     @inbounds @views for child in node.children
-            out = out .* BLAS.gemm('N','N',mutationArray[child.num], child.data)
+            out = out .* BLAS.gemm('N','N',mutationArray[child.num], data[:,:,child.num])
     end
     out
 end
@@ -86,135 +87,107 @@ This function calculates the log-likelihood of an evolutiuonary model using the
 Felsensteins pruning algorithm. If `c_grad` equals `true` (default) the analytic gradient
 regarding the branch lengths of the tree gets computed as well.
 """
-function FelsensteinFunction(tree_postorder::Vector{N}, pi_::Array{Float64}, rates::Array{Float64},
-                     U::Array{M,2}, D::Array{M}, Uinv::Array{M,2}, mu::Float64,
-                     data::Array{Float64,4}, c_grad::Bool = true) where {N<:GeneralNode, M<:Number}
-    Nbases, Nsites, Nrates, Nnodes = size(data)
-    mutationArray::Array{Float64,4} = Array{Float64,4}(undef, Nbases, Nbases, Nrates, Nnodes-1)
-    mutationArray .= 0.0
+function FelsensteinFunction(tree_postorder::Vector{N}, pi_::Array{Float64}, rates::Float64,
+                      U::A, D::V, Uinv::A, mu::Float64,
+                     data::Array{Float64,3}, substitutionModel::Function,  c_grad::Bool = true) where {N<:GeneralNode, M<:Number, A<:AbstractArray, V<:AbstractVector}
+    Nbases, Nsites, Nnodes = size(data)
+    #mutationArray::Array{Float64,3} = zeros(Nbases, Nbases, Nnodes-1)
+    
     grv::Vector{Float64} = Vector{Float64}(undef, Nnodes-1)
-    Down::Array{Float64,4} = similar(data)
-    pre_order_partial::Array{Float64,4} = similar(data)
-    ll = fels_ll(tree_postorder, data, D, U, Uinv, rates, mu, Nrates, Nsites, Down, pi_, mutationArray)
+    Down::Array{Float64,3} = similar(data)
+    pre_order_partial::Array{Float64,3} = similar(data)
+    ll = fels_ll(tree_postorder, data, D, U, Uinv, rates, mu, Down, pi_, substitutionModel)
+    #ll = recursive_ll(last(tree_postorder), data, D, U, Uinv, rates, mu, Down, pi_, substitutionModel)
+    #@show ll1, ll
     if c_grad
-        grv = fels_grad(tree_postorder, data, D, U, Uinv, rates, mu, Nrates,
-                        Nsites, Nnodes, Down, pi_, mutationArray, pre_order_partial)
+        grv = fels_grad(tree_postorder, data, D, U, Uinv, rates, mu,
+                        Down, pi_, pre_order_partial, grv, substitutionModel)
     end
 
     return ll, grv, data, Down, pre_order_partial
 
 end
 
-function fels_grad(tree_postorder::Vector{N}, data::Array{Float64,4},
-         D::Array{M,1}, U::Array{M,2}, Uinv::Array{M,2},
-         rates::Array{Float64,1}, mu::Float64, Nrates::Int64, Nsites::Int64, Nnodes::Int64, Down::Array{Float64,4},
-         pi_::Array{Float64}, mutationArray::Array{Float64,4}, pre_order_partial::Array{Float64,4})::Vector{Float64} where {N <: GeneralNode, M <: Number}
+function fels_grad(tree_postorder::Vector{N}, data::Array{Float64,3},
+         D::V, U::A, Uinv::A, rate::Float64, mu::Float64, Down::Array{Float64,3},
+         pi_::Array{Float64}, pre_order_partial::Array{Float64,3}, grv::Vector{Float64}, substitutionModel::Function)::Vector{Float64} where {N <: GeneralNode, M <: Number, 
+                                                                                                                            A<:AbstractArray, V<:AbstractVector}
 
-    root_node::N = last(tree_postorder)
-    pre_order_partial[:, :, :, root_node.num] .= pi_
-    scaler::Array{Float64, 2} = Array{Float64,2}(undef, 1, Nsites)
-    gradi::Array{Float64, 2} = Array{Float64,2}(undef, 1, Nsites)
-    grv::Vector{Float64} = Vector{Float64}(undef, Nnodes-1)
-    ptg::Array{Float64,2} = similar(mutationArray[:, :, 1, 1])
+    root_node = last(tree_postorder)
+    pre_order_partial[:, :, root_node.num] .= pi_
 
     @inbounds @views for node in reverse(tree_postorder)[2:end]
-           mother::N = node.mother
-           @inbounds @views for r in 1:Nrates
-               pre_order_partial[:, :, r, node.num] .= pre_order_partial[:, :, r, mother.num]
-               @inbounds @views for child in mother.children
-                   if child.num != node.num
-                       pre_order_partial[:, :, r, node.num] .*= Down[:, :, r, child.num]
-                   end
-               end
-           end
-           tg::Float64 = 0.0
-           @inbounds @views for r in 1:Nrates
-               BLAS.gemm!('N', 'N', 1.0, BLAS.symm('R', 'L', (D .* (rates[r] * mu)) .* diagm(exp.(D .* (rates[r]*mu*node.inc_length))), U), Uinv, 0.0, ptg)
-               gradi = sum(pre_order_partial[:, :, r, node.num] .* BLAS.gemm('N', 'N', ptg , data[:, :, r, node.num]), dims=1)
-               pre_order_partial[:, :, r, node.num] .= BLAS.gemm('T', 'N', mutationArray[:, :, r, node.num] , pre_order_partial[:, :, r, node.num])
-               tg += sum(gradi ./ sum(pre_order_partial[:, :, r, node.num] .* data[:, :, r, node.num], dims=1))
-               if node.nchild > 0
-                   scaler = maximum(pre_order_partial[:, :, r, node.num], dims = 1)
-                   pre_order_partial[:, :, r, node.num] ./= scaler
-               end
-           end
-           grv[node.num] = tg
+           mother = get_mother(node)
+            pre_order_partial[:, :, node.num] .= pre_order_partial[:, :, mother.num]
+            @simd for c in 1:mother.nchild
+                child = mother.children[c]
+                if child.num != node.num
+                    pre_order_partial[:, :, node.num] .*= Down[:, :, child.num]
+                end
+            end
+                
+            ptg = U * ((D .* (rate * mu)) .* diagm(exp.(D .* (rate*mu*node.inc_length)))) * Uinv
+            gradi = sum(pre_order_partial[:, :,  node.num] .* (ptg * data[:, :, node.num]),dims=1)
+            tr = calculate_transition(substitutionModel, rate, mu, node.inc_length, U, Uinv, D, pi_)
+            pre_order_partial[:, :,  node.num] .= transpose(tr) * pre_order_partial[:, :, node.num]
+            grv[node.num] = sum(gradi ./ sum(pre_order_partial[:, :,  node.num] .* data[:, :,  node.num], dims=1))
+            
+            if node.nchild > 0
+                pre_order_partial[:, :,  node.num] ./= maximum(pre_order_partial[:, :,  node.num], dims = 1)
+            end
     end # for
     grv
 end
 
-function fels_ll(tree_postorder::Vector{N}, data::Array{Float64,4},
-         D::Array{Float64,1}, U::Array{Float64,2}, Uinv::Array{Float64,2},
-         rates::Array{Float64,1}, mu::Float64, Nrates::Int64, Nsites::Int64, Down::Array{Float64,4},
-         pi_::Array{Float64}, mutationArray::Array{Float64,4})::Float64 where {N <: GeneralNode}
+function fels_ll(tree_postorder::Vector{N}, data::Array{Float64,3},
+          D::V, U::A, Uinv::A,
+         rate::Float64, mu::Float64,Down::Array{Float64,3},
+         pi_::Array{Float64}, substitutionModel::Function)::Float64 where {N <: GeneralNode, M<:Number, A<:AbstractArray, V<:AbstractVector}
 
-    scaler::Array{Float64, 2} = Array{Float64,2}(undef, 1, Nsites)
     ll::Float64 = 0.0
-    root_node::N = last(tree_postorder)
     @inbounds @views for node in tree_postorder
         if node.nchild > 0
-            data[:, :, :, node.num] .= 1.0
+            data[:, :, node.num] .= 1.0
             for child in node.children
-                @inbounds @views for r in 1:Nrates
-                    BLAS.gemm!('N', 'N', 1.0, BLAS.symm('R', 'L', diagm(exp.(D .* (rates[r]*mu*child.inc_length))), U), Uinv, 0.0, mutationArray[:, :, r, child.num])
-                    BLAS.gemm!('N','N', 1.0, mutationArray[:, :, r, child.num], data[:, :, r, child.num], 0.0, Down[:, :, r, child.num])
-                    data[:, :, r, node.num] .*= Down[:, :, r, child.num]
-
-                end
-
+                mul!(Down[:, :, child.num], calculate_transition(substitutionModel, rate, mu, child.inc_length, U, Uinv, D, pi_), data[:, :, child.num])
+                data[:, :, node.num] .*= Down[:, :, child.num]
             end
-
-            if !node.root
-                @inbounds @views for r in 1:Nrates
-                    scaler .= maximum(data[:, :, r, node.num], dims=1)
-                    data[:, :, r, node.num] ./= scaler
-                    ll += sum(log.(scaler))
-                end
+            
+            if !node.root   
+                ll += sum(log.(maximum(data[:, :, node.num], dims=1)))
+                data[:, :, node.num] ./= maximum(data[:, :, node.num], dims=1)
+                #ll += sum(log.(scaler))
+            else
+                ll += sum(log.(sum(data[:, :, last(tree_postorder).num] .* pi_, dims=1)))
             end
         end #if
     end # for
-
-    @inbounds @views @simd for r in 1:Nrates
-        ll += sum(log.(sum(data[:, :, r, root_node.num] .* pi_, dims=1)))
-    end
     ll
 end
 
 
-
-function fels_ll(tree_postorder::Vector{N}, data::Array{Float64,4},
-         D::Array{ComplexF64,1}, U::Array{ComplexF64,2}, Uinv::Array{ComplexF64,2},
-         rates::Array{Float64,1}, mu::Float64, Nrates::Int64, Nsites::Int64, Down::Array{Float64,4},
-         pi_::Array{Float64}, mutationArray::Array{Float64,4})::Float64 where {N <: GeneralNode}
-
-    scaler::Array{Float64, 2} = Array{Float64,2}(undef, 1, Nsites)
-    ll::Float64 = 0.0
-    root_node::N = last(tree_postorder)
-    @inbounds @views for node in tree_postorder
-        if node.nchild > 0
-            data[:, :, :, node.num] .= 1.0
-            for child in node.children
-                @inbounds @views for r in 1:Nrates
-                    mutationArray[:, :, r, child.num] .= abs.(BLAS.gemm('N', 'N', one(ComplexF64), BLAS.symm('R', 'L', diagm(exp.(D .* (rates[r]*mu*child.inc_length))), U), Uinv))
-                    BLAS.gemm!('N','N', 1.0, mutationArray[:, :, r, child.num], data[:, :, r, child.num], 0.0, Down[:, :, r, child.num])
-                    data[:, :, r, node.num] .*= Down[:, :, r, child.num]
-
-                end
-
-            end
-
-            if !node.root
-                @inbounds @views for r in 1:Nrates
-                    scaler .= maximum(data[:, :, r, node.num], dims=1)
-                    data[:, :, r, node.num] ./= scaler
-                    ll += sum(log.(scaler))
-                end
-            end
-        end #if
-    end # for
-
-    @inbounds @views @simd for r in 1:Nrates
-        ll += sum(log.(sum(data[:, :, r, root_node.num] .* pi_, dims=1)))
-    end
-    ll
+function recursive_ll(node::N, data::Array{Float64,3},
+                        D::V, U::A, Uinv::A,
+                    rate::Float64, mu::Float64,Down::Array{Float64,3},
+                    pi_::Array{Float64}, substitutionModel::Function)::Float64 where {N <: GeneralNode, M<:Number, A<:AbstractArray, V<:AbstractVector}
+    ll = 0.0
+    if node.nchild > 0
+        data[:, :, node.num] .= 1.0
+        for child in node.children
+            ll += recursive_ll(child, data, D, U, Uinv, rate, mu, Down, pi_, substitutionModel)
+   
+            tr = calculate_transition(substitutionModel, rate, mu, child.inc_length, U, Uinv, D, pi_)
+            Down[:, :, child.num] .= tr * data[:, :, child.num]            
+            data[:, :, node.num] .*= Down[:, :, child.num]
+        end
+        
+        if !node.root   
+            scaler = maximum(data[:, :, node.num], dims=1)
+            data[:, :, node.num] ./= scaler
+            ll += sum(log.(scaler))
+        else
+            ll += sum(log.(sum(data[:, :, node.num] .* pi_, dims=1)))
+        end
+    end 
+    return ll
 end
