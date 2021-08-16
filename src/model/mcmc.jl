@@ -112,16 +112,10 @@ function mcmc_master!(m::Model, window::UnitRange{Int},
   N = length(window)
   K = length(chains)
 
-  frame::ChainProgressFrame = ChainProgressFrame(
-    "MCMC Simulation of $N Iterations x $K Chain" * "s"^(K > 1), sp.verbose
-  )
+  sp.verbose && println("MCMC Simulation of $N Iterations x $K Chain" * "s"^(K > 1) * "...")
   # this is necessary for additional draws from a model
   burnin = burnin == -1 ? sp.burnin : burnin
-
-  lsts = [
-    Any[m, states[k], window, burnin, sp.thin, ChainProgress(frame, k, N),
-        sp.trees] for k in chains
-  ]
+  lsts = [Any[m, states[k], window, burnin, sp.thin, sp.trees, sp.verbose] for k in chains]
 
   results::Vector{Tuple{Chains, Model, ModelState}}, stats::Array{Float64, 2}, statnames::Vector{AbstractString}, conv_storage::Union{Nothing, ConvergenceStorage} =
     	assign_mcmc_work(mcmc_or_convergence, lsts, sp, conv_storage)
@@ -144,7 +138,7 @@ Each call to this function computes a chain for a ModelChains Object.
 function mcmc_worker!(args::AbstractArray, ASDSF_step::Int64=0,
                       rc::Union{Nothing, RemoteChannel}=nothing
                       )::Tuple{Chains, Model, ModelState}
-  m::Model, state::ModelState, window::UnitRange{Int}, burnin::Integer, thin::Integer, meter::ChainProgress, store_trees::Bool = args
+  m::Model, state::ModelState, window::UnitRange{Int}, burnin::Integer, thin::Integer, store_trees::Bool, verbose::Bool, channel::Tuple{RemoteChannel, Int} = args
   llname::AbstractString = "likelihood"
   treeind::Int64 = 1
   m.iter = first(window) - 1
@@ -163,7 +157,6 @@ function mcmc_worker!(args::AbstractArray, ASDSF_step::Int64=0,
   sim = Chains(last(window), length(pnames), start=burnin + thin, thin=thin,
                names=pnames, ntrees=length(treenodes), tree_names=treenodes)
 
-  reset!(meter)
   for i in window
 
     sample!(m)
@@ -182,12 +175,15 @@ function mcmc_worker!(args::AbstractArray, ASDSF_step::Int64=0,
         for (ind, tree_node) in enumerate(treenodes)
           push!(trees, newick(m[tree_node].value))
         end # for
+        # send trees to a RemoteChannel, so that convergence statistics can be calculated on a different worker 
         put!(rc, trees)
       end # if
     end # if
-    next!(meter)
-
+    # send update to RemoteChannel --> while loop in logpdf function updates the ProgressMeter of this chain
+    put!(channel[1], channel[2])
   end # for
+  # signal to the assign_mcmc_work function, that this chain is finished
+  put!(channel[1], -1)
   mv = samparas(m)
   sim.moves[1] = sum(mv)
   (sim, m, ModelState(unlist(m), gettune(m)))

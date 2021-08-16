@@ -161,16 +161,32 @@ function assign_mcmc_work(
                 [RemoteChannel(() -> Channel{Vector{AbstractString}}(ntrees)) for x = 1:nchains]
         end # if / else
         ASDSF_vals::Vector{Vector{Float64}} = []
+        # add necessary ASDSF related arguments to lsts for mcmc_worker function
         for (ind, lst) in enumerate(lsts)
             append!(lst, [sp.freq, r_channels[ind]])
         end # for
+        # add a list to lsts array, that contains args for calculate_convergence
         push!(lsts, [sp, conv_storage, r_channels, ntrees, 1:tree_dim])
     end # if
-    if nprocs() > 1
-        results_vec = pmap(f, lsts)
-    else
-        results_vec = map(f, lsts)
-    end # if/else
+
+    # set up a ProgressMeter for each chain...
+    meters = [Progress(lsts[1][3][end] - lsts[1][3][1] + 1; desc="Chain $c: ", enabled=sp.verbose, offset=c-1, showspeed=true) for c in 1:nchains]
+    # ... & one RemoteChannel that will be used to communicate the updates of the progress bar across parallel functions
+    channel = RemoteChannel(() -> Channel{Integer}(1))
+    # add the RemoteChannels to the lists that are later passed to the mcmc_worker
+    for c in 1:nchains
+        insert!(lsts[c], 8, (channel, c))
+    end # for
+    results_vec = []
+    @sync begin
+        # check RemoteChannel for new entries and updates the ProgressMeters
+        finished_chains = 0
+        @async while finished_chains < nchains
+            chain = take!(channel)
+            chain > 0 ? ProgressMeter.next!(meters[chain]) : finished_chains += 1
+        end # while
+        @async results_vec = pmap2(f, lsts)
+    end # @sync
     ASDSF && close.(r_channels)
     if ASDSF
         asdsf_results = results_vec[end]
@@ -183,6 +199,7 @@ function assign_mcmc_work(
     else
         stats = zeros(Float64, 0, tree_dim)
     end # if/else
+    println("\n")
     return [results_vec[i] for i = 1:nchains], stats, statnames, conv_storage
 end # assign_mcmc_work
 
@@ -201,12 +218,16 @@ function mcmc_or_convergence(args::AbstractArray
                             Tuple{Chains, Model, ModelState},
                             Tuple{Vector{Vector{Float64}}, ConvergenceStorage}
                             }
-
+    # depending on the elements of the args array either start calculate_convergence or...
     if isa(args[1], SimulationParameters)
         calculate_convergence(args...)
+    # ...mcmc_worker
     else
-        if length(args) == 7
+        # if no convergence statistics are wanted, then the mcmc_worker will be called with exactly 8 elements in args...
+        if length(args) == 8
             mcmc_worker!(args)
+        # ...but with on-the-fly convergence statistics, we have 2 more elements (the step range & the remote channel), 
+        # that we need to dispatch correctly to the mcmc_worker
         else
             mcmc_worker!(args[1:end-2], args[end-1:end]...)
         end # if/else
