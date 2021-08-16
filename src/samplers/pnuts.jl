@@ -194,11 +194,11 @@ function nuts_sub!(v::PNUTSVariate, epsilon::Float64, logfgrad::Function)
     delta = v.tune.delta
     r = randn(nl)
     g = zeros(nl)
-    blv = get_branchlength_vector(x)
-    set_branchlength_vector!(x, molifier.(blv, delta))
-    logf, grad = logfgrad(x, nl, true, true)
+    #blv = get_branchlength_vector(x)
+    #set_branchlength_vector!(x, molifier.(blv, delta))
+    #logf, grad = logfgrad(x, nl, true, true)
     
-    #x, r, logf, grad, nni = refraction(x, r, g, epsilon, logfgrad, delta, nl)
+    x, r, logf, grad, nni = refraction(x, r, g, epsilon, logfgrad, delta, nl)
     #@show nni
     lu = log(rand())
     logp0 = logf - 0.5 * dot(r)
@@ -332,7 +332,7 @@ function refraction(
     blenvec = get_branchlength_vector(v1)
     fac = scale_fac.(blenvec, delta)
     
-    r = @. r + (epsilon * 0.5) * (pm * grad * fac)
+    @. r += (epsilon * 0.5 * pm * grad * fac)
     tmpB = @. blenvec + (pm * epsilon * r)
 
     nni = 0
@@ -340,7 +340,6 @@ function refraction(
     if minimum(tmpB) <= 0
         v1, tmpB, r, nni =
             ref_NNI(v1, tmpB, r, abs(epsilon), blenvec, delta, logfgrad, sz)
-
     end
 
     blenvec = molifier.(tmpB, delta)
@@ -351,9 +350,7 @@ function refraction(
 
     fac = scale_fac.(blenvec, delta)
     
-    r = @. r + (epsilon * 0.5) * (pm * grad * fac)
-
-    #r = pm * ref_r
+    @. r += epsilon * 0.5 * pm * grad * fac
 
     return v1, r, logf, grad, nni
 end
