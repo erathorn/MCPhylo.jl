@@ -637,7 +637,6 @@ function nutsepsilon(x::FNode, logfgrad::Function, delta::Float64, target::Float
         Hp = logfprime - 0.5 * dot(rprime)
         prob = Hp - H0
     end
-    @show epsilon
     epsilon
 end
 
