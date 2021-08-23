@@ -1,6 +1,9 @@
 using MCPhylo
 using Test
 
+filenames = ["topology.txt", "topology2.txt", "topology3.txt"]  
+filepaths = [joinpath(@__DIR__,file) for file in filenames]
+
 @testset "generate_constraints" begin
     dict = generate_constraints(mono=[["A", "B"]], not_mono=[["B", "C"]])
     result1 = Dict([(:mono, [["A","B"]]),
@@ -12,8 +15,8 @@ using Test
     push!(result1[:exc], (["C", "D"], ["E"]))
     @test dict == result1
 
-    dict3 = generate_constraints("./test/Tree/topology.txt")
-    dict4 = generate_constraints!(dict, "./test/Tree/topology.txt")
+    dict3 = generate_constraints(filepaths[1])
+    dict4 = generate_constraints!(dict, filepaths[1])
     result3 = Dict([(:mono, [["A","B"], ["C", "D"]]),
                     (:not_mono, [["C","D", "E"]]),
                     (:exc, [(["E", "F"], ["G"])])])
@@ -25,7 +28,7 @@ using Test
 
     @test_logs (:warn, "Skipped line with unsupported constraint type 'TEST'.
          Allowed types are 'mono', 'not_mono' and 'exc'")
-         generate_constraints("./test/Tree/topology.txt")
+         generate_constraints(filepaths[1])
 
     @test_logs (:warn, "Some trivial 'mono' / 'not_mono' type constraints were removed.
          A valid 'mono' / 'not_mono' constraint needs at least 2 elements.")
@@ -35,8 +38,8 @@ using Test
       A non-trivial 'exc' constraints needs at least 2 elements in the first, and at least 1 in the second part of the tuple")
         generate_constraints(exc=[(["A"], ["B"])])
 
-    @test_throws FileSyntaxError generate_constraints("./test/Tree/topology2.txt")
-    @test_throws FileSyntaxError generate_constraints("./test/Tree/topology3.txt")
+    @test_throws FileSyntaxError generate_constraints(filepaths[2])
+    @test_throws FileSyntaxError generate_constraints(filepaths[3])
 end
 
 
