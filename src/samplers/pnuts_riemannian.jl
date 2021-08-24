@@ -2,7 +2,7 @@
 
 #################### Types and Constructors ####################
 
-mutable struct PNUTSTune <: SamplerTune
+mutable struct PNUTS_Rie_Tune <: SamplerTune
     logfgrad::Union{Function,Missing}
     adapt::Bool
     alpha::Float64
@@ -24,9 +24,9 @@ mutable struct PNUTSTune <: SamplerTune
     tree_depth_trace::Vector{Int}
 
 
-    PNUTSTune() = new()
+    PNUTS_Rie_Tune() = new()
 
-    function PNUTSTune(
+    function PNUTS_Rie_Tune(
         x::Vector{T},
         epsilon::Float64,
         logfgrad::Union{Function,Missing};
@@ -61,7 +61,7 @@ mutable struct PNUTSTune <: SamplerTune
     end
 end
 
-PNUTSTune(
+PNUTS_Rie_Tune(
     x::Vector{T},
     logfgrad::Function,
     ::NullFunction,
@@ -69,20 +69,20 @@ PNUTSTune(
     target::Real = 0.6;
     args...,
 ) where {T<:GeneralNode} =
-    PNUTSTune(x, nutsepsilon(x[1], logfgrad, delta, target), logfgrad; args...)
+    PNUTS_Rie_Tune(x, nutsepsilon(x[1], logfgrad, delta, target), logfgrad; args...)
 
-PNUTSTune(
+PNUTS_Rie_Tune(
     x::Vector{T},
     logfgrad::Function,
     delta::Float64,
     target::Real;
     args...,
 ) where {T<:GeneralNode} =
-    PNUTSTune(x, nutsepsilon(x[1], logfgrad, delta, target), logfgrad; args...)
+    PNUTS_Rie_Tune(x, nutsepsilon(x[1], logfgrad, delta, target), logfgrad; args...)
 
-PNUTSTune(x::Vector; epsilon::Real, args...) = PNUTSTune(x, epsilon, missing, args...)
+PNUTS_Rie_Tune(x::Vector; epsilon::Real, args...) = PNUTS_Rie_Tune(x, epsilon, missing, args...)
 
-const PNUTSVariate = SamplerVariate{PNUTSTune}
+const PNUTS_Rie_Variate = SamplerVariate{PNUTS_Rie_Tune}
 
 
 #################### Sampler Constructor ####################
@@ -100,7 +100,7 @@ Returns a `Sampler{PNUTSTune}` type object.
 
 * args...: additional keyword arguments to be passed to the PNUTSVariate constructor.
 """
-function PNUTS(params::ElementOrVector{Symbol}; args...)
+function PNUTS_Rie(params::ElementOrVector{Symbol}; args...)
     samplerfx = function (model::Model, block::Integer)
         block = SamplingBlock(model, block, true)
 
@@ -109,37 +109,19 @@ function PNUTS(params::ElementOrVector{Symbol}; args...)
         end
         v = SamplerVariate(block, f, NullFunction(); args...)
 
-        sample!(v::PNUTSVariate, f, adapt = model.iter <= model.burnin)
+        sample!(v::PNUTS_Rie_Variate, f, adapt = model.iter <= model.burnin)
 
         relist(block, v)
     end
-    Sampler(params, samplerfx, PNUTSTune())
+    Sampler(params, samplerfx, PNUTS_Rie_Tune())
 end
 
 
 #################### Sampling Functions ####################
 
-function mlogpdfgrad!(
-    block::SamplingBlock,
-    x::FNode,
-    sz::Int64,
-    ll::Bool = false,
-    gr::Bool = false,
-)::Tuple{Float64,Vector{Float64}}
-    grad = Vector{Float64}(undef, sz)
-    lp = zero(Float64)
+sample!(v::PNUTS_Rie_Variate; args...) = sample!(v, v.tune.logfgrad; args...)
 
-    if gr
-        lp, grad = gradlogpdf!(block, x)::Tuple{Float64,Vector{Float64}}
-    elseif ll
-        lp = logpdf!(block, x)::Float64
-    end
-    lp, grad
-end
-sample!(v::PNUTSVariate; args...) = sample!(v, v.tune.logfgrad; args...)
-
-function sample!(v::PNUTSVariate, logfgrad::Function; adapt::Bool = false)
-
+function sample!(v::PNUTS_Rie_Variate, logfgrad::Function; adapt::Bool = false)
     tune = v.tune
     setadapt!(v, adapt)
     if tune.adapt
@@ -172,11 +154,8 @@ function sample!(v::PNUTSVariate, logfgrad::Function; adapt::Bool = false)
     v
 end
 
-@inline function abs_adapter(x::R)::Float64 where R <:Real
-    x / (1+abs(x))
-end
 
-function setadapt!(v::PNUTSVariate, adapt::Bool)
+function setadapt!(v::PNUTS_Rie_Variate, adapt::Bool)
     tune = v.tune
     if adapt && !tune.adapt
         tune.m = 0
@@ -188,24 +167,24 @@ end
 
 
 
-function nuts_sub!(v::PNUTSVariate, epsilon::Float64, logfgrad::Function)
+function nuts_sub!(v::PNUTS_Rie_Variate, epsilon::Float64, logfgrad::Function)
     x = deepcopy(v.value[1])
     nl = size(x)[1] - 1
     delta = v.tune.delta
     r = randn(nl)
-    g = zeros(nl)
-    #blv = get_branchlength_vector(x)
-    #set_branchlength_vector!(x, molifier.(blv, delta))
-    #logf, grad = logfgrad(x, nl, true, true)
+    #g = zeros(nl)
+    blv = get_branchlength_vector(x)
+    set_branchlength_vector!(x, molifier.(blv, delta))
+    logf, grad = logfgrad(x, nl, true, true)
     
-    x, r, logf, grad, nni = refraction(x, r, g, epsilon, logfgrad, delta, nl)
+    #x, r, logf, grad, nni = refraction(x, r, g, epsilon, logfgrad, delta, nl)
     #@show nni
     lu = log(rand())
     logp0 = logf - 0.5 * dot(r)
     logu0 = logp0 + lu#log(rand())
     rminus = rplus = r
     gradminus = gradplus = grad
-
+    rho= r
     xminus = xplus = x
     nni = 0
     j = 0
@@ -213,9 +192,12 @@ function nuts_sub!(v::PNUTSVariate, epsilon::Float64, logfgrad::Function)
     s = true
     v.tune.nniprime = 0
     while s && j < v.tune.tree_depth
+        
         pm = 2 * (rand() > 0.5) - 1
-
+        rho_bwd = rho_fwd = zeros(nl)
+        
         if pm == -1
+            
 
             xminus,
             rminus,
@@ -230,7 +212,8 @@ function nuts_sub!(v::PNUTSVariate, epsilon::Float64, logfgrad::Function)
             nalpha,
             nni1,
             lpp,
-            nniprime = buildtree(
+            nniprime,
+            rho_bwd = buildtree(
                 xminus,
                 rminus,
                 gradminus,
@@ -242,7 +225,8 @@ function nuts_sub!(v::PNUTSVariate, epsilon::Float64, logfgrad::Function)
                 logu0,
                 delta,
                 nl,
-                lu
+                lu,
+                rho,
             )
 
         else
@@ -260,7 +244,8 @@ function nuts_sub!(v::PNUTSVariate, epsilon::Float64, logfgrad::Function)
             nalpha,
             nni1,
             lpp,
-            nniprime = buildtree(
+            nniprime,
+            rho_fwd = buildtree(
                 xplus,
                 rplus,
                 gradplus,
@@ -272,7 +257,8 @@ function nuts_sub!(v::PNUTSVariate, epsilon::Float64, logfgrad::Function)
                 logu0,
                 delta,
                 nl,
-                lu
+                lu,
+                rho
             )
 
         end#if pm
@@ -284,132 +270,29 @@ function nuts_sub!(v::PNUTSVariate, epsilon::Float64, logfgrad::Function)
             break
         end
         # sprime is true so checking is not necessary
+        @show nprime/n, nprime, n, j
         if rand() < nprime / n
+            println("acc")
             v.value[1] = xprime
         end
         
         n += nprime
         nni += nni1
 
-
+        rho = rho_bwd .+ rho_fwd
         j += 1
         s = nouturn(
-            xminus,
-            xplus,
+            rho,
             rminus,
-            rplus,
-            gradminus,
-            gradplus,
-            epsilon,
-            logfgrad,
-            delta,
-            nl,
-            j,
+            rplus
         )
-
+        @show s
     end
 
     push!(v.tune.moves, nni)
     push!(v.tune.tree_depth_trace, j)
     v
 end
-
-
-function refraction(
-    v::T,
-    r::Vector{Float64},
-    grad::Vector{Float64},
-    epsilon::Float64,
-    logfgrad::Function,
-    delta::Float64,
-    sz::Int64,
-) where {T<:FNode}
-
-    v1 = deepcopy(v)
-
-    blenvec = get_branchlength_vector(v1)
-    fac = scale_fac.(blenvec, delta)
-    
-    @. r += (epsilon * 0.5) * grad * fac
-    tmpB = @. blenvec + (epsilon * r)
-
-    nni = 0
-
-    if minimum(tmpB) <= 0
-        v1, tmpB, r, nni =
-            ref_NNI(v1, tmpB, r, abs(epsilon), blenvec, delta, logfgrad, sz)
-    end
-
-    blenvec = molifier.(tmpB, delta)
-
-    set_branchlength_vector!(v1, blenvec)
-
-    logf, grad = logfgrad(v1, sz, true, true)
-
-    fac = scale_fac.(blenvec, delta)
-    
-    @. r += (epsilon * 0.5) * grad * fac
-
-    return v1, r, logf, grad, nni
-end
-
-
-function ref_NNI(
-    v::T,
-    tmpB::Vector{Float64},
-    r::Vector{Float64},
-    epsilon::Float64,
-    blv::Vector{Float64},
-    delta::Float64,
-    logfgrad::Function,
-    sz::Int64,
-) where {T<:FNode}
-
-    intext = internal_external(v)
-    t = 0.0
-    nni = 0
-    #epsilon = abs(epsilon)
-    while minimum(tmpB) <= 0.0
-        timelist = tmpB ./ abs.(r)
-        ref_index = argmin(timelist)
-
-        temp = epsilon-t+timelist[ref_index]
-        blv = @. blv + (temp * r)
-        
-        r[ref_index] *= -1.0
-
-        if intext[ref_index] == 1
-
-            blv1 = molifier.(blv, delta)            
-            set_branchlength_vector!(v, blv1)
-
-            U_before_nni, _ = logfgrad(v, sz, true, false) # still with molified branch length
-            
-            v_copy = deepcopy(v)
-            tmp_NNI_made = NNI!(v_copy, ref_index)
-            
-            if tmp_NNI_made != 0
-
-                U_after_nni, _ = logfgrad(v_copy, sz, true, false)
-                
-                delta_U::Float64 = 2.0 * (U_before_nni-U_after_nni)
-                my_v::Float64 = r[ref_index]^2
-                if my_v > delta_U
-                    nni += tmp_NNI_made
-                    r[ref_index] = sqrt(my_v - delta_U)
-                    v = v_copy
-                end # if my_v
-            end #if NNI
-        end #non leave
-        
-        t = epsilon + timelist[ref_index]    
-        tmpB = @. blv + (epsilon-t) * r
-
-    end #while
-
-    v, tmpB, r, nni
-end
-
 
 
 function buildtree(
@@ -424,7 +307,8 @@ function buildtree(
     logu0::Real,
     delta::Float64,
     sz::Int64,
-    lu::Float64
+    lu::Float64,
+    rho::Vector{Float64}
 ) where {T<:FNode}
 
 
@@ -434,19 +318,21 @@ function buildtree(
             refraction(x, r, grad, pm*epsilon, logfgrad, delta, sz)
 
         logpprime = logfprime - 0.5 * dot(rprime)
-
-        nprime = lu + (logp0 - logpprime) < 0#Int(logu0 < logpprime)
-
-        sprime = lu + (logp0 - logpprime) < 1000.0
-        #logu0 < logpprime + 1000.0
+        
+        nprime = Int(logu0 < logpprime)
+        sprime = logu0 < logpprime + 1000.0
+        #@show lu + (logp0 - logpprime), sprime
         xminus = xplus = xprime
         rminus = rplus = rprime
         gradminus = gradplus = gradprime
         alphaprime = min(1.0, exp(logpprime - logp0))
         nniprime = nni
         nalphaprime = 1
+        rhoprime = rho + rprime
 
     else
+        rho_init = zeros(sz)
+
         xminus,
         rminus,
         gradminus,
@@ -460,8 +346,9 @@ function buildtree(
         nalphaprime,
         nni,
         logpprime,
-        nniprime =
-            buildtree(x, r, grad, pm, j - 1, epsilon, logfgrad, logp0, logu0, delta, sz,lu)
+        nniprime,
+        rhoprime =
+            buildtree(x, r, grad, pm, j - 1, epsilon, logfgrad, logp0, logu0, delta, sz, lu, rho_init)
         if sprime
 
             if pm == -1
@@ -479,7 +366,8 @@ function buildtree(
                 nalphaprime2,
                 nni,
                 logpprime,
-                nniprime2 = buildtree(
+                nniprime2,
+                rhoprime = buildtree(
                     xminus,
                     rminus,
                     gradminus,
@@ -491,7 +379,8 @@ function buildtree(
                     logu0,
                     delta,
                     sz,
-                    lu
+                    lu,
+                    rhoprime
                 )
             else
                 _,
@@ -507,7 +396,8 @@ function buildtree(
                 nalphaprime2,
                 nni,
                 logpprime,
-                nniprime2 = buildtree(
+                nniprime2,
+                rhoprime = buildtree(
                     xplus,
                     rplus,
                     gradplus,
@@ -519,7 +409,8 @@ function buildtree(
                     logu0,
                     delta,
                     sz,
-                    lu
+                    lu,
+                    rhoprime
                 )
             end # if pm
 
@@ -527,20 +418,7 @@ function buildtree(
                 xprime = xprime2
             end
             nprime += nprime2
-            sprime =
-                sprime2 && nouturn(
-                    xminus,
-                    xplus,
-                    rminus,
-                    rplus,
-                    gradminus,
-                    gradplus,
-                    epsilon,
-                    logfgrad,
-                    delta,
-                    sz,
-                    j,
-                )
+            sprime = sprime2 && nouturn(rhoprime, rminus, rplus)
             alphaprime += alphaprime2
             nalphaprime += nalphaprime2
             nniprime += nniprime2
@@ -560,85 +438,55 @@ function buildtree(
     nalphaprime,
     nni,
     logpprime,
-    nniprime
+    nniprime,
+    rhoprime
 end
 
 
 function nouturn(
-    xminus::T,
-    xplus::T,
+    rho::Vector{Float64},
     rminus::Vector{Float64},
-    rplus::Vector{Float64},
-    gradminus::Vector{Float64},
-    gradplus::Vector{Float64},
-    epsilon::Float64,
-    logfgrad::Function,
-    delta::Float64,
-    sz::Int64,
-    j::Int64,
-) where {T<:FNode}
-    curr_l, curr_h = BHV_bounds(xminus, xplus)
-
-    xminus_bar, _, _, _, _ = refraction(
-        deepcopy(xminus),
-        deepcopy(rminus),
-        gradminus,
-        -epsilon,
-        logfgrad,
-        delta,
-        sz,
-    )
-    xplus_bar, _, _, _, _ = refraction(
-        deepcopy(xplus),
-        deepcopy(rplus),
-        gradplus,
-        epsilon,
-        logfgrad,
-        delta,
-        sz,
-    )
-
-    curr_t_l, curr_t_h = BHV_bounds(xminus_bar, xplus_bar)
-    return curr_h < curr_t_l
+    rplus::Vector{Float64})::Bool
+    return dot(rho, rminus) > 0 && dot(rho, rplus) > 0
 end
 
 
 
 
-#################### Auxilliary Functions ####################
+# #################### Auxilliary Functions ####################
 
-function nutsepsilon(x::FNode, logfgrad::Function, delta::Float64, target::Float64)
+# function nutsepsilon(x::FNode, logfgrad::Function, delta::Float64, target::Float64)
 
-    x0 = deepcopy(x)
-    n = size(x)[1] - 1
+#     x0 = deepcopy(x)
+#     n = size(x)[1] - 1
 
-    # molifier is necessary!
-    blv = get_branchlength_vector(x)
-    set_branchlength_vector!(x, molifier.(blv, delta))
+#     # molifier is necessary!
+#     blv = get_branchlength_vector(x)
+#     set_branchlength_vector!(x, molifier.(blv, delta))
     
-    logf0, gr = logfgrad(x, n, true, true)
+#     logf0, gr = logfgrad(x, n, true, true)
     
-    r0 = randn(n)
-    epsilon = 1.0
-    _, rprime, logfprime, _, _ = refraction(x0, r0, gr, epsilon, logfgrad, delta, n)
-    Hp = logfprime - 0.5 * dot(rprime)
-    H0 = logf0 - 0.5 * dot(r0)
-    prob = Hp - H0
-    direction = prob > target ? 1 : -1
+#     r0 = randn(n)
+#     epsilon = 1.0
+#     _, rprime, logfprime, _, _ = refraction(x0, r0, gr, epsilon, logfgrad, delta, n)
+#     Hp = logfprime - 0.5 * dot(rprime)
+#     H0 = logf0 - 0.5 * dot(r0)
+#     prob = Hp - H0
+#     direction = prob > target ? 1 : -1
 
-    while direction == 1 ? prob > target : prob < target
-        epsilon = direction == 1 ? 2 * epsilon : 0.5 * epsilon
-        _, rprime, logfprime, _, _ = refraction(x0, r0, gr, epsilon, logfgrad, delta, n)
-        Hp = logfprime - 0.5 * dot(rprime)
-        prob = Hp - H0
-    end
-    epsilon
-end
+#     while direction == 1 ? prob > target : prob < target
+#         epsilon = direction == 1 ? 2 * epsilon : 0.5 * epsilon
+#         _, rprime, logfprime, _, _ = refraction(x0, r0, gr, epsilon, logfgrad, delta, n)
+#         Hp = logfprime - 0.5 * dot(rprime)
+#         prob = Hp - H0
+#     end
+#     epsilon
+# end
 
-@inline function scale_fac(x::T, delta::T) where {T<:Float64}
-    x < delta ? x/delta : 1.0
-end
+# @inline function scale_fac(x::T, delta::T) where {T<:Float64}
+#     x < delta ? x/delta : 1.0
+# end
 
-@inline function molifier(x::Float64, delta::Float64)::Float64
-    x >= delta ? x : (x^2 + delta^2) / (2.0 * delta)
-end # function
+# @inline function molifier(x::Float64, delta::Float64)::Float64
+#     x >= delta ? x : (x^2 + delta^2) / (2.0 * delta)
+# end # function
