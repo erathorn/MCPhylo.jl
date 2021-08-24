@@ -166,6 +166,7 @@ const AbstractLogical = Union{ScalarLogical, ArrayLogical}
 const AbstractStochastic = Union{ScalarStochastic, ArrayStochastic}
 const AbstractTreeStochastic = Union{TreeLogical, TreeStochastic}
 const AbstractDependent = Union{AbstractLogical, AbstractStochastic, AbstractTreeStochastic}
+const ConstraintDict{S} = Dict{Symbol, Union{Vector{Vector{S}}, Vector{Tuple{Vector{S}, Vector{S}}}} where S<:AbstractString} 
 
 
 #################### Sampler Types ####################
@@ -226,7 +227,6 @@ end
 
 
 ############## Additional Structs ################
-
 struct SimulationParameters
   burnin::Int64
   thin::Int64
@@ -275,6 +275,7 @@ end
 
 #################### Includes ####################
 
+include("customerrors.jl")
 include("utils.jl")
 include("variate.jl")
 
@@ -285,6 +286,7 @@ include("distributions/pdmatdistribution.jl")
 include("Likelihood/SubstitutionModels.jl")
 include("distributions/Phylodist.jl")
 include("distributions/TreeConstraints.jl")
+include("distributions/TreeDistribution.jl")
 include("distributions/transformdistribution.jl")
 
 include("model/dependent.jl")
@@ -371,6 +373,7 @@ export
   ArrayLogical,
   ArrayStochastic,
   ArrayVariate,
+  ConstraintDict,
   ConvergenceStorage,
   TreeLogical,
   TreeVariate,
@@ -379,6 +382,7 @@ export
   AbstractNode,
   Node,
   Chains,
+  FileSyntaxError,
   Logical,
   MatrixVariate,
   Model,
@@ -391,6 +395,7 @@ export
   ScalarVariate,
   SimulationParameters,
   Stochastic,
+  TreeDistribution,
   VectorVariate
 
 export
@@ -501,6 +506,8 @@ export
   find_lca,
   find_by_binary,
   find_by_name,
+  find_num,
+  find_name,
   find_root,
   create_tree_from_leaves,
   create_tree_from_leaves_cu,
@@ -511,6 +518,9 @@ export
   get_sister,
   get_leaves,
   check_leafsets,
+  generate_constraints,
+  generate_constraints!,
+  topological,
   neighbor_joining,
   upgma,
   prune_tree!, prune_tree,

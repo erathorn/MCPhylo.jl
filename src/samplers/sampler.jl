@@ -182,15 +182,10 @@ function unlist(block::SamplingBlock)
   unlist(block.model, block.index, block.transform)
 end
 
-function relist(block::SamplingBlock, x::AbstractArray{T}) where {T<:Real}
+function relist(block::SamplingBlock, x::Union{AbstractArray{T}, AbstractArray{N}}
+               ) where {T<:Real, N<:GeneralNode}
   relist(block.model, x, block.index, block.transform)
 end
-
-function relist(block::SamplingBlock, x::AbstractArray{T}) where {T<:GeneralNode}
-  relist(block.model, x, block.index, block.transform)
-end
-
-
 
 #################### Auxiliary Functions ####################
 

@@ -17,16 +17,13 @@ function names(d::TreeLogical, nodekey::Symbol)
     AbstractString["Tree_length["*string(nodekey)*"]"]
 end
 
-
 function unlist(root::N) where N<:GeneralNode
     [tree_length(root)]
 end
 
-
 function unlist(d::T) where T <: TreeVariate
     unlist(d.value)
 end
-
 
 function unlist_tree(root::N) where N<:GeneralNode
     [tree_length(root)]
