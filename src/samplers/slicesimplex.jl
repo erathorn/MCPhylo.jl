@@ -46,16 +46,20 @@ function SliceSimplex(params::ElementOrVector{Symbol}; args...)
       node = model[key]
       x = unlist(node)
 
-      sim = function(inds::AbstractRange, logf::Function)
-        v = SamplerVariate(x[inds], s, model.iter; args...)
-        sample!(v, logf)
+      sim = let x = x, s=s, args = args
+        function(inds::AbstractRange, logf::Function)
+          v = SamplerVariate(x[inds], s, model.iter; args...)
+          sample!(v, logf)
+        end
       end
 
-      logf = function(d::MultivariateDistribution, v::AbstractVector,
+      logf = let x = x, key = key, model=model,node=node
+        function(d::MultivariateDistribution, v::AbstractVector,
                       inds::AbstractRange)
-        x[inds] = v
-        relist!(model, x, key)
-        logpdf(d, v) + logpdf(model, node.targets)
+          x[inds] = v
+          relist!(model, x, key)
+          logpdf(d, v) + logpdf(model, node.targets)
+        end
       end
 
       SliceSimplex_sub!(node.distr, sim, logf)
@@ -134,7 +138,7 @@ end
 function shrinksimplex(bx::AbstractVector{Float64}, bc::AbstractVector{Float64},
                        cx::AbstractVector{Float64}, cc::AbstractVector{Float64},
                        vertices::AbstractMatrix{Float64})
-  for i in findall(bc .< bx)
+  @inbounds for i in findall(bc .< bx)
     inds = [1:(i - 1); (i + 1):size(vertices, 2)]
     vertices[:, inds] += bc[i] * (vertices[:, i] .- vertices[:, inds])
     bc = vertices \ cc

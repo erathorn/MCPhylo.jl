@@ -36,7 +36,10 @@ end
 function gradlogpdf(d::CompoundDirichlet, x::FNode)
     int_ext = internal_external(x)
     blv = get_branchlength_vector(x)
-    f(y) =  internal_logpdf(d, y, int_ext)
+    # use let block for proper capturing of variables
+    f = let d=d, int_ext=int_ext
+        y -> internal_logpdf(d, y, int_ext)
+    end 
     r = Zygote.pullback(f, blv)
     return r[1],r[2](1.0)[1]
 end
@@ -55,6 +58,7 @@ function gradlogpdf(t::Union{UniformConstrained, UniformTopology, UniformBranchL
     0.0, zeros(length(blv))
 end
 
+
 function logpdf(d::CompoundDirichlet, x::FNode)
     internal_logpdf(d, get_branchlength_vector(x), internal_external(x))
 end
@@ -67,7 +71,7 @@ function logpdf(ex::exponentialBL, x::FNode)
     _logpdf(ex, x)
 end
 
-function _logpdf(d::exponentialBL, x::FNode)
+function logpdf(d::exponentialBL, x::FNode)
     bl = get_branchlength_vector(x)
     sum(logpdf.(Exponential(d.scale), bl))
 end

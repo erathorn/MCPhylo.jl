@@ -51,7 +51,7 @@ Find a node by its number. Returns reference to Node.
 """
 function find_num(root::T, num::I)::T  where {T<:GeneralNode, I<:Integer}
     store = T[]
-    found = find_num(root, num, store)
+    find_num(root, num, store)
     if length(store) == 0
         throw(ArgumentError("Node not found"))
     else

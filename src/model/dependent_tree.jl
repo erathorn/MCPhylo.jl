@@ -9,22 +9,24 @@ function update!(d::TreeLogical, m::Model)
     d
 end
 
-function names(d::Union{TreeStochastic, TreeLogical}, nodekey::Symbol)
-    AbstractString["Tree_height["*string(nodekey)*"]" , "Tree_length["*string(nodekey)*"]"]
+function names(d::TreeStochastic, nodekey::Symbol)
+    AbstractString["Tree_length["*string(nodekey)*"]"]
 end
 
-function unlist(root::N) where N <: GeneralNode
-    [tree_height(root), tree_length(root)]
+function names(d::TreeLogical, nodekey::Symbol)
+    AbstractString["Tree_length["*string(nodekey)*"]"]
 end
 
+function unlist(root::N) where N<:GeneralNode
+    [tree_length(root)]
+end
 
 function unlist(d::T) where T <: TreeVariate
     unlist(d.value)
 end
 
-
-function unlist_tree(root::N) where N <: GeneralNode
-    [tree_height(root), tree_length(root)]
+function unlist_tree(root::N) where N<:GeneralNode
+    [tree_length(root)]
 end
 
 
