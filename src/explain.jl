@@ -1,12 +1,12 @@
 using Revise
-using Distributed
-addprocs(3)
-@everywhere using Pkg
-# using Pkg
-@everywhere Pkg.activate(".")
-# Pkg.activate(".")
-@everywhere using MCPhylo
-# using MCPhylo
+# using Distributed
+# addprocs(3)
+# @everywhere using Pkg
+using Pkg
+# @everywhere Pkg.activate(".")
+Pkg.activate(".")
+# @everywhere using MCPhylo
+using MCPhylo
 
 
 #=
@@ -84,7 +84,7 @@ MCPhylo.plot_asdsf(sim2)
 
 #=
 
-trees = MCPhylo.ParseNewick("./doc/Tree/Drav_mytrees_1.nwk")
+trees = MCPhylo.ParseNewick("./Drav_mytrees_1.nwk")
 
 """
 plot1 = Plots.plot(trees[1])
@@ -136,3 +136,4 @@ pv = plot(sim, [:bar], linecolor=:match, legend=:true, filename="blub.pdf")
 savefig("test.pdf")
 
 =#
+
