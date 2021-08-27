@@ -48,6 +48,16 @@ function gradlogpdf(d::exponentialBL, x::FNode)
     r[1],r[2](1.0)[1]
 end
 
+function gradlogpdf(d::BirthDeath, x::FNode)::Tuple{Float64, Vector{Float64}}
+    n::Int64 = length(get_leaves(x))
+    p = post_order(x)[1:end-1]
+    v = [n.height for n in p]
+    v₂ = [n.mother.height for n in p]
+    g(y) = _logpdf(d, x, n, y, v₂)
+    r = Zygote.pullback(g, v)
+    r[1],r[2](1.0)[1]
+end
+
 function gradlogpdf(t::Union{UniformConstrained, UniformTopology, UniformBranchLength}, 
                     x::FNode)::Tuple{Float64, Vector{Float64}}
 
@@ -57,6 +67,10 @@ end
 
 function logpdf(d::CompoundDirichlet, x::FNode)
     internal_logpdf(d, get_branchlength_vector(x), internal_external(x))
+end
+
+function logpdf_sub(d::CompoundDirichlet, x::FNode, transform::Bool)
+    insupport(LengthDistribution(d), x) ? logpdf(d, x) : -Inf
 end
 
 function logpdf(t::Union{UniformConstrained, UniformTopology, UniformBranchLength}, x::FNode)
@@ -72,8 +86,12 @@ function _logpdf(d::exponentialBL, x::FNode)
     sum(logpdf.(Exponential(d.scale), bl))
 end
 
-function logpdf_sub(d::CompoundDirichlet, x::FNode, transform::Bool)
-    insupport(LengthDistribution(d), x) ? logpdf(d, x) : -Inf
+function logpdf(d::BirthDeath, x::FNode)
+    n::Int64 = length(get_leaves(x))
+    p = post_order(x)[1:end-1]
+    v = [n.height for n in p]
+    v₂ = [n.mother.height for n in p]
+    _logpdf(d, x, n, v, v₂)
 end
 
 function insupport(l::LengthDistribution, x::FNode)
@@ -110,39 +128,37 @@ end
 Using formula 11.24 with 11.25 from the following paper:
 https://lukejharmon.github.io/pcm/chapter11_fitbd/#ref-FitzJohn2009-sg
 
+The constant factorial factor (n-1)! is currently not in the formula, since the gradient
+calculation with Zygote has problems with the BigInt number that it produces. Be aware of
+"this multiplier if comparing likelihoods across different models for model selection" 
+(from the paper above right before equation 11.18)
 """
-function _logpdf(d::BirthDeath, x::FNode)::Float64
+function _logpdf(d::BirthDeath, x::FNode, n::Int64, v::Vector{Float64}, v₂::Vector{Float64}
+                )::Float64
+                
     λ::Float64 = d.lambd
     μ::Float64 = d.mu
     f::Float64 = d.rho
-    n::Int64 = length(get_leaves(x))
-    h::Float64 = node_height(x)
+    h::Float64 = x.height
     
     start::Float64 = λ ^ (n - 2)
-    for node in post_order(x)
-        node.root && continue
-        #= 
-        unsure about the t(k,t) & t(k,b) values in num & denum. The paper is not very clear 
-        about those numbers, i.e. we don't know if they are both supposed to be positive, 
-        negative or one positive & one negative
-        =#
-        num::Float64 = (f * λ - (μ - λ * (1 - f)) * exp((λ - μ) * 
-                       node_height(node))) ^ 2
-        denum::Float64 = (f * λ - (μ - λ * (1 - f)) * exp((λ - μ) *
-                         (h - node_height(node)))) ^ 2
-        value::Float64 = exp((λ - μ) * ((h - node_height(node)) - node_height(node))) *
-                         (num / denum)
+
+    for (i, nh) in enumerate(v)
+        num::Float64 = (f * λ - (μ - λ * (1 - f)) * exp((λ - μ) * nh)) ^ 2
+        denum::Float64 = (f * λ - (μ - λ * (1 - f)) * exp((λ - μ) * (h - v₂[i]))) ^ 2
+        value::Float64 = exp((λ - μ) * (((h - v₂[i])) - nh)) * (num / denum)
         start *= value
     end # for
-    denumerator::Float64 = (1 - (1 - ((λ - μ) /(λ - (λ - μ) * exp((λ - μ) *
-                           node_height(x)))))) ^ 2
-    THEFORMULA = factorial(n - 1) * start / denumerator
+
+    denumerator::Float64 = (1 - (1 - ((λ - μ) /(λ - (λ - μ) * exp((λ - μ) * h))))) ^ 2
+    # THEFORMULA::Float64 = log(factorial(big((n - 1))) * start / denumerator)
+    THEFORMULA::Float64 = log(start / denumerator)
 end
 
 """
 Fossilized Birth Death
 Implemented following Heath, Huelsenbeck and Stadler 2013
-DOI: 10.1073/pnas.1319091111
+DOI: https://arxiv.org/pdf/1310.2968.pdf
 """
 mutable struct BirthDeathFossilized <: ContinuousMultivariateDistribution
     rho::Float64
@@ -151,18 +167,19 @@ mutable struct BirthDeathFossilized <: ContinuousMultivariateDistribution
     psi::Float64
 end # mutable struct
 
-function _logpdf(d::FossilizedBirthDeath, x::FNode)::Float64
+
+function _logpdf(d::BirthDeathFossilized, x::FNode)::Float64
 
 λ::Float64 = d.lambd
 μ::Float64 = d.mu
 ρ::Float64 = d.rho
 ψ::Float64 = d.psi
 
-c1::Float64 = sqrt((λ - μ - ψ)^2 + 4 * λ * ψ)
-c2::Float64 = - ((λ - μ - 2 * λ *ρ - ψ )/ c1)
-qt::Float64 = 2 * (1- c2 ^2) + exp(-c1) # I am not sure how to integrate t yet, need to read more of the paper
-p0::Float64
-p0_past::Float64
+c₁::Float64 = sqrt((λ - μ - ψ)^2 + 4 * λ * ψ)
+c₂::Float64 = - ((λ - μ - 2 * λ *ρ - ψ )/ c₁)
+qt::Float64 = 2 * (1- c₂ ^2) + exp(-c₁ * t) * (1- c₂)^2  + exp(c₁ * t) * (1 + c₂)^ 2
+p₀::Float64 
+p₀_past::Float64 
 result::Float64 = 0.5 # placeholder
 
 return result
