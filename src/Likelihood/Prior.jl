@@ -33,6 +33,9 @@ function internal_logpdf(d::CompoundDirichlet, b_lens::Array{Float64},
 
 end
 
+
+#################### Gradlogpdfs ####################
+
 function gradlogpdf(d::CompoundDirichlet, x::FNode)
     int_ext = internal_external(x)
     blv = get_branchlength_vector(x)
@@ -65,6 +68,8 @@ function gradlogpdf(t::Union{UniformConstrained, UniformTopology, UniformBranchL
     0.0, zeros(length(blv))
 end
 
+#################### Logpdfs ####################
+
 function logpdf(d::CompoundDirichlet, x::FNode)
     internal_logpdf(d, get_branchlength_vector(x), internal_external(x))
 end
@@ -93,36 +98,6 @@ function logpdf(d::BirthDeath, x::FNode)
     v₂ = [n.mother.height for n in p]
     _logpdf(d, x, n, v, v₂)
 end
-
-function insupport(l::LengthDistribution, x::FNode)
-    bl = get_branchlength_vector(x)
-    all(isfinite.(bl)) && all(0.0 .< bl) && topo_placeholder(x, l) && !any(isnan.(bl))
-end
-
-#=
-function insupport(d::BirthDeath, t::AbstractVector{T}) where {T<:Real}
-    length(d) == length(t) && all(isfinite.(t)) && all(0 .< t)
-end # function
-=#
-
-function insupport(t::UniformConstrained, x::FNode)::Bool
-    topological.constraint_dict(t, x)
-end
-
-function insupport(t::UniformTopology, x::FNode)::Bool
-    true
-end
-
-function topo_placeholder(x::FNode , l::LengthDistribution)
-    true
-end
-
-function relistlength(d::CompoundDirichlet, x::AbstractArray)
-  n = length(x)
-  (Array(x), n)
-end
-
-
 
 """
 Using formula 11.24 with 11.25 from the following paper:
@@ -154,6 +129,43 @@ function _logpdf(d::BirthDeath, x::FNode, n::Int64, v::Vector{Float64}, v₂::Ve
     # THEFORMULA::Float64 = log(factorial(big((n - 1))) * start / denumerator)
     THEFORMULA::Float64 = log(start / denumerator)
 end
+
+
+
+#################### Insupports ####################
+
+function insupport(l::LengthDistribution, x::FNode)
+    bl = get_branchlength_vector(x)
+    all(isfinite.(bl)) && all(0.0 .< bl) && topo_placeholder(x, l) && !any(isnan.(bl))
+end
+
+#=
+function insupport(d::BirthDeath, t::AbstractVector{T}) where {T<:Real}
+    length(d) == length(t) && all(isfinite.(t)) && all(0 .< t)
+end # function
+=#
+
+function insupport(t::UniformConstrained, x::FNode)::Bool
+    topological.constraint_dict(t, x)
+end
+
+function insupport(t::UniformTopology, x::FNode)::Bool
+    true
+end
+
+function topo_placeholder(x::FNode , l::LengthDistribution)
+    true
+end
+
+function relistlength(d::CompoundDirichlet, x::AbstractArray)
+  n = length(x)
+  (Array(x), n)
+end
+
+
+
+
+
 
 """
 Fossilized Birth Death
