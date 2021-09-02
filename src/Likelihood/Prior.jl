@@ -52,12 +52,13 @@ function gradlogpdf(d::exponentialBL, x::FNode)
 end
 
 function gradlogpdf(d::BirthDeath, x::FNode)::Tuple{Float64, Vector{Float64}}
+    blv::Vector{Float64} = get_branchlength_vector(x)[1:end]
     n::Int64 = length(get_leaves(x))
-    p = post_order(x)[1:end-1]
-    v = [n.height for n in p]
-    v₂ = [n.mother.height for n in p]
-    g(y) = _logpdf(d, x, n, y, v₂)
-    r = Zygote.pullback(g, v)
+    p::Vector{FNode} = post_order(x)[1:end-1]
+    sort!(p, by = x -> x.num)
+    hv::Vector{Float64} = [n.height for n in p]
+    g(y) = _logpdf(d, x, n, y, hv)
+    r = Zygote.pullback(g, blv)
     r[1],r[2](1.0)[1]
 end
 
@@ -87,16 +88,17 @@ function logpdf(ex::exponentialBL, x::FNode)
 end
 
 function _logpdf(d::exponentialBL, x::FNode)
-    bl = get_branchlength_vector(x)
-    sum(logpdf.(Exponential(d.scale), bl))
+    blv = get_branchlength_vector(x)
+    sum(logpdf.(Exponential(d.scale), blv))
 end
 
 function logpdf(d::BirthDeath, x::FNode)
+    blv::Vector{Float64} = get_branchlength_vector(x)
     n::Int64 = length(get_leaves(x))
-    p = post_order(x)[1:end-1]
-    v = [n.height for n in p]
-    v₂ = [n.mother.height for n in p]
-    _logpdf(d, x, n, v, v₂)
+    p::Vector{FNode} = post_order(x)[1:end-1]
+    sort!(p, by = x -> x.num)
+    hv::Vector{Float64} = [n.height for n in p]
+    _logpdf(d, x, n, blv, hv)
 end
 
 """
@@ -108,8 +110,8 @@ calculation with Zygote has problems with the BigInt number that it produces. Be
 "this multiplier if comparing likelihoods across different models for model selection" 
 (from the paper above right before equation 11.18)
 """
-function _logpdf(d::BirthDeath, x::FNode, n::Int64, v::Vector{Float64}, v₂::Vector{Float64}
-                )::Float64
+function _logpdf(d::BirthDeath, x::FNode, n::Int64, blv::Vector{Float64}, 
+                 hv::Vector{Float64})::Float64
                 
     λ::Float64 = d.lambd
     μ::Float64 = d.mu
@@ -118,16 +120,16 @@ function _logpdf(d::BirthDeath, x::FNode, n::Int64, v::Vector{Float64}, v₂::Ve
     
     start::Float64 = λ ^ (n - 2)
 
-    for (i, nh) in enumerate(v)
-        num::Float64 = (f * λ - (μ - λ * (1 - f)) * exp((λ - μ) * nh)) ^ 2
-        denum::Float64 = (f * λ - (μ - λ * (1 - f)) * exp((λ - μ) * (h - v₂[i]))) ^ 2
-        value::Float64 = exp((λ - μ) * (((h - v₂[i])) - nh)) * (num / denum)
+    for (i, bl) in enumerate(blv)
+        num::Float64 = (f * λ - (μ - λ * (1 - f)) * exp((λ - μ) * hv[i])) ^ 2
+        denum::Float64 = (f * λ - (μ - λ * (1 - f)) * exp((λ - μ) * (h - bl - hv[i]))) ^ 2
+        value::Float64 = exp((λ - μ) * (h - bl - (2 * hv[i])) * (num / denum))
+        # value::Float64 = exp((λ - μ) * (h - bl) * (num / denum))
         start *= value
     end # for
 
     denumerator::Float64 = (1 - (1 - ((λ - μ) /(λ - (λ - μ) * exp((λ - μ) * h))))) ^ 2
-    # THEFORMULA::Float64 = log(factorial(big((n - 1))) * start / denumerator)
-    THEFORMULA::Float64 = log(start / denumerator)
+    log(start / denumerator)
 end
 
 
@@ -139,11 +141,9 @@ function insupport(l::LengthDistribution, x::FNode)
     all(isfinite.(bl)) && all(0.0 .< bl) && topo_placeholder(x, l) && !any(isnan.(bl))
 end
 
-#=
 function insupport(d::BirthDeath, t::AbstractVector{T}) where {T<:Real}
     length(d) == length(t) && all(isfinite.(t)) && all(0 .< t)
-end # function
-=#
+end
 
 function insupport(t::UniformConstrained, x::FNode)::Bool
     topological.constraint_dict(t, x)
