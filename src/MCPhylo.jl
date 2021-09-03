@@ -31,6 +31,7 @@ using ProgressMeter
 using StaticArrays
 using LoopVectorization
 using CUDA
+using StatsFuns
 if has_cuda()
   using GPUArrays
 else
@@ -312,6 +313,10 @@ include("output/plot.jl")
 include("output/tree_plot.jl")
 
 include("samplers/sampler.jl")
+
+include("samplers/tree_hamiltonian/states.jl")
+include("samplers/tree_hamiltonian/refraction.jl")
+include("samplers/tree_hamiltonian/auxilliary.jl")
 
 include("samplers/abc.jl")
 include("samplers/amm.jl")

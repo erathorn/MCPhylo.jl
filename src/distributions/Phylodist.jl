@@ -81,6 +81,7 @@ function __logpdf(d::PhyloDist, x::AbstractArray, gradient::Bool=false)
         ll += ll1
         gr .+= gr1
     end
+    
     ll, gr
 end
 
