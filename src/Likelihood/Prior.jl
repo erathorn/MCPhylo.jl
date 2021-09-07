@@ -109,6 +109,8 @@ The constant factorial factor (n-1)! is currently not in the formula, since the 
 calculation with Zygote has problems with the BigInt number that it produces. Be aware of
 "this multiplier if comparing likelihoods across different models for model selection" 
 (from the paper above right before equation 11.18)
+
+This paper & our method assume ultrametric trees.
 """
 function _logpdf(d::BirthDeath, x::FNode, n::Int64, blv::Vector{Float64}, 
                  hv::Vector{Float64})::Float64
