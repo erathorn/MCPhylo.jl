@@ -351,6 +351,15 @@ function node_height_vec(root::T)::Vector{Float64} where T<:GeneralNode
     t
 end # function node_height
 
+function node_age(node::FNode)::Float64
+    depth::Float64 = 0
+    while !node.root
+        depth += node.inc_length
+        node = node.mother
+    end
+    return node.height - depth
+end
+
 """
     node_depth(node::T)::Int64 where T<:GeneralNode
 
