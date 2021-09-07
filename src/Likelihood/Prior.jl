@@ -101,7 +101,12 @@ function logpdf(d::BirthDeath, x::FNode)
     _logpdf(d, x, n, blv, hv)
 end
 
+
 """
+    _logpdf(d::BirthDeath, x::FNode, n::Int64, blv::Vector{Float64}, hv::Vector{Float64}
+           )::Float64
+  
+--- INTERNAL ---           
 Using formula 11.24 with 11.25 from the following paper:
 https://lukejharmon.github.io/pcm/chapter11_fitbd/#ref-FitzJohn2009-sg
 
@@ -166,9 +171,6 @@ end
 
 
 
-
-
-
 """
 Fossilized Birth Death
 Implemented following Heath, Huelsenbeck and Stadler 2013
@@ -218,13 +220,27 @@ end
 return start
 end
 
-for time in leaf_fossil_times
-    start *= p₀(time) * q(time)
- 
-result::Float64 = 0.5 # placeholder
 
-return result
-end
+
+"""
+    γ(calibration_node::FNode, fossil_time::Float64)::Int64
+
+--- INTERNAL ---
+Helper function to find the number of possible attachment lineages for a given fossil based
+on its calibration node.
+"""
+function γ(calibration_node::FNode, fossil_time::Float64)::Int64
+    attachment_lineages::Int64 = 0
+    for child in calibration_node.children
+        if child.nchild != 0
+            if node_age(child) > fossil_time
+                attachment_lineages += 1
+                attachment_lineages += get_attachment_lineages(child, fossil)
+            end # if
+        end # if
+    end # for
+    return attachment_lineages + 2
+end # get_attachment_lineages
 
 
 """
