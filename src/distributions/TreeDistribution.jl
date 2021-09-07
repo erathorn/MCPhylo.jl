@@ -42,7 +42,6 @@ Implemented following Yang & Rannala 1997
 doi.org/10.1093/oxfordjournals.molbev.a025811
 """
 mutable struct BirthDeath <: ContinuousMultivariateDistribution
-    s::Int64
     rho::Float64
     mu::Float64
     lambd::Float64
