@@ -184,26 +184,38 @@ mutable struct BirthDeathFossilized <: ContinuousMultivariateDistribution
 end # mutable struct
 
 
-function _logpdf(d::BirthDeathFossilized, x::FNode, internal_node_times::Vector{Float64}, 
-                 leaf_fossil_times::Vector{Float64})::Float64
+function _logpdf(d::BirthDeathFossilized, x::FNode, internal_nodes::Vector{FNode}, 
+                 mh::Vector{Float64}, fossils::Vector{Tuple{FNode, Float64, Float64}}
+                )::Float64
 
 λ::Float64 = d.lambd
 μ::Float64 = d.mu
 ρ::Float64 = d.rho
 ψ::Float64 = d.psi
 
-start::Float64 = λ ^ (n + m - 1) * ψ ^ (k + m) * (4 * ρ) ^ n
-c₁::Float64 = abs(sqrt((λ - μ - ψ)^2 + 4 * λ * ψ))
-c₂::Float64 = - ((λ - μ - 2 * λ * ρ - ψ )/ c₁)
+start = (1 / ((λ * (1 - p̂(x.height))) ^ 2)) * ((4 * λ * ρ) / q(x.height))
+c₁::Float64 = abs(sqrt((λ - μ - ψ) ^ 2 + 4 * λ * ψ))
+c₂::Float64 = - ((λ - μ - 2 * λ * ρ - ψ) / c₁)
 
 q(t) = 2 * (1 - c₂ ^ 2) + exp(-c₁ * t) * (1 - c₂) ^ 2  + exp(c₁ * t) * (1 + c₂) ^ 2
 num(t)::Float64 = exp(-c₁ * t) * (1 - c₂) - (1 + c₂)
 denum(t)::Float64 = exp(-c₁ * t) * (1 - c₂) + (1 + c₂) 
-p₀(t)::Float64 = (λ + μ + ψ + c₁ * (num(t) / denum(t))) / (2 * λ)
-p₁(t)::Float64 = (4 * ρ) / q(t)
+p₀(t)::Float64 = 1 + ((-(λ - μ - ψ) + c₁ * (num(t) / denum(t))) / (2 * λ))
+p_denum(t)::Float64 = λ * ρ + (λ * (1 - ρ) - μ) * exp(-(λ - μ)* t)
+p̂(t)::Float64 = 1 - ((ρ * (λ - μ)) / p_denum(t))
 
-for time in internal_node_times
-    start *= 1 / q(time)
+
+
+for (i, node) in enumerate(internal_nodes)
+    start *= (4 * λ * ρ) / q(mh(node) - blv[i])
+end
+
+for fossil in fossils
+    start *= ψ * (2 * γ(fossil[1], fossil[2]) * λ * 
+                 ((p₀(fossil[2]) * q(fossil[2])) / q(fossil[3])) ^ fossil[4])
+end
+
+return start
 end
 
 for time in leaf_fossil_times
