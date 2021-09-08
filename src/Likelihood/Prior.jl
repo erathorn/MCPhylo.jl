@@ -187,7 +187,8 @@ end # mutable struct
 
 
 function _logpdf(d::BirthDeathFossilized, x::FNode, internal_nodes::Vector{FNode}, 
-                 mh::Vector{Float64}, fossils::Vector{Tuple{FNode, Float64, Float64}}
+                 blv::Vector{Float64}, mh::Vector{Float64}, 
+                 fossils::Vector{Tuple{FNode, Float64, Float64}}
                 )::Float64
 
 λ::Float64 = d.lambd
