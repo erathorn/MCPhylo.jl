@@ -351,6 +351,26 @@ function node_height_vec(root::T)::Vector{Float64} where T<:GeneralNode
     t
 end # function node_height
 
+
+"""
+    get_node_height(node::FNode, blv::Vector{Float64})::Float64
+
+    Function to get the height of a particular node, based on the branch length vector. 
+    -- WARNING -- This function only works correctly with ultrametric trees. -- WARNING --
+"""
+function get_node_height(node::FNode, blv::Vector{Float64}; warn=true)::Float64
+    warn && @warn(
+        "This function only works with ultrametric trees. 
+         Set warn=false, to suppress this warning."
+         )
+    nh::Float64 = 0
+    while node.nchild != 0
+        node = node.children[1]
+        nh += blv[node.num]
+    end
+    nh
+end 
+
 function node_age(node::FNode)::Float64
     depth::Float64 = 0
     while !node.root
