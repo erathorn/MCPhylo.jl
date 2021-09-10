@@ -52,12 +52,11 @@ function gradlogpdf(d::exponentialBL, x::FNode)
 end
 
 function gradlogpdf(d::BirthDeath, x::FNode)::Tuple{Float64, Vector{Float64}}
-    blv::Vector{Float64} = get_branchlength_vector(x)[1:end]
+    blv::Vector{Float64} = get_branchlength_vector(x)
     n::Int64 = length(get_leaves(x))
-    p::Vector{FNode} = post_order(x)[1:end-1]
-    sort!(p, by = x -> x.num)
-    hv::Vector{Float64} = [n.height for n in p]
-    g(y) = _logpdf(d, x, n, y, hv)
+    nodes::Vector{FNode} = post_order(x)[1:end-1]
+    g(y) = _logpdf(d, x, n, nodes, y)
+    # FiniteDiff.finite_difference_gradient(g, blv)
     r = Zygote.pullback(g, blv)
     r[1],r[2](1.0)[1]
 end
@@ -95,10 +94,8 @@ end
 function logpdf(d::BirthDeath, x::FNode)
     blv::Vector{Float64} = get_branchlength_vector(x)
     n::Int64 = length(get_leaves(x))
-    p::Vector{FNode} = post_order(x)[1:end-1]
-    sort!(p, by = x -> x.num)
-    hv::Vector{Float64} = [n.height for n in p]
-    _logpdf(d, x, n, blv, hv)
+    nodes::Vector{FNode} = post_order(x)[1:end-1]
+    _logpdf(d, x, n, nodes, blv)
 end
 
 
@@ -117,28 +114,28 @@ calculation with Zygote has problems with the BigInt number that it produces. Be
 
 This paper & our method assume ultrametric trees.
 """
-function _logpdf(d::BirthDeath, x::FNode, n::Int64, blv::Vector{Float64}, 
-                 hv::Vector{Float64})::Float64
+function _logpdf(d::BirthDeath, x::FNode, n::Int64, nodes::Vector{FNode}, 
+                 blv::Vector{Float64},)::Float64
                 
     λ::Float64 = d.lambd
     μ::Float64 = d.mu
     f::Float64 = d.rho
-    h::Float64 = x.height
+    h::Float64 = MCPhylo.get_node_height(x, blv, warn=false)
     
     start::Float64 = λ ^ (n - 2)
 
-    for (i, bl) in enumerate(blv)
-        num::Float64 = (f * λ - (μ - λ * (1 - f)) * exp((λ - μ) * hv[i])) ^ 2
-        denum::Float64 = (f * λ - (μ - λ * (1 - f)) * exp((λ - μ) * (h - bl - hv[i]))) ^ 2
-        value::Float64 = exp((λ - μ) * (h - bl - (2 * hv[i])) * (num / denum))
-        # value::Float64 = exp((λ - μ) * (h - bl) * (num / denum))
+    for node in nodes
+        nh::Float64 = MCPhylo.get_node_height(node, blv, warn=false)
+        bl::Float64 = blv[node.num]
+        num::Float64 = (f * λ - (μ - λ * (1 - f)) * exp((λ - μ) * nh)) ^ 2
+        denum::Float64 = (f * λ - (μ - λ * (1 - f)) * exp((λ - μ) * (h - bl - nh))) ^ 2
+        value::Float64 = exp((λ - μ) * (h - bl - (2 * nh)) * (num / denum))
         start *= value
     end # for
 
     denumerator::Float64 = (1 - (1 - ((λ - μ) /(λ - (λ - μ) * exp((λ - μ) * h))))) ^ 2
     log(start / denumerator)
 end
-
 
 
 #################### Insupports ####################
