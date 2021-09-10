@@ -182,18 +182,24 @@ mutable struct BirthDeathFossilized <: ContinuousMultivariateDistribution
     k::Int64
 end # mutable struct
 
+mutable struct Fossil
+    calibration_cluster::Vector{AbstractString}
+    age::Float64
+    attachment_time::Float64
+    is_tip::Bool
+end # Fossil
 
 function _logpdf(d::BirthDeathFossilized, x::FNode, internal_nodes::Vector{FNode}, 
-                 blv::Vector{Float64}, mh::Vector{Float64}, 
-                 fossils::Vector{Tuple{FNode, Float64, Float64}}
+                 blv::Vector{Float64}, fossils::Vector{Tuple{FNode, Float64, Float64}}
                 )::Float64
 
 λ::Float64 = d.lambd
 μ::Float64 = d.mu
 ρ::Float64 = d.rho
 ψ::Float64 = d.psi
+h::Float64 = get_node_height(x, blv)
 
-start = (1 / ((λ * (1 - p̂(x.height))) ^ 2)) * ((4 * λ * ρ) / q(x.height))
+start = (1 / ((λ * (1 - p̂(h))) ^ 2)) * ((4 * λ * ρ) / q(h))
 c₁::Float64 = abs(sqrt((λ - μ - ψ) ^ 2 + 4 * λ * ψ))
 c₂::Float64 = - ((λ - μ - 2 * λ * ρ - ψ) / c₁)
 
@@ -201,18 +207,18 @@ q(t) = 2 * (1 - c₂ ^ 2) + exp(-c₁ * t) * (1 - c₂) ^ 2  + exp(c₁ * t) * (
 num(t)::Float64 = exp(-c₁ * t) * (1 - c₂) - (1 + c₂)
 denum(t)::Float64 = exp(-c₁ * t) * (1 - c₂) + (1 + c₂) 
 p₀(t)::Float64 = 1 + ((-(λ - μ - ψ) + c₁ * (num(t) / denum(t))) / (2 * λ))
-p_denum(t)::Float64 = λ * ρ + (λ * (1 - ρ) - μ) * exp(-(λ - μ)* t)
+p_denum(t)::Float64 = λ * ρ + (λ * (1 - ρ) - μ) * exp(-(λ - μ) * t)
 p̂(t)::Float64 = 1 - ((ρ * (λ - μ)) / p_denum(t))
 
 
 
-for (i, node) in enumerate(internal_nodes)
-    start *= (4 * λ * ρ) / q(mh(node) - blv[i])
+for node in internal_nodes
+    start *= (4 * λ * ρ) / q(get_node_height(node, blv))
 end
 
 for fossil in fossils
-    start *= ψ * (2 * γ(fossil[1], fossil[2]) * λ * 
-                 ((p₀(fossil[2]) * q(fossil[2])) / q(fossil[3])) ^ fossil[4])
+    start *= ψ * (2 * γ(x, fossil.calibration_cluster, fossil.age, blv) * λ * 
+             ((p₀(fossil.age) * q(fossil.age)) / q(fossil.attachement)) ^ fossil.is_tip)
 end
 
 return start
@@ -227,11 +233,14 @@ end
 Helper function to find the number of possible attachment lineages for a given fossil based
 on its calibration node.
 """
-function γ(calibration_node::FNode, fossil_time::Float64)::Int64
+function γ(tree::FNode, calibration_cluster::Vector{AbstractString}, fossil_time::Float64, 
+           blv::Vector{Float64})::Int64
+
     attachment_lineages::Int64 = 0
+    calibration_node = find_lca(tree, calibration_cluster)
     for child in calibration_node.children
         if child.nchild != 0
-            if node_age(child) > fossil_time
+            if get_node_age(child, blv) > fossil_time
                 attachment_lineages += 1
                 attachment_lineages += get_attachment_lineages(child, fossil)
             end # if
