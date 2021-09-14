@@ -49,6 +49,33 @@ end # BirthDeath
 
 length(d::BirthDeath) = d.s - 1
 
+
+"""
+    Fossil(calibration_cluster::Vector{AbstractString}, age::Float64, 
+           attachment_time::Float64, is_tip::Bool)
+
+Struct to represent fossils for the Fossilized Birth Death prior.
+"""
+mutable struct Fossil
+    calibration_cluster::Vector{AbstractString}
+    age::Float64
+    attachment_time::Float64
+    is_tip::Bool
+end # Fossil
+
+"""
+Fossilized Birth Death
+Implemented following Heath, Huelsenbeck and Stadler 2013
+DOI: https://arxiv.org/pdf/1310.2968.pdf
+"""
+mutable struct BirthDeathFossilized <: ContinuousMultivariateDistribution
+    rho::Float64
+    lambd::Float64
+    mu::Float64
+    psi::Float64
+    fossils::Vector{Fossil}
+end # BirthDeathFossilized
+
 """
     UniformBranchLength()
 
