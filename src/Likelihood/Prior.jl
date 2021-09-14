@@ -61,6 +61,15 @@ function gradlogpdf(d::BirthDeath, x::FNode)::Tuple{Float64, Vector{Float64}}
     r[1],r[2](1.0)[1]
 end
 
+function gradlogpdf(d::BirthDeathFossilized, x::FNode)::Tuple{Float64, Vector{Float64}}
+    blv::Vector{Float64} = get_branchlength_vector(x)
+    lcas::Vector{FNode} = [find_lca(x, fossil.calibration_cluster) for fossil in d.fossils]
+    nodes::Vector{FNode} = filter(x -> x.nchild != 0, post_order(x))
+    g(y) = _logpdf(d, x, nodes, lcas, y)
+    r = Zygote.pullback(g, blv)
+    r[1],r[2](1.0)[1]
+end
+
 function gradlogpdf(t::Union{UniformConstrained, UniformTopology, UniformBranchLength}, 
                     x::FNode)::Tuple{Float64, Vector{Float64}}
 
@@ -98,13 +107,21 @@ function logpdf(d::BirthDeath, x::FNode)
     _logpdf(d, x, n, nodes, blv)
 end
 
+function logpdf(d::BirthDeathFossilized, x::FNode)
+    blv::Vector{Float64} = get_branchlength_vector(x)
+    lcas::Vector{FNode} = [find_lca(x, fossil.calibration_cluster) for fossil in d.fossils]
+    nodes::Vector{FNode} = filter(x -> x.nchild != 0, post_order(x))
+    _logpdf(d, x, nodes, lcas, blv)
+end
 
 """
-    _logpdf(d::BirthDeath, x::FNode, n::Int64, blv::Vector{Float64}, hv::Vector{Float64}
-           )::Float64
+    _logpdf(d::BirthDeath, x::FNode, n::Int64, nodes::Vector{FNode}, 
+            blv::Vector{Float64},)::Float64
   
---- INTERNAL ---           
-Using formula 11.24 with 11.25 from the following paper:
+--- INTERNAL ---     
+This function calculates the probability of a given tree under a given BD model.
+
+It is based on formula 11.24 & 11.25 from the following paper:
 https://lukejharmon.github.io/pcm/chapter11_fitbd/#ref-FitzJohn2009-sg
 
 The constant factorial factor (n-1)! is currently not in the formula, since the gradient
@@ -137,6 +154,52 @@ function _logpdf(d::BirthDeath, x::FNode, n::Int64, nodes::Vector{FNode},
     log(start / denumerator)
 end
 
+"""
+    _logpdf(d::BirthDeathFossilized, x::FNode, internal_nodes::Vector{FNode}, 
+            lcas::Vector{FNode}, blv::Vector{Float64})::Float64
+  
+--- INTERNAL ---           
+This function calculates the probability of a given tree under a given FBD model.
+
+It is based on formula 1 on page 12 of the following paper:
+https://arxiv.org/pdf/1310.2968.pdf
+
+This paper & our method assume ultrametric trees.
+"""
+function _logpdf(d::BirthDeathFossilized, x::FNode, internal_nodes::Vector{FNode}, 
+                 lcas::Vector{FNode}, blv::Vector{Float64})::Float64
+
+    λ::Float64 = d.lambd
+    μ::Float64 = d.mu
+    ρ::Float64 = d.rho
+    ψ::Float64 = d.psi
+    h::Float64 = get_node_height(x, blv, warn=false)
+
+    c₁::Float64 = abs(sqrt((λ - μ - ψ) ^ 2 + 4 * λ * ψ))
+    c₂::Float64 = - ((λ - μ - 2 * λ * ρ - ψ) / c₁)
+
+    q(t) = 2 * (1 - c₂ ^ 2) + exp(-c₁ * t) * (1 - c₂) ^ 2  + exp(c₁ * t) * (1 + c₂) ^ 2
+    num(t)::Float64 = exp(-c₁ * t) * (1 - c₂) - (1 + c₂)
+    denum(t)::Float64 = exp(-c₁ * t) * (1 - c₂) + (1 + c₂) 
+    p₀(t)::Float64 = 1 + ((-(λ - μ - ψ) + c₁ * (num(t) / denum(t))) / (2 * λ))
+    p_denum(t)::Float64 = λ * ρ + (λ * (1 - ρ) - μ) * exp(-(λ - μ) * t)
+    p̂(t)::Float64 = 1 - ((ρ * (λ - μ)) / p_denum(t))
+
+    start::Float64 = (1 / ((λ * (1 - p̂(h))) ^ 2)) * ((4 * λ * ρ) / q(h))
+    
+    for node in internal_nodes
+        start *= (4 * λ * ρ) / q(get_node_height(node, blv, warn=false))
+    end
+
+    for (fossil, lca) in zip(d.fossils, lcas)
+        start *= ψ * (2 * γ(lca, fossil.age, blv) * λ * 
+                ((p₀(fossil.age) * q(fossil.age)) / q(fossil.attachment_time)) ^
+                fossil.is_tip)
+    end
+
+    return start
+end
+
 
 #################### Insupports ####################
 
@@ -167,65 +230,6 @@ function relistlength(d::CompoundDirichlet, x::AbstractArray)
 end
 
 
-
-"""
-Fossilized Birth Death
-Implemented following Heath, Huelsenbeck and Stadler 2013
-DOI: https://arxiv.org/pdf/1310.2968.pdf
-"""
-mutable struct BirthDeathFossilized <: ContinuousMultivariateDistribution
-    rho::Float64
-    lambd::Float64
-    mu::Float64
-    psi::Float64
-    m::Int64
-    k::Int64
-end # mutable struct
-
-mutable struct Fossil
-    calibration_cluster::Vector{AbstractString}
-    age::Float64
-    attachment_time::Float64
-    is_tip::Bool
-end # Fossil
-
-function _logpdf(d::BirthDeathFossilized, x::FNode, internal_nodes::Vector{FNode}, 
-                 blv::Vector{Float64}, fossils::Vector{Tuple{FNode, Float64, Float64}}
-                )::Float64
-
-λ::Float64 = d.lambd
-μ::Float64 = d.mu
-ρ::Float64 = d.rho
-ψ::Float64 = d.psi
-h::Float64 = get_node_height(x, blv)
-
-start = (1 / ((λ * (1 - p̂(h))) ^ 2)) * ((4 * λ * ρ) / q(h))
-c₁::Float64 = abs(sqrt((λ - μ - ψ) ^ 2 + 4 * λ * ψ))
-c₂::Float64 = - ((λ - μ - 2 * λ * ρ - ψ) / c₁)
-
-q(t) = 2 * (1 - c₂ ^ 2) + exp(-c₁ * t) * (1 - c₂) ^ 2  + exp(c₁ * t) * (1 + c₂) ^ 2
-num(t)::Float64 = exp(-c₁ * t) * (1 - c₂) - (1 + c₂)
-denum(t)::Float64 = exp(-c₁ * t) * (1 - c₂) + (1 + c₂) 
-p₀(t)::Float64 = 1 + ((-(λ - μ - ψ) + c₁ * (num(t) / denum(t))) / (2 * λ))
-p_denum(t)::Float64 = λ * ρ + (λ * (1 - ρ) - μ) * exp(-(λ - μ) * t)
-p̂(t)::Float64 = 1 - ((ρ * (λ - μ)) / p_denum(t))
-
-
-
-for node in internal_nodes
-    start *= (4 * λ * ρ) / q(get_node_height(node, blv))
-end
-
-for fossil in fossils
-    start *= ψ * (2 * γ(x, fossil.calibration_cluster, fossil.age, blv) * λ * 
-             ((p₀(fossil.age) * q(fossil.age)) / q(fossil.attachement)) ^ fossil.is_tip)
-end
-
-return start
-end
-
-
-
 """
     γ(calibration_node::FNode, fossil_time::Float64)::Int64
 
@@ -233,21 +237,21 @@ end
 Helper function to find the number of possible attachment lineages for a given fossil based
 on its calibration node.
 """
-function γ(tree::FNode, calibration_cluster::Vector{AbstractString}, fossil_time::Float64, 
-           blv::Vector{Float64})::Int64
+function γ(lca::FNode, fossil_time::Float64, blv::Vector{Float64})::Int64
 
     attachment_lineages::Int64 = 0
-    calibration_node = find_lca(tree, calibration_cluster)
-    for child in calibration_node.children
+    for child in lca.children
         if child.nchild != 0
-            if get_node_age(child, blv) > fossil_time
+            if get_node_height(child, blv, warn=false) > fossil_time
                 attachment_lineages += 1
-                attachment_lineages += get_attachment_lineages(child, fossil)
+                attachment_lineages += γ(child, fossil_time, blv)
             end # if
         end # if
     end # for
     return attachment_lineages + 2
-end # get_attachment_lineages
+end # γ
+
+
 
 
 """
