@@ -23,7 +23,7 @@ mutable struct PNUTSTune <: SamplerTune
         logfgrad::Union{Function,Missing};
         target::Real = 0.6,
         tree_depth::Int = 10,
-        targetNNI::Float64 = 5.0,
+        targetNNI::Int = 5,
         delta::Float64 = 0.003,
     ) where {T<:GeneralNode}
 
@@ -133,11 +133,11 @@ function sample!(v::PNUTSVariate, logfgrad::Function; adapt::Bool = false)
         adaptstat = adapter.metro_acc_prob > 1 ? 1 : adapter.metro_acc_prob
         
         HT = const_params.δ - adaptstat
-        HT -= const_params.τ - adapter.avg_nni
+        HT2 = const_params.τ - adapter.avg_nni
         
                 
-        #HT -= abs_adapter(HT2)
-        #HT /= 2
+        HT -= abs_adapter(HT2)
+        HT /= 2
         
         η = 1.0/(adapter.m + const_params.t0)
         
@@ -189,14 +189,13 @@ function nuts_sub!(v::PNUTSVariate, epsilon::Float64, logfgrad::Function)
     
 
     nni = 0
-    tnni = 0
     j = 0
     n = 1
     
     
     meta = PNUTSMeta()
-    directions_plus = nothing#rand(Bool, nl)
-    directions_minus = nothing#rand(Bool, nl)
+    directions_plus = rand(Bool, nl)
+    directions_minus = rand(Bool, nl)
     acc_p_r = 0
     while j < v.tune.tree_depth
         pm = 2 * (rand() > 0.5) - 1
@@ -243,9 +242,9 @@ function nuts_sub!(v::PNUTSVariate, epsilon::Float64, logfgrad::Function)
             
 
         end#if pm
+        v.tune.stepsizeadapter.metro_acc_prob = meta.alpha / meta.nalpha
         
-        tnni += meta.nni
-        
+        v.tune.stepsizeadapter.avg_nni = meta.nni
         
         if !sprime
             break
@@ -256,7 +255,7 @@ function nuts_sub!(v::PNUTSVariate, epsilon::Float64, logfgrad::Function)
             acc_p_r += 1
             v.value[1] = xprime.x
         end
-        nni += meta.nni
+        
         n += nprime
         nni += meta.nni
 
@@ -279,9 +278,7 @@ function nuts_sub!(v::PNUTSVariate, epsilon::Float64, logfgrad::Function)
             break
         end
     end
-    #@show nni, tnni
-    v.tune.stepsizeadapter.metro_acc_prob = meta.alpha / meta.nalpha
-    v.tune.stepsizeadapter.avg_nni = tnni == 0 ? 0.0 : nni/tnni
+
     push!(v.tune.moves, nni)
     push!(v.tune.tree_depth_trace, j)
     push!(v.tune.acc_p_r, acc_p_r)
@@ -384,8 +381,8 @@ function buildtree(
                 transfer!(xprime, xprime2)
             end
             nprime += nprime2
-            directions_minus = nothing#rand(Bool, sz)
-            directions_plus = nothing#rand(Bool, sz)
+            #directions_minus = rand(Bool, sz)
+            #directions_plus = rand(Bool, sz)
             sprime =
                 sprime2 && nouturn(
                     xminus,
@@ -419,8 +416,8 @@ function nouturn(
     logfgrad::Function,
     delta::Float64,
     sz::Int64,
-    directions_minus::Union{Nothing,Vector{Bool}},
-    directions_plus::Union{Nothing,Vector{Bool}}
+    directions_minus::Vector{Bool},
+    directions_plus::Vector{Bool}
 )
     curr_l, curr_h = BHV_bounds(xminus.x, xplus.x)
     xminus_bar = transfer(xminus)

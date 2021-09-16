@@ -345,7 +345,7 @@ function buildtree(
 
     if depth == 0
         d1 = transfer(s_worker)
-        nni = refraction!(d1, pm*epsilon, logfgrad, delta, sz)
+        nni = refraction!(d1, pm*epsilon, logfgrad, delta, sz, nothing)
         transfer!(s_prob, d1)
 
 

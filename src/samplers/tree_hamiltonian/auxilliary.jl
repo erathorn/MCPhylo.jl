@@ -15,7 +15,7 @@ function nutsepsilon(x::FNode, logfgrad::Function, delta::Float64, target::Float
     x1 = transfer(x0)
     H0 = hamiltonian(x0)
     epsilon = 1.0
-    _ = refraction!(x0, epsilon, logfgrad, delta, n)
+    _ = refraction!(x0, epsilon, logfgrad, delta, n, nothing)
     Hp = hamiltonian(x0)
     
     prob = Hp - H0
@@ -25,7 +25,7 @@ function nutsepsilon(x::FNode, logfgrad::Function, delta::Float64, target::Float
         epsilon = direction == 1 ? 2 * epsilon : 0.5 * epsilon
         
         x2 = transfer(x1)
-        _ = refraction!(x2, epsilon, logfgrad, delta, n)
+        _ = refraction!(x2, epsilon, logfgrad, delta, n, nothing)
         
         Hp = hamiltonian(x2)
         

@@ -6,6 +6,7 @@ function refraction!(
     logfgrad::Function,
     delta::Float64,
     sz::Int64,
+    directions::Union{Nothing,Vector{Bool}}
 )
 
     blenvec = get_branchlength_vector(s.x)
@@ -19,7 +20,7 @@ function refraction!(
 
     if minimum(tmpB) <= 0
         tmpB, nni =
-            ref_NNI!(s, tmpB, abs(epsilon), blenvec, delta, logfgrad, sz)
+            ref_NNI!(s, tmpB, abs(epsilon), blenvec, delta, logfgrad, sz, directions)
     end
 
     blenvec = molifier.(tmpB, delta)
@@ -47,6 +48,7 @@ function ref_NNI!(
     delta::Float64,
     logfgrad::Function,
     sz::Int64,
+    directions::Union{Nothing,Vector{Bool}}
 )
  
     intext = internal_external(s.x)
@@ -73,7 +75,11 @@ function ref_NNI!(
             U_before_nni, _ = logfgrad(s.x, sz, true, false) # still with molified branch length
             
             v_copy = deepcopy(s.x)
-            tmp_NNI_made = NNI!(v_copy, ref_index)
+            if isnothing(directions)
+                tmp_NNI_made = NNI!(v_copy, ref_index)
+            else
+                tmp_NNI_made = NNI!(v_copy, ref_index, directions[ref_index])
+            end
             
             if tmp_NNI_made != 0
                 
