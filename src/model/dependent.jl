@@ -134,7 +134,7 @@ logical operation to be scalar.
 
 * `monitor` : Indicates whether the results should be monitored, i.e.saved.
 """
-function Logical(f::Function, monitor::Union{Bool, Vector{Int}}=true)
+function Logical(f::Function, monitor::Union{Bool, Vector{Int}}=true, cuda::Bool=false)
   value = Float64(NaN)
   fx, src = modelfxsrc(depfxargs, f)
   l = ScalarLogical(value, :nothing, Int[], fx, src, Symbol[])
@@ -276,7 +276,7 @@ logical operation to be scalar.
 
 * `monitor` : Indicates whether the results should be monitored, i.e. saved.
 """
-function Stochastic(f::Function, monitor::Union{Bool, Vector{Int}}=true)
+function Stochastic(f::Function, monitor::Union{Bool, Vector{Int}}=true, cuda::Bool=false)
   value = Float64(NaN)
   fx, src = modelfxsrc(depfxargs, f)
   s = ScalarStochastic(value, :nothing, Int[], fx, src, Symbol[],
