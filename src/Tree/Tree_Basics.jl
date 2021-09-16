@@ -145,7 +145,7 @@ function tree_from_leaves(leaf_nodes::Vector{String}, node_size::Int, final_leng
         # create a new mother node to which the two first nodes are added as children
         # add the new mother node to the list and reshuffle
         first_child::FNode = pop!(my_node_list)
-        first_child.inc_length = rand()#*0.1
+        first_child.inc_length = rand()
         second_child::FNode = pop!(my_node_list)
         second_child.inc_length = rand()
         curr_node::FNode = Node(string(temp_name))
@@ -622,11 +622,12 @@ function internal_external(root::T)::Vector{Int64}  where T<:GeneralNode
 end
 
 
-function find_lca(tree::T, node_l::Array{String, 1})::T  where T<:GeneralNode
-    find_lca(tree, [find_by_name(tree, i) for i in node_l])
+function find_lca(tree::T, node_l::Vector{S})::T  where {T<:GeneralNode, S<:AbstractString}
+    find_lca(tree, [find_name(tree, i) for i in node_l])
 end
 
-function find_lca(tree::T, node_l::Array{T})::T  where T<:GeneralNode
+
+function find_lca(tree::T, node_l::Vector{T})::T  where T<:GeneralNode
     @assert length(node_l) > 0
     if length(node_l) === 1
         return node_l[1]

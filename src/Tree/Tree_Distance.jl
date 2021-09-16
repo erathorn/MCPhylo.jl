@@ -28,14 +28,13 @@ Returns a vector containing Tuples of sets representing the bipartions.
 function get_bipartitions(tree::T)::Vector{Tuple} where T <:GeneralNode
     po_vect= post_order(tree)[1:end-1]
     bt = Vector{Tuple}(undef, length(po_vect))
+    all_leaves = [n.name for n in get_leaves(tree)]
     for ind in eachindex(po_vect)
         elem = po_vect[ind]::T
-        inset = Set{Int64}()
-        outset = Set{Int64}()
-        @simd for elem2 in po_vect
-            startswith(elem2.binary, elem.binary) ? push!(inset, elem2.num) : push!(outset, elem2.num)
-        end # for
-        @inbounds bt[ind] = (inset, outset)
+        outset = String[]
+        inset = sort([i.name for i in get_leaves(elem)])
+        outset = setdiff(all_leaves, inset)
+        @inbounds bt[ind] = (join(sort(inset),","), join(sort(outset),","))
     end # for
     bt
 end

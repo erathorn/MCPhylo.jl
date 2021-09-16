@@ -17,6 +17,7 @@ using Plots.PlotMeasures
 using StatsPlots
 @reexport using StatsPlots
 using RecipesBase
+import RecipesBase.plot
 using StatsBase
 using Zygote
 using FiniteDiff
@@ -27,6 +28,8 @@ using Markdown
 using Random
 using DataStructures
 using ProgressMeter
+using StaticArrays
+using LoopVectorization
 using CUDA
 using Bijectors
 if has_cuda()
@@ -164,6 +167,7 @@ const AbstractLogical = Union{ScalarLogical, ArrayLogical}
 const AbstractStochastic = Union{ScalarStochastic, ArrayStochastic}
 const AbstractTreeStochastic = Union{TreeLogical, TreeStochastic}
 const AbstractDependent = Union{AbstractLogical, AbstractStochastic, AbstractTreeStochastic}
+const ConstraintDict{S} = Dict{Symbol, Union{Vector{Vector{S}}, Vector{Tuple{Vector{S}, Vector{S}}}} where S<:AbstractString} 
 
 
 #################### Sampler Types ####################
@@ -211,7 +215,6 @@ struct ModelState
   tune::Vector{Any}
 end
 
-
 mutable struct Model
   nodes::Dict{Symbol, Any}
   samplers::Vector{Sampler}
@@ -223,6 +226,24 @@ mutable struct Model
   likelihood::Float64
 end
 
+
+############## Additional Structs ################
+struct SimulationParameters
+  burnin::Int64
+  thin::Int64
+  chains::Int64
+  verbose::Bool
+  trees::Bool
+  asdsf::Bool
+  freq::Int64
+  min_splits::Float64
+end
+
+struct ConvergenceStorage
+  splitsQueue::Vector{Accumulator{Tuple{String, String}, Int64}}
+  splitsQueues::Vector{Vector{Accumulator{Tuple{String, String}, Int64}}}
+  run::Int64
+end
 
 #################### Chains Type ####################
 
@@ -247,12 +268,15 @@ struct ModelChains <: AbstractChains
   trees::Array{AbstractString, 3}
   moves::Array{Int, 1}
   tree_names::Vector{AbstractString}
+  stats::Array{Float64, 2}
+  stat_names::Vector{AbstractString}
+  sim_params::SimulationParameters
+  conv_storage::Union{Nothing, ConvergenceStorage}
 end
-
 
 #################### Includes ####################
 
-include("progress.jl")
+include("customerrors.jl")
 include("utils.jl")
 include("variate.jl")
 
@@ -263,7 +287,8 @@ include("distributions/pdmatdistribution.jl")
 include("Likelihood/SubstitutionModels.jl")
 include("distributions/Phylodist.jl")
 include("distributions/TreeConstraints.jl")
-#include("distributions/transformdistribution.jl")
+include("distributions/TreeDistribution.jl")
+
 
 include("model/dependent.jl")
 include("model/dependent_tree.jl")
@@ -272,6 +297,7 @@ include("model/initialization.jl")
 include("model/mcmc.jl")
 include("model/model.jl")
 include("model/simulation.jl")
+include("model/simulation_statistics.jl")
 
 include("output/chains.jl")
 include("output/chainsummary.jl")
@@ -305,11 +331,11 @@ include("samplers/mala.jl")
 include("samplers/miss.jl")
 include("samplers/nuts.jl")
 include("samplers/pnuts.jl")
+include("samplers/pphmc.jl")
 include("samplers/rwm.jl")
 include("samplers/rwmc.jl")
 include("samplers/slice.jl")
 include("samplers/slicesimplex.jl")
-
 
 include("Tree/Tree_Basics.jl")
 include("Tree/Converter.jl")
@@ -348,6 +374,8 @@ export
   ArrayLogical,
   ArrayStochastic,
   ArrayVariate,
+  ConstraintDict,
+  ConvergenceStorage,
   TreeLogical,
   TreeVariate,
   TreeStochastic,
@@ -355,6 +383,7 @@ export
   AbstractNode,
   Node,
   Chains,
+  FileSyntaxError,
   Logical,
   MatrixVariate,
   Model,
@@ -365,7 +394,9 @@ export
   ScalarLogical,
   ScalarStochastic,
   ScalarVariate,
+  SimulationParameters,
   Stochastic,
+  TreeDistribution,
   VectorVariate
 
 export
@@ -405,6 +436,7 @@ export
   mcmc,
   mcse,
   plot,
+  plot_asdsf,
   predict,
   quantile,
   rafterydiag,
@@ -444,6 +476,7 @@ export
   SliceSimplex, SliceSimplexVariate,
   DMH, DMHVariate,
   PNUTS, PNUTSVariate,
+  PPHMC, PPHMCVariate,
   Empirical, EmpiricalVariate
 
 export
@@ -474,6 +507,8 @@ export
   find_lca,
   find_by_binary,
   find_by_name,
+  find_num,
+  find_name,
   find_root,
   create_tree_from_leaves,
   create_tree_from_leaves_cu,
@@ -484,6 +519,9 @@ export
   get_sister,
   get_leaves,
   check_leafsets,
+  generate_constraints,
+  generate_constraints!,
+  topological,
   neighbor_joining,
   upgma,
   prune_tree!, prune_tree,
