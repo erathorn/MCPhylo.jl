@@ -31,7 +31,7 @@ using ProgressMeter
 using StaticArrays
 using LoopVectorization
 using CUDA
-using Bijectors
+#using Bijectors
 if has_cuda()
   using GPUArrays
 else
@@ -288,6 +288,7 @@ include("Likelihood/SubstitutionModels.jl")
 include("distributions/Phylodist.jl")
 include("distributions/TreeConstraints.jl")
 include("distributions/TreeDistribution.jl")
+include("distributions/transformdistribution.jl")
 
 
 include("model/dependent.jl")
