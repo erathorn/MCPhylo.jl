@@ -1,67 +1,52 @@
-
-#################### Phylogenetic No-U-Turn Sampler ####################
-
-#################### Types and Constructors ####################
-
-mutable struct PNUTS_Rie_Tune <: SamplerTune
+mutable struct NUTS_Rie_Tune <: SamplerTune
     logfgrad::Union{Function,Missing}
     stepsizeadapter::NUTSstepadapter
     adapt::Bool
     epsilon::Float64
-    delta::Float64
-    moves::Vector{Int}
     tree_depth::Int    
-    tree_depth_trace::Vector{Int}
     acc_p_r::Vector{Int}
 
-    PNUTS_Rie_Tune() = new()
+    NUTS_Rie_Tune() = new()
 
-    function PNUTS_Rie_Tune(
-        x::Vector{T},
+    function NUTS_Rie_Tune(
+        x::Vector{<:Real},
         epsilon::Float64,
         logfgrad::Union{Function,Missing};
         target::Real = 0.75,
         tree_depth::Int = 10,
-        targetNNI::Float64 = 5.0,
-        delta::Float64 = 0.003
-    ) where {T<:GeneralNode}
+    )
         
         new(
             logfgrad,
-            NUTSstepadapter(0,0,0,NUTS_StepParams(0.5,target,0.05,0.75,10,targetNNI)),
+            NUTSstepadapter(0,0,0,NUTS_StepParams(0.5,target,0.05,0.75,10,-Inf)),
             false,
             epsilon,
-            delta,
-            Int[],
             tree_depth,
-            Int[],
             Int[]
         )
     end
 end
 
-PNUTS_Rie_Tune(
-    x::Vector{T},
+NUTS_Rie_Tune(
+    x::Vector{<:Real},
     logfgrad::Function,
     ::NullFunction,
-    delta::Float64 = 0.003,
     target::Real = 0.75;
     args...,
-) where {T<:GeneralNode} =
-    PNUTS_Rie_Tune(x, nutsepsilon(x[1], logfgrad, delta, target), logfgrad; args...)
+)=
+    NUTS_Rie_Tune(x, nutsepsilon(x, logfgrad, target), logfgrad; args...)
 
-PNUTS_Rie_Tune(
-    x::Vector{T},
+NUTS_Rie_Tune(
+    x::Vector{<:Real},
     logfgrad::Function,
-    delta::Float64,
     target::Real;
     args...,
-) where {T<:GeneralNode} =
-    PNUTS_Rie_Tune(x, nutsepsilon(x[1], logfgrad, delta, target), logfgrad; args...)
+) =
+    NUTS_Rie_Tune(x, nutsepsilon(x, logfgrad, target), logfgrad; args...)
 
-PNUTS_Rie_Tune(x::Vector; epsilon::Real, args...) = PNUTS_Rie_Tune(x, epsilon, missing, args...)
+NUTS_Rie_Tune(x::Vector; epsilon::Real, args...) = NUTS_Rie_Tune(x, epsilon, missing, args...)
 
-const PNUTS_Rie_Variate = SamplerVariate{PNUTS_Rie_Tune}
+const NUTS_Rie_Variate = SamplerVariate{NUTS_Rie_Tune}
 
 
 #################### Sampler Constructor ####################
@@ -79,28 +64,26 @@ Returns a `Sampler{PNUTSTune}` type object.
 
 * args...: additional keyword arguments to be passed to the PNUTSVariate constructor.
 """
-function PNUTS_Rie(params::ElementOrVector{Symbol}; args...)
+function NUTS_Rie(params::ElementOrVector{Symbol}; args...)
     samplerfx = function (model::Model, block::Integer)
         block = SamplingBlock(model, block, true)
-
-        f = let block = block
-            (x, sz, ll, gr) -> mlogpdfgrad!(block, x, sz, ll, gr)
-        end
+        f = x -> logpdfgrad!(block, x, :forward)
+        
         v = SamplerVariate(block, f, NullFunction(); args...)
         
-        sample!(v::PNUTS_Rie_Variate, f, adapt = model.iter <= model.burnin)
+        sample!(v::NUTS_Rie_Variate, f, adapt = model.iter <= model.burnin)
         
         relist(block, v)
     end
-    Sampler(params, samplerfx, PNUTS_Rie_Tune())
+    Sampler(params, samplerfx, NUTS_Rie_Tune())
 end
 
 
 #################### Sampling Functions ####################
 
-sample!(v::PNUTS_Rie_Variate; args...) = sample!(v, v.tune.logfgrad; args...)
+sample!(v::NUTS_Rie_Variate; args...) = sample!(v, v.tune.logfgrad; args...)
 
-function sample!(v::PNUTS_Rie_Variate, logfgrad::Function; adapt::Bool = false)
+function sample!(v::NUTS_Rie_Variate, logfgrad::Function; adapt::Bool = false)
     tune = v.tune
     adapter = tune.stepsizeadapter
     const_params = tune.stepsizeadapter.params
@@ -115,12 +98,7 @@ function sample!(v::PNUTS_Rie_Variate, logfgrad::Function; adapt::Bool = false)
         adaptstat = adapter.metro_acc_prob > 1 ? 1 : adapter.metro_acc_prob
         
         adaptstat = const_params.δ - adaptstat
-        #@show adaptstat, const_params.δ
-        HT2 = const_params.τ - adapter.avg_nni
-        adaptstat -= HT2#0.4*abs_adapter(HT2)
-        #HT2 = tune.targetNNI - tune.nniprime / tune.nalpha
-        adaptstat /= 2
-        #@show adapter.avg_nni,adapter.metro_acc_prob, adaptstat, HT2#, adaptstat2
+        
         η = 1.0/(adapter.m + const_params.t0)
         
         adapter.s_bar = (1.0 - η) * adapter.s_bar + η * adaptstat
@@ -129,6 +107,7 @@ function sample!(v::PNUTS_Rie_Variate, logfgrad::Function; adapt::Bool = false)
         x_η = adapter.m^-const_params.κ
         adapter.x_bar = (1.0 - x_η) * adapter.x_bar + x_η * x
         tune.epsilon = exp(x)
+        @show tune.epsilon
 
     else
         if (adapter.m > 0)
@@ -141,7 +120,7 @@ function sample!(v::PNUTS_Rie_Variate, logfgrad::Function; adapt::Bool = false)
 end
 
 
-function setadapt!(v::PNUTS_Rie_Variate, adapt::Bool)
+function setadapt!(v::NUTS_Rie_Variate, adapt::Bool)
     tune = v.tune
     if adapt && !tune.adapt
         tune.stepsizeadapter.m = 0
@@ -153,43 +132,39 @@ end
 
 
 
-function nuts_sub!(v::PNUTS_Rie_Variate, epsilon::Float64, logfgrad::Function)
-    x = deepcopy(v.value[1])
-    nl = size(x)[1] - 1
-    delta = v.tune.delta
-    r = randn(nl)
+function nuts_sub!(v::NUTS_Rie_Variate, epsilon::Float64, logfgrad::Function)
+    x = v.value
+
+    r = randn(size(x))
     #g = zeros(nl)
     #epsilon = 0.15
     #@show epsilon
     
     log_sum_weight = 0.0
-
-    blv = get_branchlength_vector(x)
-    set_branchlength_vector!(x, molifier.(blv, delta))
-    logf, grad = logfgrad(x, nl, true, true)
+    
+    logf, grad = logfgrad(x)
     
 
-    z_plus = Tree_HMC_State(deepcopy(x), r, grad, logf)
-    z_minus = Tree_HMC_State(deepcopy(x), r, grad, logf)
-    z_propose = Tree_HMC_State(deepcopy(x), r, grad, logf)
-    z_sample = Tree_HMC_State(deepcopy(x), r, grad, logf)
-    z_worker = Tree_HMC_State(deepcopy(x), r, grad, logf)
+    z_plus = Array_HMC_State(x[:], r[:], grad[:], logf)
+    z_minus = Array_HMC_State(x[:], r[:], grad[:], logf)
+    z_propose = Array_HMC_State(x[:], r[:], grad[:], logf)
+    z_sample = Array_HMC_State(x[:], r[:], grad[:], logf)
+    z_worker = Array_HMC_State(x[:], r[:], grad[:], logf)
 
-    p_fwd_fwd = r
-    p_fwd_bck = r
-    p_bck_fwd = r
-    p_bck_bck = r
-    p_sharp_fwd_fwd = grad
-    p_sharp_fwd_bck = grad
-    p_sharp_bck_fwd = grad
-    p_sharp_bck_bck = grad
+    p_fwd_fwd = r[:]
+    p_fwd_bck = r[:]
+    p_bck_fwd = r[:]
+    p_bck_bck = r[:]
+    p_sharp_fwd_fwd = grad[:]
+    p_sharp_fwd_bck = grad[:]
+    p_sharp_bck_fwd = grad[:]
+    p_sharp_bck_bck = grad[:]
 
     # calculate hamiltonian of current state
     H0 = hamiltonian(z_sample)
     
     rho = r
-    
-    nni = 0
+        
     tnni = 0
     depth = 0
         
@@ -202,16 +177,15 @@ function nuts_sub!(v::PNUTS_Rie_Variate, epsilon::Float64, logfgrad::Function)
         #reset!(meta)
         meta.alpha = 0
         meta.nalpha = 0
-        meta.accnni = 0
-        meta.nni = 0
         
+                
         log_sum_weight_subtree = [-Inf]
         valid_subtree = false
         
         pm = 2 * (rand() > 0.5) - 1
         
-        rho_bwd = zeros(nl)
-        rho_fwd = zeros(nl)
+        rho_bwd = zeros(size(x))
+        rho_fwd = zeros(size(x))
         
         if pm == -1
             transfer!(z_worker, z_minus)
@@ -227,8 +201,6 @@ function nuts_sub!(v::PNUTS_Rie_Variate, epsilon::Float64, logfgrad::Function)
                 epsilon,
                 logfgrad,
                 H0,
-                delta,
-                nl,
                 rho_bwd,
                 log_sum_weight_subtree,
                 p_sharp_bck_fwd,
@@ -254,8 +226,6 @@ function nuts_sub!(v::PNUTS_Rie_Variate, epsilon::Float64, logfgrad::Function)
                 epsilon,
                 logfgrad,
                 H0,
-                delta,
-                nl,
                 rho_fwd,
                 log_sum_weight_subtree,
                 p_sharp_fwd_bck,
@@ -288,7 +258,7 @@ function nuts_sub!(v::PNUTS_Rie_Variate, epsilon::Float64, logfgrad::Function)
             end
         end
         log_sum_weight = logsumexp(lsw_t, log_sum_weight)
-        nni += meta.nni
+        #nni += meta.nni
         
 
         rho = rho_bwd .+ rho_fwd
@@ -312,27 +282,25 @@ function nuts_sub!(v::PNUTS_Rie_Variate, epsilon::Float64, logfgrad::Function)
     #@show meta
     v.tune.stepsizeadapter.metro_acc_prob = meta.alpha / meta.nalpha
     #@show nni, tnni
-    v.tune.stepsizeadapter.avg_nni = tnni == 0 ? 0.0 : nni/tnni#/(2^depth)#meta.nni / meta.nalpha
+    #v.tune.stepsizeadapter.avg_nni = tnni == 0 ? 0.0 : nni/tnni#/(2^depth)#meta.nni / meta.nalpha
     
     
-    v.value[1] = z_sample.x
-    push!(v.tune.moves, nni)
-    push!(v.tune.tree_depth_trace, depth)
+    v.value[:] .= z_sample.x[:]
+    
+    #push!(v.tune.tree_depth_trace, depth)
     push!(v.tune.acc_p_r, acc_p_r)
     v
 end
 
 
 function buildtree(
-    s_worker::Tree_HMC_State,
-    s_prob::Tree_HMC_State,
+    s_worker::Array_HMC_State,
+    s_prob::Array_HMC_State,
     pm::Int64,
     depth::Integer,
     epsilon::Float64,
     logfgrad::Function,
     H0::Real,
-    delta::Float64,
-    sz::Int64,
     rho::Vector{Float64},
     log_sum_weight::Vector{Float64},
     p_sharp_beg::Vector{Float64},
@@ -345,25 +313,21 @@ function buildtree(
 
     if depth == 0
         d1 = transfer(s_worker)
-        nni = refraction!(d1, pm*epsilon, logfgrad, delta, sz, nothing)
+        leapfrog!(d1, pm*epsilon, logfgrad)
         transfer!(s_prob, d1)
 
 
         h = hamiltonian(s_worker)
         h = isnan(h) ? -Inf : h
         
-        #divergent = H0 < (h + 1000.0)# ? true : false
+        
         divergent = (h-H0) < -1000# ? true : false
-        #@show H0, h, divergent#, divergent2
+        
         stat = (h - H0) > 0 ? 1 : exp(h - H0)
-        #@show H0, h, stat, divergent, nni
+        
         meta.alpha += stat#H0 - h > 0 ? 1 : exp(H0 - h)
         meta.nalpha += 1
-        meta.nni += nni
-        if rand() < stat
-            meta.accnni += nni
-        end
-        #@show meta
+                
         log_sum_weight .= logsumexp(log_sum_weight[1], H0-h)
         
         rho .+= s_prob.r
@@ -375,13 +339,13 @@ function buildtree(
         return !divergent
     end
 
-    rho_init = zeros(sz)
+    rho_init = zeros(size(rho))
     log_sum_weight_init = [-Inf]
-    p_init_end = zeros(sz)
-    p_sharp_init_end = zeros(sz)
+    p_init_end = zeros(size(rho))
+    p_sharp_init_end = zeros(size(rho))
     
     valid_init =
-        buildtree(s_worker, s_prob, pm, depth - 1, epsilon, logfgrad, H0, delta, sz, rho_init, log_sum_weight_init,
+        buildtree(s_worker, s_prob, pm, depth - 1, epsilon, logfgrad, H0, rho_init, log_sum_weight_init,
         p_sharp_beg, p_sharp_init_end, p_beg, p_init_end, meta)
    
     if !valid_init
@@ -389,13 +353,13 @@ function buildtree(
     end
 
     s_final=transfer(s_worker)
-    rho_final = zeros(sz)
+    rho_final = zeros(size(rho))
     log_sum_weight_final = [-Inf]
-    p_final_beg = zeros(sz)
-    p_sharp_final_beg = zeros(sz)
+    p_final_beg = zeros(size(rho))
+    p_sharp_final_beg = zeros(size(rho))
     
     valid_final =
-        buildtree(s_worker, s_final, pm, depth - 1, epsilon, logfgrad, H0, delta, sz, rho_final, log_sum_weight_final,
+        buildtree(s_worker, s_final, pm, depth - 1, epsilon, logfgrad, H0, rho_final, log_sum_weight_final,
         p_sharp_final_beg , p_sharp_end, p_final_beg, p_end, meta)
         
     if !valid_final
@@ -433,10 +397,19 @@ function buildtree(
 end
 
 
-# function nouturn(
-#     rho::Vector{Float64},
-#     rminus::Vector{Float64},
-#     rplus::Vector{Float64})::Bool
-#     return dot(rho, rminus) > 0 && dot(rho, rplus) > 0
-# end
+function nouturn(
+    rho::Vector{Float64},
+    rminus::Vector{Float64},
+    rplus::Vector{Float64})::Bool
+    return dot(rho, rminus) > 0 && dot(rho, rplus) > 0
+end
 
+
+function leapfrog!(d::Array_HMC_State,
+    epsilon::Real, logfgrad::Function)
+
+    d.r += (0.5 * epsilon) * d.g
+    d.x += epsilon * d.r
+    d.lf, d.g = logfgrad(d.x)
+    d.r += (0.5 * epsilon) * d.g
+end

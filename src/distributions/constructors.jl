@@ -1,8 +1,7 @@
 ######################################################################
 # Distributions Package MultivariateDistribution
 ######################################################################
-
-
+PDMat(s::MatrixVariate) = PDMat(s.value)
 #################### Multinomial ####################
 
 Multinomial(n::Real, p::AbstractVector{T}) where {T<:Real} =

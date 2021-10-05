@@ -4,7 +4,7 @@
 
 mutable struct PNUTSTune <: SamplerTune
     logfgrad::Union{Function,Missing}
-    stepsizeadapter::PNUTSstepadapter
+    stepsizeadapter::NUTSstepadapter
     adapt::Bool
     epsilon::Float64
     delta::Float64
@@ -29,7 +29,7 @@ mutable struct PNUTSTune <: SamplerTune
 
         new(
             logfgrad,
-            PNUTSstepadapter(0,0,0,PNUTS_StepParams(0.5,target,0.05,0.75,10,targetNNI)),
+            NUTSstepadapter(0,0,0,NUTS_StepParams(0.5,target,0.05,0.75,10,targetNNI)),
             false,
             epsilon,
             delta,
@@ -194,7 +194,7 @@ function nuts_sub!(v::PNUTSVariate, epsilon::Float64, logfgrad::Function)
     n = 1
     
     
-    meta = PNUTSMeta()
+    meta = NUTSMeta()
     directions_plus = nothing#rand(Bool, nl)
     directions_minus = nothing#rand(Bool, nl)
     acc_p_r = 0
@@ -301,7 +301,7 @@ function buildtree(
     lu::Real,
     delta::Float64,
     sz::Int64,
-    meta::PNUTSMeta,
+    meta::NUTSMeta,
     directions::Union{Nothing,Vector{Bool}}
 ) where {T<:FNode}
 
@@ -336,7 +336,7 @@ function buildtree(
         directions_minus, 
         directions_plus = buildtree(x, pm, j - 1, epsilon, logfgrad, logp0,lu , delta, sz, meta, directions)
         if sprime
-            meta1 = PNUTSMeta()
+            meta1 = NUTSMeta()
             if pm == -1
                 xminus,
                 _,

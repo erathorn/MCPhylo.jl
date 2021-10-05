@@ -37,6 +37,39 @@ end
 
 
 
+function nutsepsilon(x::Vector{<:Real}, logfgrad::Function, target::Float64)
+    
+        
+    logf0, gr = logfgrad(x)
+    
+    r0 = randn(size(x))
+    x0 = Array_HMC_State(deepcopy(x), r0, gr, logf0)
+    x1 = transfer(x0)
+    H0 = hamiltonian(x0)
+    epsilon = 1.0
+    leapfrog!(x0, epsilon, logfgrad)
+    Hp = hamiltonian(x0)
+    
+    prob = Hp - H0
+    direction = prob > target ? 1 : -1
+
+    while direction == 1 ? prob > target : prob < target
+        epsilon = direction == 1 ? 2 * epsilon : 0.5 * epsilon
+        
+        x2 = transfer(x1)
+        leapfrog!(x2, epsilon, logfgrad)
+        
+        Hp = hamiltonian(x2)
+        
+        prob = Hp - H0
+    end
+    
+    epsilon
+end
+
+
+
+
 @inline function scale_fac(x::T, delta::T)::T where {T<:Real}
     x < delta ? x/delta : 1.0
 end
