@@ -71,7 +71,7 @@ function logpdf(ex::exponentialBL, x::FNode)
     _logpdf(ex, x)
 end
 
-function logpdf(d::exponentialBL, x::FNode)
+function _logpdf(d::exponentialBL, x::FNode)
     bl = get_branchlength_vector(x)
     sum(logpdf.(Exponential(d.scale), bl))
 end
