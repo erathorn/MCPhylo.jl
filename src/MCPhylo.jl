@@ -344,7 +344,6 @@ include("samplers/nuts.jl")
 include("samplers/pnuts.jl")
 include("samplers/pphmc.jl")
 include("samplers/rwm.jl")
-include("samplers/rwmc.jl")
 include("samplers/slice.jl")
 include("samplers/slicesimplex.jl")
 
