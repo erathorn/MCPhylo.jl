@@ -42,11 +42,7 @@ inits = [ Dict{Symbol, Union{Any, Real}}(
     ) for i in 1:2
     ]
 
-scheme = [MCPhylo.NUTS_Rie([:mu1, :cm], target=0.8, tree_depth=5),
-          #NUTS([:mu1, :cm])
-          #Slice([:mu1, :cm], 1.0)
-          #RWM(:mu1, 1.0)
-          ]
+scheme = [Slice([:mu1, :cm], 1.0)]
 
 setsamplers!(model, scheme);
 

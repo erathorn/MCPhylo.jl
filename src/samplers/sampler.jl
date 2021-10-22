@@ -122,14 +122,14 @@ end
 
 #################### sample! Generics ####################
 
-function sample!(v::SamplerVariate, density; args...)
-    isa(density, Missing) && error(
-        "must specify a target density in $(typeof(v))",
-        " constructor or sample! method",
-    )
-    #  throw("Who")
-    sample!(v, density; args...)
-end
+# function sample!(v::SamplerVariate, density; args...)
+#     isa(density, Missing) && error(
+#         "must specify a target density in $(typeof(v))",
+#         " constructor or sample! method",
+#     )
+#     #  throw("Who")
+#     sample!(v, density; args...)
+# end
 
 
 #################### Simulation Methods ####################

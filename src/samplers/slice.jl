@@ -81,7 +81,7 @@ end
 
 #################### Sampling Functions ####################
 
-sample!(v::Union{SliceUnivariate,SliceMultivariate}) = sample!(v, v.tune.logf)
+sample!(v::Union{SliceUnivariate,SliceMultivariate}, logf::Function; args...) = sample!(v, logf)
 """
     sample!(v::Union{SliceUnivariate, SliceMultivariate}, logf::Function)
 

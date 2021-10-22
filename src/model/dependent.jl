@@ -527,13 +527,13 @@ function relist(s::AbstractStochastic, x::AbstractArray, transform::Bool = false
     relistlength(s, x, transform)[1]
 end
 
-function relistlength(s::Union{AbstractStochastic, AbstractTreeStochastic},
+function relistlength(s::AbstractVariate,
   x::AbstractArray, transform::Bool=false)
 value, n = relistlength_sub(s.distr, s, x)
 (transform ? invlink_sub(s.distr, value) : value, n)
 end
 
-function relistlength(s::AbstractTreeStochastic, x::N,
+function relistlength(s::TreeVariate, x::N,
   transform::Bool=false) where N<:GeneralNode
 value, n = relistlength_sub(s.distr, s, x)
 (transform ? invlink_sub(s.distr, value) : value, n)
@@ -543,7 +543,7 @@ function logpdf(s::AbstractStochastic, transform::Bool=false)
   logpdf(s, s.value, transform)
 end
 
-function logpdf(s::AbstractTreeStochastic, transform::Bool=false)
+function logpdf(s::TreeVariate, transform::Bool=false)
   logpdf(s, s.value, transform)
 end
 
@@ -569,7 +569,7 @@ function gradlogpdf(s::Union{AbstractStochastic, AbstractLogical})
   gradlogpdf(s, s.value)
 end
 
-function gradlogpdf(s::AbstractTreeStochastic, x::N, transform::Bool=false
+function gradlogpdf(s::TreeVariate, x::N, transform::Bool=false
                    ) where N <: GeneralNode
   gradlogpdf(s.distr, x)
 end
@@ -582,7 +582,7 @@ function logpdf(s::AbstractStochastic, x::Union{AbstractArray, Real}, transform:
   logpdf_sub(s.distr, x, transform)
 end
 
-function logpdf(s::AbstractTreeStochastic, x::FNode, transform::Bool=false)
+function logpdf(s::TreeVariate, x::FNode, transform::Bool=false)
   logpdf_sub(s.distr, x, transform)
 end
 
