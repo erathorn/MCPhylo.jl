@@ -1,5 +1,5 @@
 mutable struct NUTS_Rie_Tune <: SamplerTune
-    logfgrad::Union{Function,Missing}
+    logf::Union{Function,Missing}
     stepsizeadapter::NUTSstepadapter
     adapt::Bool
     epsilon::Float64
@@ -27,26 +27,30 @@ mutable struct NUTS_Rie_Tune <: SamplerTune
     end
 end
 
-NUTS_Rie_Tune(
-    x::Vector{<:Real},
-    logfgrad::Function,
-    ::NullFunction,
-    target::Real = 0.75;
-    args...,
-)=
-    NUTS_Rie_Tune(x, nutsepsilon(x, logfgrad, target), logfgrad; args...)
+# NUTS_Rie_Tune(
+#     x::Vector{<:Real},
+#     logfgrad::Function,
+#     ::NullFunction,
+#     target::Real = 0.75;
+#     args...,
+# )=
+#     NUTS_Rie_Tune(x, nutsepsilon(x, logfgrad, target), logfgrad; args...)
 
-NUTS_Rie_Tune(
-    x::Vector{<:Real},
-    logfgrad::Function,
-    target::Real;
-    args...,
-) =
-    NUTS_Rie_Tune(x, nutsepsilon(x, logfgrad, target), logfgrad; args...)
+# NUTS_Rie_Tune(
+#     x::Vector{<:Real},
+#     logfgrad::Function,
+#     target::Real;
+#     args...,
+# ) =
+#     NUTS_Rie_Tune(x, nutsepsilon(x, logfgrad, target), logfgrad; args...)
 
-NUTS_Rie_Tune(x::Vector; epsilon::Real, args...) = NUTS_Rie_Tune(x, epsilon, missing, args...)
+# NUTS_Rie_Tune(x::Vector; epsilon::Real, args...) = NUTS_Rie_Tune(x, epsilon, missing, args...)
 
-const NUTS_Rie_Variate = SamplerVariate{NUTS_Rie_Tune}
+
+# NUTSTune(x::Vector, epsilon::Real; args...) =
+#   NUTSTune(x, epsilon, missing; args...)
+
+const NUTS_Rie_Variate = SamplerVariate{NUTS_Rie_Tune, T} where T
 
 
 #################### Sampler Constructor ####################
@@ -64,30 +68,23 @@ Returns a `Sampler{PNUTSTune}` type object.
 
 * args...: additional keyword arguments to be passed to the PNUTSVariate constructor.
 """
-function NUTS_Rie(params::ElementOrVector{Symbol}; args...)
-    samplerfx = function (model::Model, block::Integer)
-        block = SamplingBlock(model, block, true)
-        f = x -> logpdfgrad!(block, x, :forward)
-        
-        v = SamplerVariate(block, f, NullFunction(); args...)
-        
-        sample!(v::NUTS_Rie_Variate, f, adapt = model.iter <= model.burnin)
-        
-        relist(block, v)
-    end
-    Sampler(params, samplerfx, NUTS_Rie_Tune())
+function NUTS_Rie(params::ElementOrVector{Symbol}; epsilon::Float64 = -Inf, args...)
+    tune = NUTS_Rie_Tune(Float64[], epsilon, logpdfgrad!; args...)
+    Sampler(params, tune, Symbol[], true)
 end
 
 
 #################### Sampling Functions ####################
 
-sample!(v::NUTS_Rie_Variate; args...) = sample!(v, v.tune.logfgrad; args...)
+#sample!(v::NUTS_Rie_Variate; args...) = sample!(v, v.tune.logfgrad; args...)
 
-function sample!(v::NUTS_Rie_Variate, logfgrad::Function; adapt::Bool = false)
+function sample!(v::NUTS_Rie_Variate{T}, logfgrad::Function; adapt::Bool = false) where T<: AbstractArray{<: Real}
     tune = v.tune
     adapter = tune.stepsizeadapter
     const_params = tune.stepsizeadapter.params
-    
+    if adapter.m == 0 && isinf(tune.epsilon)
+        tune.epsilon = nutsepsilon(v.value, logfgrad, const_params.δ)
+    end
     setadapt!(v, adapt)
     
     if tune.adapt
@@ -107,7 +104,7 @@ function sample!(v::NUTS_Rie_Variate, logfgrad::Function; adapt::Bool = false)
         x_η = adapter.m^-const_params.κ
         adapter.x_bar = (1.0 - x_η) * adapter.x_bar + x_η * x
         tune.epsilon = exp(x)
-        @show tune.epsilon
+        
 
     else
         if (adapter.m > 0)
@@ -120,7 +117,7 @@ function sample!(v::NUTS_Rie_Variate, logfgrad::Function; adapt::Bool = false)
 end
 
 
-function setadapt!(v::NUTS_Rie_Variate, adapt::Bool)
+function setadapt!(v::NUTS_Rie_Variate{T}, adapt::Bool) where T<: AbstractArray{<: Real}
     tune = v.tune
     if adapt && !tune.adapt
         tune.stepsizeadapter.m = 0
@@ -132,14 +129,11 @@ end
 
 
 
-function nuts_sub!(v::NUTS_Rie_Variate, epsilon::Float64, logfgrad::Function)
+function nuts_sub!(v::NUTS_Rie_Variate{T}, epsilon::Float64, logfgrad::Function)  where T<: AbstractArray{<: Real}
     x = v.value
 
     r = randn(size(x))
-    #g = zeros(nl)
-    #epsilon = 0.15
-    #@show epsilon
-    
+        
     log_sum_weight = 0.0
     
     logf, grad = logfgrad(x)
@@ -149,16 +143,15 @@ function nuts_sub!(v::NUTS_Rie_Variate, epsilon::Float64, logfgrad::Function)
     z_minus = Array_HMC_State(x[:], r[:], grad[:], logf)
     z_propose = Array_HMC_State(x[:], r[:], grad[:], logf)
     z_sample = Array_HMC_State(x[:], r[:], grad[:], logf)
-    z_worker = Array_HMC_State(x[:], r[:], grad[:], logf)
 
     p_fwd_fwd = r[:]
     p_fwd_bck = r[:]
     p_bck_fwd = r[:]
     p_bck_bck = r[:]
-    p_sharp_fwd_fwd = grad[:]
-    p_sharp_fwd_bck = grad[:]
-    p_sharp_bck_fwd = grad[:]
-    p_sharp_bck_bck = grad[:]
+    p_sharp_fwd_fwd = r[:]
+    p_sharp_fwd_bck = r[:]
+    p_sharp_bck_fwd = r[:]
+    p_sharp_bck_bck = r[:]
 
     # calculate hamiltonian of current state
     H0 = hamiltonian(z_sample)
@@ -188,8 +181,8 @@ function nuts_sub!(v::NUTS_Rie_Variate, epsilon::Float64, logfgrad::Function)
         rho_fwd = zeros(size(x))
         
         if pm == -1
-            transfer!(z_worker, z_minus)
-            
+            #transfer!(z_worker, z_minus)
+            z_worker = Ref(z_minus)
             rho_fwd .= rho
             p_fwd_bck .= p_bck_bck
             p_sharp_fwd_bck .= p_sharp_bck_bck
@@ -210,11 +203,12 @@ function nuts_sub!(v::NUTS_Rie_Variate, epsilon::Float64, logfgrad::Function)
                 meta
             )
         
-            transfer!(z_minus, z_worker)
+            #transfer!(z_minus, z_worker)
 
         else
 
-            transfer!(z_worker, z_plus)
+            #transfer!(z_worker, z_plus)
+            z_worker = Ref(z_plus)
             rho_bwd .= rho
             p_bck_fwd .= p_fwd_fwd
             p_sharp_bck_fwd .= p_sharp_fwd_fwd
@@ -235,7 +229,7 @@ function nuts_sub!(v::NUTS_Rie_Variate, epsilon::Float64, logfgrad::Function)
                 meta
             )
             
-            transfer!(z_plus, z_worker)
+            #transfer!(z_plus, z_worker)
         end#if pm
         tnni += meta.nni
         # the subtree is not valid! Further computations are not necessary
@@ -247,13 +241,11 @@ function nuts_sub!(v::NUTS_Rie_Variate, epsilon::Float64, logfgrad::Function)
         
         if lsw_t > log_sum_weight
             transfer!(z_sample, z_propose)
-        
             acc_p_r += 1
         else
             accp = exp(lsw_t - log_sum_weight)
             if rand() < accp
                 transfer!(z_sample, z_propose)
-        
                 acc_p_r += 1
             end
         end
@@ -294,8 +286,8 @@ end
 
 
 function buildtree(
-    s_worker::Array_HMC_State,
-    s_prob::Array_HMC_State,
+    s_worker::Ref{T},
+    s_prob::T,
     pm::Int64,
     depth::Integer,
     epsilon::Float64,
@@ -309,15 +301,14 @@ function buildtree(
     p_end::Vector{Float64},
     meta::NUTSMeta
     
-)
+) where T<: Array_HMC_State
 
     if depth == 0
-        d1 = transfer(s_worker)
-        leapfrog!(d1, pm*epsilon, logfgrad)
-        transfer!(s_prob, d1)
+        leapfrog!(s_worker[], pm*epsilon, logfgrad)
+        transfer!(s_prob, s_worker[])
 
 
-        h = hamiltonian(s_worker)
+        h = hamiltonian(s_prob)
         h = isnan(h) ? -Inf : h
         
         
@@ -328,7 +319,7 @@ function buildtree(
         meta.alpha += stat#H0 - h > 0 ? 1 : exp(H0 - h)
         meta.nalpha += 1
                 
-        log_sum_weight .= logsumexp(log_sum_weight[1], H0-h)
+        log_sum_weight .= logsumexp(log_sum_weight[1], h-H0)
         
         rho .+= s_prob.r
         p_sharp_beg .= s_prob.r
@@ -352,7 +343,7 @@ function buildtree(
         return false
     end
 
-    s_final=transfer(s_worker)
+    s_final=transfer(s_worker[])
     rho_final = zeros(size(rho))
     log_sum_weight_final = [-Inf]
     p_final_beg = zeros(size(rho))
@@ -401,15 +392,16 @@ function nouturn(
     rho::Vector{Float64},
     rminus::Vector{Float64},
     rplus::Vector{Float64})::Bool
-    return dot(rho, rminus) > 0 && dot(rho, rplus) > 0
+    return dot(rminus, rho) > 0 && dot(rplus, rho) > 0
 end
 
 
 function leapfrog!(d::Array_HMC_State,
     epsilon::Real, logfgrad::Function)
-
+    
     d.r += (0.5 * epsilon) * d.g
     d.x += epsilon * d.r
     d.lf, d.g = logfgrad(d.x)
+    
     d.r += (0.5 * epsilon) * d.g
 end

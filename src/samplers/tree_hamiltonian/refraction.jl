@@ -103,3 +103,65 @@ function ref_NNI!(
 
     tmpB, nni
 end
+
+struct division
+    arr::Array{<:Real, 2}
+    names::Vector{<:AbstractString}
+    number::Vector{Int}
+end
+
+Base.length(divi::division) = length(divi.names)
+
+function create_division(covmat, names, numbers, tol)::Tuple{division, division}
+    true_inds = findall(covmat[1, :] .< tol)
+    false_inds = findall(covmat[1, :] .>= tol)
+    d1 = division(covmat[true_inds, true_inds], names[true_inds], numbers[true_inds])
+    d2 = division(covmat[false_inds, false_inds], names[false_inds], numbers[false_inds])
+    d1, d2
+end
+
+function div2node(d1::division)
+    n1 = Node(d1.names[1])
+    n1.inc_length = d1.arr[1]
+    n1.num = d1.number[1]
+    n1
+end
+
+function cov2tree(covmat::Array{<:Real, 2}, names::Vector{<:AbstractString}, numbers, tol::Real=1e-7)
+    @assert issymmetric(covmat)
+    @assert isposdef(covmat)
+
+    d1, d2 = create_division(covmat, names, numbers, tol)
+    if length(d1) == 1 && length(d2) == 1
+        # two singlular nodes left
+        n1 = div2node(d1)
+        n2 = div2node(d2)
+        
+    elseif length(d1) == 1 && length(d2) > 1
+        # d1 is a leaf node, d2 is a cluster of nodes
+        n1 = div2node(d1)
+        min = minimum(d2.arr)
+        n2 = cov2tree(d2.arr .- min, d2.names, d2.number, tol)
+        n2.inc_length = min
+
+    elseif length(d1) > 1 && length(d2) == 1
+        # d1 is a cluster of node2, d2 is a leaf node
+        min = minimum(d1.arr)
+        n1 = cov2tree(d1.arr .- min , d1.names, d1.number, tol)
+        n1.inc_length = min
+        n2 = div2node(d2)
+    
+    else
+        # d1 and d2 are a cluster of nodes
+        min = minimum(d1.arr)
+        n1 = cov2tree(d1.arr .- min, d1.names, d1.number, tol)
+        n1.inc_length = min
+        min = minimum(d2.arr)
+        n2 = cov2tree(d2.arr .- min, d2.names, d2.number, tol)
+        n2.inc_length = min
+    end
+    n = Node("root")
+    add_child!(n, n1)
+    add_child!(n, n2)
+    return n
+end
