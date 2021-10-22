@@ -66,7 +66,6 @@ function mcmc(m::Model, inputs::Dict{Symbol},
               chains::Integer=1, verbose::Bool=true, trees::Bool=false,
               params::SimulationParameters=SimulationParameters()
               )::ModelChains
-
   burnin = burnin == 0 ? params.burnin : burnin
   thin = thin == 1 ? params.thin : thin
   chains = chains == 1 ? params.chains : chains

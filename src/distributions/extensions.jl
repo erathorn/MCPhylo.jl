@@ -19,22 +19,22 @@ end
 
 #################### BDiagNormal Distribution ####################
 
-const BDiagNormal = MvNormal{Float64, PBDiagMat, Vector{Float64}}
+# const BDiagNormal = MvNormal{Float64, PBDiagMat, Vector{Float64}}
 
-function BDiagNormal(μ::Vector{Float64}, Σ::Matrix{Float64})
-  n = div(length(μ), size(Σ, 1))
-  BDiagNormal(μ, PBDiagMat(Σ, n))
-end
+# function BDiagNormal(μ::Vector{Float64}, Σ::Matrix{Float64})
+#   n = div(length(μ), size(Σ, 1))
+#   BDiagNormal(μ, PBDiagMat(Σ, n))
+# end
 
-function BDiagNormal(μ::Vector{Float64}, Σ::Vector{Matrix{Float64}})
-  BDiagNormal(μ, PBDiagMat(Σ))
-end
+# function BDiagNormal(μ::Vector{Float64}, Σ::Vector{Matrix{Float64}})
+#   BDiagNormal(μ, PBDiagMat(Σ))
+# end
 
-BDiagNormal(μ::AbstractVector, Σ::AbstractMatrix) =
-  BDiagNormal(convert(Vector{Float64}, μ), convert(Matrix{Float64}, Σ))
+# BDiagNormal(μ::AbstractVector, Σ::AbstractMatrix) =
+#   BDiagNormal(convert(Vector{Float64}, μ), convert(Matrix{Float64}, Σ))
 
-BDiagNormal(μ::AbstractVector, Σ::AbstractVector) =
-  BDiagNormal(convert(Vector{Float64}, μ), Matrix{Float64}[Σ...])
+# BDiagNormal(μ::AbstractVector, Σ::AbstractVector) =
+#   BDiagNormal(convert(Vector{Float64}, μ), Matrix{Float64}[Σ...])
 
 
 #################### Null Distribution ####################

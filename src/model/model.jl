@@ -19,29 +19,33 @@ Returns a `Model` type object.
 * `nodes...`: arbitrary number of user-specified arguments defining logical and stochastic nodes in the model. Argument values must be `Logical` or `Stochastic` type objects. Their names in the model will be taken from the argument names.
 
 """
-function Model(; iter::Integer=0, burnin::Integer=0,
-               samplers::Vector{Sampler}=Sampler[], nodes...)
+function Model(;
+    iter::Integer = 0,
+    burnin::Integer = 0,
+    samplers::Vector{Sampler} = Sampler[],
+    nodes...,
+)
 
-  nodedict = Dict{Symbol, Any}()
-  for (key, value) in nodes
-    isa(value, AbstractDependent) || throw(ArgumentError("nodes are not all Dependent types"))
-    node = deepcopy(value)
-    isa(key, Symbol) || throw(ArgumentError("Something is wrong here"))
-    node.symbol = key
-    nodedict[key] = node
-  end
-  m = Model(nodedict, Sampler[], ModelState[], iter, burnin, false, false, -Inf64)
-  dag = ModelGraph(m)
-  dependentkeys = keys(m, :dependent)
-  terminalkeys = keys(m, :stochastic)
-  for v in vertices(dag.graph)
-    vkey = dag.keys[v]
-    if vkey in dependentkeys
-      m[vkey].targets = intersect(dependentkeys,
-                                  gettargets(dag, v, terminalkeys))
+    nodedict = Dict{Symbol,Any}()
+    for (key, value) in nodes
+        isa(value, AbstractDependent) ||
+            throw(ArgumentError("nodes are not all Dependent types"))
+        node = deepcopy(value)
+        isa(key, Symbol) || throw(ArgumentError("Something is wrong here"))
+        node.symbol = key
+        nodedict[key] = node
     end
-  end
-  setsamplers!(m, samplers)
+    m = Model(nodedict, Sampler[], ModelState[], iter, burnin, false, false, -Inf64)
+    dag = ModelGraph(m)
+    dependentkeys = keys(m, :dependent)
+    terminalkeys = keys(m, :stochastic)
+    for v in vertices(dag.graph)
+        vkey = dag.keys[v]
+        if vkey in dependentkeys
+            m[vkey].targets = intersect(dependentkeys, gettargets(dag, v, terminalkeys))
+        end
+    end
+    setsamplers!(m, samplers)
 end
 
 
@@ -51,23 +55,34 @@ Base.getindex(m::Model, nodekey::Symbol) = m.nodes[nodekey]
 
 
 function Base.setindex!(m::Model, value, nodekey::Symbol)
-  node = m[nodekey]
-  if isa(node, AbstractDependent)
-    node.value = value
-  else
-    m.nodes[nodekey] = convert(typeof(node), value)
-  end
+    node = m[nodekey]
+    m.nodes[nodekey] = set_node(node, value)
 end
 
+
+for (s_t, v) in [(:ArrayStochastic, :AbstractArray), 
+                 (:ScalarStochastic, :Real),
+                 (:TreeStochastic, :GeneralNode),
+                 (:ArrayLogical, :AbstractArray),
+                 (:ScalarLogical, :Real),
+                 (:TreeLogical, :GeneralNode),]
+    @eval begin
+        function set_node(node::T, value::S)::$s_t{S} where {T<:$s_t, S<:$v}
+            $s_t(node, value)
+        end
+    end
+end
+
+
 function Base.setindex!(m::Model, values::Dict, nodekeys::Vector{Symbol})
-  for key in nodekeys
-    m[key] = values[key]
-  end
+    for key in nodekeys
+        m[key] = values[key]
+    end
 end
 
 function Base.setindex!(m::Model, value, nodekeys::Vector{Symbol})
-  length(nodekeys) == 1 || throw(BoundsError())
-  m[first(nodekeys)] = value
+    length(nodekeys) == 1 || throw(BoundsError())
+    m[first(nodekeys)] = value
 end
 
 
@@ -105,152 +120,152 @@ Extract the symbols (keys) for all existing nodes or for nodes of a specified ty
 * `at...` : additional positional arguments to be passed to the `ntype` options, as described above.
 """
 function Base.keys(m::Model, ntype::Symbol, at...)
-  ntype == :block       ? keys_block(m, at...) :
-  ntype == :all         ? keys_all(m) :
-  ntype == :assigned    ? keys_assigned(m) :
-  ntype == :dependent   ? keys_dependent(m) :
-  ntype == :independent ? keys_independent(m) :
-  ntype == :input       ? keys_independent(m) :
-  ntype == :logical     ? keys_logical(m) :
-  ntype == :monitor     ? keys_monitor(m) :
-  ntype == :output      ? keys_output(m) :
-  ntype == :source      ? keys_source(m, at...) :
-  ntype == :stochastic  ? keys_stochastic(m) :
-  ntype == :target      ? keys_target(m, at...) :
+    ntype == :block ? keys_block(m, at...) :
+    ntype == :all ? keys_all(m) :
+    ntype == :assigned ? keys_assigned(m) :
+    ntype == :dependent ? keys_dependent(m) :
+    ntype == :independent ? keys_independent(m) :
+    ntype == :input ? keys_independent(m) :
+    ntype == :logical ? keys_logical(m) :
+    ntype == :monitor ? keys_monitor(m) :
+    ntype == :output ? keys_output(m) :
+    ntype == :source ? keys_source(m, at...) :
+    ntype == :stochastic ? keys_stochastic(m) :
+    ntype == :target ? keys_target(m, at...) :
     throw(ArgumentError("unsupported node type $ntype"))
 end
 
 function keys_all(m::Model)::Array{Symbol}
-  values = Symbol[]
-  for key in keys(m)
-    node = m[key]
-    if isa(node, AbstractDependent)
-      push!(values, key)
-      append!(values, node.sources)
+    values = Symbol[]
+    for key in keys(m)
+        node = m[key]
+        if isa(node, AbstractDependent)
+            push!(values, key)
+            append!(values, node.sources)
+        end
     end
-  end
-  unique(values)
+    unique(values)
 end
 
 function keys_assigned(m::Model)::Array{Symbol}
-  if m.hasinits
-    values = keys(m)
-  else
-    values = Symbol[]
-    for key in keys(m)
-      if !isa(m[key], AbstractDependent)
-        push!(values, key)
-      end
+    if m.hasinits
+        values = keys(m)
+    else
+        values = Symbol[]
+        for key in keys(m)
+            if !isa(m[key], AbstractDependent)
+                push!(values, key)
+            end
+        end
     end
-  end
-  values
+    values
 end
 
-function keys_block(m::Model, block::Integer=0)::Array{Symbol}
-  block == 0 ? keys_block0(m) : m.samplers[block].params
+function keys_block(m::Model, block::Integer = 0)::Array{Symbol}
+    block == 0 ? keys_block0(m) : m.samplers[block].params
 end
 
 function keys_block0(m::Model)::Array{Symbol}
-  values = Symbol[]
-  for sampler in m.samplers
-    append!(values, sampler.params)
-  end
-  unique(values)
+    values = Symbol[]
+    for sampler in m.samplers
+        append!(values, sampler.params)
+    end
+    unique(values)
 end
 
 function keys_dependent(m::Model)::Array{Symbol}
-  values = Symbol[]
-  for key in keys(m)
-    if isa(m[key], AbstractDependent)
-      push!(values, key)
+    values = Symbol[]
+    for key in keys(m)
+        if isa(m[key], AbstractDependent)
+            push!(values, key)
+        end
     end
-  end
-  intersect(tsort(m), values)
+    intersect(tsort(m), values)
 end
 
 function keys_independent(m::Model)::Array{Symbol}
-  deps = Symbol[]
-  for key in keys(m)
-    if isa(m[key], AbstractDependent)
-      push!(deps, key)
+    deps = Symbol[]
+    for key in keys(m)
+        if isa(m[key], AbstractDependent)
+            push!(deps, key)
+        end
     end
-  end
-  setdiff(keys(m, :all), deps)
+    setdiff(keys(m, :all), deps)
 end
 
 function keys_logical(m::Model)::Array{Symbol}
-  values = Symbol[]
-  for key in keys(m)
-    if isa(m[key], AbstractLogical) || isa(m[key], TreeLogical)
-      push!(values, key)
+    values = Symbol[]
+    for key in keys(m)
+        if isa(m[key], AbstractLogical) || isa(m[key], TreeLogical)
+            push!(values, key)
+        end
     end
-  end
-  values
+    values
 end
 
 function keys_monitor(m::Model)::Array{Symbol}
-  values = Symbol[]
-  for key in keys(m)
-    node = m[key]
-    if isa(node, AbstractDependent) && !isempty(node.monitor)
-      push!(values, key)
+    values = Symbol[]
+    for key in keys(m)
+        node = m[key]
+        if isa(node, AbstractDependent) && !isempty(node.monitor)
+            push!(values, key)
+        end
     end
-  end
-  values
+    values
 end
 
 function keys_output(m::Model)::Array{Symbol}
-  values = Symbol[]
-  dag = ModelGraph(m)
-  for v in vertices(dag.graph)
-    vkey = dag.keys[v]
-    if isa(m[vkey], AbstractStochastic) && !any_stochastic(dag, v, m)
-      push!(values, vkey)
+    values = Symbol[]
+    dag = ModelGraph(m)
+    for v in vertices(dag.graph)
+        vkey = dag.keys[v]
+        if isa(m[vkey], AbstractStochastic) && !any_stochastic(dag, v, m)
+            push!(values, vkey)
+        end
     end
-  end
-  values
+    values
 end
 
 keys_source(m::Model, nodekey::Symbol)::Array{Symbol} = m[nodekey].sources
 
 function keys_source(m::Model, nodekeys::Vector{Symbol})::Array{Symbol}
-  values = Symbol[]
-  for key in nodekeys
-    append!(values, m[key].sources)
-  end
-  unique(values)
+    values = Symbol[]
+    for key in nodekeys
+        append!(values, m[key].sources)
+    end
+    unique(values)
 end
 
 function keys_stochastic(m::Model)::Array{Symbol}
-  values = Symbol[]
-  for key in keys(m)
-    if isa(m[key], AbstractStochastic) || isa(m[key], TreeStochastic)
-      push!(values, key)
+    values = Symbol[]
+    for key in keys(m)
+        if isa(m[key], AbstractStochastic) || isa(m[key], TreeStochastic)
+            push!(values, key)
+        end
     end
-  end
-  values
+    values
 end
 
-function keys_target(m::Model, block::Integer=0)::Array{Symbol}
-  block == 0 ? keys_target0(m) : m.samplers[block].targets
+function keys_target(m::Model, block::Integer = 0)::Array{Symbol}
+    block == 0 ? keys_target0(m) : m.samplers[block].targets
 end
 
 function keys_target0(m::Model)::Array{Symbol}
-  values = Symbol[]
-  for sampler in m.samplers
-    append!(values, sampler.targets)
-  end
-  intersect(keys(m, :dependent), values)
+    values = Symbol[]
+    for sampler in m.samplers
+        append!(values, sampler.targets)
+    end
+    intersect(keys(m, :dependent), values)
 end
 
 keys_target(m::Model, nodekey::Symbol)::Array{Symbol} = m[nodekey].targets
 
 function keys_target(m::Model, nodekeys::Vector{Symbol})::Array{Symbol}
-  values = Symbol[]
-  for key in nodekeys
-    append!(values, m[key].targets)
-  end
-  intersect(keys(m, :dependent), values)
+    values = Symbol[]
+    for key in nodekeys
+        append!(values, m[key].targets)
+    end
+    intersect(keys(m, :dependent), values)
 end
 
 
@@ -261,7 +276,7 @@ end
 Write a text representation of the model, nodes, and attributes to the current output stream.
 """
 function Base.show(io::IO, m::Model)
-  showf(io, m, Base.show)
+    showf(io, m, Base.show)
 end
 """
     showall(io::IO, m::Model)
@@ -269,57 +284,57 @@ end
 Write a verbose text representation of the model, nodes, and attributes to the current output stream.
 """
 function showall(io::IO, m::Model)
-  showf(io, m, Base.showall)
+    showf(io, m, Base.showall)
 end
 
 function showf(io::IO, m::Model, f::Function)
-  print(io, "Object of type \"$(summary(m))\"\n")
-  width = displaysize()[2] - 1
-  for node in keys(m)
-    print(io, string("-"^width, "\n", node, ":\n"))
-    f(io, m[node])
-    println(io)
-  end
+    print(io, "Object of type \"$(summary(m))\"\n")
+    width = displaysize()[2] - 1
+    for node in keys(m)
+        print(io, string("-"^width, "\n", node, ":\n"))
+        f(io, m[node])
+        println(io)
+    end
 end
 
 
 #################### Auxiliary Functions ####################
 
 function names(m::Model, monitoronly::Bool)
-  values = AbstractString[]
-  for key in keys(m, :dependent)
-    if monitoronly
-      if !isempty(m[key].monitor)
-        nodenames = names(m, key)
-        append!(values, nodenames)
-      end
-    else
-      nodenames = names(m, key)
-      append!(values, nodenames)
+    values = AbstractString[]
+    for key in keys(m, :dependent)
+        if monitoronly
+            if !isempty(m[key].monitor)
+                nodenames = names(m, key)
+                append!(values, nodenames)
+            end
+        else
+            nodenames = names(m, key)
+            append!(values, nodenames)
+        end
+        #  end
+        #v = monitoronly ? nodenames[m[key].monitor] : nodenames
+        #append!(values, v)
     end
-    #  end
-    #v = monitoronly ? nodenames[m[key].monitor] : nodenames
-    #append!(values, v)
-  end
-  values
+    values
 end
 
 function names(m::Model, nodekey::Symbol)
-  node = m[nodekey]
+    node = m[nodekey]
 
-  unlist(node, names(node))
+    unlist(node, names(node))
 end
 
 function names(m::Model, nodekeys::Vector{Symbol})
-  values = AbstractString[]
-  for key in nodekeys
-    append!(values, names(m, key))
-  end
-  values
+    values = AbstractString[]
+    for key in nodekeys
+        append!(values, names(m, key))
+    end
+    values
 end
 
 
 function update_likelihood!(m::Model, likelihood::Float64)
-  m.likelihood = likelihood
-  m
+    m.likelihood = likelihood
+    m
 end

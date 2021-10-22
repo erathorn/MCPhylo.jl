@@ -30,10 +30,10 @@ function unlist_tree(root::N) where N<:GeneralNode
 end
 
 
-function unlist_tree(s::AbstractTreeStochastic)
+function unlist_tree(s::TreeVariate)
     unlist_tree(s.value)
 end
 
-function unlist(s::AbstractTreeStochastic, x::N, transform::Bool=false)  where N <: GeneralNode
+function unlist(s::TreeVariate, x::N, transform::Bool=false)  where N <: GeneralNode
     s.value
 end

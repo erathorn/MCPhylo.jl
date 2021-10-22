@@ -49,7 +49,11 @@ function make_tree_with_data(filename::String, dialect::AbstractString="nexus",
 		n_tax, n_sites, gap, miss, symbols, df, langs = ParseCSV(filename, gap, miss, header)
 	end
 	# create random tree
-	new_tree = create_tree_from_leaves(langs, n_sites)
+	if binary
+		new_tree = create_tree_from_leaves_bin(langs, n_sites)
+	else
+		new_tree = create_tree_from_leaves(langs, n_sites)
+	end
 
 	n_nodes = length(post_order(new_tree))
 	n_states = length(symbols)

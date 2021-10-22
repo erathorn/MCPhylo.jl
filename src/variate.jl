@@ -10,13 +10,14 @@ Base.convert(::Type{T}, v::ScalarVariate) where T<:AbstractFloat =
 Base.AbstractFloat(v::ScalarVariate) = convert(Float64, v)
 Base.Float64(v::ScalarVariate) = convert(Float64, v)
 
-Base.convert(::Type{Matrix}, v::MatrixVariate) = v.value
+Base.convert(::Type{T}, v::MatrixVariate) where T<:Matrix = convert(T, v.value)
 Base.convert(::Type{Vector}, v::VectorVariate) = v.value
 Base.convert(::Union{Type{Array{T}}, Type{Array{T, N}}},
-             v::ArrayVariate{N}) where {T<:Real, N} =
+             v::ArrayVariate) where {T<:Real, N} =
   convert(Array{T, N}, v.value)
 
 Base.unsafe_convert(::Type{Ptr{Float64}}, v::ArrayVariate) = pointer(v.value)
+
 
 
 macro promote_scalarvariate(V)
@@ -29,7 +30,8 @@ end
 #################### Base Functions ####################
 
 Base.size(v::AbstractVariate) = size(v.value)
-
+Base.length(s::AbstractVariate) = length(s.value)
+Base.ndims(s::AbstractVariate) = ndims(s.value)
 Base.stride(v::ArrayVariate, k::Int) = stride(v.value, k)
 
 
@@ -61,7 +63,7 @@ function Base.setindex!(v::ScalarVariate, x::Vector{T},
   end
 end
 
-Base.setindex!(v::ArrayVariate, x, inds::Int...) =
+Base.setindex!(v::AbstractVariate, x, inds...) =
   setindex!(v.value, x, inds...)
 
 
@@ -73,9 +75,9 @@ function Base.show(io::IO, v::AbstractVariate)
 end
 
 
-function Base.summary(io::IO, d::N) where N <: TreeVariate
-    summary(io, "Tree Variate")
-end
+# function Base.summary(io::IO, d::N) where N <: TreeVariate
+#     summary(io, "Tree Variate")
+# end
 
 
 #################### Auxiliary Functions ####################
@@ -119,8 +121,12 @@ const BinaryScalarMethods = [
 ]
 
 for op in BinaryScalarMethods
-  @eval ($op)(x::ScalarVariate, y::ScalarVariate) = ($op)(x.value, y.value)
+  @eval ($op)(x::AbstractVariate, y::AbstractVariate) = ($op)(x.value, y.value)
+  @eval ($op)(x::ScalarVariate, y::Number) = ($op)(x.value, y)
+  @eval ($op)(x::AbstractVariate, y::AbstractArray) = ($op)(x.value, y)
 end
+
+Base.getindex(d::AbstractVariate, i::Int) = d.value[i]
 
 const RoundScalarMethods = [
   :(Base.ceil),

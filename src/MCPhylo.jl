@@ -21,6 +21,7 @@ import RecipesBase.plot
 using StatsBase
 using Zygote
 using FiniteDiff
+using ForwardDiff
 using ChainRules
 using ChainRulesCore
 using Showoff: showoff
@@ -73,8 +74,11 @@ using LightGraphs: DiGraph, add_edge!, outneighbors,
 import StatsBase: autocor, autocov, countmap, counts, describe, predict,
        quantile, sample, sem, summarystats
 
-include("distributions/pdmats2.jl")
-using .PDMats2
+using Bijectors
+
+
+# include("distributions/pdmats2.jl")
+# using .PDMats2
 include("Tree/Node_Type.jl") # We need this to get the Node type in
 
 #################### Types ####################
@@ -84,15 +88,13 @@ ElementOrVector{T} = Union{T, Vector{T}}
 
 #################### Variate Types ####################
 
-abstract type ScalarVariate <: Real end
-abstract type ArrayVariate{N} <: DenseArray{Float64, N} end
-abstract type TreeVariate <: AbstractNode end
-
-const AbstractVariate = Union{ScalarVariate, ArrayVariate, TreeVariate}
-const NumericalVariate = Union{ScalarVariate, ArrayVariate}
-const VectorVariate = ArrayVariate{1}
-const MatrixVariate = ArrayVariate{2}
-
+abstract type AbstractVariate end
+# abstract type ArrayNode{S, N} <: AbstractArray{S, N} end
+# abstract type TreeNode <: AbstractNode end
+# abstract type ScalarNode <: Real end
+#abstract type AbstractLogical end
+# abstract type ArrayVariate{T, N} <: DenseArray{T,N} end
+# abstract type TreeVariate <: AbstractNode end
 
 
 #################### Distribution Types ####################
@@ -104,8 +106,8 @@ const DistributionStruct = Union{Distribution,
 
 #################### Dependent Types ####################
 
-mutable struct ScalarLogical <: ScalarVariate
-  value::Float64
+mutable struct ScalarLogical{D<:Real} <: AbstractVariate
+  value::D
   symbol::Symbol
   monitor::Vector{Int}
   eval::Function
@@ -113,8 +115,8 @@ mutable struct ScalarLogical <: ScalarVariate
   targets::Vector{Symbol}
 end
 
-mutable struct ArrayLogical{N} <: ArrayVariate{N}
-  value::Array{Float64, N}
+mutable struct ArrayLogical{D<:AbstractArray{T, N} where {T<: Real, N}} <: AbstractVariate
+  value::D
   symbol::Symbol
   monitor::Vector{Int}
   eval::Function
@@ -122,7 +124,7 @@ mutable struct ArrayLogical{N} <: ArrayVariate{N}
   targets::Vector{Symbol}
 end
 
-mutable struct TreeLogical{T} <: TreeVariate where T<:GeneralNode
+mutable struct TreeLogical{T<:GeneralNode} <: AbstractVariate
   value::T
   symbol::Symbol
   monitor::Vector{Int}
@@ -131,8 +133,8 @@ mutable struct TreeLogical{T} <: TreeVariate where T<:GeneralNode
   targets::Vector{Symbol}
 end
 
-mutable struct ScalarStochastic <: ScalarVariate
-  value::Float64
+mutable struct ScalarStochastic{D<:Real} <: AbstractVariate
+  value::D
   symbol::Symbol
   monitor::Vector{Int}
   eval::Function
@@ -141,8 +143,8 @@ mutable struct ScalarStochastic <: ScalarVariate
   distr::UnivariateDistribution
 end
 
-mutable struct ArrayStochastic{N} <: ArrayVariate{N}
-  value::Union{CuArray{Float64, N}, Array{Float64, N}}
+mutable struct ArrayStochastic{D<:AbstractArray{T, N} where {T<: Real, N}} <: AbstractVariate
+  value::D
   symbol::Symbol
   monitor::Vector{Int}
   eval::Function
@@ -152,7 +154,7 @@ mutable struct ArrayStochastic{N} <: ArrayVariate{N}
 end
 
 
-mutable struct TreeStochastic{T} <: TreeVariate where T<: GeneralNode
+mutable struct TreeStochastic{T<: GeneralNode} <: AbstractVariate
     value::T
     symbol::Symbol
     monitor::Vector{Int}
@@ -162,45 +164,55 @@ mutable struct TreeStochastic{T} <: TreeVariate where T<: GeneralNode
     distr::DistributionStruct
 end
 
-const AbstractLogical = Union{ScalarLogical, ArrayLogical}
-const AbstractStochastic = Union{ScalarStochastic, ArrayStochastic}
-const AbstractTreeStochastic = Union{TreeLogical, TreeStochastic}
-const AbstractDependent = Union{AbstractLogical, AbstractStochastic, AbstractTreeStochastic}
-const ConstraintDict{S} = Dict{Symbol, Union{Vector{Vector{S}}, Vector{Tuple{Vector{S}, Vector{S}}}} where S<:AbstractString} 
+# Specialized Unions
+const ScalarVariate = Union{ScalarStochastic{<:Real}, ScalarLogical{<:Real}}
+const VectorVariate = Union{ArrayStochastic{<:AbstractArray{<:Real, 1}}, ArrayLogical{<:AbstractArray{<:Real, 1}}}
+const MatrixVariate = Union{ArrayStochastic{<:AbstractArray{<:Real, 2}}, ArrayLogical{<:AbstractArray{<:Real, 2}}}
+const TreeVariate = Union{TreeLogical{<:GeneralNode}, TreeStochastic{<:GeneralNode}}
+
+# General Union
+const ArrayVariate = Union{ArrayStochastic{<:AbstractArray{<:Real,  N}} where N, ArrayLogical{<:AbstractArray{<:Real, N} where N}}
+
+
+const AbstractLogical = Union{ScalarLogical{<:Real}, ArrayLogical{<:AbstractArray{<:Real, N} where N}}
+const AbstractStochastic = Union{ScalarStochastic{<:Real}, ArrayStochastic{<:AbstractArray{<:Real, N} where N}}
+
+const AbstractDependent = Union{AbstractLogical, AbstractStochastic, TreeVariate}
 
 
 #################### Sampler Types ####################
 
 mutable struct Sampler{T}
   params::Vector{Symbol}
-  eval::Function
   tune::T
   targets::Vector{Symbol}
+  transform::Bool
 end
 
 
 abstract type SamplerTune end
 
-struct SamplerVariate{T<:SamplerTune} <: VectorVariate
-  value::Union{Vector{Float64}, Vector{S}} where S<:GeneralNode
+struct SamplerVariate{T<:SamplerTune, R<:AbstractArray{S} where S<:Union{Real, GeneralNode}} <: AbstractVariate
+  value::R
   tune::T
 
-  function SamplerVariate{T}(x::AbstractVector, tune::T) where T<:SamplerTune
-    v = new{T}(x, tune)
+  function SamplerVariate{T, R}(x::R, tune::T) where {T<:SamplerTune, R}
+    v = new{T, R}(x, tune)
     validate(v)
   end
 
-  function SamplerVariate{T}(x::AbstractVector, pargs...; kargs...) where T<:SamplerTune
+  function SamplerVariate{T, R}(x::R, pargs...; kargs...) where {T<:SamplerTune, R}
     if !isa(x[1], GeneralNode)
       value = convert(Vector{Float64}, x)
     else
       mt = typeof(x[1])
       value = convert(Vector{mt}, x)
     end
-    new{T}(value, T(value, pargs...; kargs...))
+    new{T, R}(value, T(value, pargs...; kargs...))
   end
 end
 
+Base.length(s::SamplerVariate) = length(s.value)
 
 #################### Model Types ####################
 
@@ -528,7 +540,8 @@ export
   majority_consensus_tree,
   discrete_gamma_rates,
   Restriction, JC, GTR, freeK,
-  ASDSF, parsimony, ParseNewick
+  ASDSF, parsimony, ParseNewick,
+  cov2tree
 
 
 export

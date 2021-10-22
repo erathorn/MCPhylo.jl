@@ -77,9 +77,10 @@ function gradlogpdf!(
     transform::Bool = false;
     dtype::Symbol = :forward,
 ) where {T<:Real}
-    f = x -> logpdf!(m, x, block, transform)
+    f = y -> logpdf!(m, y, block, transform)
     if dtype == :Zygote
-        Zygote.gradient(f, x)
+        mylogpdf!(m, x, block, transform)
+        #Zygote.gradient(f, x)
     else
         FiniteDiff.finite_difference_gradient(f, x)
     end
@@ -117,8 +118,9 @@ function logpdf(m::Model, nodekeys::Vector{Symbol}, transform::Bool = false)
         lp += logpdf(m[key], transform)
         isfinite(lp) || break
     end
-    m.likelihood = isnan(lp) ? -Inf : lp
-    m.likelihood
+    #m.likelihood = isnan(lp) ? -Inf : lp
+    #m.likelihood
+    lp
 end
 
 function pseudologpdf(m::Model, nodekeys::Vector{Symbol}, y, transform::Bool = false)
@@ -273,6 +275,66 @@ function logpdf!(
     lp
 end
 
+function logpdf!(
+    m::Model,
+    x::AbstractArray{T},
+    params::Array{Symbol},
+    targets::Array{Symbol},
+    transform::Bool = false,
+) where {T<:Real}
+    m[params] = relist(m, x, params, transform)
+    
+    df = [i for i in params if i ∉ targets]
+    lp = logpdf(m, df, transform)
+
+    isnan(lp) && return -Inf
+
+    for key in targets
+        isfinite(lp) || break
+        isnan(lp) && return -Inf
+        node = m[key]
+        update!(node, m)
+        lp += key in params ? logpdf(node, transform) : logpdf(node)
+    end
+    lp
+end
+
+
+
+function mylogpdf!(
+    m::Model,
+    x::AbstractArray{T},
+    block::Integer = 0,
+    transform::Bool = false,
+) where {T<:Real}
+    params = keys(m, :block, block)
+    targets = keys(m, :target, block)
+    diff = setdiff(params, targets)
+    myfun(y) = begin
+        #v = relist(m, x, params, transform)
+        m[params] = relist(m, y, params, transform)
+        #lp = sum(y)
+        
+        lp = logpdf(m, diff, transform)
+        # lp = isnan(lp) ? -Inf : lp
+        #lp = 0.0
+        for key in targets
+            isfinite(lp) || break
+            node = m[key]
+            update!(node, m)
+            lp += key in params ? logpdf(node, transform) : logpdf(node)
+        end
+        #lp = 0.0
+        lp
+    end
+    lp = myfun(x)
+
+    p = pullback(myfun, x)
+    d1 = p[2](1.0)
+    lp
+end
+
+
 function rand!(m::Model, x::Int64, block::Integer = 0)
     params = keys(m, :block, block)
     res = rand(m, params, x)
@@ -294,20 +356,31 @@ Returns the model updated with the MCMC sample and, in the case of `block=0`, th
 """
 function sample!(m::Model, block::Integer = 0)
     m.iter += 1
-    isoneblock = block != 0
-    blocks = isoneblock ? block : 1:length(m.samplers)
-    for b in blocks
-        sampler = m.samplers[b]
-        value = sampler.eval(m::Model, b::Int)
-        if value !== nothing
-            m[sampler.params] = value
-            update!(m, b)
+    #isoneblock = block != 0
+    #blocks = isoneblock ? block : 1:length(m.samplers)
+    #for b in blocks
+    for sampler in m.samplers
+        #sampler = m.samplers[b]
+        #value = sampler.eval(m::Model, b::Int)
+        res = sample!(sampler, m)
+        if res !== nothing
+            m[sampler.params] = res
+       #     update!(m, b)
         end
     end
-    m.iter -= isoneblock
+    #m.iter# -= isoneblock
     m.likelihood = final_likelihood(m)
     m
 end
+
+function sample!(s::Sampler, m::Model)
+    sv = SamplerVariate(unlist(m, s.params), s.tune)
+    lpdf(x) = s.tune.logf(m, x, s.params, s.targets, s.transform)
+    sample!(sv, lpdf, adapt=m.iter < m.burnin)
+    relist(m, sv.value, s.params, s.transform)
+end
+
+
 
 function pseudologpdf!(
     m::Model,
@@ -373,7 +446,7 @@ function unlist(m::Model, monitoronly::Bool)
         key -> begin
             node = m[key]
             lvalue =
-                isa(node, AbstractTreeStochastic) ? unlist_tree(node) : unlist(node)
+                isa(node, TreeVariate) ? unlist_tree(node) : unlist(node)
             monitoronly ? lvalue[node.monitor] : lvalue
         end
     end

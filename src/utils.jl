@@ -18,6 +18,7 @@ function modelexprsrc(f::Function, literalargs::Vector{Tuple{Symbol,DataType}})
     argnames = Vector{Any}(undef, m.nargs)
     argnames = Base.method_argnames(m)
     fkeys = Symbol[argnames[2:end]...]
+    
     ftypes = DataType[m.sig.parameters[2:end]...]
     n = length(fkeys)
 
@@ -35,16 +36,16 @@ function modelexprsrc(f::Function, literalargs::Vector{Tuple{Symbol,DataType}})
 
     modelargs = Array{Any}(undef, n)
     for i in nodeinds
-        modelargs[i] = Expr(:ref, :model, QuoteNode(fkeys[i]))
+        modelargs[i] = Expr(:call, MCPhylo.mod_value, Expr(:ref, :model, QuoteNode(fkeys[i])))
     end
     for i in literalinds
         modelargs[i] = fkeys[i]
     end
     expr = Expr(:block, Expr(:(=), :f, f), Expr(:call, :f, modelargs...))
-
     (expr, fkeys[nodeinds])
 end
 
+mod_value(d::AbstractVariate) = d.value
 
 #################### Mathematical Operators ####################
 

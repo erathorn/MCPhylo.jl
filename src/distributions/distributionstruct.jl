@@ -50,11 +50,11 @@ end
 relistlength_sub(d::Distribution, s::AbstractStochastic, x::AbstractArray) =
   relistlength(d, x)
 
-function relistlength_sub(d::Distribution, s::AbstractTreeStochastic, x::T) where T<:GeneralNode
+function relistlength_sub(d::Distribution, s::TreeStochastic{T}, x::T) where T<:GeneralNode
   relistlength(d, x)
 end
 
-function relistlength_sub(d::Distribution, s::AbstractTreeStochastic, x::AbstractArray)
+function relistlength_sub(d::Distribution, s::TreeStochastic{T}, x::AbstractArray{T}) where T<:GeneralNode
   relistlength(d, x[1])
 end
 
@@ -113,8 +113,8 @@ invlink(d::Distribution, x) = x
 invlink_sub(d::Distribution, x) = invlink(d, x)
 
 function invlink_sub(d::UnivariateDistribution, X::AbstractArray)
-  Y = similar(X, Float64)
-  map!(x -> invlink_sub(d, x), Y, X)
+  #Y = similar(X, Float64)
+  map(x -> invlink_sub(d, x), X)
 end
 
 function invlink_sub(D::Array{UnivariateDistribution}, X::AbstractArray)
@@ -150,8 +150,9 @@ end
 function logpdf_sub(d::UnivariateDistribution, X::AbstractArray,
                     transform::Bool)
   lp = 0.0
-  for x in X
-    lp += logpdf_sub(d, x, transform)
+  n = length(X)
+  @inbounds for i in 1:n
+   lp += logpdf_sub(d, X[i], transform)
   end
   lp
 end
@@ -168,9 +169,9 @@ end
 function logpdf_sub(D::Array{MultivariateDistribution}, X::AbstractArray,
                     transform::Bool)
   lp = 0.0
-  for sub in CartesianIndices(size(D))
-    d = D[sub]
-    lp += logpdf_sub(d, vec(X[sub, 1:length(d)]), transform)
+  #lp = sum([logpdf_sub(D[sub], vec(X[sub, 1:length(D[sub])]), transform) for sub in CartesianIndices(size(D))])
+  @inbounds for (ind, d) in enumerate(D)
+    lp += logpdf_sub(d, vec(X[ind, 1:length(d)]), transform)
   end
   lp
 end
