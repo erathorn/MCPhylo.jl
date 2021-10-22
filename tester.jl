@@ -1,11 +1,4 @@
 
-#=
-tester:
-- Julia version: 1.3.1
-- Author: erathorn
-- Date: 2020-10-07
-OPENBLAS_NUM_THREADS=5 JULIA_NUM_THREADS=5 /home/jo/Julia14/julia-1.4.2/bin/julia -O3
-=#
 
 using Revise
 using Pkg

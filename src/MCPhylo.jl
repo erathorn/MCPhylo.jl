@@ -22,15 +22,16 @@ using StatsBase
 using Zygote
 using FiniteDiff
 using ForwardDiff
-using ChainRules
-using ChainRulesCore
+#using ChainRules
+#ausing ChainRulesCore
 using Showoff: showoff
 using Markdown
 using Random
 using DataStructures
 using ProgressMeter
 using StaticArrays
-#using LoopVectorization
+using Bijectors
+
 using CUDA
 using PDMats
 if has_cuda()
@@ -42,7 +43,7 @@ end
 
 import Base: Matrix, names, summary
 
-#import LinearAlgebra: cholesky, dot, BlasFloat
+
 import Statistics: cor
  import Distributions:
 #        ## Generic Types
@@ -53,31 +54,12 @@ import Statistics: cor
        # Functions
        cdf, dim, gradlogpdf, insupport, isprobvec, logpdf, logpdf!, maximum,
        minimum, pdf, quantile, rand, sample!, support, length
-#        ## ContinuousUnivariateDistribution Types
-#        Arcsine, Beta, BetaPrime, Biweight, Cauchy, Chi, Chisq, Cosine,
-#        Epanechnikov, Erlang, Exponential, FDist, Frechet, Gamma, Gumbel,
-#        InverseGamma, InverseGaussian, Kolmogorov, KSDist, KSOneSided, Laplace,
-#        Levy, Logistic, LogNormal, NoncentralBeta, NoncentralChisq,
-#        NoncentralF, NoncentralT, Normal, NormalCanon, Pareto, Rayleigh,
-#        SymTriangularDist, TDist, TriangularDist, Triweight, Uniform, VonMises,
-#        Weibull,
-#        ## DiscreteUnivariateDistribution Types
-#        Bernoulli, Binomial, Categorical, DiscreteUniform, Geometric,
-#        Hypergeometric, NegativeBinomial, NoncentralHypergeometric,
-#        PoissonBinomial, Skellam,
-#        ## MultivariateDistribution Types
-#        Dirichlet, Multinomial, MvNormal, MvNormalCanon, MvTDist,
-#        VonMisesFisher,
-#        ## MatrixDistribution Types
-#        InverseWishart, Wishart,
-       ## Methods
-       
+
 using LightGraphs: DiGraph, add_edge!, outneighbors,
        topological_sort_by_dfs, vertices
 import StatsBase: autocor, autocov, countmap, counts, describe, predict,
        quantile, sample, sem, summarystats
 
-using Bijectors
 
 
 # include("distributions/pdmats2.jl")
