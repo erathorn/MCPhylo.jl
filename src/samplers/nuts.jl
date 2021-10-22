@@ -109,7 +109,7 @@ end
 function nuts_sub!(v::NUTSVariate{T}, epsilon::Real, logfgrad::Function) where T<: AbstractArray{<: Real}
   n = length(v)
   x, r, logf, grad = leapfrog(v.value, randn(n), zeros(n), 0.0, logfgrad)
-  logp0 = logf - 0.5 * dot(r)
+  logp0 = logf - 0.5 * dot(r, r)
   logu0 = logp0 + log(rand())
   xminus = xplus = x
   rminus = rplus = r
@@ -156,7 +156,7 @@ function buildtree(x::Vector{Float64}, r::Vector{Float64},
   if j == 0
     xprime, rprime, logfprime, gradprime = leapfrog(x, r, grad, pm * epsilon,
                                                     logfgrad)
-    logpprime = logfprime - 0.5 * dot(rprime)
+    logpprime = logfprime - 0.5 * dot(rprime, rprime)
     nprime = Int(logu0 < logpprime)
     sprime = logu0 < logpprime + 1000.0
     xminus = xplus = xprime
@@ -200,4 +200,17 @@ function nouturn(xminus::Vector{Float64}, xplus::Vector{Float64},
   dot(xdiff, rminus) >= 0 && dot(xdiff, rplus) >= 0
 end
 
-
+function nutsepsilon(x::Vector{Float64}, logfgrad::Function, target::Float64)
+  n = length(x)
+  _, r0, logf0, grad0 = leapfrog(x, randn(n), zeros(n), 0.0, logfgrad)
+  epsilon = 1.0
+  _, rprime, logfprime, gradprime = leapfrog(x, r0, grad0, epsilon, logfgrad)
+  prob = exp(logfprime - logf0 - 0.5 * (dot(rprime, rprime) - dot(r0, r0)))
+  pm = 2 * (prob > target) - 1
+  while prob^pm > target^pm
+    epsilon *= 2.0^pm
+    _, rprime, logfprime, _ = leapfrog(x, r0, grad0, epsilon, logfgrad)
+    prob = exp(logfprime - logf0 - 0.5 * (dot(rprime, rprime) - dot(r0, r0)))
+  end
+  epsilon
+end

@@ -35,7 +35,9 @@ inits = [ Dict{Symbol, Union{Any, Real}}(
     ) for i in 1:2
     ]
 
-scheme = [Slice([:mu1, :cm], 1.0)]
+scheme = [#Slice([:mu1, :cm], 1.0)
+          RWM([:mu1, :cm], 1.0)
+]
 
 setsamplers!(model, scheme);
 

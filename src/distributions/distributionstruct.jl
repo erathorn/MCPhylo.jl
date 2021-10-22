@@ -149,30 +149,19 @@ end
 
 function logpdf_sub(d::UnivariateDistribution, X::AbstractArray,
                     transform::Bool)
-  lp = 0.0
-  n = length(X)
-  @inbounds for i in 1:n
-   lp += logpdf_sub(d, X[i], transform)
-  end
+  @inbounds lp = sum([logpdf_sub(d, X[i], transform) for i in 1:length(X)])
   lp
 end
 
 function logpdf_sub(D::Array{UnivariateDistribution}, X::AbstractArray,
                     transform::Bool)
-  lp = 0.0
-  for i in 1:length(D)
-    lp += logpdf_sub(D[i], X[i], transform)
-  end
+  @inbounds lp = sum([logpdf_sub(D[i], X[i], transform) for i in 1:length(D)])
   lp
 end
 
 function logpdf_sub(D::Array{MultivariateDistribution}, X::AbstractArray,
                     transform::Bool)
-  lp = 0.0
-  #lp = sum([logpdf_sub(D[sub], vec(X[sub, 1:length(D[sub])]), transform) for sub in CartesianIndices(size(D))])
-  @inbounds for (ind, d) in enumerate(D)
-    lp += logpdf_sub(d, vec(X[ind, 1:length(d)]), transform)
-  end
+  @inbounds lp = sum([logpdf_sub(D[sub], vec(X[sub, 1:length(D[sub])]), transform) for sub in CartesianIndices(size(D))])
   lp
 end
 

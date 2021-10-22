@@ -63,7 +63,6 @@ function cummean(x::AbstractVector{T}) where {T<:Real}
     y
 end
 
-dot(x) = dot(x, x)
 
 @inline logit(x::Real) = log(x / (1.0 - x))
 @inline invexpit(x::Real) = 1.0 / (x - x^2)
@@ -186,7 +185,8 @@ function assign_mcmc_work(
             chain = take!(channel)
             chain > 0 ? ProgressMeter.next!(meters[chain]) : finished_chains += 1
         end # while
-        @async results_vec = pmap2(f, lsts)
+        #@async 
+        results_vec = pmap2(f, lsts)
     end # @sync
     ASDSF && close.(r_channels)
     if ASDSF
