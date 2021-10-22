@@ -27,29 +27,6 @@ mutable struct NUTS_Rie_Tune <: SamplerTune
     end
 end
 
-# NUTS_Rie_Tune(
-#     x::Vector{<:Real},
-#     logfgrad::Function,
-#     ::NullFunction,
-#     target::Real = 0.75;
-#     args...,
-# )=
-#     NUTS_Rie_Tune(x, nutsepsilon(x, logfgrad, target), logfgrad; args...)
-
-# NUTS_Rie_Tune(
-#     x::Vector{<:Real},
-#     logfgrad::Function,
-#     target::Real;
-#     args...,
-# ) =
-#     NUTS_Rie_Tune(x, nutsepsilon(x, logfgrad, target), logfgrad; args...)
-
-# NUTS_Rie_Tune(x::Vector; epsilon::Real, args...) = NUTS_Rie_Tune(x, epsilon, missing, args...)
-
-
-# NUTSTune(x::Vector, epsilon::Real; args...) =
-#   NUTSTune(x, epsilon, missing; args...)
-
 const NUTS_Rie_Variate = SamplerVariate{NUTS_Rie_Tune, T} where T
 
 
@@ -76,7 +53,6 @@ end
 
 #################### Sampling Functions ####################
 
-#sample!(v::NUTS_Rie_Variate; args...) = sample!(v, v.tune.logfgrad; args...)
 
 function sample!(v::NUTS_Rie_Variate{T}, logfgrad::Function; adapt::Bool = false) where T<: AbstractArray{<: Real}
     tune = v.tune
