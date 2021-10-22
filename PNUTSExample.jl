@@ -31,7 +31,7 @@ using Random
 #mt, df = make_tree_with_data("Example.nex", binary=true); # load your own nexus file
 
 
-mt, df = make_tree_with_data("untracked_files/simulation_PNUTS_Paper/out_Res_20-600.nex"); # load your own nexus file
+mt, df = make_tree_with_data("untracked_files/simulation_PNUTS_Paper/out_Res_20-600.nex", binary=true); # load your own nexus file
 #mt, df = make_tree_with_data("untracked_files/Dravidian.cc.phy.nex"); # load your own nexus file
 
 
