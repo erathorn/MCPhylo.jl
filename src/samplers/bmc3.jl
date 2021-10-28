@@ -17,11 +17,11 @@ mutable struct BMC3Tune{F<:BMC3Form} <: SamplerTune
 end
 
 
-const BMC3IntVariate = SamplerVariate{BMC3Tune{Int}}
-const BMC3VecVariate = SamplerVariate{BMC3Tune{Vector{Vector{Int}}}}
+const BMC3IntVariate = Sampler{BMC3Tune{Int}, T} where T
+const BMC3VecVariate = Sampler{BMC3Tune{Vector{Vector{Int}}}, T} where T
 
 BMC3Variate(x::Vector, logf::Function; k::F=1) where {F<:BMC3Form} =
-  SamplerVariate{BMC3Tune{F}}(x, k, logf)
+  Sampler{BMC3Tune{F}}(x, k, logf)
 
 
 function validate(v::BMC3IntVariate)
@@ -54,7 +54,7 @@ Returns a `Sampler{BMC3Tune{typeof(k)}}` type object.
 function BMC3(params::ElementOrVector{Symbol}; k::F=1) where {F<:BMC3Form}
   samplerfx = function(model::Model, block::Integer)
     block = SamplingBlock(model, block)
-    v = SamplerVariate(block, k)
+    v = Sampler(block, k)
     sample!(v, x -> logpdf!(block, x))
     relist(block, v)
   end
@@ -64,7 +64,7 @@ end
 
 #################### Sampling Functions ####################
 
-sample!(v::SamplerVariate{BMC3Tune{F}}) where {F<:BMC3Form} = sample!(v, v.tune.logf)
+sample!(v::Sampler{BMC3Tune{F}}) where {F<:BMC3Form} = sample!(v, v.tune.logf)
 """
     sample!(v::SamplerVariate{BMC3Tune{F}}, logf::Function) where {F<:BMC3Form}
 
@@ -73,7 +73,7 @@ are assumed to have binary numerical values (0 or 1).
 
 Returns `v` updated with similar values and associated tuning parameters.
 """
-function sample!(v::SamplerVariate{BMC3Tune{F}}, logf::Function) where {F<:BMC3Form}
+function sample!(v::Sampler{BMC3Tune{F}}, logf::Function) where {F<:BMC3Form}
   x = v[:]
   idx = randind(v)
   x[idx] = 1.0 .- v[idx]

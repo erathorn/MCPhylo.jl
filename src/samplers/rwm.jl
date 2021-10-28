@@ -23,7 +23,7 @@ mutable struct RWMTune <: SamplerTune
   end
 end
 
-const RWMVariate = SamplerVariate{RWMTune, T} where T
+const RWMVariate = Sampler{RWMTune, T} where T
 
 validate(v::RWMVariate{T}) where T<:AbstractArray{S} where S<:Union{Real, GeneralNode} = validate(v, v.tune.scale)
 

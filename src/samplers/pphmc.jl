@@ -21,7 +21,7 @@ end
 #    PPHMCTune(x, logfgrad, epsilon, nleap, delta)
 
 
-const PPHMCVariate = SamplerVariate{PPHMCTune}
+const PPHMCVariate = Sampler{PPHMCTune, T} where T<:GeneralNode
 
 
 
@@ -47,7 +47,7 @@ function PPHMC(params::ElementOrVector{Symbol}, epsilon::Float64, nleap::Int64, 
         f = let block = block
             (x, sz, ll, gr) -> mlogpdfgrad!(block, x, sz, ll, gr)
         end
-        v = SamplerVariate(block, f, epsilon, nleap, delta)
+        v = Sampler(block, f, epsilon, nleap, delta)
 
         sample!(v::PPHMCVariate, f, model.iter <= model.burnin, model.burnin)
 

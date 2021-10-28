@@ -21,7 +21,7 @@ mutable struct DMHTune <: SamplerTune
 	end
   end
   
-  const DMHVariate = SamplerVariate{DMHTune}
+  const DMHVariate = Sampler{DMHTune, T} where T
   
   DMHTune(x::Vector, f, ps, cl, dk, m, s; args...) = DMHTune(f, ps, cl, dk, m, s; args...)
   
@@ -42,7 +42,7 @@ mutable struct DMHTune <: SamplerTune
 	  f = x -> logpdf!(block, x)
 	  fp = (x, y) -> pseudologpdf!(block, x, y)
 	  cl = (x, args...) -> conditional_likelihood!(block, x, args...)
-	  v = SamplerVariate(block, f, fp, cl, targets, m, scale; args...)
+	  v = Sampler(block, f, fp, cl, targets, m, scale; args...)
   
 	  sample!(v::DMHVariate, model)
   

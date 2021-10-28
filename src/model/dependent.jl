@@ -118,7 +118,7 @@ gradlogpdf(d::AbstractDependent, x=nothing, transform::Bool=false) = 0.0
 
 #################### Logical ####################
 
-@promote_scalarvariate ScalarLogical
+@promote_scalarvariate Logical{<:Real}
 
 
 #################### Constructors ####################
@@ -136,7 +136,7 @@ logical operation to be scalar.
 function Logical(f::Function, monitor::Union{Bool,Vector{Int}} = true)
     value = Float64(NaN)
     fx, src = modelfxsrc(depfxargs, f)
-    l = ScalarLogical(value, :nothing, Int[], fx, src, Symbol[])
+    l = Logical(value, :nothing, Int[], fx, src, Symbol[])
     setmonitor!(l, monitor)
 end
 
@@ -156,7 +156,7 @@ Constructor for a Logical model node.
 function Logical(d::Integer, f::Function, monitor::Union{Bool,Vector{Int}} = true)
     value = Array{Float64}(undef, fill(0, d)...)
     fx, src = modelfxsrc(depfxargs, f)
-    l = ArrayLogical(value, :nothing, Int[], fx, src, Symbol[])
+    l = Logical(value, :nothing, Int[], fx, src, Symbol[])
     setmonitor!(l, monitor)
 end
 
@@ -178,12 +178,15 @@ function Logical(
 ) where {T<:GeneralNode}
     value = T()
     fx, src = modelfxsrc(depfxargs, f)
-    l = TreeLogical(value, :nothing, Int[], fx, src, Symbol[])
+    l = Logical(value, :nothing, Int[], fx, src, Symbol[])
     setmonitor!(l, monitor)
 end
 
 ScalarLogical(x::T) where {T<:Real} = x
 
+function Logical(a::Logical, value::T)::Logical{T} where T
+    Logical(value, a.symbol, a.monitor, a.eval, a.sources, a.targets, a.distr)
+end
 
 #################### Updating ####################
 """
@@ -197,7 +200,7 @@ Returns the result of a call to setmonitor!(l, l.monitor) or setmonitor!(d, d.mo
 
 * `m` : model containing the node.
 """
-function setinits!(l::AbstractLogical, m::Model, ::Any = nothing)
+function setinits!(l::Logical, m::Model, ::Any = nothing)
     l.value = l.eval(m)
     setmonitor!(l, l.monitor)
 end
@@ -212,7 +215,7 @@ Returns the result of a call to `setmonitor!(l, l.monitor)` or `setmonitor!(d, d
 
 * `m`  : model containing the node.
 """
-function setinits!(d::TreeLogical, m::Model, x::T) where {T<:GeneralNode}
+function setinits!(d::Logical{T}, m::Model, x::T) where {T<:GeneralNode}
     d.value = d.eval(m)
     setmonitor!(d, d.monitor)
 end # function
@@ -236,9 +239,9 @@ end
 
 #################### Distribution Methods ####################
 
-relistlength(d::ScalarLogical, x::AbstractArray, transform::Bool = false) = (x[1], 1)
+relistlength(d::Logical{<:Real}, x::AbstractArray, transform::Bool = false) = (x[1], 1)
 
-function relistlength(d::ArrayLogical, x::AbstractArray, transform::Bool = false)
+function relistlength(d::Logical{<:A}, x::A, transform::Bool = false) where  A<:AbstractArray
     n = length(d)
     value = reshape(x[1:n], size(d))
     (value, n)
@@ -249,7 +252,7 @@ end
 
 #################### Base Methods ####################
 
-@promote_scalarvariate ScalarStochastic
+@promote_scalarvariate Stochastic{<:Real}
 
 function showall(io::IO, s::AbstractStochastic)
     show(io, s)
@@ -279,7 +282,7 @@ logical operation to be scalar.
 function Stochastic(f::Function, monitor::Union{Bool,Vector{Int}} = true)
     value = Float64(NaN)
     fx, src = modelfxsrc(depfxargs, f)
-    s = ScalarStochastic(
+    s = Stochastic(
         value,
         :nothing,
         Int[],
@@ -293,29 +296,13 @@ end
 
 Stochastic(f::Function, d::Integer, args...) = Stochastic(d, f, args...)
 
-function Stochastic_cu(d::Integer, f::Function, monitor::Union{Bool,Vector{Int}} = true)
 
-    value = CuArray{Float64}(undef, fill(0, d)...)
-    fx, src = modelfxsrc(depfxargs, f)
-    s = ArrayStochastic(
-        value,
-        :nothing,
-        Int[],
-        fx,
-        src,
-        Symbol[],
-        NullUnivariateDistribution(),
-    )
-    setmonitor!(s, monitor)
-end
-
-
-function Stochastic_ncu(d::Integer, f::Function, monitor::Union{Bool,Vector{Int}} = true)
+function Stochastic(d::Integer, f::Function, monitor::Union{Bool,Vector{Int}} = true)
 
     value = Array{Float64}(undef, fill(0, d)...)
 
     fx, src = modelfxsrc(depfxargs, f)
-    s = ArrayStochastic(
+    s = Stochastic(
         value,
         :nothing,
         Int[],
@@ -327,35 +314,6 @@ function Stochastic_ncu(d::Integer, f::Function, monitor::Union{Bool,Vector{Int}
     setmonitor!(s, monitor)
 end
 
-
-"""
-    Stochastic(d::Integer, f::Function, monitor::Union{Bool,
-        Vector{Int}}=true, cuda::Bool=false)
-
-Constructor for a Stochastic model node.
-
-* `d` : Specifies dimensions of the output.
-
-* `f` : Specifies the distributional relationship between the arguments and the node. These arguments are other nodes of the model.
-
-* `monitor` : indicates whether the results should be monitored, i.e. saved.
-
-* `cuda` : indicates whether the function supports cuda functionality and the data is
-in the respective format. THIS FEATURE IS NOT FULLY SUPPORTED.
-"""
-function Stochastic(
-    d::Integer,
-    f::Function,
-    monitor::Union{Bool,Vector{Int}} = true,
-    cuda::Bool = false,
-)
-    if cuda
-        return Stochastic_cu(d, f, monitor)
-    else
-        return Stochastic_ncu(d, f, monitor)
-    end
-
-end
 
 Stochastic(f::Function, d::T, args...) where {T<:GeneralNode} = Stochastic(d, f, args...)
 
@@ -378,7 +336,7 @@ function Stochastic(
 ) where {N<:GeneralNode}
     value = Node()
     fx, src = modelfxsrc(depfxargs, f)
-    s = TreeStochastic(
+    s = Stochastic(
         value,
         :nothing,
         Int[],
@@ -390,7 +348,9 @@ function Stochastic(
     setmonitor!(s, monitor)
 end
 
-ScalarStochastic(x::T) where {T<:Real} = x
+function Stochastic(a::Stochastic, value::T)::Stochastic{T} where T
+    Stochastic(value, a.symbol, a.monitor, a.eval, a.sources, a.targets, a.distr)
+end
 
 
 #################### Updating ####################
@@ -407,9 +367,9 @@ Returns the node with its assigned initial values.
 
 * `x` : values to assign to the node.
 """
-function setinits!(s::ScalarStochastic, m::Model, x::Real)
+function setinits!(s::Stochastic{R}, m::Model, x::R) where R <: Real
     s.value = convert(Float64, x)
-    s.eval(m)
+    s.distr = s.eval(m)
     setmonitor!(s, s.monitor)
 end
 """
@@ -425,7 +385,7 @@ Returns the node with its assigned initial values.
 
 * `x` : values to assign to the node.
 """
-function setinits!(s::ArrayStochastic, m::Model, x::DenseArray)
+function setinits!(s::Stochastic{<:DenseArray}, m::Model, x::DenseArray)
   s.value = convert(typeof(s.value), copy(x))
   s.distr = s.eval(m)
   if isa(s.distr, PhylogeneticDistribution)
@@ -436,15 +396,14 @@ function setinits!(s::ArrayStochastic, m::Model, x::DenseArray)
       end
     end
   elseif !isa(s.distr, UnivariateDistribution) && dims(s) != dims(s.distr)
-    throw(DimensionMismatch("incompatible distribution for stochastic node $(s.symbol).\n
-                            Expected $(dims(s.distr)), got$(dims(s))."))
+    throw(DimensionMismatch("incompatible distribution for stochastic node $(s.symbol). Expected $(dims(s.distr)), got$(dims(s))."))
   end
   setmonitor!(s, s.monitor)
 end
 
-function setinits!(s::AbstractStochastic, m::Model, x)
-    throw(ArgumentError("incompatible initial value for node : $(s.symbol)"))
-end
+# function setinits!(s::Stochastic, m::Model, x)
+#     throw(ArgumentError("incompatible initial value for node : $(s.symbol)"))
+# end
 """
     setinits!(d::TreeStochastic, m::Model, x::T) where {T<:GeneralNode}
 
@@ -458,7 +417,7 @@ Returns the node with its assigned initial values.
 
 * `x` : values to assign to the node.
 """
-function setinits!(d::TreeStochastic, m::Model, x::T) where {T<:GeneralNode}
+function setinits!(d::Stochastic{T}, m::Model, x::T) where {T<:GeneralNode}
     d.value = deepcopy(x)
     d.distr = d.eval(m)
     insupport(d.distr, x) || throw(
@@ -480,33 +439,11 @@ Returns the node with its values updated.
 * `m` : model containing the node.
 """
 function update!(s::AbstractStochastic, m::Model)
-    s.eval(m)
+    s.distr = s.eval(m)
     s
 end
 
-for (s, t) in [
-    (:ArrayStochastic, :AbstractArray),
-    (:ScalarStochastic, :Real),
-    (:TreeStochastic, :GeneralNode),
-]
-    @eval begin
-        function $s(a::S, value::T) where {S<:$s,T<:$t}
-            $s{T}(value, a.symbol, a.monitor, a.eval, a.sources, a.targets, a.distr)
-        end
-    end
-end
 
-for (s, t) in [
-    (:ArrayLogical, :AbstractArray),
-    (:ScalarLogical, :Real),
-    (:TreeLogical, :GeneralNode),
-]
-    @eval begin
-        function $s(a::S, value::T) where {S<:$s,T<:$t}
-            $s{T}(value, a.symbol, a.monitor, a.eval, a.sources, a.targets)
-        end
-    end
-end
 
 
 #################### Distribution Methods ####################
@@ -530,7 +467,13 @@ end
 function relistlength(s::AbstractVariate,
   x::AbstractArray, transform::Bool=false)
 value, n = relistlength_sub(s.distr, s, x)
-(transform ? invlink_sub(s.distr, value) : value, n)
+if transform
+    u = invlink_sub(s.distr, value)
+   return u, n
+else
+    return value, n
+end
+#(transform ? invlink_sub(s.distr, value) : value, n)
 end
 
 function relistlength(s::TreeVariate, x::N,

@@ -27,7 +27,7 @@ end
 BHMCTune(x::Vector, traveltime::Real) =
   BHMCTune(x, traveltime, missing)
 
-const BHMCVariate = SamplerVariate{BHMCTune}
+const BHMCVariate = Sampler{BHMCTune, T} where T
 
 validate(v::BHMCVariate) = validatebinary(v)
 
@@ -48,7 +48,7 @@ Returns a `Sampler{BHMCTune}` type object.
 function BHMC(params::ElementOrVector{Symbol}, traveltime::Real)
   samplerfx = function(model::Model, block::Integer)
     block = SamplingBlock(model, block)
-    v = SamplerVariate(block, traveltime)
+    v = Sampler(block, traveltime)
     sample!(v, x -> logpdf!(block, x))
     relist(block, v)
   end

@@ -17,11 +17,11 @@ mutable struct BMGTune{F<:BMGForm} <: SamplerTune
 end
 
 
-const BMGIntVariate = SamplerVariate{BMGTune{Int}}
-const BMGVecVariate = SamplerVariate{BMGTune{Vector{Vector{Int}}}}
+const BMGIntVariate = Sampler{BMGTune{Int}, T} where T
+const BMGVecVariate = Sampler{BMGTune{Vector{Vector{Int}}}, T} where T
 
 BMGVariate(x::Vector, logf::Function; k::F=1) where {F<:BMGForm} =
-  SamplerVariate{BMGTune{F}}(x, k, logf)
+  Sampler{BMGTune{F}}(x, k, logf)
 
 
 function validate(v::BMGIntVariate)
@@ -54,7 +54,7 @@ Returns a `Sampler{BMGTune{typeof(k)}}` type object.
 function BMG(params::ElementOrVector{Symbol}; k::F=1) where {F<:BMGForm}
   samplerfx = function(model::Model, block::Integer)
     block = SamplingBlock(model, block)
-    v = SamplerVariate(block, k)
+    v = Sampler(block, k)
     sample!(v, x -> logpdf!(block, x))
     relist(block, v)
   end
@@ -64,16 +64,16 @@ end
 
 #################### Sampling Functions ####################
 
-sample!(v::SamplerVariate{BMGTune{F}}) where {F<:BMGForm} = sample!(v, v.tune.logf)
+sample!(v::Sampler{BMGTune{F}}) where {F<:BMGForm} = sample!(v, v.tune.logf)
 """
-    sample!(v::SamplerVariate{BMGTune{F}}, logf::Function) where {F<:BMGForm}
+    sample!(v::Sampler{BMGTune{F}}, logf::Function) where {F<:BMGForm}
 
 Draw one sample from a target distribution using the BMG sampler. Parameters
 are assumed to have binary numerical values (0 or 1).
 
 Returns `v` updated with simulated values and associated tuning parameters.
 """
-function sample!(v::SamplerVariate{BMGTune{F}}, logf::Function) where {F<:BMGForm}
+function sample!(v::Sampler{BMGTune{F}}, logf::Function) where {F<:BMGForm}
   n = length(v)
   probs = Vector{Float64}(undef, n)
   idx = randind(v)

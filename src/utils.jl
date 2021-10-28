@@ -50,6 +50,7 @@ mod_value(d::AbstractVariate) = d.value
 #################### Mathematical Operators ####################
 
 # isprobvec(p::AbstractVector) = isprobvec(convert(Vector{Float64}, p))
+isprobvec(s::AbstractVariate) = isprobvec(s.value)
 
 cummean(x::AbstractArray) = mapslices(cummean, x, dims = 1)
 
@@ -143,7 +144,7 @@ function assign_mcmc_work(
     # count the number of trees per step per chain
     tree_dim::Int64 = 0
     for i in lsts[1][1].nodes
-        if isa(i[2], TreeStochastic)
+        if isa(i[2], Stochastic{<:GeneralNode})
             push!(statnames, string("asdsf_", string(i[1])))
             tree_dim += 1
         end # if

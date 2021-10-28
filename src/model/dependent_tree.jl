@@ -1,19 +1,19 @@
 
-function update!(d::TreeStochastic, m::Model)
+function update!(d::Stochastic{<:GeneralNode}, m::Model)
     d.distr = d.eval(m)
     d
 end
 
-function update!(d::TreeLogical, m::Model)
+function update!(d::Logical{<:GeneralNode}, m::Model)
     d.value = d.eval(m)
     d
 end
 
-function names(d::TreeStochastic, nodekey::Symbol)
+function names(d::Stochastic{<:GeneralNode}, nodekey::Symbol)
     AbstractString["Tree_length["*string(nodekey)*"]"]
 end
 
-function names(d::TreeLogical, nodekey::Symbol)
+function names(d::Logical{<:GeneralNode}, nodekey::Symbol)
     AbstractString["Tree_length["*string(nodekey)*"]"]
 end
 

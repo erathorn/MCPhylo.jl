@@ -28,7 +28,7 @@ mutable struct HMCTune <: SamplerTune
 end
 
 
-const HMCVariate = SamplerVariate{HMCTune}
+const HMCVariate = Sampler{HMCTune, T} where T
 
 validate(v::HMCVariate) = validate(v, v.tune.SigmaL)
 
@@ -83,7 +83,7 @@ end
 function HMCSampler(params, pargs...; dtype::Symbol=:forward)
   samplerfx = function(model::Model, block::Integer)
     block = SamplingBlock(model, block, true)
-    v = SamplerVariate(block, pargs...)
+    v = Sampler(block, pargs...)
     sample!(v, x -> logpdfgrad!(block, x, dtype))
     relist(block, v)
   end

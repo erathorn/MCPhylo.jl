@@ -27,7 +27,7 @@ end
 BIATune(x::Vector; args...) =
    BIATune(x, missing; args...)
 
-const BIAVariate = SamplerVariate{BIATune}
+const BIAVariate = Sampler{BIATune, T} where T
 
 function validate(v::BIAVariate)
   n = length(v)
@@ -61,7 +61,7 @@ Returns a `Sampler{BIATune}` type object.
 function BIA(params::ElementOrVector{Symbol}; args...)
   samplerfx = function(model::Model, block::Integer)
     block = SamplingBlock(model, block)
-    v = SamplerVariate(block; args...)
+    v = Sampler(block; args...)
     sample!(v, x -> logpdf!(block, x))
     relist(block, v)
   end

@@ -59,18 +59,12 @@ function Base.setindex!(m::Model, value, nodekey::Symbol)
     m.nodes[nodekey] = set_node(node, value)
 end
 
+function set_node(node::Logical, value::A)::Logical{A} where A
+    Logical(node, value)
+end
 
-for (s_t, v) in [(:ArrayStochastic, :AbstractArray), 
-                 (:ScalarStochastic, :Real),
-                 (:TreeStochastic, :GeneralNode),
-                 (:ArrayLogical, :AbstractArray),
-                 (:ScalarLogical, :Real),
-                 (:TreeLogical, :GeneralNode),]
-    @eval begin
-        function set_node(node::T, value::S)::$s_t{S} where {T<:$s_t, S<:$v}
-            $s_t(node, value)
-        end
-    end
+function set_node(node::Stochastic, value::A)::Stochastic{A} where A
+    Stochastic(node, value)
 end
 
 
@@ -239,7 +233,7 @@ end
 function keys_stochastic(m::Model)::Array{Symbol}
     values = Symbol[]
     for key in keys(m)
-        if isa(m[key], AbstractStochastic) || isa(m[key], TreeStochastic)
+        if isa(m[key], Stochastic)# || isa(m[key], TreeStochastic)
             push!(values, key)
         end
     end

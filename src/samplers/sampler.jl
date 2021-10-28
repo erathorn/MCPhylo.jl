@@ -36,52 +36,59 @@ function Sampler(params::Vector{Symbol}, f::Function, tune::Any = Dict())
     Sampler(params, modelfx(samplerfxargs, f), tune, Symbol[])
 end
 
-
-function SamplerVariate(x::U, tune::T) where {T<:SamplerTune,U<:DenseArray{<:Real}}
-    SamplerVariate{T,U}(x, tune)
+function Sampler(params::Vector{Symbol}, tune::SamplerTune, targets::Vector{Symbol}, transform::Bool=false)
+    Sampler(Float64[], params, tune, targets, transform)
 end
 
-function SamplerVariate(x::U, tune::T) where {T<:SamplerTune,U<:DenseArray{<:GeneralNode}}
-    SamplerVariate{T,U}(x, tune)
+function Sampler(v::T, s::Sampler{R, X})::Sampler{R, T} where {R<:SamplerTune, X, T}
+    Sampler(v, s.params, s.tune, s.targets, s.transform)
 end
 
+# function SamplerVariate(x::U, tune::T) where {T<:SamplerTune,U<:DenseArray{<:Real}}
+#     SamplerVariate{T,U}(x, tune)
+# end
 
-function SamplerVariate(block::SamplingBlock, pargs...; kargs...)
-    m = block.model
-    SamplerVariate(unlist(block), m.samplers[block.index], m.iter, pargs...; kargs...)
-end
+# function SamplerVariate(x::U, tune::T) where {T<:SamplerTune,U<:DenseArray{<:GeneralNode}}
+#     SamplerVariate{T,U}(x, tune)
+# end
 
-function SamplerVariate(
-    x::R,
-    s::Sampler{T},
-    iter::Integer,
-    pargs...;
-    kargs...,
-) where {T<:SamplerTune,R<:DenseArray{<:Real}}
-    if iter == 1
-        v = SamplerVariate{T,R}(x, pargs...; kargs...)
-        s.tune = v.tune
-    else
-        v = SamplerVariate{T,R}(x, s.tune)
-    end
-    v
-end
 
-function SamplerVariate(
-    x::U,
-    s::Sampler{T},
-    iter::Integer,
-    pargs...;
-    kargs...,
-) where {T<:SamplerTune,U<:DenseArray{<:GeneralNode}}
-    if iter == 1
-        v = SamplerVariate{T,U}(x, pargs...; kargs...)
-        s.tune = v.tune
-    else
-        v = SamplerVariate{T,U}(x, s.tune)
-    end
-    v
-end
+# function SamplerVariate(block::SamplingBlock, pargs...; kargs...)
+#     m = block.model
+#     SamplerVariate(unlist(block), m.samplers[block.index], m.iter, pargs...; kargs...)
+# end
+
+# function SamplerVariate(
+#     x::R,
+#     s::Sampler{T},
+#     iter::Integer,
+#     pargs...;
+#     kargs...,
+# ) where {T<:SamplerTune,R<:DenseArray{<:Real}}
+#     if iter == 1
+#         v = SamplerVariate{T,R}(x, pargs...; kargs...)
+#         s.tune = v.tune
+#     else
+#         v = SamplerVariate{T,R}(x, s.tune)
+#     end
+#     v
+# end
+
+# function SamplerVariate(
+#     x::U,
+#     s::Sampler{T},
+#     iter::Integer,
+#     pargs...;
+#     kargs...,
+# ) where {T<:SamplerTune,U<:DenseArray{<:GeneralNode}}
+#     if iter == 1
+#         v = SamplerVariate{T,U}(x, pargs...; kargs...)
+#         s.tune = v.tune
+#     else
+#         v = SamplerVariate{T,U}(x, s.tune)
+#     end
+#     v
+# end
 
 
 
@@ -107,14 +114,14 @@ end
 
 #################### Variate Validators ####################
 
-validate(v::SamplerVariate) = v
+validate(v::Sampler) = v
 
-function validatebinary(v::SamplerVariate)
+function validatebinary(v::Sampler)
     all(insupport(Bernoulli, v)) || throw(ArgumentError("variate is not a binary vector"))
     v
 end
 
-function validatesimplex(v::SamplerVariate)
+function validatesimplex(v::Sampler)
     isprobvec(v) || throw(ArgumentError("variate is not a probability vector $v"))
     v
 end
@@ -217,12 +224,14 @@ function logpdfgrad!(
             lp
         end
     end
-
+    #ll1 = lf(x)
+    #grad1 = FiniteDiff.finite_difference_gradient(lf, x)
     chunk = ForwardDiff.Chunk(min(length(x), chunksize))
     config = ForwardDiff.GradientConfig(lf, x, chunk)
     grad = ForwardDiff.gradient!(similar(x), lf, x, config)
     
-    (ll, ifelse.(isfinite.(grad), grad, 0.0))
+    #(ll, ifelse.(isfinite.(grad), grad, 0.0))
+    ll, grad
 end
 
 

@@ -286,7 +286,7 @@ function logpdf!(
     
     df = [i for i in params if i ∉ targets]
     lp = logpdf(m, df, transform)
-
+    
     isnan(lp) && return -Inf
 
     for key in targets
@@ -369,15 +369,15 @@ function sample!(m::Model, block::Integer = 0)
         end
     end
     #m.iter# -= isoneblock
-    m.likelihood = final_likelihood(m)
+#    m.likelihood = final_likelihood(m)
     m
 end
 
 function sample!(s::Sampler, m::Model)
-    sv = SamplerVariate(unlist(m, s.params), s.tune)
+    #sv = SamplerVariate(unlist(m, s.params, transform=s.transform), s.tune)
     lpdf(x) = s.tune.logf(m, x, s.params, s.targets, s.transform)
-    sample!(sv, lpdf, adapt=m.iter < m.burnin)
-    relist(m, sv.value, s.params, s.transform)
+    sample!(s, lpdf, adapt=m.iter < m.burnin)
+    relist(m, s.value, s.params, s.transform)
 end
 
 
@@ -425,8 +425,8 @@ end
 """
     unlist(m::Model, block::Integer=0, transform::Bool=false)
 """
-function unlist(m::Model, block::Integer = 0, transform::Bool = false)
-    unlist(m, keys(m, :block, block), transform)
+function unlist(m::Model, block::Integer = 0; transform::Bool = false)
+    unlist(m, keys(m, :block, block), transform=transform)
 end
 
 function samparas(m::Model)
@@ -468,7 +468,7 @@ Returns vectors of concatenated node values.
 
 * `transform` : whether to apply a link transformation in the conversion.
 """
-function unlist(m::Model, nodekeys::Vector{Symbol}, transform::Bool = false)
+function unlist(m::Model, nodekeys::Vector{Symbol}; transform::Bool = false)
     f = let m = m, transform = transform
         key -> unlist(m[key], transform)
     end

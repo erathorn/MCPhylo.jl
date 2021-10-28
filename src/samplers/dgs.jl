@@ -22,8 +22,8 @@ mutable struct DSTune{F<:DSForm} <: SamplerTune
 end
 
 
-const DGSVariate = SamplerVariate{DSTune{Function}}
-const DiscreteVariate = SamplerVariate{DSTune{Vector{Float64}}}
+const DGSVariate = Sampler{DSTune{Function}, T} where T
+const DiscreteVariate = Sampler{DSTune{Vector{Float64}}, T} where T
 
 validate(v::DGSVariate) = validate(v, v.tune.support)
 
@@ -32,7 +32,7 @@ function validate(v::DiscreteVariate)
   validate(v, v.tune.support, v.tune.mass)
 end
 
-function validate(v::SamplerVariate{DSTune{F}}, support::Matrix) where {F<:DSForm}
+function validate(v::Sampler{DSTune{F}}, support::Matrix) where {F<:DSForm}
   n = length(v)
   size(support, 1) == n ||
     throw(ArgumentError("size(support, 1) differs from variate length $n"))
@@ -113,7 +113,7 @@ end
 
 #################### Sampling Functions ####################
 
-sample!(v::SamplerVariate{DSTune{F}}) where {F<:DSForm} = sample!(v, v.tune.mass)
+sample!(v::Sampler{DSTune{F}}) where {F<:DSForm} = sample!(v, v.tune.mass)
 
 """
     sample!(v::DGSVariate, mass::Function)

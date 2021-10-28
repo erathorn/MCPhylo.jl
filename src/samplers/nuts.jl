@@ -31,7 +31,7 @@ end
 #  NUTSTune(x, epsilon; args...)
 
 
-const NUTSVariate = SamplerVariate{NUTSTune, T} where T
+const NUTSVariate = Sampler{NUTSTune, T} where T
 
 
 #################### Sampler Constructor ####################
@@ -52,9 +52,9 @@ Returns a `Sampler{NUTSTune}` type object.
 
 * `args...`: additional keyword arguments to be passed to the `NUTSVariate` constructor.
 """
-function NUTS(params::ElementOrVector{Symbol}; epsilon::Real = -Inf, args...)
-  tune = NUTSTune(Float64[], epsilon, logpdfgrad!, args...)
-  Sampler(params, tune, Symbol[], true)
+function NUTS(params::ElementOrVector{Symbol}; epsilon::Real = -Inf, kwargs...)
+  tune = NUTSTune(Float64[], epsilon, logpdfgrad!; kwargs...)
+  Sampler(Float64[], params, tune, Symbol[], true)
   #Sampler(params, samplerfx, NUTSTune())
 end
 
@@ -108,12 +108,15 @@ end
 
 function nuts_sub!(v::NUTSVariate{T}, epsilon::Real, logfgrad::Function) where T<: AbstractArray{<: Real}
   n = length(v)
-  x, r, logf, grad = leapfrog(v.value, randn(n), zeros(n), 0.0, logfgrad)
+  x = deepcopy(v.value)
+  logf, grad = logfgrad(x)
+  r = randn(n)
+  #x, r, logf, grad = leapfrog(v.value, randn(n), zeros(n), 0.0, logfgrad)
   logp0 = logf - 0.5 * dot(r, r)
   logu0 = logp0 + log(rand())
-  xminus = xplus = x
-  rminus = rplus = r
-  gradminus = gradplus = grad
+  xminus = xplus = deepcopy(x)
+  rminus = rplus = deepcopy(r)
+  gradminus = gradplus = deepcopy(grad)
   j = 0
   n = 1
   s = true

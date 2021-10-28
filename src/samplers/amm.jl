@@ -24,7 +24,7 @@ end
 
 AMMTune(x::Vector, Sigma::Matrix{T}; args...) where {T<:Real} = AMMTune(x, Sigma, missing; args...)
 
-const AMMVariate = SamplerVariate{AMMTune}
+const AMMVariate = Sampler{AMMTune, T} where T
 
 function validate(v::AMMVariate)
   n = length(v)
@@ -62,7 +62,7 @@ function AMM(params::ElementOrVector{Symbol}, Sigma::Matrix{T};
 
   samplerfx = function(model::Model, block::Integer)
     block = SamplingBlock(model, block, true)
-    v = SamplerVariate(block, Sigma; args...)
+    v = Sampler(block, Sigma; args...)
     isadapt = adapt == :burnin ? model.iter <= model.burnin :
               adapt == :all ? true : false
     sample!(v, x -> logpdf!(block, x), adapt=isadapt)

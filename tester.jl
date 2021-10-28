@@ -8,35 +8,40 @@ using Random
 using LinearAlgebra
 
 
+Random.seed!(42)
 
-
-s = rand(InverseWishart(10, diagm(ones(5))))
+s = rand(InverseWishart(50, diagm(ones(50))))
 #s = rand(Exponential())
-mu = randn(5)
+mu = [0.1,0.4,0.3,0.15,0.05]
+μ = randn(50)
+#mu1 = mu + rand(5)
+#mu1 /= sum(mu1)
 
 my_data = Dict{Symbol, Any}(
-  :df => collect(transpose(rand(MultivariateNormal(mu, s), 500)))
+  :df => collect(transpose(rand(MultivariateNormal(μ, s), 500)))
 );
 
 
 
 # model setup
 model =  Model(
-    df = Stochastic(2, (mu1, cm) ->  MultivariateDistribution[MultivariateNormal(mu1, cm) for i in 1:500], false, false),
+    df = Stochastic(2, (mu1, cm) ->  MultivariateDistribution[MultivariateNormal(mu1, cm) for i in 1:500], false),
     mu1 = Stochastic(1, () -> Normal(), true),
-    cm = Stochastic(2, () -> InverseWishart(10, diagm(ones(5))), true)
+    cm = Stochastic(2, () -> InverseWishart(50, diagm(ones(50))), true)
      )
 # intial model values
 inits = [ Dict{Symbol, Union{Any, Real}}(
-    :mu1 => randn(5),
-    :cm => rand(InverseWishart(10, diagm(ones(5)))),
+    :mu1 => randn(50),
+    :cm => rand(InverseWishart(50, diagm(ones(50)))),
     :df => my_data[:df],
     
     ) for i in 1:2
     ]
 
-scheme = [#Slice([:mu1, :cm], 1.0)
-          RWM([:mu1, :cm], 1.0)
+scheme = [#Slice([:mu1, :cm], 1.0),
+          #RWM(:mu1, 1.0)
+          #SliceSimplex(:mu1, scale = 1)
+          NUTS([:mu1, :cm], tree_depth=5, target=0.8)
 ]
 
 setsamplers!(model, scheme);

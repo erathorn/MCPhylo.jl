@@ -82,7 +82,7 @@ PNUTSTune(
 
 PNUTSTune(x::Vector; epsilon::Real, args...) = PNUTSTune(x, epsilon, missing, args...)
 
-const PNUTSVariate = SamplerVariate{PNUTSTune}
+const PNUTSVariate = Sampler{PNUTSTune, T} where T<:GeneralNode
 
 
 #################### Sampler Constructor ####################
@@ -107,7 +107,7 @@ function PNUTS(params::ElementOrVector{Symbol}; args...)
         f = let block = block
             (x, sz, ll, gr) -> mlogpdfgrad!(block, x, sz, ll, gr)
         end
-        v = SamplerVariate(block, f, NullFunction(); args...)
+        v = Sampler(block, f, NullFunction(); args...)
 
         sample!(v::PNUTSVariate, f, adapt = model.iter <= model.burnin)
 

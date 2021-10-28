@@ -1,6 +1,6 @@
 #################### PDMatDistribution ####################
 
-const PDMatDistribution = Union{InverseWishart, Wishart}
+#const PDMatDistribution = Union{InverseWishart, Wishart}
 
 function unlist(d::PDMatDistribution, X::AbstractArray)
   n = dim(d)
@@ -39,35 +39,35 @@ function relistlength(d::PDMatDistribution, X::AbstractArray{T}) where T
   #(collect(reshape(X, (n,n))), n*n)
 end
 
-# function link(d::PDMatDistribution, X::DenseMatrix)
-#   n = dim(d)
-#   Y = zeros(n, n)
-#   U = cholesky(X).U
-#   for i in 1:n
-#     Y[i, i] = log(U[i, i])
-#   end
-#   for i in 1:n, j in (i + 1):n
-#     Y[i, j] = U[i, j]
-#   end
-#   Y
-# end
+function mylink(d::PDMatDistribution, X::DenseMatrix)
+  n = dim(d)
+  Y = zeros(n, n)
+  L = cholesky(X).L
+  for i in 1:n
+    Y[i, i] = log(L[i, i])
+  end
+  for i in 1:n, j in (i + 1):n
+    Y[j, i] = L[j, i]
+  end
+  Y
+end
 
-# function invlink(d::PDMatDistribution, X::DenseMatrix)
-#   n = dim(d)
-#   U = zeros(n, n)
-#   di = diagind(n,n)
-#   XD = diagm(exp.(X[di]) .- X[di])
-#   U = X .+ XD
-#   transpose(U) * U
+function myinvlink(d::PDMatDistribution, X::DenseMatrix)
+  n = dim(d)
+  U = zeros(n, n)
+  di = diagind(n,n)
+  XD = diagm(exp.(X[di]) .- X[di])
+  U = X .+ XD
+  U * transpose(U)
 
-#   # for i in 1:n
-#   #   U[i, i] = exp(X[i, i])
-#   # end
-#   # for i in 1:n, j in (i + 1):n
-#   #   U[i, j] = U[i,j] + X[i, j]
-#   # end
-#   # transpose(U) * U
-# end
+  # for i in 1:n
+  #   U[i, i] = exp(X[i, i])
+  # end
+  # for i in 1:n, j in (i + 1):n
+  #   U[i, j] = U[i,j] + X[i, j]
+  # end
+  # transpose(U) * U
+end
 
 function logpdf(d::PDMatDistribution, X::DenseMatrix, transform::Bool)
   lp = logpdf(d, X)

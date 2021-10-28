@@ -30,14 +30,14 @@ mutable struct SliceTune{F<:SliceForm} <: SamplerTune
 end
 
 
-const SliceUnivariate = SamplerVariate{SliceTune{Univariate}, R} where R
-const SliceMultivariate = SamplerVariate{SliceTune{Multivariate}, R} where R
+const SliceUnivariate = Sampler{SliceTune{Univariate}, R} where R
+const SliceMultivariate = Sampler{SliceTune{Multivariate}, R} where R
 
-validate(v::SamplerVariate{SliceTune{F}}) where {F<:SliceForm} = validate(v, v.tune.width)
+validate(v::Sampler{SliceTune{F}}) where {F<:SliceForm} = validate(v, v.tune.width)
 
-validate(v::SamplerVariate{SliceTune{F}}, width::Float64) where {F<:SliceForm} = v
+validate(v::Sampler{SliceTune{F}}, width::Float64) where {F<:SliceForm} = v
 
-function validate(v::SamplerVariate{SliceTune{F}}, width::Vector) where {F<:SliceForm}
+function validate(v::Sampler{SliceTune{F}}, width::Vector) where {F<:SliceForm}
     n = length(v)
     length(width) == n ||
         throw(ArgumentError("length(width) differs from variate length $n"))
