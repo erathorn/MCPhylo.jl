@@ -28,8 +28,8 @@ mutable struct DMHTune <: SamplerTune
   
   #################### Sampler Constructor ####################
   
-  function DMH(params::ElementOrVector{Symbol}, m::Int64, scale::Float64=1.0,
-			   proposal::Distribution=Normal(), transform::Bool=true; args...)
+  function DMH(params::ElementOrVector{Symbol}, m::Int64; scale::Float64=1.0,
+			   proposal::Distribution=Normal(), transform::Bool=true, args...)
   
 		samplerfx = function(model::Model, block::Integer)
   
