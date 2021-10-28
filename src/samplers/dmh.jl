@@ -155,6 +155,6 @@ function propose(θ::T, scale::Float64, d::LogNormal)::Tuple{T, Float64} where T
 	θ_prime = rate * θ
 	lograte = log(rate)
 	logirate = log(irate)
-	logr = (lograte * lograte - logirate * logirate) / (2.0 * d.σ * d.σ) + lograte - logirate
+	logr = (logirate * logirate -lograte * lograte) / (2.0 * d.σ * d.σ) + logirate - lograte
 	return θ_prime, logr
 end
