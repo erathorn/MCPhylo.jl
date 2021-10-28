@@ -8,27 +8,28 @@ mutable struct DMHTune <: SamplerTune
 	scale::Float64
 	link::Function
 	invlink::Function
+	proposal::Distribution
   
 	DMHTune() = new()
   
-	function DMHTune(f::Union{Function, Missing}, ps, cl, m::Int64, s::Float64;
+	function DMHTune(f::Union{Function, Missing}, ps, cl, m::Int64, s::Float64, proposal::Distribution;
 						link::Function=identity, inverselink::Function=identity)
-	  new(f, ps, cl, Vector{Symbol}(), m, s, link, inverselink)
+	  new(f, ps, cl, Vector{Symbol}(), m, s, link, inverselink, proposal)
 	end
-	function DMHTune(f::Union{Function, Missing}, ps, cl, dk::Vector{Symbol}, m::Int64, s::Float64;
+	function DMHTune(f::Union{Function, Missing}, ps, cl, dk::Vector{Symbol}, m::Int64, s::Float64, proposal::Distribution;
 						link::Function=identity, inverselink::Function=identity)
-	  new(f, ps, cl, dk, m, s, link, inverselink)
+	  new(f, ps, cl, dk, m, s, link, inverselink, proposal)
 	end
   end
   
   const DMHVariate = SamplerVariate{DMHTune}
   
-  DMHTune(x::Vector, f, ps, cl, dk, m, s; args...) = DMHTune(f, ps, cl, dk, m, s; args...)
+  DMHTune(x::Vector, f, ps, cl, dk, m, s, proposal; args...) = DMHTune(f, ps, cl, dk, m, s, proposal; args...)
   
   #################### Sampler Constructor ####################
   
-  function DMH(params::ElementOrVector{Symbol}, m::Int64, scale::Float64=1.0,
-			   transform::Bool=true; args...)
+  function DMH(params::ElementOrVector{Symbol}, m::Int64; scale::Float64=1.0,
+			   proposal::Distribution=Normal(), transform::Bool=true, args...)
   
 		samplerfx = function(model::Model, block::Integer)
   
@@ -42,7 +43,7 @@ mutable struct DMHTune <: SamplerTune
 	  f = x -> logpdf!(block, x)
 	  fp = (x, y) -> pseudologpdf!(block, x, y)
 	  cl = (x, args...) -> conditional_likelihood!(block, x, args...)
-	  v = SamplerVariate(block, f, fp, cl, targets, m, scale; args...)
+	  v = SamplerVariate(block, f, fp, cl, targets, m, scale, proposal; args...)
   
 	  sample!(v::DMHVariate, model)
   
@@ -77,7 +78,11 @@ mutable struct DMHTune <: SamplerTune
 	  # this way of generating theta_prime from the current values of theta
 	  # takes care of the transition probability from theta_prime to theta and vice versa
 	  # the values equal and will cancel out.
-	  θ_prime = θ + v.tune.scale .* rand(Normal(0.0, 1.0), length(v))
+	  
+	  # The proposal function also calculats the parameter transition propbabilities in case of
+	  # non-symmetric proposal distributions
+	  θ_prime, r = propose(θ, v.tune.scale, v.tune.proposal)
+	  
   
 	  #println("real")
 	  # calculate logpdf values
@@ -98,7 +103,7 @@ mutable struct DMHTune <: SamplerTune
 	  lf_yt = tune.pseudolog(θ, y)
   
 	  # calculate acceptance probability (proposal distribution?)
-	  r = exp((lf_yt + lf_xtp) - (lf_xt + lf_ytp))
+	  r += (lf_yt + lf_xtp) - (lf_xt + lf_ytp)
 	  #println("r $r")
   
 	  # RWM acceptance logic is a bit reversed here. Above the new value is
@@ -106,7 +111,7 @@ mutable struct DMHTune <: SamplerTune
 	  # If the sample is accepted nothing needs to be done anymore, otherwise the
 	  # old value will be reassigned.
   
-	  if rand() > r
+	  if log(rand()) > r
 		  #println("rejected")
 		  # sample is rejected, so use the old value.
 		  v[:] = θ
@@ -140,3 +145,16 @@ mutable struct DMHTune <: SamplerTune
 	  end
   end
   
+function propose(θ::T, scale::Float64, d::SymDistributionType)::Tuple{T, Float64} where T<:Vector{<:Real}
+	θ + scale .* rand(d, length(v)), 0
+end
+
+function propose(θ::T, scale::Float64, d::LogNormal)::Tuple{T, Float64} where T<:Vector{<:Real}
+	rate = rand(d)
+	irate = 1.0 / rate
+	θ_prime = rate * θ
+	lograte = log(rate)
+	logirate = log(irate)
+	logr = (lograte * lograte - logirate * logirate) / (2.0 * d.σ * d.σ) + lograte - logirate
+	return θ_prime, logr
+end
