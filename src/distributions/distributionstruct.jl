@@ -47,8 +47,7 @@ function relistlength(d::MatrixDistribution, x::AbstractArray)
   (value, n)
 end
 
-relistlength_sub(d::Distribution, s::AbstractStochastic, x::AbstractArray) =
-  relistlength(d, x)
+relistlength_sub(d::Distribution, s::AbstractStochastic, x::AbstractArray) = relistlength(d, x)
 
 function relistlength_sub(d::Distribution, s::Stochastic{T}, x::T) where T<:GeneralNode
   relistlength(d, x)
@@ -61,7 +60,7 @@ end
 relistlength(d::UnivariateDistribution, x::T) where T<:GeneralNode = (x, 1)
 
 function relistlength_sub(d::Union{Array{UnivariateDistribution}, UnivariateDistribution}, 
-                          s::Stochastic{<:AbstractArray}, X::AbstractArray)
+                          s::Stochastic{<:AbstractArray{<:Real, N} where N}, X::AbstractArray)
   n = length(s)
   value = reshape(X[1:n], size(s))
   (value, n)
