@@ -116,6 +116,18 @@ function pmap2(f::Function, lsts::AbstractArray)
     end
 end
 
+## Custom Macro to get embedded errror messages
+macro async_showerr(ex)
+    quote
+        t = @async try
+            eval($(esc(ex)))
+        catch err
+            bt = catch_backtrace()
+            println()
+            showerror(stderr, err, bt)
+        end
+    end
+end
 
 """
   assign_mcmc_work(f::Function, lsts::AbstractArray
@@ -186,13 +198,7 @@ function assign_mcmc_work(
             chain > 0 ? ProgressMeter.next!(meters[chain]) : finished_chains += 1
         end # while
         #@async 
-        results_vec = @async try
-                                pmap2(f, lsts)
-                             catch err
-                                bt = catch_backtrace()
-                                println()
-                                showerror(stderr, err, bt)
-                             end
+        @async_showerr results_vec = pmap2(f, lsts)
         
     end # @sync
     ASDSF && close.(r_channels)
