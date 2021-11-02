@@ -146,7 +146,7 @@ mutable struct DMHTune <: SamplerTune
   end
   
 function propose(θ::T, scale::Float64, d::Normal)::Tuple{T, Float64} where T<:Vector{<:Real}
-	θ + scale .* rand(d, length(v)), 0
+	θ + scale .* rand(d, length(θ)), 0
 end
 
 function propose(θ::T, scale::Float64, d::LogNormal)::Tuple{T, Float64} where T<:Vector{<:Real}
