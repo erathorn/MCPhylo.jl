@@ -145,7 +145,7 @@ mutable struct DMHTune <: SamplerTune
 	  end
   end
   
-function propose(θ::T, scale::Float64, d::SymDistributionType)::Tuple{T, Float64} where T<:Vector{<:Real}
+function propose(θ::T, scale::Float64, d::Normal)::Tuple{T, Float64} where T<:Vector{<:Real}
 	θ + scale .* rand(d, length(v)), 0
 end
 
