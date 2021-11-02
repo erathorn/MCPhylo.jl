@@ -101,7 +101,7 @@ mutable struct DMHTune <: SamplerTune
 	  #println("pseudo")
 	  lf_ytp = tune.pseudolog(v.value, y) # -> Do I calculate the prior here??? This should not happen!!!
 	  lf_yt = tune.pseudolog(θ, y)
-  
+	  
 	  # calculate acceptance probability (proposal distribution?)
 	  r += (lf_yt + lf_xtp) - (lf_xt + lf_ytp)
 	  #println("r $r")
@@ -112,7 +112,6 @@ mutable struct DMHTune <: SamplerTune
 	  # old value will be reassigned.
   
 	  if log(rand()) > r
-		  #println("rejected")
 		  # sample is rejected, so use the old value.
 		  v[:] = θ
 	  end
@@ -127,14 +126,14 @@ mutable struct DMHTune <: SamplerTune
 	  counter = zero(Int64)
   
 	  while true
-		  random_language_idx = shuffle(1:nlangs)
+		  #random_language_idx = shuffle(1:nlangs)
 		  random_feature_idx = shuffle(1:nfeatures)
-		  @inbounds for i in random_language_idx
+		  @inbounds for i in 1:nlangs#random_language_idx
 			  @inbounds for f in random_feature_idx
 				  
-				  probs = v.tune.condlike(v, X, i, f)	
-				  new_x = sample(1:length(probs), Weights(probs))
-					X[f, i] = new_x
+				probs = v.tune.condlike(v, X, i, f)	
+				new_x = sample(1:length(probs), Weights(probs))
+				X[f, i] = new_x
 			  #	end
 			  end
 			  counter += 1
