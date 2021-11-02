@@ -47,7 +47,7 @@ function relistlength(d::MatrixDistribution, x::AbstractArray)
   (value, n)
 end
 
-relistlength_sub(d::Distribution, s::Stochastic{<:AbstractArray}, x::AbstractArray) =
+relistlength_sub(d::Distribution, s::AbstractStochastic, x::AbstractArray) =
   relistlength(d, x)
 
 function relistlength_sub(d::Distribution, s::Stochastic{T}, x::T) where T<:GeneralNode

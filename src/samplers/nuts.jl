@@ -70,7 +70,7 @@ are assumed to be continuous and unconstrained.
 
 Returns `v` updated with simulated values and associated tuning parameters.
 """
-function sample!(v::NUTSVariate{T}, logfgrad::Function; adapt::Bool=false) where T<: AbstractArray{<: Real}
+function sample!(v::NUTSVariate{T}, logfgrad::Function; adapt::Bool=false, kwargs...) where T<: AbstractArray{<: Real}
   tune = v.tune
   
   if tune.m == 0 && isinf(tune.epsilon)

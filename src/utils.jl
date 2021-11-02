@@ -46,6 +46,7 @@ function modelexprsrc(f::Function, literalargs::Vector{Tuple{Symbol,DataType}})
 end
 
 mod_value(d::AbstractVariate) = d.value
+mod_value(d) = d
 
 #################### Mathematical Operators ####################
 

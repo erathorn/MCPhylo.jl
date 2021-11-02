@@ -374,10 +374,13 @@ function sample!(m::Model, block::Integer = 0)
 end
 
 function sample!(s::Sampler, m::Model)
-    #sv = SamplerVariate(unlist(m, s.params, transform=s.transform), s.tune)
     lpdf(x) = s.tune.logf(m, x, s.params, s.targets, s.transform)
-    sample!(s, lpdf, adapt=m.iter < m.burnin)
+    sample!(s, lpdf, adapt=m.iter < m.burnin, gen=m.iter)
     relist(m, s.value, s.params, s.transform)
+end
+
+function my_relist(m, v, p, s)
+    m[p] = relist(m, v, p, s)
 end
 
 
@@ -609,6 +612,8 @@ function relist!(
     m[nodekey] = relist(node, x, transform)
     update!(m, node.targets)
 end
+
+
 
 """
     update!(m::Model, block::Integer=0)

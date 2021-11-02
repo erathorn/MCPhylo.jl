@@ -465,15 +465,15 @@ function relist(s::AbstractStochastic, x::AbstractArray, transform::Bool = false
 end
 
 function relistlength(s::AbstractVariate,
-  x::AbstractArray, transform::Bool=false)
-value, n = relistlength_sub(s.distr, s, x)
-if transform
-    u = invlink_sub(s.distr, value)
-   return u, n
-else
-    return value, n
-end
-#(transform ? invlink_sub(s.distr, value) : value, n)
+    x::AbstractArray, transform::Bool=false)
+    value, n = relistlength_sub(s.distr, s, x)
+    if transform
+        u = invlink_sub(s.distr, value)
+    return u, n
+    else
+        return value, n
+    end
+    #(transform ? invlink_sub(s.distr, value) : value, n)
 end
 
 function relistlength(s::TreeVariate, x::N,
