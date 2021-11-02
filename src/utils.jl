@@ -185,7 +185,8 @@ function assign_mcmc_work(
             chain = take!(channel)
             chain > 0 ? ProgressMeter.next!(meters[chain]) : finished_chains += 1
         end # while
-        @async results_vec = pmap2(f, lsts)
+        #@async 
+        results_vec = pmap2(f, lsts)
     end # @sync
     ASDSF && close.(r_channels)
     if ASDSF
