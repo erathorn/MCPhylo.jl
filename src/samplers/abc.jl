@@ -114,44 +114,8 @@ function ABC(
 
     params = asvec(params)
     kernelpdf = (epsilon, d) -> pdf(kernel(0.0, epsilon), d)
-    propose(x) = proposalfun(proposal, scale, x)#theta0 -> theta0 + scale * rand(proposal(0.0, 1.0), length(theta0))
-    #targets = keys(model, :target, params)
-    #stochastics = keys(model, :stochastic)
-    #datakeys = intersect(setdiff(targets, params), stochastics)
-    # samplerfx = function (model::Model, block::Integer)
-
-    #     sblock = SamplingBlock(model, block, true)
-    #     tune = gettune(model, block)
-    #     targets = keys(model, :target, params)
-    #     stochastics = keys(model, :stochastic)
-    #     datakeys = intersect(setdiff(targets, params), stochastics)
-
-    # summarizenodes =
-    #         length(datakeys) > 1 ?
-    #         (mo, data) -> vcat(map(key -> summary(data(mo, key)), datakeys)...) :
-    #         (mo, data) -> asvec(summary(data(mo, datakeys[1])))
-
-    #     v = SamplerVariate(
-    #         sblock,
-    #         params,
-    #         datakeys,
-    #         epsilon,
-    #         kernelpdf,
-    #         dist,
-    #         proposal,
-    #         maxdraw,
-    #         nsim,
-    #         decay,
-    #         randeps,
-    #         summarizenodes,
-    #         model,
-    #     )
-
-    #     fp = let model = model
-    #          x -> logpdf(model, x, true)
-    #      end
-    #     sample!(v, fp, model, block, model.iter == 1)
-    # end
+    propose(x) = proposalfun(proposal, scale, x)
+    
     lf(m, args...) = m
 
     tune = ABCTune(
@@ -170,8 +134,6 @@ function ABC(
         summary
     )
     Sampler(Float64[], params, tune, Symbol[], false)
-    #Sampler(params, samplerfx, ABCTune())
-
 end
 
 """
@@ -210,65 +172,31 @@ function ABC(
     randeps::Bool=false,
     args...,
 )
-    0 <= decay <= 1 || throw(ArgumentError("decay is not in [0, 1]"))
+0 <= decay <= 1 || throw(ArgumentError("decay is not in [0, 1]"))
 
     params = asvec(params)
     kernelpdf = (epsilon, d) -> pdf(kernel(0.0, epsilon), d)
-    targets = keys(model, :target, params)
-    stochastics = keys(model, :stochastic)
-    datakeys = intersect(setdiff(targets, params), stochastics)
-    # samplerfx = function (model::Model, block::Integer)
-
-    #     sblock = SamplingBlock(model, block, true)
-    #     tune = gettune(model, block)
-    #     targets = keys(model, :target, params)
-    #     stochastics = keys(model, :stochastic)
-    #     datakeys = intersect(setdiff(targets, params), stochastics)
-
-        summarizenodes =
-            length(datakeys) > 1 ?
-            (mo, data) -> vcat(map(key -> summary(data(mo, key)), datakeys)...) :
-            (mo, data) -> asvec(summary(data(mo, datakeys[1])))
-
-    #     v = SamplerVariate(
-    #         sblock,
-    #         params,
-    #         datakeys,
-    #         epsilon,
-    #         kernelpdf,
-    #         dist,
-    #         proposal,
-    #         maxdraw,
-    #         nsim,
-    #         decay,
-    #         randeps,
-    #         summarizenodes,
-    #         model,
-    #     )
-
-    #     fp = let model = model
-    #          x -> logpdf(model, x, true)
-    #      end
-    #     sample!(v, fp, model, block, model.iter == 1)
-    # end
+    propose(x) = proposalfun(proposal, scale, x)
+    
+    lf(m, args...) = m
 
     tune = ABCTune(
         Float64[],
         lf,
         params,
-        datakeys,
+        Symbol[],
         epsilon,
-        kernel,
+        kernelpdf,
         dist,
         proposal,
         maxdraw,
         nsim,
         decay,
         randeps,
-        summarizenodes
+        summary
     )
-    Sampler(Float64[], params, tune, targets, transform)
-    #Sampler(params, samplerfx, ABCTune())
+    Sampler(Float64[], params, tune, Symbol[], false)
+    
     end
 
 #################### Sampler Functions ####################
