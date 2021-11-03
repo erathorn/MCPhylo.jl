@@ -81,68 +81,9 @@ end
 
 #################### Link Fallbacks ####################
 
-# link(d::Distribution, x) = x
-
 link_sub(d::Distribution, x) = link(d, x)
 
-function link_sub(d::PDMatDistribution, x)
-  res = mylink(d, x)
-
-  res
-end
-
-
-# function link_sub(d::UnivariateDistribution, X::AbstractArray)
-#   Y = similar(X, Float64)
-#   map!(x -> link_sub(d, x), Y, X)
-# end
-
-# function link_sub(D::Array{UnivariateDistribution}, X::AbstractArray)
-#   Y = similar(X, Float64)
-#   map!(i -> link_sub(D[i], X[i]), Y, 1:length(D))
-# end
-
-# function link_sub(D::Array{MultivariateDistribution}, X::AbstractArray)
-#   Y = similar(X, Float64)
-#   for sub in CartesianIndices(size(D))
-#     d = D[sub]
-#     inds = 1:length(d)
-#     Y[sub, inds] = link_sub(d, X[sub, inds])
-#   end
-#   Y
-# end
-
-
-# invlink(d::Distribution, x) = x
-
 invlink_sub(d::Distribution, x) = invlink(d, x)
-
-function invlink_sub(d::PDMatDistribution, x) 
-  U, _ = relistlength(d, unlist(d, myinvlink(d, x)))
-  U
-end
-
-
-
-# function invlink_sub(d::UnivariateDistribution, X::AbstractArray)
-#   #Y = similar(X, Float64)
-#   map(x -> invlink_sub(d, x), X)
-# end
-
-# function invlink_sub(D::Array{UnivariateDistribution}, X::AbstractArray)
-#   Y = similar(X, Float64)
-#   map!(i -> invlink_sub(D[i], X[i]), Y, 1:length(D))
-# end
-
-# function invlink_sub(D::Array{MultivariateDistribution}, X::AbstractArray)
-#   Y = similar(X, Float64)
-#   for sub in CartesianIndices(size(D))
-#     d = D[sub]
-#     inds = 1:length(d)
-#     Y[sub, inds] = invlink_sub(d, X[sub, inds])
-#   end
-#   Y
-# end
 
 
 logcond(d, x, args...) = logcond(d, x, args...)

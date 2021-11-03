@@ -81,8 +81,10 @@ function sample!(v::NUTSVariate{T}, logfgrad::Function; adapt::Bool=false, kwarg
     tune.m += 1
     nuts_sub!(v, tune.epsilon, logfgrad)
     p = 1.0 / (tune.m + tune.t0)
+    ada = tune.alpha / tune.nalpha
+    ada = ada > 1 ? 1.0 : ada
     tune.Hbar = (1.0 - p) * tune.Hbar +
-                p * (tune.target - tune.alpha / tune.nalpha)
+                p * (tune.target - ada)
     tune.epsilon = exp(tune.mu - sqrt(tune.m) * tune.Hbar / tune.gamma)
     p = tune.m^-tune.kappa
     tune.epsilonbar = exp(p * log(tune.epsilon) +
@@ -166,6 +168,7 @@ function buildtree(x::Vector{Float64}, r::Vector{Float64},
     rminus = rplus = rprime
     gradminus = gradplus = gradprime
     alphaprime = min(1.0, exp(logpprime - logp0))
+    alphaprime = isnan(alphaprime) ? 0.0 : alphaprime
     nalphaprime = 1
   else
     xminus, rminus, gradminus, xplus, rplus, gradplus, xprime, nprime, sprime,
@@ -214,6 +217,7 @@ function nutsepsilon(x::Vector{Float64}, logfgrad::Function, target::Float64)
     epsilon *= 2.0^pm
     _, rprime, logfprime, _ = leapfrog(x, r0, grad0, epsilon, logfgrad)
     prob = exp(logfprime - logf0 - 0.5 * (dot(rprime, rprime) - dot(r0, r0)))
+    prob = isnan(prob) ? 0.0 : prob
   end
   epsilon
 end

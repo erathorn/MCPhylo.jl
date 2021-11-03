@@ -469,7 +469,7 @@ function relistlength(s::AbstractVariate,
     value, n = relistlength_sub(s.distr, s, x)
     if transform
         u = invlink_sub(s.distr, value)
-    return u, n
+        return u, n
     else
         return value, n
     end
