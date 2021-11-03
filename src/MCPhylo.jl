@@ -32,14 +32,14 @@ using ProgressMeter
 using StaticArrays
 using Bijectors
 
-using CUDA
+#using CUDA
 using PDMats
-if has_cuda()
-  using GPUArrays
-else
-  @warn "The Julia CUDA library is installed, but no CUDA device detected.
-         Computation is performed without CUDA functionality."
-end
+# if has_cuda()
+#   using GPUArrays
+# else
+#   @warn "The Julia CUDA library is installed, but no CUDA device detected.
+#          Computation is performed without CUDA functionality."
+# end
 
 import Base: Matrix, names, summary
 
