@@ -236,6 +236,28 @@ end
 
 
 
+function logpdfgrad!(
+    m::Model,
+    x::T,
+    params::ElementOrVector{Symbol},
+    target::ElementOrVector{Symbol},
+    transform::Bool,
+) where {T<:GeneralNode}
+        
+    #params = keys(m, :block, block)
+    #targets = keys(m, :target, block)
+    # likelihood
+    v, grad = gradlogpdf(m, target)
+    # prior
+    vp, gradp = gradlogpdf(m[params[1]], x)
+
+    vp + v, gradp .+ grad
+end
+
+
+
+
+
 #################### unlist and relist functionality ####################
 
 function unlist(block::SamplingBlock)
