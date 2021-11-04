@@ -66,7 +66,6 @@ function mcmc(m::Model, inputs::Dict{Symbol},
               chains::Integer=1, verbose::Bool=true, trees::Bool=false,
               params::SimulationParameters=SimulationParameters()
               )::ModelChains
-
   burnin = burnin == 0 ? params.burnin : burnin
   thin = thin == 1 ? params.thin : thin
   chains = chains == 1 ? params.chains : chains
@@ -144,12 +143,12 @@ function mcmc_worker!(args::AbstractArray, ASDSF_step::Int64=0,
   m.iter = first(window) - 1
 
   relist!(m, state.value)
-
+  initialize_samplers!(m)
   settune!(m, state.tune)
   pnames = vcat(names(m, true), llname)
   treenodes = Symbol[]
   for i in m.nodes
-    if isa(i[2], TreeStochastic)
+    if isa(i[2], Stochastic{<:GeneralNode})
       push!(treenodes, i[1])
     end
   end

@@ -3,6 +3,7 @@
 #################### Types and Constructors ####################
 
 mutable struct ABCTune <: SamplerTune
+    logf::Function
     params::Vector{Symbol}
     datakeys::Vector{Symbol}
     Tsim::Vector{Vector{Float64}}
@@ -29,6 +30,7 @@ mutable struct ABCTune <: SamplerTune
 
     function ABCTune(
         x,
+        lf,
         params::Vector{Symbol},
         datakeys::Vector{Symbol},
         epsilon::Float64,
@@ -40,9 +42,9 @@ mutable struct ABCTune <: SamplerTune
         decay::Real,
         randeps::Bool,
         summarizenodes::Function,
-        model::Model,
     )
         new(
+            lf,
             params,
             datakeys,
             Vector{Vector{Float64}}(),
@@ -66,7 +68,7 @@ mutable struct ABCTune <: SamplerTune
 
 end
 
-const ABCVariate = SamplerVariate{ABCTune}
+const ABCVariate = Sampler{ABCTune, T} where T
 
 #################### Sampler Constructor ####################
 
@@ -111,47 +113,27 @@ function ABC(
     0 <= decay <= 1 || throw(ArgumentError("decay is not in [0, 1]"))
 
     params = asvec(params)
-
     kernelpdf = (epsilon, d) -> pdf(kernel(0.0, epsilon), d)
+    propose(x) = proposalfun(proposal, scale, x)
+    
+    lf(m, args...) = m
 
-
-    samplerfx = function (model::Model, block::Integer)
-
-        sblock = SamplingBlock(model, block, true)
-        tune = gettune(model, block)
-        targets = keys(model, :target, params)
-        stochastics = keys(model, :stochastic)
-        datakeys = intersect(setdiff(targets, params), stochastics)
-
-        summarizenodes =
-            length(datakeys) > 1 ?
-            (mo, data) -> vcat(map(key -> summary(data(mo, key)), datakeys)...) :
-            (mo, data) -> asvec(summary(data(mo, datakeys[1])))
-
-        proposal_fun = theta0 -> theta0 + scale * rand(proposal(0.0, 1.0), length(theta0))
-
-        v = SamplerVariate(
-            sblock,
-            params,
-            datakeys,
-            epsilon,
-            kernelpdf,
-            dist,
-            proposal_fun,
-            maxdraw,
-            nsim,
-            decay,
-            randeps,
-            summarizenodes,
-            model,
-        )
-
-        fp = x -> logpdf(model, x, true)
-
-        sample!(v, fp, model, block, model.iter == 1)
-    end
-
-    Sampler(params, samplerfx, ABCTune())
+    tune = ABCTune(
+        Float64[],
+        lf,
+        params,
+        Symbol[],
+        epsilon,
+        kernelpdf,
+        dist,
+        propose,
+        maxdraw,
+        nsim,
+        decay,
+        randeps,
+        summary
+    )
+    Sampler(Float64[], params, tune, Symbol[], false)
 end
 
 """
@@ -190,67 +172,68 @@ function ABC(
     randeps::Bool=false,
     args...,
 )
-    0 <= decay <= 1 || throw(ArgumentError("decay is not in [0, 1]"))
+0 <= decay <= 1 || throw(ArgumentError("decay is not in [0, 1]"))
 
     params = asvec(params)
     kernelpdf = (epsilon, d) -> pdf(kernel(0.0, epsilon), d)
+    propose(x) = proposalfun(proposal, scale, x)
+    
+    lf(m, args...) = m
 
-    samplerfx = function (model::Model, block::Integer)
-
-        sblock = SamplingBlock(model, block, true)
-        tune = gettune(model, block)
-        targets = keys(model, :target, params)
-        stochastics = keys(model, :stochastic)
-        datakeys = intersect(setdiff(targets, params), stochastics)
-
-        summarizenodes =
-            length(datakeys) > 1 ?
-            (mo, data) -> vcat(map(key -> summary(data(mo, key)), datakeys)...) :
-            (mo, data) -> asvec(summary(data(mo, datakeys[1])))
-
-        v = SamplerVariate(
-            sblock,
-            params,
-            datakeys,
-            epsilon,
-            kernelpdf,
-            dist,
-            proposal,
-            maxdraw,
-            nsim,
-            decay,
-            randeps,
-            summarizenodes,
-            model,
-        )
-
-        fp = let model = model
-             x -> logpdf(model, x, true)
-         end
-        sample!(v, fp, model, block, model.iter == 1)
-    end
-
-
-
-    Sampler(params, samplerfx, ABCTune())
+    tune = ABCTune(
+        Float64[],
+        lf,
+        params,
+        Symbol[],
+        epsilon,
+        kernelpdf,
+        dist,
+        proposal,
+        maxdraw,
+        nsim,
+        decay,
+        randeps,
+        summary
+    )
+    Sampler(Float64[], params, tune, Symbol[], false)
+    
     end
 
 #################### Sampler Functions ####################
 
+function proposalfun(d::SymDistributionType, scale, theta0::T)::T where T<:Real
+    theta0 + scale * rand(d(0.0, 1.0), length(theta0))
+end
 
-function sample!(v::ABCVariate, lp::Function, model::Model, block::Integer, gen1::Bool)
+function proposalfun(d::SymDistributionType, scale, theta0::T)::T where T<:AbstractArray
+    theta0 .+ scale .* rand(d(0.0, 1.0), length(theta0))
+end
+
+function simulate(model::Model, key::Symbol)
+    unlist(model[key], rand(model[key]))
+end
+
+
+function sample!(v::ABCVariate, get_model::Function; gen::Int, kwargs...)
 
     tune = v.tune
-    if gen1
-        pi_epsilon0 = 0.0
-        pi_error0 = 1.0
 
-        v.tune.Tobs = v.tune.summarizenodes(model, v.tune.obsdata)
+    # TODO: Look for alternative
+    # dummy function to get handle on model...
+    model = get_model(0)
+    stochastics = keys(model, :stochastic)
+    datakeys = intersect(setdiff(v.targets, tune.params), stochastics)
+    if gen == 1
+        pi_epsilon0 = 0.0
+        pi_error0 = 1.0        
+        
+        v.tune.Tobs = v.tune.summarizenodes(unlist(model, datakeys))
         v.tune.Tsim = Array{Vector{Float64}}(undef, v.tune.nsim)
         v.tune.epsilonprime = Array{Float64}(undef, v.tune.nsim)
         for i = 1:tune.nsim
             ## simulated data summary statistics for current parameter values
-            tune.Tsim[i] = tune.summarizenodes(model, tune.simdata)
+            res1 = v.tune.summarizenodes(simulate.(Ref(model), datakeys)...)
+            tune.Tsim[i] = res1
             d = tune.dist(tune.Tsim[i], tune.Tobs)
 
             # starting tolerance
@@ -269,20 +252,20 @@ function sample!(v::ABCVariate, lp::Function, model::Model, block::Integer, gen1
             tune.pi_epsilon0 = pi_epsilon0
         end
     end
-    ABC_sample(v, lp, model, block)
+    ABC_sample(v, model, datakeys)
 end
 
 
 """
     Do the ABC sampling. This version uses threads.
 """
-function ABC_sample(v::ABCVariate, lp::Function, model::Model, block::Integer)
+function ABC_sample(v::ABCVariate, model::Model, datakeys::Vector{Symbol})
 
     tune = v.tune
 
     ## current parameter and density values
     theta0::Array{Float64} = v.value
-    logprior0::Float64 = lp(tune.params)
+    logprior0::Float64 = logpdf(model, tune.params, true)
 
     lo::Base.ReentrantLock = Base.ReentrantLock()
     flag = Threads.Atomic{Bool}(true)
@@ -296,14 +279,16 @@ function ABC_sample(v::ABCVariate, lp::Function, model::Model, block::Integer)
                 logprior1::Float64 = mapreduce(
                 keyval -> logpdf(other_model[keyval[1]], keyval[2]),
                 +,
-                relist(other_model, theta1, block, true),
+                relist(other_model, theta1, v.params, true),
             )
 
             if logprior1 == -Inf
                 continue
             end
 
-            relist!(other_model, theta1, block, true)
+            #relist(other_model, theta1, v.params, true)
+
+            my_relist(other_model, theta1, v.params, true)
 
             ## tolerances and kernel density
             pi_epsilon1::Float64 = 0.0
@@ -312,7 +297,7 @@ function ABC_sample(v::ABCVariate, lp::Function, model::Model, block::Integer)
             Tsim1::Vector{Vector{Float64}} = similar(tune.Tsim)
             for i = 1:tune.nsim
                 ## simulated data summary statistics for candidate draw
-                Tsim1[i] = tune.summarizenodes(other_model, tune.simdata)
+                Tsim1[i] = v.tune.summarizenodes(simulate.(Ref(other_model), datakeys)...)
                 d::Float64 = tune.dist(Tsim1[i], tune.Tobs)
                 pi_error1::Float64 = 1.0
                 ## monotonically decrease tolerance to target
@@ -350,6 +335,6 @@ function ABC_sample(v::ABCVariate, lp::Function, model::Model, block::Integer)
             end
         end
     end
-
-    relist(model, theta0, block, true)
+    v[:] = theta0[:]
+    #relist(model, theta0, block, true)
 end

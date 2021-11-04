@@ -23,17 +23,21 @@ mutable struct SliceTune{F<:SliceForm} <: SamplerTune
         width::Vector,
         logf::Union{Function,Missing},
     ) where {F<:SliceForm} = new{F}(logf, convert(Vector{Float64}, width))
+    SliceTune{F}(
+        width,
+        logf::Union{Function,Missing},
+    ) where {F<:SliceForm} = new{F}(logf, width)
 end
 
 
-const SliceUnivariate = SamplerVariate{SliceTune{Univariate}}
-const SliceMultivariate = SamplerVariate{SliceTune{Multivariate}}
+const SliceUnivariate = Sampler{SliceTune{Univariate}, R} where R
+const SliceMultivariate = Sampler{SliceTune{Multivariate}, R} where R
 
-validate(v::SamplerVariate{SliceTune{F}}) where {F<:SliceForm} = validate(v, v.tune.width)
+validate(v::Sampler{SliceTune{F}}) where {F<:SliceForm} = validate(v, v.tune.width)
 
-validate(v::SamplerVariate{SliceTune{F}}, width::Float64) where {F<:SliceForm} = v
+validate(v::Sampler{SliceTune{F}}, width::Float64) where {F<:SliceForm} = v
 
-function validate(v::SamplerVariate{SliceTune{F}}, width::Vector) where {F<:SliceForm}
+function validate(v::Sampler{SliceTune{F}}, width::Vector) where {F<:SliceForm}
     n = length(v)
     length(width) == n ||
         throw(ArgumentError("length(width) differs from variate length $n"))
@@ -70,19 +74,14 @@ function Slice(
     ::Type{F} = Multivariate;
     transform::Bool = false,
 ) where {T<:Real,F<:SliceForm}
-    samplerfx = function (model::Model, block::Integer)
-        block = SamplingBlock(model, block, transform)
-        v = SamplerVariate(block, width)
-        sample!(v, x -> logpdf!(block, x))
-        relist(block, v)
-    end
-    Sampler(params, samplerfx, SliceTune{F}())
+    tune = SliceTune{F}(width, logpdf!)
+    Sampler(params, tune, Symbol[], transform)
 end
 
 
 #################### Sampling Functions ####################
 
-sample!(v::Union{SliceUnivariate,SliceMultivariate}) = sample!(v, v.tune.logf)
+sample!(v::Union{SliceUnivariate,SliceMultivariate}, logf::Function; args...) = sample!(v, logf)
 """
     sample!(v::Union{SliceUnivariate, SliceMultivariate}, logf::Function)
 
@@ -92,12 +91,8 @@ constrained or unconstrained.
 
 Returns `v` updated with simulated values and associated tuning parameters.
 """
-function sample!(v::Union{SliceUnivariate,SliceMultivariate}, logf::Function)
-    typeof(v.value[1]) <: GeneralNode ? sample_node!(v, logf) : sample_number!(v, logf)
-end
 
-
-function sample_node!(v::SliceUnivariate, logf::Function)
+function sample!(v::SliceUnivariate{Vector{GeneralNode}}, logf::Function)
     tree = v.value[1]
 
     logf0 = logf(tree)
@@ -131,7 +126,7 @@ function sample_node!(v::SliceUnivariate, logf::Function)
 end
 
 
-function sample_node!(v::SliceMultivariate, logf::Function)
+function sample!(v::SliceMultivariate{Vector{GeneralNode}}, logf::Function)
     tree = v.value[1]
 
     p0 = logf(tree) + log(rand())
@@ -165,7 +160,7 @@ end
 
 
 
-function sample_number!(v::SliceUnivariate, logf::Function)
+function sample!(v::SliceUnivariate{Vector{Float64}}, logf::Function)
     logf0 = logf(v.value)
 
     n = length(v)
@@ -194,9 +189,9 @@ function sample_number!(v::SliceUnivariate, logf::Function)
 end
 
 
-function sample_number!(v::SliceMultivariate, logf::Function)
+function sample!(v::SliceMultivariate{Vector{Float64}}, logf::Function)
     p0 = logf(v.value) + log(rand())
-
+    
     n = length(v)
     lower = v - v.tune.width .* rand(n)
     upper = lower .+ v.tune.width

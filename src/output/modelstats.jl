@@ -44,7 +44,7 @@ function logpdf(mc::ModelChains, f::Function, nodekeys::Vector{Symbol})
   relistkeys = union(relistkeys, intersect(nodekeys, keys(m, :block)))
   inds = names2inds(mc, relistkeys)
   for key in relistkeys
-      isa(m[key], TreeStochastic) && throw("not possible with tree objects")
+      isa(m[key], Stochastic{<:GeneralNode}) && throw("not possible with tree objects")
   end
 
   m[relistkeys] = relist(m, map(i -> f(mc.value[:, i, :]), inds), relistkeys)
@@ -146,7 +146,7 @@ function predict(mc::ModelChains,
   nodenames = names(m, nodekeys)
   relistkeys, updatekeys = getsimkeys(mc, nodekeys)
   for key in relistkeys
-    isa(m[key], TreeStochastic) && throw("not possible with tree objects")
+    isa(m[key], Stochastic{<:GeneralNode}) && throw("not possible with tree objects")
   end
 
   inds = names2inds(mc, relistkeys)

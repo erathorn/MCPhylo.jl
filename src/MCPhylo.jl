@@ -21,61 +21,50 @@ import RecipesBase.plot
 using StatsBase
 using Zygote
 using FiniteDiff
-using ChainRules
-using ChainRulesCore
+using ForwardDiff
+#using ChainRules
+#ausing ChainRulesCore
 using Showoff: showoff
 using Markdown
 using Random
 using DataStructures
 using ProgressMeter
 using StaticArrays
-using LoopVectorization
-using CUDA
-using StatsFuns
-if has_cuda()
-  using GPUArrays
-else
-  @warn "The Julia CUDA library is installed, but no CUDA device detected.
-         Computation is performed without CUDA functionality."
-end
+using Bijectors
 
-import Base: Matrix, names, summary, iterate
-import Base.Threads.@spawn
-import LinearAlgebra: cholesky, dot, BlasFloat
+#using CUDA
+using PDMats
+# if has_cuda()
+#   using GPUArrays
+# else
+#   @warn "The Julia CUDA library is installed, but no CUDA device detected.
+#          Computation is performed without CUDA functionality."
+# end
+
+import Base: Matrix, names, summary
+
+
 import Statistics: cor
 import Distributions:
-       ## Generic Types
+#        ## Generic Types
        Continuous, ContinuousUnivariateDistribution, Distribution,
        MatrixDistribution, Multivariate, MultivariateDistribution, PDiagMat,
        PDMat, ScalMat, Truncated, Univariate, UnivariateDistribution,
        ValueSupport,
-       ## ContinuousUnivariateDistribution Types
-       Arcsine, Beta, BetaPrime, Biweight, Cauchy, Chi, Chisq, Cosine,
-       Epanechnikov, Erlang, Exponential, FDist, Frechet, Gamma, Gumbel,
-       InverseGamma, InverseGaussian, Kolmogorov, KSDist, KSOneSided, Laplace,
-       Levy, Logistic, LogNormal, NoncentralBeta, NoncentralChisq,
-       NoncentralF, NoncentralT, Normal, NormalCanon, Pareto, Rayleigh,
-       SymTriangularDist, TDist, TriangularDist, Triweight, Uniform, VonMises,
-       Weibull,
-       ## DiscreteUnivariateDistribution Types
-       Bernoulli, Binomial, Categorical, DiscreteUniform, Geometric,
-       Hypergeometric, NegativeBinomial, NoncentralHypergeometric, Pareto,
-       PoissonBinomial, Skellam,
-       ## MultivariateDistribution Types
-       Dirichlet, Multinomial, MvNormal, MvNormalCanon, MvTDist,
-       VonMisesFisher,
-       ## MatrixDistribution Types
-       InverseWishart, Wishart,
-       ## Methods
+       # Functions
        cdf, dim, gradlogpdf, insupport, isprobvec, logpdf, logpdf!, maximum,
        minimum, pdf, quantile, rand, sample!, support, length
+
 using LightGraphs: DiGraph, add_edge!, outneighbors,
        topological_sort_by_dfs, vertices
 import StatsBase: autocor, autocov, countmap, counts, describe, predict,
        quantile, sample, sem, summarystats
 
-include("distributions/pdmats2.jl")
-using .PDMats2
+import Bijectors: link
+
+
+# include("distributions/pdmats2.jl")
+# using .PDMats2
 include("Tree/Node_Type.jl") # We need this to get the Node type in
 
 #################### Types ####################
@@ -85,15 +74,13 @@ ElementOrVector{T} = Union{T, Vector{T}}
 
 #################### Variate Types ####################
 
-abstract type ScalarVariate <: Real end
-abstract type ArrayVariate{N} <: DenseArray{Float64, N} end
-abstract type TreeVariate <: AbstractNode end
-
-const AbstractVariate = Union{ScalarVariate, ArrayVariate, TreeVariate}
-const NumericalVariate = Union{ScalarVariate, ArrayVariate}
-const VectorVariate = ArrayVariate{1}
-const MatrixVariate = ArrayVariate{2}
-
+abstract type AbstractVariate end
+# abstract type ArrayNode{S, N} <: AbstractArray{S, N} end
+# abstract type TreeNode <: AbstractNode end
+# abstract type ScalarNode <: Real end
+#abstract type AbstractLogical end
+# abstract type ArrayVariate{T, N} <: DenseArray{T,N} end
+# abstract type TreeVariate <: AbstractNode end
 
 
 #################### Distribution Types ####################
@@ -105,8 +92,8 @@ const DistributionStruct = Union{Distribution,
 
 #################### Dependent Types ####################
 
-mutable struct ScalarLogical <: ScalarVariate
-  value::Float64
+mutable struct Logical{D<:Union{Real, AbstractArray{T, N} where {T<:Real, N}, GeneralNode}} <: AbstractVariate
+  value::D
   symbol::Symbol
   monitor::Vector{Int}
   eval::Function
@@ -114,36 +101,37 @@ mutable struct ScalarLogical <: ScalarVariate
   targets::Vector{Symbol}
 end
 
-mutable struct ArrayLogical{N} <: ArrayVariate{N}
-  value::Array{Float64, N}
-  symbol::Symbol
-  monitor::Vector{Int}
-  eval::Function
-  sources::Vector{Symbol}
-  targets::Vector{Symbol}
-end
 
-mutable struct TreeLogical{T} <: TreeVariate where T<:GeneralNode
-  value::T
-  symbol::Symbol
-  monitor::Vector{Int}
-  eval::Function
-  sources::Vector{Symbol}
-  targets::Vector{Symbol}
-end
+# mutable struct ScalarLogical{D<:Real} <: AbstractVariate
+#   value::D
+#   symbol::Symbol
+#   monitor::Vector{Int}
+#   eval::Function
+#   sources::Vector{Symbol}
+#   targets::Vector{Symbol}
+# end
 
-mutable struct ScalarStochastic <: ScalarVariate
-  value::Float64
-  symbol::Symbol
-  monitor::Vector{Int}
-  eval::Function
-  sources::Vector{Symbol}
-  targets::Vector{Symbol}
-  distr::UnivariateDistribution
-end
+# mutable struct ArrayLogical{D<:AbstractArray{T, N} where {T<: Real, N}} <: AbstractVariate
+#   value::D
+#   symbol::Symbol
+#   monitor::Vector{Int}
+#   eval::Function
+#   sources::Vector{Symbol}
+#   targets::Vector{Symbol}
+# end
 
-mutable struct ArrayStochastic{N} <: ArrayVariate{N}
-  value::Union{CuArray{Float64, N}, Array{Float64, N}}
+# mutable struct TreeLogical{T<:GeneralNode} <: AbstractVariate
+#   value::T
+#   symbol::Symbol
+#   monitor::Vector{Int}
+#   eval::Function
+#   sources::Vector{Symbol}
+#   targets::Vector{Symbol}
+# end
+
+
+mutable struct Stochastic{D<:Union{Real, AbstractArray{T, N} where {T<:Real, N}, GeneralNode}} <: AbstractVariate
+  value::D
   symbol::Symbol
   monitor::Vector{Int}
   eval::Function
@@ -152,55 +140,88 @@ mutable struct ArrayStochastic{N} <: ArrayVariate{N}
   distr::DistributionStruct
 end
 
+# mutable struct ScalarStochastic{D<:Real} <: AbstractVariate
+#   value::D
+#   symbol::Symbol
+#   monitor::Vector{Int}
+#   eval::Function
+#   sources::Vector{Symbol}
+#   targets::Vector{Symbol}
+#   distr::UnivariateDistribution
+# end
 
-mutable struct TreeStochastic{T} <: TreeVariate where T<: GeneralNode
-    value::T
-    symbol::Symbol
-    monitor::Vector{Int}
-    eval::Function
-    sources::Vector{Symbol}
-    targets::Vector{Symbol}
-    distr::DistributionStruct
-end
-
-const AbstractLogical = Union{ScalarLogical, ArrayLogical}
-const AbstractStochastic = Union{ScalarStochastic, ArrayStochastic}
-const AbstractTreeStochastic = Union{TreeLogical, TreeStochastic}
-const AbstractDependent = Union{AbstractLogical, AbstractStochastic, AbstractTreeStochastic}
+# mutable struct ArrayStochastic{D<:AbstractArray{T, N} where {T<: Real, N}} <: AbstractVariate
+#   value::D
+#   symbol::Symbol
+#   monitor::Vector{Int}
+#   eval::Function
+#   sources::Vector{Symbol}
+#   targets::Vector{Symbol}
+#   distr::DistributionStruct
+# end
 
 
+# mutable struct TreeStochastic{T<: GeneralNode} <: AbstractVariate
+#     value::T
+#     symbol::Symbol
+#     monitor::Vector{Int}
+#     eval::Function
+#     sources::Vector{Symbol}
+#     targets::Vector{Symbol}
+#     distr::DistributionStruct
+# end
+
+# Specialized Unions
+const ScalarVariate = Union{Stochastic{<:Real}, Logical{<:Real}}
+const VectorVariate = Union{Stochastic{<:AbstractArray{<:Real, 1}}, Logical{<:AbstractArray{<:Real, 1}}}
+const MatrixVariate = Union{Stochastic{<:AbstractArray{<:Real, 2}}, Logical{<:AbstractArray{<:Real, 2}}}
+const TreeVariate = Union{Logical{<:GeneralNode}, Stochastic{<:GeneralNode}}
+
+# General Union
+const ArrayVariate = Union{Stochastic{<:AbstractArray{<:Real,  N}} where N, Logical{<:AbstractArray{<:Real, N} where N}}
+
+
+const AbstractLogical = Union{Logical{<:Real}, Logical{<:AbstractArray{<:Real, N} where N}}
+const AbstractStochastic = Union{Stochastic{<:Real}, Stochastic{<:AbstractArray{<:Real, N} where N}}
+
+const AbstractDependent = Union{AbstractLogical, AbstractStochastic, TreeVariate}
+
+const ConstraintDict{S} = Dict{Symbol, Union{Vector{Vector{S}}, Vector{Tuple{Vector{S}, Vector{S}}}} where S<:AbstractString} 
 #################### Sampler Types ####################
 
-mutable struct Sampler{T}
+abstract type SamplerTune end
+mutable struct Sampler{T<:SamplerTune, R<:AbstractArray{S} where S<:Union{Real, GeneralNode}} <: AbstractVariate
+  value::R
   params::Vector{Symbol}
-  eval::Function
   tune::T
   targets::Vector{Symbol}
+  transform::Bool
 end
 
 
-abstract type SamplerTune end
 
-struct SamplerVariate{T<:SamplerTune} <: VectorVariate
-  value::Union{Vector{Float64}, Vector{S}} where S<:GeneralNode
-  tune::T
 
-  function SamplerVariate{T}(x::AbstractVector, tune::T) where T<:SamplerTune
-    v = new{T}(x, tune)
-    validate(v)
-  end
+# struct SamplerVariate{T<:SamplerTune, R<:AbstractArray{S} where S<:Union{Real, GeneralNode}} <: AbstractVariate
+#   value::R
+#   tune::T
 
-  function SamplerVariate{T}(x::AbstractVector, pargs...; kargs...) where T<:SamplerTune
-    if !isa(x[1], GeneralNode)
-      value = convert(Vector{Float64}, x)
-    else
-      mt = typeof(x[1])
-      value = convert(Vector{mt}, x)
-    end
-    new{T}(value, T(value, pargs...; kargs...))
-  end
-end
+#   function SamplerVariate{T, R}(x::R, tune::T) where {T<:SamplerTune, R}
+#     v = new{T, R}(x, tune)
+#     validate(v)
+#   end
 
+#   function SamplerVariate{T, R}(x::R, pargs...; kargs...) where {T<:SamplerTune, R}
+#     if !isa(x[1], GeneralNode)
+#       value = convert(Vector{Float64}, x)
+#     else
+#       mt = typeof(x[1])
+#       value = convert(Vector{mt}, x)
+#     end
+#     new{T, R}(value, T(value, pargs...; kargs...))
+#   end
+# end
+
+Base.length(s::Sampler) = length(s.value)
 
 #################### Model Types ####################
 
@@ -227,7 +248,6 @@ end
 
 
 ############## Additional Structs ################
-
 struct SimulationParameters
   burnin::Int64
   thin::Int64
@@ -276,6 +296,7 @@ end
 
 #################### Includes ####################
 
+include("customerrors.jl")
 include("utils.jl")
 include("variate.jl")
 
@@ -286,6 +307,7 @@ include("distributions/pdmatdistribution.jl")
 include("Likelihood/SubstitutionModels.jl")
 include("distributions/Phylodist.jl")
 include("distributions/TreeConstraints.jl")
+include("distributions/TreeDistribution.jl")
 include("distributions/transformdistribution.jl")
 
 include("model/dependent.jl")
@@ -337,7 +359,6 @@ include("samplers/pnuts.jl")
 include("samplers/pnuts_riemannian.jl")
 include("samplers/pphmc.jl")
 include("samplers/rwm.jl")
-include("samplers/rwmc.jl")
 include("samplers/slice.jl")
 include("samplers/slicesimplex.jl")
 
@@ -375,29 +396,32 @@ export
   AbstractLogical,
   AbstractStochastic,
   AbstractVariate,
-  ArrayLogical,
-  ArrayStochastic,
+  #ArrayLogical,
+  #ArrayStochastic,
   ArrayVariate,
+  ConstraintDict,
   ConvergenceStorage,
-  TreeLogical,
+  #TreeLogical,
   TreeVariate,
-  TreeStochastic,
+  #TreeStochastic,
   GeneralNode,
   AbstractNode,
   Node,
   Chains,
+  FileSyntaxError,
   Logical,
   MatrixVariate,
   Model,
   ModelChains,
   Sampler,
   SamplerTune,
-  SamplerVariate,
-  ScalarLogical,
-  ScalarStochastic,
+  #SamplerVariate,
+  #ScalarLogical,
+  #ScalarStochastic,
   ScalarVariate,
   SimulationParameters,
   Stochastic,
+  TreeDistribution,
   VectorVariate
 
 export
@@ -508,6 +532,8 @@ export
   find_lca,
   find_by_binary,
   find_by_name,
+  find_num,
+  find_name,
   find_root,
   create_tree_from_leaves,
   create_tree_from_leaves_cu,
@@ -518,6 +544,9 @@ export
   get_sister,
   get_leaves,
   check_leafsets,
+  generate_constraints,
+  generate_constraints!,
+  topological,
   neighbor_joining,
   upgma,
   prune_tree!, prune_tree,
@@ -525,7 +554,8 @@ export
   majority_consensus_tree,
   discrete_gamma_rates,
   Restriction, JC, GTR, freeK,
-  ASDSF, parsimony, ParseNewick
+  ASDSF, parsimony, ParseNewick,
+  cov2tree
 
 
 export

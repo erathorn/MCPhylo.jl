@@ -3,7 +3,7 @@
 #################### Types and Constructors ####################
 
 mutable struct PNUTSTune <: SamplerTune
-    logfgrad::Union{Function,Missing}
+    logf::Union{Function,Missing}
     stepsizeadapter::NUTSstepadapter
     adapt::Bool
     epsilon::Float64
@@ -62,7 +62,7 @@ PNUTSTune(
 
 PNUTSTune(x::Vector; epsilon::Real, args...) = PNUTSTune(x, epsilon, missing, args...)
 
-const PNUTSVariate = SamplerVariate{PNUTSTune}
+const PNUTSVariate = Sampler{PNUTSTune, T} where T<:GeneralNode
 
 
 #################### Sampler Constructor ####################
@@ -80,25 +80,28 @@ Returns a `Sampler{PNUTSTune}` type object.
 
 * args...: additional keyword arguments to be passed to the PNUTSVariate constructor.
 """
-function PNUTS(params::ElementOrVector{Symbol}; args...)
-    samplerfx = function (model::Model, block::Integer)
-        block = SamplingBlock(model, block, true)
+function PNUTS(params::ElementOrVector{Symbol}; delta::Float64=0.003, target::Float64=0.6, epsilon::Float64=-Inf, args...)
+    tune = PNUTSTune(GeneralNode[], epsilon, logpdfgrad!, delta=delta, target=target, args...)
+    # samplerfx = function (model::Model, block::Integer)
+    #     block = SamplingBlock(model, block, true)
 
-        f = let block = block
-            (x, sz, ll, gr) -> mlogpdfgrad!(block, x, sz, ll, gr)
-        end
-        v = SamplerVariate(block, f, NullFunction(); args...)
+    #     f = let block = block
+    #         (x, sz, ll, gr) -> mlogpdfgrad!(block, x, sz, ll, gr)
+    #     end
+    #     v = Sampler(block, f, NullFunction(); args...)
 
-        sample!(v::PNUTSVariate, f, adapt = model.iter <= model.burnin)
+    #     sample!(v::PNUTSVariate, f, adapt = model.iter <= model.burnin)
 
-        relist(block, v)
-    end
-    Sampler(params, samplerfx, PNUTSTune())
+    #     relist(block, v)
+    # end
+    Sampler(params, tune, Symbol[], false)
 end
 
 
 #################### Sampling Functions ####################
 
+
+    
 function mlogpdfgrad!(
     block::SamplingBlock,
     x::FNode,
@@ -116,14 +119,18 @@ function mlogpdfgrad!(
     end
     lp, grad
 end
-sample!(v::PNUTSVariate; args...) = sample!(v, v.tune.logfgrad; args...)
+#sample!(v::PNUTSVariate; args...) = sample!(v, v.tune.logfgrad; args...)
 
-function sample!(v::PNUTSVariate, logfgrad::Function; adapt::Bool = false)
+    
+function sample!(v::PNUTSVariate{<:Vector{<:GeneralNode}}, logfgrad::Function; adapt::Bool = false, args...)
+
     tune = v.tune
     adapter = tune.stepsizeadapter
     const_params = tune.stepsizeadapter.params
     
-    
+    if tune.m == 0 && isinf(tune.epsilon)
+        tune.epsilon = nutsepsilon(v.value[1], logfgrad, tune.delta , const_params.δ)
+    end
     setadapt!(v, adapt)
     if tune.adapt
         adapter.m += 1
@@ -159,7 +166,7 @@ function sample!(v::PNUTSVariate, logfgrad::Function; adapt::Bool = false)
 end
 
 
-function setadapt!(v::PNUTSVariate, adapt::Bool)
+function setadapt!(v::PNUTSVariate{<:Vector{<:GeneralNode}}, adapt::Bool)
     tune = v.tune
     if adapt && !tune.adapt
         tune.stepsizeadapter.m = 0
@@ -171,7 +178,7 @@ end
 
 
 
-function nuts_sub!(v::PNUTSVariate, epsilon::Float64, logfgrad::Function)
+function nuts_sub!(v::PNUTSVariate{<:AbstractArray{<:GeneralNode}}, epsilon::Float64, logfgrad::Function)
     x = deepcopy(v.value[1])
     nl = size(x)[1] - 1
     delta = v.tune.delta

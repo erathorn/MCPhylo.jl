@@ -1,11 +1,4 @@
 
-#=
-tester:
-- Julia version: 1.3.1
-- Author: erathorn
-- Date: 2020-10-07
-OPENBLAS_NUM_THREADS=5 JULIA_NUM_THREADS=5 /home/jo/Julia14/julia-1.4.2/bin/julia -O3
-=#
 
 using Revise
 using Pkg
@@ -13,37 +6,47 @@ Pkg.activate(".")
 using MCPhylo
 using Random
 using LinearAlgebra
-covmat = rand(InverseWishart(5,Diagonal(ones(5))))
-mu = randn(5)
+
+
+Random.seed!(42)
+
+s = rand(InverseWishart(3, diagm(ones(3))))
+#s = rand(Exponential())
+mu = [0.1,0.4,0.3,0.15,0.05]
+μ = randn(3)
+#mu1 = mu + rand(5)
+#mu1 /= sum(mu1)
+
 my_data = Dict{Symbol, Any}(
-  :df => collect(transpose(rand(MultivariateNormal(mu, covmat), 500))),
-  :N => 500
+  :df => collect(transpose(rand(MultivariateNormal(μ, s), 50)))
 );
 
 
 
 # model setup
 model =  Model(
-    df = Stochastic(2, (mu1, cm, N) ->  MultivariateDistribution[MultivariateNormal(mu1, cm) for i in 1:N], false, false),
+    df = Stochastic(2, (mu1, cm) ->  MultivariateDistribution[MultivariateNormal(mu1, cm) for i in 1:50], false),
     mu1 = Stochastic(1, () -> Normal(), true),
-    cm = Stochastic(2, () -> InverseWishart(5,diagm(ones(5))), true)
+    cm = Stochastic(2, () -> InverseWishart(3, diagm(ones(3))), true)
      )
 # intial model values
 inits = [ Dict{Symbol, Union{Any, Real}}(
-    :mu1 => randn(5),
-    :cm => rand(InverseWishart(5,diagm(ones(5)))),
+    :mu1 => randn(3),
+    :cm => rand(InverseWishart(3, diagm(ones(3)))),
     :df => my_data[:df],
-    :N => my_data[:N]
+    
     ) for i in 1:2
     ]
 
-scheme = [MCPhylo.NUTS_Rie([:mu1, :cm], target=0.8, tree_depth=5),
-          ]
+scheme = [#Slice([:mu1, :cm], 1.0),
+          #RWM(:mu1, 1.0)
+          #SliceSimplex(:mu1, scale = 1)
+          NUTS([:mu1, :cm], tree_depth=10, target=0.7)
+]
 
 setsamplers!(model, scheme);
 
 # do the mcmc simmulation. if trees=true the trees are stored and can later be
 # flushed ot a file output.
-#@run 
-sim_p = mcmc(model, my_data, inits, 1000, burnin=500,thin=1, chains=2, trees=true)
 
+sim = mcmc(model, my_data, inits, 250000, burnin=125000,thin=10, chains=2, trees=true)

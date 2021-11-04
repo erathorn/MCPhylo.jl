@@ -50,7 +50,7 @@ maximum(d::PhyloDist) = Inf
 Base.size(d::PhyloDist) = (d.nbase, 1, d.nnodes)
 
 function logpdf(d::PhyloDist, x::AbstractArray)
-    mt = post_order(d.tree)
+    #mt = post_order(d.tree)
     #nba, nsi, nno = size(x)
     #data = Array{Float64, 4}(undef, nba, nsi, length(d.rates), nno)
     #@inbounds for i in 1:length(d.rates)
@@ -87,7 +87,7 @@ end
 
 function gradlogpdf(d::PhyloDist, x::AbstractArray)
 
-    mt = post_order(d.tree)
+    #mt = post_order(d.tree)
     #nba, nsi, nno = size(x)
 #    data = Array{Float64, 4}(undef, nba, nsi, length(d.rates), nno)
 #    @inbounds for i in 1:length(d.rates)

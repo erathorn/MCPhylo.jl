@@ -2,18 +2,19 @@
 
 const samplerfxargs = [(:model, MCPhylo.Model), (:block, Integer)]
 
+const chunksize = 40
 
 #################### Types and Constructors ####################
 
 struct NullFunction end
 
 struct SamplingBlock
-  model::Model
-  index::Int
-  transform::Bool
+    model::Model
+    index::Int
+    transform::Bool
 
-  SamplingBlock(model::Model, index::Integer=0, transform::Bool=false) =
-    new(model, index, transform)
+    SamplingBlock(model::Model, index::Integer = 0, transform::Bool = false) =
+        new(model, index, transform)
 end
 
 
@@ -31,168 +32,249 @@ Returns a `Sampler{typeof(tune)}` type object.
 
 * `tune`: tuning parameters needed by the sampling function.
 """
-function Sampler(params::Vector{Symbol}, f::Function, tune::Any=Dict())
-  Sampler(params, modelfx(samplerfxargs, f), tune, Symbol[])
+function Sampler(params::Vector{Symbol}, f::Function, tune::Any = Dict())
+    Sampler(params, modelfx(samplerfxargs, f), tune, Symbol[])
 end
 
-
-function SamplerVariate(x::AbstractVector{U}, tune::T) where {T<:SamplerTune, U<:Real}
-  SamplerVariate{T}(x, tune)
+function Sampler(params::Vector{Symbol}, tune::SamplerTune, targets::Vector{Symbol}, transform::Bool=false)
+    Sampler(Float64[], params, tune, targets, transform)
 end
 
-function SamplerVariate(x::AbstractVector{U}, tune::T) where {T<:SamplerTune, U<:GeneralNode}
-  SamplerVariate{T}(x, tune)
+function Sampler(v::T, s::Sampler{R, X})::Sampler{R, T} where {R<:SamplerTune, X, T}
+    Sampler(v, s.params, s.tune, s.targets, s.transform)
 end
 
+# function SamplerVariate(x::U, tune::T) where {T<:SamplerTune,U<:DenseArray{<:Real}}
+#     SamplerVariate{T,U}(x, tune)
+# end
 
-function SamplerVariate(block::SamplingBlock, pargs...; kargs...)
-  m = block.model
-  SamplerVariate(unlist(block), m.samplers[block.index], m.iter, pargs...;
-                 kargs...)
-end
+# function SamplerVariate(x::U, tune::T) where {T<:SamplerTune,U<:DenseArray{<:GeneralNode}}
+#     SamplerVariate{T,U}(x, tune)
+# end
 
-function SamplerVariate(x::AbstractVector{U},
-                        s::Sampler{T}, iter::Integer,
-                        pargs...; kargs...) where {T<:SamplerTune, U<:Real}
-  if iter == 1
-    v = SamplerVariate{T}(x, pargs...; kargs...)
-    s.tune = v.tune
-  else
-    v = SamplerVariate(x, s.tune)
-  end
-  v
-end
 
-function SamplerVariate(x::AbstractVector{U},
-                        s::Sampler{T}, iter::Integer,
-                        pargs...; kargs...) where {T<:SamplerTune, U<:GeneralNode}
-  if iter == 1
-    v = SamplerVariate{T}(x, pargs...; kargs...)
-    s.tune = v.tune
-  else
-    v = SamplerVariate(x, s.tune)
-  end
-  v
-end
+# function SamplerVariate(block::SamplingBlock, pargs...; kargs...)
+#     m = block.model
+#     SamplerVariate(unlist(block), m.samplers[block.index], m.iter, pargs...; kargs...)
+# end
+
+# function SamplerVariate(
+#     x::R,
+#     s::Sampler{T},
+#     iter::Integer,
+#     pargs...;
+#     kargs...,
+# ) where {T<:SamplerTune,R<:DenseArray{<:Real}}
+#     if iter == 1
+#         v = SamplerVariate{T,R}(x, pargs...; kargs...)
+#         s.tune = v.tune
+#     else
+#         v = SamplerVariate{T,R}(x, s.tune)
+#     end
+#     v
+# end
+
+# function SamplerVariate(
+#     x::U,
+#     s::Sampler{T},
+#     iter::Integer,
+#     pargs...;
+#     kargs...,
+# ) where {T<:SamplerTune,U<:DenseArray{<:GeneralNode}}
+#     if iter == 1
+#         v = SamplerVariate{T,U}(x, pargs...; kargs...)
+#         s.tune = v.tune
+#     else
+#         v = SamplerVariate{T,U}(x, s.tune)
+#     end
+#     v
+# end
 
 
 
 #################### Base Methods ####################
 
 function Base.show(io::IO, s::Sampler)
-  print(io, "An object of type \"$(summary(s))\"\n")
-  print(io, "Sampling Block Nodes:\n")
-  show(io, s.params)
-  print(io, "\n\n")
-  show(io, "text/plain", first(code_typed(s.eval)))
-  println(io)
+    print(io, "An object of type \"$(summary(s))\"\n")
+    print(io, "Sampling Block Nodes:\n")
+    show(io, s.params)
+    #print(io, "\n\n")
+    #show(io, "text/plain", first(code_typed(s.eval)))
+    println(io)
 end
 
 function showall(io::IO, s::Sampler)
-  show(io, s)
-  print(io, "\nTuning Parameters:\n")
-  show(io, s.tune)
-  print(io, "\n\nTarget Nodes:\n")
-  show(io, s.targets)
+    show(io, s)
+    print(io, "\nTuning Parameters:\n")
+    show(io, s.tune)
+    print(io, "\n\nTarget Nodes:\n")
+    show(io, s.targets)
 end
 
 
 #################### Variate Validators ####################
 
-validate(v::SamplerVariate) = v
+validate(v::Sampler) = v
 
-function validatebinary(v::SamplerVariate)
-  all(insupport(Bernoulli, v)) ||
-    throw(ArgumentError("variate is not a binary vector"))
-  v
+function validatebinary(v::Sampler)
+    all(insupport(Bernoulli, v)) || throw(ArgumentError("variate is not a binary vector"))
+    v
 end
 
-function validatesimplex(v::SamplerVariate)
-  isprobvec(v) || throw(ArgumentError("variate is not a probability vector $v"))
-  v
+function validatesimplex(v::Sampler)
+    isprobvec(v) || throw(ArgumentError("variate is not a probability vector $v"))
+    v
 end
 
 
 #################### sample! Generics ####################
 
-function sample!(v::SamplerVariate, density; args...)
-  isa(density, Missing) && error("must specify a target density in $(typeof(v))", " constructor or sample! method")
-  throw("Who")
-  sample!(v, density; args...)
-end
+# function sample!(v::SamplerVariate, density; args...)
+#     isa(density, Missing) && error(
+#         "must specify a target density in $(typeof(v))",
+#         " constructor or sample! method",
+#     )
+#     #  throw("Who")
+#     sample!(v, density; args...)
+# end
 
 
 #################### Simulation Methods ####################
 
-function gradlogpdf!(block::SamplingBlock, x::AbstractArray{T},
-                    dtype::Symbol=:forward) where {T<:Real}
-  gradlogpdf!(block.model, x, block.index, block.transform, dtype=dtype)
+function gradlogpdf!(
+    block::SamplingBlock,
+    x::AbstractArray{T},
+    dtype::Symbol = :forward,
+) where {T<:Real}
+    gradlogpdf!(block.model, x, block.index, block.transform, dtype = dtype)
 end
 
 
-function gradlogpdf!(block::SamplingBlock, x::N) where N<:GeneralNode
-      gradlogpdf!(block.model, x, block.index, block.transform)
+function gradlogpdf!(block::SamplingBlock, x::N) where {N<:GeneralNode}
+    gradlogpdf!(block.model, x, block.index, block.transform)
 end
 
 function logpdf!(block::SamplingBlock, x::AbstractArray{T}) where {T<:Real}
-  logpdf!(block.model, x, block.index, block.transform)
+    logpdf!(block.model, x, block.index, block.transform)
 end
 
-function pseudologpdf!(block::SamplingBlock, x::AbstractArray{T}, y::AbstractArray) where {T<:Real}
-  pseudologpdf!(block.model, x, y, block.index , block.transform)
+function pseudologpdf!(
+    block::SamplingBlock,
+    x::AbstractArray{T},
+    y::AbstractArray,
+) where {T<:Real}
+    pseudologpdf!(block.model, x, y, block.index, block.transform)
 end
 
-function conditional_likelihood!(block::SamplingBlock, x::AbstractArray{T}, args...) where {T<:Real}
-  conditional_likelihood!(block.model, x, block.index, args...)
+function conditional_likelihood!(
+    block::SamplingBlock,
+    x::AbstractArray{T},
+    args...,
+) where {T<:Real}
+    conditional_likelihood!(block.model, x, block.index, args...)
 end
 
 function logpdf!(block::SamplingBlock, x::AbstractArray{T}) where {T<:GeneralNode}
-  logpdf!(block.model, x[1])
+    logpdf!(block.model, x[1])
 end
 
 function logpdf!(block::SamplingBlock, x::T) where {T<:GeneralNode}
-  logpdf!(block.model, x, block.index, block.transform)
+    logpdf!(block.model, x, block.index, block.transform)
 end
 
 function rand!(block::SamplingBlock, x::Int64)
-  rand!(block.model, x, block.index)
+    rand!(block.model, x, block.index)
 end
 
 
 
-function _gradlogpdf!(m::Model, x::AbstractArray, block::Integer, dtype::Symbol=:provided)
-  targets = keys(m, :target, block)
+function _gradlogpdf!(m::Model, x::AbstractArray, block::Integer, dtype::Symbol = :provided)
+    targets = keys(m, :target, block)
 
-  node = m[targets[1]]
-  update!(node, m)
-  return gradlogpdf(node)
+    node = m[targets[1]]
+    update!(node, m)
+    return gradlogpdf(node)
 
 end
 
-function logpdfgrad!(block::SamplingBlock, x::AbstractVector{T},
-                    dtype::Symbol) where {T<:Real}
-  grad = gradlogpdf!(block, x, dtype)
-  logf = logpdf!(block, x)
-  (logf, ifelse.(isfinite.(grad), grad, 0.0))
+function logpdfgrad!(
+    block::SamplingBlock,
+    x::AbstractVector{T},
+    dtype::Symbol,
+) where {T<:Real}
+    grad = gradlogpdf!(block, x, dtype)
+    logf = logpdf!(block, x)
+    (logf, ifelse.(isfinite.(grad), grad, 0.0))
 end
+
+
+function logpdfgrad!(
+    m::Model,
+    x::AbstractVector{T},
+    params::ElementOrVector{Symbol},
+    target::ElementOrVector{Symbol},
+    transform::Bool,
+) where {T<:Real}
+    ll::Float64 = 0.0
+        
+    function lf(y)
+        let m1 = m, para = params, tar = target, tr = transform
+            lp = logpdf!(m1, y, para, tar, tr)
+            ll = ForwardDiff.value(lp)
+            lp
+        end
+    end
+    #ll1 = lf(x)
+    #grad1 = FiniteDiff.finite_difference_gradient(lf, x)
+    chunk = ForwardDiff.Chunk(min(length(x), chunksize))
+    config = ForwardDiff.GradientConfig(lf, x, chunk)
+    grad = ForwardDiff.gradient!(similar(x), lf, x, config)
+    
+    #(ll, ifelse.(isfinite.(grad), grad, 0.0))
+    ll, grad
+end
+
+
+
+function logpdfgrad!(
+    m::Model,
+    x::T,
+    params::ElementOrVector{Symbol},
+    target::ElementOrVector{Symbol},
+    transform::Bool,
+) where {T<:GeneralNode}
+        
+    #params = keys(m, :block, block)
+    #targets = keys(m, :target, block)
+    # likelihood
+    v, grad = gradlogpdf(m, target)
+    # prior
+    vp, gradp = gradlogpdf(m[params[1]], x)
+
+    vp + v, gradp .+ grad
+end
+
+
+
+
 
 #################### unlist and relist functionality ####################
 
 function unlist(block::SamplingBlock)
-  unlist(block.model, block.index, block.transform)
+    unlist(block.model, block.index, block.transform)
 end
 
-function relist(block::SamplingBlock, x::AbstractArray{T}) where {T<:Real}
-  relist(block.model, x, block.index, block.transform)
+function relist(block::SamplingBlock, x::AbstractVariate) where {T<:Real}
+    relist(block.model, x.value, block.index, block.transform)
 end
 
-function relist(block::SamplingBlock, x::AbstractArray{T}) where {T<:GeneralNode}
-  relist(block.model, x, block.index, block.transform)
-end
+# function relist(block::SamplingBlock, x::AbstractArray{T}) where {T<:GeneralNode}
+#   relist(block.model, x, block.index, block.transform)
+# end
 
 
 
 #################### Auxiliary Functions ####################
 
-asvec(x::Union{Number, Symbol}) = [x]
+asvec(x::Union{Number,Symbol}) = [x]
 asvec(x::Vector) = x

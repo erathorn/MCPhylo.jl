@@ -266,7 +266,7 @@ end # function slide!
 function reroot(root::T, new_root::String)::T where T<:GeneralNode
 
     new_tree = deepcopy(root)
-    root_node = find_by_name(new_tree, new_root)
+    root_node = find_name(new_tree, new_root)
 
     mother = root_node.mother
 

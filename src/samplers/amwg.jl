@@ -27,7 +27,7 @@ AMWGTune(x::Vector, sigma::Real, logf::Union{Function, Missing}; args...) =
   AMWGTune(x, fill(sigma, length(x)), logf; args...)
 
 
-const AMWGVariate = SamplerVariate{AMWGTune}
+const AMWGVariate = Sampler{AMWGTune, T} where T
 
 function validate(v::AMWGVariate)
   n = length(v)
@@ -71,7 +71,7 @@ function AMWG(params::ElementOrVector{Symbol},
 
   samplerfx = function(model::Model, block::Integer)
     block = SamplingBlock(model, block, true)
-    v = SamplerVariate(block, sigma; args...)
+    v = Sampler(block, sigma; args...)
     isadapt = adapt == :burnin ? model.iter <= model.burnin :
               adapt == :all ? true : false
     sample!(v, x -> logpdf!(block, x), adapt=isadapt)

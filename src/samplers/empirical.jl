@@ -17,7 +17,7 @@ end
 EmpiricalTune(x::Vector, width::Int64, replacement::Bool=false)=
     EmpiricalTune(missing, width, replacement)
 
-const EmpiricalVariate = SamplerVariate{EmpiricalTune}
+const EmpiricalVariate = Sampler{EmpiricalTune, T} where T
 
 
 #################### Sampler Constructor ####################
@@ -33,7 +33,7 @@ function Empirical(params::ElementOrVector{Symbol},
                 args...)
     samplerfx = function(model::Model, block::Integer)
         block = SamplingBlock(model, block)
-        v = SamplerVariate(block, width, args...)
+        v = Sampler(block, width, args...)
         sample!(v, x -> rand!(block, x))
         relist(block, v)
     end

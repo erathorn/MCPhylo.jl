@@ -24,7 +24,7 @@ mutable struct MALATune <: SamplerTune
 end
 
 
-const MALAVariate = SamplerVariate{MALATune}
+const MALAVariate = Sampler{MALATune, T} where T
 
 validate(v::MALAVariate) = validate(v, v.tune.SigmaL)
 
@@ -76,7 +76,7 @@ end
 function MALASampler(params, pargs...; dtype::Symbol=:forward)
   samplerfx = function(model::Model, block::Integer)
     block = SamplingBlock(model, block, true)
-    v = SamplerVariate(block, pargs...)
+    v = Sampler(block, pargs...)
     sample!(v, x -> logpdfgrad!(block, x, dtype))
     relist(block, v)
   end
