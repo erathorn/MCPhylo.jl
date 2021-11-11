@@ -200,8 +200,8 @@ function assign_mcmc_work(
             chain > 0 ? ProgressMeter.next!(meters[chain]) : finished_chains += 1
         end # while
 
-        #@async_showerr 
         results_vec = pmap2(f, lsts)
+
         
     end # @sync
     ASDSF && close.(r_channels)
