@@ -478,16 +478,7 @@ end
 
 export
   ABC,
-  AMM, AMMVariate,
-  AMWG, AMWGVariate,
-  BHMC, BHMCVariate,
-  BMC3, BMC3Variate,
-  BMG, BMGVariate,
-  DiscreteVariate,
-  DGS, DGSVariate,
   HMC, HMCVariate,
-  BIA, BIAVariate,
-  MALA, MALAVariate,
   MISS,
   NUTS, NUTSVariate,
   RWM, RWMVariate,
