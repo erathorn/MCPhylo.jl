@@ -36,60 +36,18 @@ function Sampler(params::Vector{Symbol}, f::Function, tune::Any = Dict())
     Sampler(params, modelfx(samplerfxargs, f), tune, Symbol[])
 end
 
-function Sampler(params::Vector{Symbol}, tune::SamplerTune, targets::Vector{Symbol}, transform::Bool=false)
+function Sampler(
+    params::Vector{Symbol},
+    tune::SamplerTune,
+    targets::Vector{Symbol},
+    transform::Bool = false,
+)
     Sampler(Float64[], params, tune, targets, transform)
 end
 
-function Sampler(v::T, s::Sampler{R, X})::Sampler{R, T} where {R<:SamplerTune, X, T}
+function Sampler(v::T, s::Sampler{R,X})::Sampler{R,T} where {R<:SamplerTune,X,T}
     Sampler(v, s.params, s.tune, s.targets, s.transform)
 end
-
-# function SamplerVariate(x::U, tune::T) where {T<:SamplerTune,U<:DenseArray{<:Real}}
-#     SamplerVariate{T,U}(x, tune)
-# end
-
-# function SamplerVariate(x::U, tune::T) where {T<:SamplerTune,U<:DenseArray{<:GeneralNode}}
-#     SamplerVariate{T,U}(x, tune)
-# end
-
-
-# function SamplerVariate(block::SamplingBlock, pargs...; kargs...)
-#     m = block.model
-#     SamplerVariate(unlist(block), m.samplers[block.index], m.iter, pargs...; kargs...)
-# end
-
-# function SamplerVariate(
-#     x::R,
-#     s::Sampler{T},
-#     iter::Integer,
-#     pargs...;
-#     kargs...,
-# ) where {T<:SamplerTune,R<:DenseArray{<:Real}}
-#     if iter == 1
-#         v = SamplerVariate{T,R}(x, pargs...; kargs...)
-#         s.tune = v.tune
-#     else
-#         v = SamplerVariate{T,R}(x, s.tune)
-#     end
-#     v
-# end
-
-# function SamplerVariate(
-#     x::U,
-#     s::Sampler{T},
-#     iter::Integer,
-#     pargs...;
-#     kargs...,
-# ) where {T<:SamplerTune,U<:DenseArray{<:GeneralNode}}
-#     if iter == 1
-#         v = SamplerVariate{T,U}(x, pargs...; kargs...)
-#         s.tune = v.tune
-#     else
-#         v = SamplerVariate{T,U}(x, s.tune)
-#     end
-#     v
-# end
-
 
 
 #################### Base Methods ####################
@@ -125,18 +83,6 @@ function validatesimplex(v::Sampler)
     isprobvec(v) || throw(ArgumentError("variate is not a probability vector $v"))
     v
 end
-
-
-#################### sample! Generics ####################
-
-# function sample!(v::SamplerVariate, density; args...)
-#     isa(density, Missing) && error(
-#         "must specify a target density in $(typeof(v))",
-#         " constructor or sample! method",
-#     )
-#     #  throw("Who")
-#     sample!(v, density; args...)
-# end
 
 
 #################### Simulation Methods ####################
@@ -216,7 +162,7 @@ function logpdfgrad!(
     transform::Bool,
 ) where {T<:Real}
     ll::Float64 = 0.0
-        
+
     function lf(y)
         let m1 = m, para = params, tar = target, tr = transform
             lp = logpdf!(m1, y, para, tar, tr)
@@ -229,7 +175,7 @@ function logpdfgrad!(
     chunk = ForwardDiff.Chunk(min(length(x), chunksize))
     config = ForwardDiff.GradientConfig(lf, x, chunk)
     grad = ForwardDiff.gradient!(similar(x), lf, x, config)
-    
+
     #(ll, ifelse.(isfinite.(grad), grad, 0.0))
     ll, grad
 end
@@ -243,9 +189,9 @@ function logpdfgrad!(
     target::ElementOrVector{Symbol},
     transform::Bool,
 ) where {T<:GeneralNode}
-        
-    #params = keys(m, :block, block)
-    #targets = keys(m, :target, block)
+
+    m[params] = relist(m, x, params, transform)
+
     # likelihood
     v, grad = gradlogpdf(m, target)
     # prior
@@ -267,11 +213,6 @@ end
 function relist(block::SamplingBlock, x::AbstractVariate) where {T<:Real}
     relist(block.model, x.value, block.index, block.transform)
 end
-
-# function relist(block::SamplingBlock, x::AbstractArray{T}) where {T<:GeneralNode}
-#   relist(block.model, x, block.index, block.transform)
-# end
-
 
 
 #################### Auxiliary Functions ####################

@@ -1,7 +1,6 @@
 #################### Phylogenetic No-U-Turn Sampler ####################
 
 #################### Types and Constructors ####################
-
 mutable struct PNUTSTune <: SamplerTune
     logf::Union{Function,Missing}
     stepsizeadapter::NUTSstepadapter
@@ -9,7 +8,7 @@ mutable struct PNUTSTune <: SamplerTune
     epsilon::Float64
     delta::Float64
     moves::Vector{Int}
-    tree_depth::Int    
+    tree_depth::Int
     tree_depth_trace::Vector{Int}
     acc_p_r::Vector{Int}
 
@@ -29,14 +28,19 @@ mutable struct PNUTSTune <: SamplerTune
 
         new(
             logfgrad,
-            NUTSstepadapter(0,0,0,NUTS_StepParams(0.5,target,0.05,0.75,10,targetNNI)),
+            NUTSstepadapter(
+                0,
+                0,
+                0,
+                NUTS_StepParams(0.5, target, 0.05, 0.75, 10, targetNNI),
+            ),
             false,
             epsilon,
             delta,
             Int[],
             tree_depth,
             Int[],
-            Int[]
+            Int[],
         )
     end
 end
@@ -62,7 +66,7 @@ PNUTSTune(
 
 PNUTSTune(x::Vector; epsilon::Real, args...) = PNUTSTune(x, epsilon, missing, args...)
 
-const PNUTSVariate = Sampler{PNUTSTune, T} where T<:GeneralNode
+const PNUTSVariate = Sampler{PNUTSTune,T} where {T<:GeneralNode}
 
 
 #################### Sampler Constructor ####################
@@ -80,20 +84,21 @@ Returns a `Sampler{PNUTSTune}` type object.
 
 * args...: additional keyword arguments to be passed to the PNUTSVariate constructor.
 """
-function PNUTS(params::ElementOrVector{Symbol}; delta::Float64=0.003, target::Float64=0.6, epsilon::Float64=-Inf, args...)
-    tune = PNUTSTune(GeneralNode[], epsilon, logpdfgrad!, delta=delta, target=target, args...)
-    # samplerfx = function (model::Model, block::Integer)
-    #     block = SamplingBlock(model, block, true)
-
-    #     f = let block = block
-    #         (x, sz, ll, gr) -> mlogpdfgrad!(block, x, sz, ll, gr)
-    #     end
-    #     v = Sampler(block, f, NullFunction(); args...)
-
-    #     sample!(v::PNUTSVariate, f, adapt = model.iter <= model.burnin)
-
-    #     relist(block, v)
-    # end
+function PNUTS(
+    params::ElementOrVector{Symbol};
+    delta::Float64 = 0.003,
+    target::Float64 = 0.6,
+    epsilon::Float64 = -Inf,
+    args...,
+)
+    tune = PNUTSTune(
+        GeneralNode[],
+        epsilon,
+        logpdfgrad!;
+        delta = delta,
+        target = target,
+        args...,
+    )
     Sampler(params, tune, Symbol[], false)
 end
 
@@ -101,56 +106,45 @@ end
 #################### Sampling Functions ####################
 
 
-    
-function mlogpdfgrad!(
-    block::SamplingBlock,
-    x::FNode,
-    sz::Int64,
-    ll::Bool = false,
-    gr::Bool = false,
-)::Tuple{Float64,Vector{Float64}}
-    grad = Vector{Float64}(undef, sz)
-    lp = zero(Float64)
 
-    if gr
-        lp, grad = gradlogpdf!(block, x)::Tuple{Float64,Vector{Float64}}
-    elseif ll
-        lp = logpdf!(block, x)::Float64
-    end
-    lp, grad
-end
-#sample!(v::PNUTSVariate; args...) = sample!(v, v.tune.logfgrad; args...)
+#################### Sampling Functions ####################
 
-    
-function sample!(v::PNUTSVariate{<:Vector{<:GeneralNode}}, logfgrad::Function; adapt::Bool = false, args...)
+sample!(v::PNUTSVariate; args...) = sample!(v, v.tune.logfgrad; args...)
 
+function sample!(
+    v::PNUTSVariate{<:Vector{<:GeneralNode}},
+    logfgrad::Function;
+    adapt::Bool = false,
+    args...,
+)
     tune = v.tune
     adapter = tune.stepsizeadapter
     const_params = tune.stepsizeadapter.params
-    
-    if tune.m == 0 && isinf(tune.epsilon)
-        tune.epsilon = nutsepsilon(v.value[1], logfgrad, tune.delta , const_params.δ)
+
+    if adapter.m == 0 && isinf(tune.epsilon)
+        tune.epsilon = nutsepsilon(v.value[1], logfgrad, tune.delta, const_params.δ)
     end
     setadapt!(v, adapt)
     if tune.adapt
         adapter.m += 1
-        
 
         nuts_sub!(v, tune.epsilon, logfgrad)
+
         adaptstat = adapter.metro_acc_prob > 1 ? 1 : adapter.metro_acc_prob
-        
+
         HT = const_params.δ - adaptstat
-        HT -= const_params.τ - adapter.avg_nni
-        
-                
-        #HT -= abs_adapter(HT2)
-        #HT /= 2
-        
-        η = 1.0/(adapter.m + const_params.t0)
-        
+
+        HT2 = const_params.τ - adapter.avg_nni
+
+
+        HT -= abs_adapter(HT2)
+        HT /= 2
+
+        η = 1.0 / (adapter.m + const_params.t0)
+
         adapter.s_bar = (1.0 - η) * adapter.s_bar + η * HT
         x = const_params.μ - adapter.s_bar * sqrt(adapter.m) / const_params.γ
-        #@show exp(x), adapter.s_bar, η
+
         x_η = adapter.m^-const_params.κ
         adapter.x_bar = (1.0 - x_η) * adapter.x_bar + x_η * x
         tune.epsilon = exp(x)
@@ -170,7 +164,8 @@ function setadapt!(v::PNUTSVariate{<:Vector{<:GeneralNode}}, adapt::Bool)
     tune = v.tune
     if adapt && !tune.adapt
         tune.stepsizeadapter.m = 0
-        tune.stepsizeadapter.params = update_step(tune.stepsizeadapter.params, log(10.0 * tune.epsilon))
+        tune.stepsizeadapter.params =
+            update_step(tune.stepsizeadapter.params, log(10.0 * tune.epsilon))
     end
     tune.adapt = adapt
     v
@@ -178,117 +173,80 @@ end
 
 
 
-function nuts_sub!(v::PNUTSVariate{<:AbstractArray{<:GeneralNode}}, epsilon::Float64, logfgrad::Function)
+
+
+function nuts_sub!(
+    v::PNUTSVariate{<:AbstractArray{<:GeneralNode}},
+    epsilon::Float64,
+    logfgrad::Function,
+)
     x = deepcopy(v.value[1])
-    nl = size(x)[1] - 1
     delta = v.tune.delta
-    r = randn(nl)
-    #epsilon = 0.01
-    
+    blv = get_branchlength_vector(x)
+    r = randn(length(blv))
+
     blv = get_branchlength_vector(x)
     set_branchlength_vector!(x, molifier.(blv, delta))
-    logf, grad = logfgrad(x, nl, true, true)
+    logf, grad = logfgrad(x)
     xminus = Tree_HMC_State(deepcopy(x), r, grad, logf)
     xplus = Tree_HMC_State(deepcopy(x), r, grad, logf)
-    
+
     lu = log(rand())
     logp0 = hamiltonian(xminus)
-    
 
     nni = 0
     tnni = 0
     j = 0
     n = 1
-    
-    
+
     meta = NUTSMeta()
-    directions_plus = nothing#rand(Bool, nl)
-    directions_minus = nothing#rand(Bool, nl)
+
     acc_p_r = 0
     while j < v.tune.tree_depth
         pm = 2 * (rand() > 0.5) - 1
-        
+        meta.alpha = 0
+        meta.nalpha = 0
+        meta.accnni = 0
+        meta.nni = 0
         if pm == -1
 
-            xminus,
-            _,
-            xprime,
-            nprime,
-            sprime,_,_ = buildtree(
-                xminus,
-                pm,
-                j,
-                epsilon,
-                logfgrad,
-                logp0,
-                lu,
-                delta,
-                nl,
-                meta,
-                directions_minus
-            )
+            xminus, _, xprime, nprime, sprime =
+                buildtree(xminus, pm, j, epsilon, logfgrad, logp0, lu, delta, meta)
 
         else
-            
-            _,
-            xplus,
-            xprime,
-            nprime,
-            sprime,_,_ = buildtree(
-                xplus,
-                pm,
-                j,
-                epsilon,
-                logfgrad,
-                logp0,
-                lu,
-                delta,
-                nl,
-                meta,
-                directions_plus
-            )
-            
+
+            _, xplus, xprime, nprime, sprime =
+                buildtree(xplus, pm, j, epsilon, logfgrad, logp0, lu, delta, meta)
+
 
         end#if pm
-        
+        v.tune.stepsizeadapter.metro_acc_prob = meta.alpha / meta.nalpha
+
         tnni += meta.nni
-        
-        
         if !sprime
             break
         end
         # sprime is true so checking is not necessary
-        
+
         if rand() < nprime / n
             acc_p_r += 1
             v.value[1] = xprime.x
         end
-        nni += meta.nni
+
         n += nprime
         nni += meta.nni
 
 
         j += 1
-        directions_minus = nothing#rand(Bool, nl)
-        directions_plus = nothing#rand(Bool, nl)
-        s = nouturn(
-            xminus,
-            xplus,
-            epsilon,
-            logfgrad,
-            delta,
-            nl,
-            directions_minus,
-            directions_plus
-        )
-        
+
+
+        s = nouturn(xminus, xplus, epsilon, logfgrad, delta)
+
         if !s
             break
         end
     end
-    #@show nni, tnni
-    v.tune.stepsizeadapter.metro_acc_prob = meta.alpha / meta.nalpha
-    v.tune.stepsizeadapter.avg_nni = tnni == 0 ? 0.0 : nni/tnni
+    v.tune.stepsizeadapter.avg_nni = tnni == 0 ? 0.0 : nni / tnni
     push!(v.tune.moves, nni)
     push!(v.tune.tree_depth_trace, j)
     push!(v.tune.acc_p_r, acc_p_r)
@@ -307,115 +265,68 @@ function buildtree(
     logp0::Real,
     lu::Real,
     delta::Float64,
-    sz::Int64,
     meta::NUTSMeta,
-    directions::Union{Nothing,Vector{Bool}}
-) where {T<:FNode}
+) where {T<:GeneralNode}
 
 
     if j == 0
         xprime = transfer(x)
-        #@show x.r
-        nni = refraction!(xprime, pm*epsilon, logfgrad, delta, sz, directions)
-        
+        nni = 0.0
+        if !xprime.extended
+            nni = refraction!(xprime, pm * epsilon, logfgrad, delta)
+        else
+            nni = xprime.nni
+            xprime.extended = false
+        end
+
         logpprime = hamiltonian(xprime)
 
-        nprime = Int((logp0 +lu) < logpprime)
+        nprime = Int((logp0 + lu) < logpprime)
         sprime = (logp0 + lu) < logpprime + 1000.0
-        
-        #nprime = lu + (logp0 - logpprime) < 0#Int(logu0 < logpprime)
 
-        #sprime = lu + (logp0 - logpprime) < 1000.0
-        #sprime = logpprime - (logp0 + lu) > -1000
+        meta.nni = nni
+
 
         xminus = transfer(xprime)
         xplus = transfer(xprime)
         meta.alpha = min(1.0, exp(logpprime - logp0))
-        meta.nni = nni
+        if rand() < meta.alpha
+            meta.accnni += nni
+        end
         meta.nalpha = 1
-        directions_minus = directions_plus = nothing
+
     else
-        xminus,
-        xplus,
-        xprime,
-        nprime,
-        sprime, 
-        directions_minus, 
-        directions_plus = buildtree(x, pm, j - 1, epsilon, logfgrad, logp0,lu , delta, sz, meta, directions)
+        xminus, xplus, xprime, nprime, sprime =
+            buildtree(x, pm, j - 1, epsilon, logfgrad, logp0, lu, delta, meta)
         if sprime
             meta1 = NUTSMeta()
             if pm == -1
-                xminus,
-                _,
-                xprime2,
-                nprime2,
-                sprime2,
-                directions_minus,
-                _ = buildtree(
-                    xminus,
-                    pm,
-                    j - 1,
-                    epsilon,
-                    logfgrad,
-                    logp0,
-                    lu,
-                    delta,
-                    sz,
-                    meta1,
-                    directions_minus
-                )
+                xminus, _, xprime2, nprime2, sprime2 =
+                    buildtree(xminus, pm, j - 1, epsilon, logfgrad, logp0, lu, delta, meta1)
             else
-                
-                _,
-                xplus,
-                xprime2,
-                nprime2,
-                sprime2,
-                _,
-                directions_plus = buildtree(
-                    xplus,
-                    pm,
-                    j - 1,
-                    epsilon,
-                    logfgrad,
-                    logp0,
-                    lu,
-                    delta,
-                    sz,
-                    meta1,
-                    directions_plus
-                )
+
+                _, xplus, xprime2, nprime2, sprime2 =
+                    buildtree(xplus, pm, j - 1, epsilon, logfgrad, logp0, lu, delta, meta1)
             end # if pm
             update!(meta, meta1)
             if rand() < nprime2 / (nprime + nprime2)
                 transfer!(xprime, xprime2)
             end
             nprime += nprime2
-            directions_minus = nothing#rand(Bool, sz)
-            directions_plus = nothing#rand(Bool, sz)
-            sprime =
-                sprime2 && nouturn(
-                    xminus,
-                    xplus,
-                    epsilon,
-                    logfgrad,
-                    delta,
-                    sz,
-                    directions_minus,
-                    directions_plus
-                )
-            
+
+            xminus_bar = transfer(xminus)
+            xplus_bar = transfer(xplus)
+            sprime = sprime2 && nouturn(xminus_bar, xplus_bar, epsilon, logfgrad, delta)
+            if pm == -1
+                transfer!(xminus, xminus_bar)
+            else
+                transfer!(xplus, xplus_bar)
+            end
+
         end #if sprime
     end #if j
 
-    xminus,
-    xplus,
-    xprime,
-    nprime,
-    sprime,
-    directions_minus,
-    directions_plus
-    
+    xminus, xplus, xprime, nprime, sprime
 end
 
 
@@ -425,31 +336,16 @@ function nouturn(
     epsilon::Float64,
     logfgrad::Function,
     delta::Float64,
-    sz::Int64,
-    directions_minus::Union{Nothing,Vector{Bool}},
-    directions_plus::Union{Nothing,Vector{Bool}}
 )
     curr_l, curr_h = BHV_bounds(xminus.x, xplus.x)
-    xminus_bar = transfer(xminus)
-    xplus_bar = transfer(xplus)
-     _ = refraction!(
-        xminus_bar,
-        -epsilon,
-        logfgrad,
-        delta,
-        sz,
-        directions_minus
-    )
-    _ = refraction!(
-        xplus_bar,
-        epsilon,
-        logfgrad,
-        delta,
-        sz,
-        directions_plus
-    )
 
-    curr_t_l, curr_t_h = BHV_bounds(xminus_bar.x, xplus_bar.x)
+    nni_m = refraction!(xminus, -epsilon, logfgrad, delta)
+    nni_p = refraction!(xplus, epsilon, logfgrad, delta)
+    xminus.extended = true
+    xplus.extended = true
+    xminus.nni = nni_m
+    xplus.nni = nni_p
+    curr_t_l, curr_t_h = BHV_bounds(xminus.x, xplus.x)
     return curr_h < curr_t_l
 end
 

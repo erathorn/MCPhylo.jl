@@ -1,29 +1,6 @@
 const MCP_TIME_MIN = 1.0E-11
 const MCP_TIME_MAX = 100.0
 
-"""
-    F81(base_freq::Vector{Float64},
-                SubstitutionRates::Vector{Float64})::Tuple{Array{Float64,2}, Array{Float64,1}, Array{Float64,2}}
-
-Calculate the eigenvalue decomposition of the Q matrix of the F81 model.
-The `SubstitutionRates` are ignored, and just for call stability.
-
-The function returns the Eigenvectors, Eigenvalues, inverse of eigenvectors and
-    the scale factor for expected number changes per site
-"""
-function F81(base_freq::Vector{Float64}, SubstitutionRates::Vector{Float64})::Tuple{Array{Float64,2}, Array{Float64,1}, Array{Float64,2}, Float64}
-    Nbases = length(base_freq)
-    Q::Array{Float64,2} = ones(Nbases,Nbases)
-    Q[diagind(Nbases,Nbases)] .= 0
-    Q .*= reverse(base_freq)
-    dia = sum(Q,dims=1)
-    Q[diagind(Nbases,Nbases)] = -dia
-    Q = transpose(Q)
-    D, U = eigen(Q)
-    Uinv = inv(U)
-    mu::Float64 =  1.0 / (1-dot(base_freq))
-    return U, D, Uinv, mu
-end
 
 """
     Restriction(base_freq::Vector{Float64},
@@ -39,7 +16,7 @@ function Restriction(base_freq::Vector{Float64}, SubstitutionRates::Vector{Float
     Q = ones(Nbases,Nbases)
     Q[diagind(Nbases,Nbases)] .= -1
     Q .*= reverse(base_freq)
-    Q = SMatrix{Nbases,Nbases}(Q)
+    Q = Matrix{Nbases,Nbases}(Q)
     D, U = eigen(Q)
     Uinv = inv(U)
     mu::Float64 =  1.0 / (2.0 * prod(base_freq))
@@ -63,7 +40,7 @@ function JC(base_freq::Vector{Float64}, SubstitutionRates::Vector{Float64})#::Tu
     diag = off_diag * (Nbases-1)
     Q .= off_diag
     Q[diagind(Nbases,Nbases)] .= -diag
-    Q = SMatrix{Nbases,Nbases}(Q)
+    Q = Matrix{Nbases,Nbases}(Q)
     D, U = eigen(Q)
     Uinv = inv(U)
     mu = 1/sum(diag)
@@ -133,14 +110,8 @@ end
 
 ### Calculate Transition Matrices
 
-# function calculate_transition(f, rate::R, mu::R, time::R, U::A, Uinv::A, D::Vector, pi_::Vector)::Array{Float64,2} where {R<:Real, A<:AbstractArray{<:Real}}
-#     return_mat = Array{Float64,2}(undef, length(pi_),length(pi_))
-#     t = rate * mu * time
-#     BLAS.gemm!('N', 'N', 1.0, BLAS.symm('R', 'L', diagm(exp.(D .* t)), U), Uinv, 0.0, return_mat)
-#     return return_mat
-# end
 
-function calculate_transition(f::typeof(JC), rate::R, mu::R, time::R, U::A, Uinv::A, D::T, pi_::Vector)::Array{Float64,2} where {R<:Real, A<:AbstractArray{<:Real}, T<:AbstractVector{<:Real}}
+function calculate_transition(f::typeof(JC), rate::R, mu::R, time<:Real, U::A, Uinv::A, D, pi_::Vector)::Array{R1,2} where {R1<:Real, R<:Real, A<:AbstractArray{<:Real}}
     
     t = rate * time
     if t < MCP_TIME_MIN
@@ -153,31 +124,13 @@ function calculate_transition(f::typeof(JC), rate::R, mu::R, time::R, U::A, Uinv
         return_mat .= 1.0/length(pi_)
         return return_mat
     else
-        #BLAS.gemm!('N', 'N', 1.0, BLAS.symm('R', 'L', diagm(exp.(D .* t)), U), Uinv, 0.0, return_mat)
-        #@show U * diagm(exp.(D .* t)) * Uinv
         return (U * diagm(exp.(D .* t))) * Uinv
     end
     #return_mat
 end
 
-function calculate_transition(f::typeof(F81), rate::R, mu::R, time::R, U::A, Uinv::A, D::Vector, pi_::Vector)::Array{Float64,2} where {R<:Real, A<:AbstractArray{<:Real}}
-    return_mat = similar(U)
-    t = rate * time
-    if t < MCP_TIME_MIN
-        return_mat .= 0.0
-        return_mat[diagind(return_mat)] .= 1.0
-    elseif t > MCP_TIME_MAX
-        return_mat .= reverse(pi_)
-        return_mat = collect(transpose(return_mat))
-    else
-        t *= mu
-        BLAS.gemm!('N', 'N', 1.0, BLAS.symm('R', 'L', diagm(exp.(D .* t)), U), Uinv, 0.0, return_mat)
-    end
-    return_mat
-end
 
-function calculate_transition(f::typeof(Restriction), rate::R, mu::R, time::R, U::A, Uinv::A, D, pi_::Vector)::Array{Float64,2} where {R<:Real, A<:AbstractArray{<:Real}}
-    return calc_trans(time, pi_[1], mu, rate)
+function calculate_transition(f::typeof(Restriction), rate::R, mu::R, time<:Real, U::A, Uinv::A, D, pi_::Vector)::Array{R1,2} where {R1<:Real, R<:Real, A<:AbstractArray{<:Real}}
     return_mat = similar(U)
     t = rate *  time
     if t < MCP_TIME_MIN
@@ -187,7 +140,6 @@ function calculate_transition(f::typeof(Restriction), rate::R, mu::R, time::R, U
         return_mat .= reverse(pi_)
     else
         t *= mu
-        #BLAS.gemm!('N', 'N', 1.0, BLAS.symm('R', 'L', diagm(exp.(D .* t)), U), Uinv, 0.0, return_mat)
         return (U * diagm(exp.(D .* t))) * Uinv
         
     end

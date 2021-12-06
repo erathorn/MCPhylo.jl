@@ -25,18 +25,22 @@ mutable struct GeneralNode{R<:Real, I<:Integer} <: AbstractNode
     stats::Dict{String, Float64}
 end # struct Node
 
-const FNode = GeneralNode{Float64, Int64}
+#const GeneralNode = GeneralNode{Float64, Int64}
 """
-    function Node()::FNode
+    function Node()::GeneralNode
 This function will initialize an empty node.
 """
-function Node()::FNode
-        FNode("no_name", missing, FNode[], 0, true, 1.0, "0",1, 1.0,Int64[], Float64[], Dict{String, Float64}())
+function Node()#::GeneralNode
+        GeneralNode("no_name", missing, GeneralNode{Float64, Int64}[], 0, true, 1.0, "0",1, 1.0,Int64[], Float64[], Dict{String, Float64}())
+end
+
+function Node(name::String, incl::T)::GeneralNode{T, Int64} where T <: Real
+    GeneralNode(name, missing, GeneralNode{T, Int64}[], 0, true, incl, "0",1, one(T),Int64[], T[], Dict{String, Float64}())
 end
 
 
-function Node(name::String)::FNode
-        FNode(name, missing, FNode[], 0, true, 1.0, "0", 1, 1.0, Int64[], Float64[], Dict{String, Float64}())
+function Node(name::String)#::GeneralNode
+        GeneralNode(name, missing, GeneralNode{Float64, Int64}[], 0, true, 1.0, "0", 1, 1.0, Int64[], Float64[], Dict{String, Float64}())
 end
 
 

@@ -1,31 +1,30 @@
 
 
-function nutsepsilon(x::FNode, logfgrad::Function, delta::Float64, target::Float64)
-    
+function nutsepsilon(x::GeneralNode, logfgrad::Function, delta::Float64, target::Float64)
     n = size(x)[1] - 1
-
+    log_target = log(target)
     # molifier is necessary!
-    blv = get_branchlength_vector(x)
-    set_branchlength_vector!(x, molifier.(blv, delta))
+    # blv = get_branchlength_vector(x)
+    # set_branchlength_vector!(x, molifier.(blv, delta))
     
-    logf0, gr = logfgrad(x, n, true, true)
+    logf0, gr = logfgrad(x)
     
     r0 = randn(n)
     x0 = Tree_HMC_State(deepcopy(x), r0, gr, logf0)
     x1 = transfer(x0)
     H0 = hamiltonian(x0)
     epsilon = 1.0
-    _ = refraction!(x0, epsilon, logfgrad, delta, n, nothing)
+    _ = refraction!(x0, epsilon, logfgrad, delta)
     Hp = hamiltonian(x0)
     
     prob = Hp - H0
-    direction = prob > target ? 1 : -1
+    direction = prob > log_target ? 1 : -1
 
-    while direction == 1 ? prob > target : prob < target
+    while direction == 1 ? prob > log_target : prob < log_target
         epsilon = direction == 1 ? 2 * epsilon : 0.5 * epsilon
         
         x2 = transfer(x1)
-        _ = refraction!(x2, epsilon, logfgrad, delta, n, nothing)
+        _ = refraction!(x2, epsilon, logfgrad, delta)
         
         Hp = hamiltonian(x2)
         
@@ -39,7 +38,7 @@ end
 
 function nutsepsilon(x::Vector{<:Real}, logfgrad::Function, target::Float64)
     
-        
+    
     logf0, gr = logfgrad(x)
     target = log(target)
     
@@ -54,7 +53,7 @@ function nutsepsilon(x::Vector{<:Real}, logfgrad::Function, target::Float64)
     prob = Hp - H0
 
     direction = prob > target ? 1 : -1
-    
+    restart = false
     while direction == 1 ? prob > target : prob < target
         epsilon = direction == 1 ? 2 * epsilon : 0.5 * epsilon
         
@@ -64,8 +63,16 @@ function nutsepsilon(x::Vector{<:Real}, logfgrad::Function, target::Float64)
         Hp = hamiltonian(x2)
         
         prob = Hp - H0
+        #if epsilon < 1e-7
+        #    restart = true
+        #    break
+        #end
     end
-    
+    @show epsilon
+    if restart
+        @warn "restarting initialization of ϵ"
+        epsilon = nutsepsilon(x, logfgrad, exp(target))
+    end
     epsilon
 end
 
@@ -76,7 +83,7 @@ end
     x < delta ? x/delta : 1.0
 end
 
-@inline function molifier(x::T, delta::T)::T where {T<:Real}
+@inline function molifier(x::T, delta::Real)::T where {T<:Real}
     x >= delta ? x : (x^2 + delta^2) / (2.0 * delta)
 end # function
 

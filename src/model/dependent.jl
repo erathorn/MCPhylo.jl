@@ -528,7 +528,7 @@ function logpdf(s::AbstractStochastic, x::Union{AbstractArray, Real}, transform:
   logpdf_sub(s.distr, x, transform)
 end
 
-function logpdf(s::TreeVariate, x::FNode, transform::Bool=false)
+function logpdf(s::TreeVariate, x::GeneralNode, transform::Bool=false)
   logpdf_sub(s.distr, x, transform)
 end
 

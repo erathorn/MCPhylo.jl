@@ -7,7 +7,7 @@ Returns Tuple containing the matrix and a vector of names.
 
 * `root` : root of tree used to create matrix represenation.
 """
-function to_df(root::GeneralNode)::Tuple{Array{Float64}, Vector{String}}
+function to_df(root::GeneralNode)::Tuple{Array{Float64},Vector{String}}
 
     post_order_iteration = post_order(root)
 
@@ -38,9 +38,9 @@ Returns the root node of the tree.
 * `df` : matrix with edge weights
 * `name_list` : a list of names such that they match the column indices of the matrix
 """
-function from_df(df::Array{Float64,2}, name_list::Vector{String})::FNode
+function from_df(df::Array{Float64,2}, name_list::Vector{String})::GeneralNode
 
-    node_list::Vector{FNode} = [Node(String(i)) for i in name_list]
+    node_list::Vector{GeneralNode} = [Node(String(i)) for i in name_list]
 
     for (col_index, col) in enumerate(eachcol(df))
         for (row_index, entry) in enumerate(col)
@@ -59,7 +59,7 @@ function from_df(df::Array{Float64,2}, name_list::Vector{String})::FNode
             break
         end # end if
     end # for
-    node::FNode = node_list[i]
+    node::GeneralNode = node_list[i]
 
     # do some bookeeping here and set the binary representation of the nodes
     set_binary!(node)
@@ -75,7 +75,7 @@ Returns a properly formatted newick String.
 
 * `node` : root node of tree used to create the newick string.
 """
-function newick(root::T)::String  where T<:GeneralNode
+function newick(root::T)::String where {T<:GeneralNode}
     # get the newickstring
     newickstring = newick(root, "")
 
@@ -90,15 +90,15 @@ end
 
 Do the newick recursion. It is meant as the internal iterator function.
 """
-function newick(root::T, newickstring::AbstractString) where T<:GeneralNode
+function newick(root::T, newickstring::AbstractString) where {T<:GeneralNode}
     if root.nchild != 0
         # internal node
         newickstring = string(newickstring, "(")
         for child in root.children
-            newickstring = string(newick(child,newickstring))
+            newickstring = string(newick(child, newickstring))
         end # for
         newickstring = chop(newickstring)
-        return string(newickstring,")", root.name, ":", root.inc_length,",")
+        return string(newickstring, ")", root.name, ":", root.inc_length, ",")
 
     else
         # leave
@@ -113,12 +113,15 @@ function to_covariance(tree::Stochastic{<:GeneralNode})::Array{Float64,2}
     to_covariance(tree.value, blv)
 end # end to_covariance
 
-function to_covariance(tree::N) where N<:GeneralNode
+function to_covariance(tree::N) where {N<:GeneralNode}
     blv = get_branchlength_vector(tree)
     to_covariance(tree, blv)
 end # end to_covariance
 
-function to_covariance(tree::Stochastic{<:GeneralNode}, blv::Vector{T})::Array{T,2} where T<: Real
+function to_covariance(
+    tree::Stochastic{<:GeneralNode},
+    blv::Vector{T},
+)::Array{T,2} where {T<:Real}
     to_covariance(tree.value, blv)
 end # end to_covariance
 
@@ -132,7 +135,7 @@ Returns an Array of Real numbers.
 * `tree` : root of tree used to perform calculation.
 
 """
-function to_covariance_ultra(tree::N)::Array{R,2} where {N <:GeneralNode{R,I}} where {R,I}
+function to_covariance_ultra(tree::N)::Array{R,2} where {N<:GeneralNode{R,I}} where {R,I}
     # scale the branchlength between 0 and 1
     blv = get_branchlength_vector(tree)
     blv ./= tree_height(tree)
@@ -158,16 +161,16 @@ Returns an Array of Floats.
 
 * `tree` : root node of tree used to perform caclulcation.
 """
-function to_distance_matrix(tree::T)::Array{Float64,2} where T <:GeneralNode
+function to_distance_matrix(tree::T)::Array{Float64,2} where {T<:GeneralNode}
     leaves::Vector{T} = get_leaves(tree)
     ll = length(leaves)
     distance_mat = zeros(Float64, ll, ll)
-    for i in 1:ll
-        for j in 1:ll
-            if i>j
+    for i = 1:ll
+        for j = 1:ll
+            if i > j
                 d = node_distance(tree, leaves[i], leaves[j])
-                distance_mat[i,j] = d
-                distance_mat[j,i] = d
+                distance_mat[i, j] = d
+                distance_mat[j, i] = d
             end # if
         end # for
     end #for
@@ -188,22 +191,23 @@ Returns an Array of Real numbers.
 * `blv` : branchlength vector of tree.
 
 """
-function to_covariance(tree::N, blv::Vector{T})::Array{T,2} where {N<:GeneralNode,T<: Real}
-    leaves::Vector{N} = get_leaves(tree)
+function to_covariance(tree::N, blv::Vector{T})::Array{T,2} where {N<:GeneralNode,T<:Real}
+    leaves::Vector{N} = sort(get_leaves(tree), by = x -> x.num)
+
     ll = length(leaves)
     covmat = zeros(T, ll, ll)
     #@inbounds for ((ind,itm),(jnd,jtm)) in Iterators.product(enumerate(leaves), enumerate(leaves))
     @inbounds for ind = 1:ll, jnd = 1:ind
         itm = leaves[ind]
         if ind == jnd
-            covmat[ind,jnd] = covmat[ind,jnd] + reduce(+, @view blv[get_path(tree, itm)])
+            covmat[ind, jnd] = reduce(+, @view blv[get_path(tree, itm)])
         else
 
             lca = find_lca(tree, itm, leaves[jnd])
             if !lca.root
                 tmp = reduce(+, @view blv[get_path(tree, lca)])
-                covmat[ind,jnd] = covmat[ind,jnd] + tmp
-                covmat[jnd,ind] = covmat[jnd,ind] + tmp
+                covmat[ind, jnd] = covmat[jnd, ind] = tmp
+                #covmat[jnd,ind] = covmat[jnd,ind] + tmp
             end # if
         end # if
 
@@ -212,25 +216,25 @@ function to_covariance(tree::N, blv::Vector{T})::Array{T,2} where {N<:GeneralNod
 end# function to_covariance
 
 
-function to_covariance_func(tree::N)::Array{Function,2} where {N<: GeneralNode}
+function to_covariance_func(tree::N)::Array{Function,2} where {N<:GeneralNode}
     leaves = get_leaves(tree)
     ll = length(leaves)
-    covmat = Array{Function, 2}(undef, ll, ll)
+    covmat = Array{Function,2}(undef, ll, ll)
     @inbounds for ind = 1:ll, jnd = 1:ind
         itm = leaves[ind]
         if ind == jnd
             sympath = get_path(tree, itm)
-            covmat[ind,jnd] = y -> sum(y[sympath])
+            covmat[ind, jnd] = y -> sum(y[sympath])
         else
 
             lca = find_lca(tree, itm, leaves[jnd])
             if !lca.root
                 sympath = get_path(tree, lca)
-                covmat[ind,jnd] = y -> sum(y[sympath])
-                covmat[jnd,ind] = y -> covmat[ind,jnd](y)
+                covmat[ind, jnd] = y -> sum(y[sympath])
+                covmat[jnd, ind] = y -> covmat[ind, jnd](y)
             else
-                covmat[ind,jnd] = y -> 0.0
-                covmat[jnd,ind] = y -> 0.0
+                covmat[ind, jnd] = y -> 0.0
+                covmat[jnd, ind] = y -> 0.0
             end # if
 
         end # if
@@ -250,19 +254,19 @@ function to_covariance_ultra(tree::GeneralNode)
     leaves = get_leaves(root)
     ll = length(leaves)
     covmat = zeros(ll, ll)
-    for i in 1:ll
+    for i = 1:ll
         node1 = leaves[i]
-        for j in 1:ll
+        for j = 1:ll
             if i == j
 
                 path = path_length(root, node1)
-                covmat[i,j] = path
-            elseif i>j
+                covmat[i, j] = path
+            elseif i > j
                 lca = find_lca(root, node1, leaves[j])
                 if lca.root != true
                     path = path_length(root, lca)
-                    covmat[i,j] = path
-                    covmat[j,i] = path
+                    covmat[i, j] = path
+                    covmat[j, i] = path
 
 
                 end

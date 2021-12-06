@@ -43,11 +43,11 @@ end
 
 
 """
-    function parsing_newick_string(newick::String)::FNode
+    function parsing_newick_string(newick::String)::GeneralNode
 
 Parse a single newick string.
 """
-function parsing_newick_string(newick::String)::FNode
+function parsing_newick_string(newick::String)::GeneralNode
     if !is_valid_newick_string(newick)
         throw("$newick is not correctly formatted!")
     end # if
@@ -83,7 +83,7 @@ function ParseNewick(filename::String)::Array{GeneralNode, 1}
 end
 
 
-function nwk_parser(nwk_string::S)::FNode where S <: AbstractString
+function nwk_parser(nwk_string::S)::GeneralNode where S <: AbstractString
     if  nwk_string[end] == ';' #no need for semicolon
         nwk_string = chop(nwk_string)
     end #if
@@ -108,10 +108,10 @@ function nwk_parser(nwk_string::S)::FNode where S <: AbstractString
 end 
 
 
-function parse_sibblings(nwk_string::S)::Array{FNode} where S <: AbstractString
+function parse_sibblings(nwk_string::S)::Array{GeneralNode} where S <: AbstractString
     bracket_level = 0
     current = Char[]
-    children = FNode[]
+    children = GeneralNode[]
     # trick to remove special-case of trailing chars
     for c in (nwk_string * ",")
         if c == ',' && bracket_level == 0
@@ -130,7 +130,7 @@ function parse_sibblings(nwk_string::S)::Array{FNode} where S <: AbstractString
     children
 end
 
-function parse_name_length(newick::S)::FNode where S<:AbstractString
+function parse_name_length(newick::S)::GeneralNode where S<:AbstractString
     nnam = "no_name"
     ninc = 1.0
     if length(newick) > 0

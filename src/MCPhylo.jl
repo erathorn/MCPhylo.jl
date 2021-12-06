@@ -22,8 +22,6 @@ using StatsBase
 using Zygote
 using FiniteDiff
 using ForwardDiff
-#using ChainRules
-#ausing ChainRulesCore
 using Showoff: showoff
 using Markdown
 using Random
@@ -31,15 +29,10 @@ using DataStructures
 using ProgressMeter
 using StaticArrays
 using Bijectors
+using LogExpFunctions
 
-#using CUDA
+
 using PDMats
-# if has_cuda()
-#   using GPUArrays
-# else
-#   @warn "The Julia CUDA library is installed, but no CUDA device detected.
-#          Computation is performed without CUDA functionality."
-# end
 
 import Base: Matrix, names, summary
 
@@ -75,12 +68,6 @@ ElementOrVector{T} = Union{T, Vector{T}}
 #################### Variate Types ####################
 
 abstract type AbstractVariate end
-# abstract type ArrayNode{S, N} <: AbstractArray{S, N} end
-# abstract type TreeNode <: AbstractNode end
-# abstract type ScalarNode <: Real end
-#abstract type AbstractLogical end
-# abstract type ArrayVariate{T, N} <: DenseArray{T,N} end
-# abstract type TreeVariate <: AbstractNode end
 
 
 #################### Distribution Types ####################
@@ -102,33 +89,6 @@ mutable struct Logical{D<:Union{Real, AbstractArray{T, N} where {T<:Real, N}, Ge
 end
 
 
-# mutable struct ScalarLogical{D<:Real} <: AbstractVariate
-#   value::D
-#   symbol::Symbol
-#   monitor::Vector{Int}
-#   eval::Function
-#   sources::Vector{Symbol}
-#   targets::Vector{Symbol}
-# end
-
-# mutable struct ArrayLogical{D<:AbstractArray{T, N} where {T<: Real, N}} <: AbstractVariate
-#   value::D
-#   symbol::Symbol
-#   monitor::Vector{Int}
-#   eval::Function
-#   sources::Vector{Symbol}
-#   targets::Vector{Symbol}
-# end
-
-# mutable struct TreeLogical{T<:GeneralNode} <: AbstractVariate
-#   value::T
-#   symbol::Symbol
-#   monitor::Vector{Int}
-#   eval::Function
-#   sources::Vector{Symbol}
-#   targets::Vector{Symbol}
-# end
-
 
 mutable struct Stochastic{D<:Union{Real, AbstractArray{T, N} where {T<:Real, N}, GeneralNode}} <: AbstractVariate
   value::D
@@ -139,37 +99,6 @@ mutable struct Stochastic{D<:Union{Real, AbstractArray{T, N} where {T<:Real, N},
   targets::Vector{Symbol}
   distr::DistributionStruct
 end
-
-# mutable struct ScalarStochastic{D<:Real} <: AbstractVariate
-#   value::D
-#   symbol::Symbol
-#   monitor::Vector{Int}
-#   eval::Function
-#   sources::Vector{Symbol}
-#   targets::Vector{Symbol}
-#   distr::UnivariateDistribution
-# end
-
-# mutable struct ArrayStochastic{D<:AbstractArray{T, N} where {T<: Real, N}} <: AbstractVariate
-#   value::D
-#   symbol::Symbol
-#   monitor::Vector{Int}
-#   eval::Function
-#   sources::Vector{Symbol}
-#   targets::Vector{Symbol}
-#   distr::DistributionStruct
-# end
-
-
-# mutable struct TreeStochastic{T<: GeneralNode} <: AbstractVariate
-#     value::T
-#     symbol::Symbol
-#     monitor::Vector{Int}
-#     eval::Function
-#     sources::Vector{Symbol}
-#     targets::Vector{Symbol}
-#     distr::DistributionStruct
-# end
 
 # Specialized Unions
 const ScalarVariate = Union{Stochastic{<:Real}, Logical{<:Real}}
@@ -200,26 +129,6 @@ end
 
 
 
-
-# struct SamplerVariate{T<:SamplerTune, R<:AbstractArray{S} where S<:Union{Real, GeneralNode}} <: AbstractVariate
-#   value::R
-#   tune::T
-
-#   function SamplerVariate{T, R}(x::R, tune::T) where {T<:SamplerTune, R}
-#     v = new{T, R}(x, tune)
-#     validate(v)
-#   end
-
-#   function SamplerVariate{T, R}(x::R, pargs...; kargs...) where {T<:SamplerTune, R}
-#     if !isa(x[1], GeneralNode)
-#       value = convert(Vector{Float64}, x)
-#     else
-#       mt = typeof(x[1])
-#       value = convert(Vector{mt}, x)
-#     end
-#     new{T, R}(value, T(value, pargs...; kargs...))
-#   end
-# end
 
 Base.length(s::Sampler) = length(s.value)
 
@@ -292,6 +201,7 @@ struct ModelChains <: AbstractChains
   stat_names::Vector{AbstractString}
   sim_params::SimulationParameters
   conv_storage::Union{Nothing, ConvergenceStorage}
+  samplers::Vector{Vector{Sampler}}
 end
 
 #################### Includes ####################
@@ -300,6 +210,7 @@ include("customerrors.jl")
 include("utils.jl")
 include("variate.jl")
 
+include("distributions/TreeDistribution.jl")
 include("distributions/constructors.jl")
 include("distributions/distributionstruct.jl")
 include("distributions/extensions.jl")
@@ -307,7 +218,7 @@ include("distributions/pdmatdistribution.jl")
 include("Likelihood/SubstitutionModels.jl")
 include("distributions/Phylodist.jl")
 include("distributions/TreeConstraints.jl")
-include("distributions/TreeDistribution.jl")
+
 include("distributions/transformdistribution.jl")
 
 include("model/dependent.jl")
@@ -356,7 +267,6 @@ include("samplers/miss.jl")
 include("samplers/nuts.jl")
 include("samplers/nuts_riemannian.jl")
 include("samplers/pnuts.jl")
-include("samplers/pnuts_riemannian.jl")
 include("samplers/pphmc.jl")
 include("samplers/rwm.jl")
 include("samplers/slice.jl")

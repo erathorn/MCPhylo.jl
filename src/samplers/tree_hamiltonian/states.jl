@@ -7,6 +7,12 @@ mutable struct Tree_HMC_State{T<:GeneralNode} <: HMC_State
     r::Vector{Float64}
     g::Vector{Float64}
     lf::Float64
+    extended::Bool
+    nni::Int64
+end
+
+function Tree_HMC_State(tree::T, r::Vector{Float64}, g::Vector{Float64}, lf::Float64)::Tree_HMC_State{T} where T<:GeneralNode
+    Tree_HMC_State(tree, r, g, lf, false, 0)
 end
 
 
@@ -18,20 +24,22 @@ mutable struct Array_HMC_State{T<:Array{<:Real}} <: HMC_State
 end
 
 function transfer(s1::T)::T where T<:HMC_State
-    T(deepcopy(s1.x), s1.r[:],s1.g[:],s1.lf)
+    T(deepcopy(s1.x), s1.r[:],s1.g[:],s1.lf, s1.extended, s1.nni)
 end
 
 function transfer(s1::T)::T where T<:Array_HMC_State
     T(s1.x[:], s1.r[:],s1.g[:],s1.lf)
 end
 
-hamiltonian(s::HMC_State) = s.lf - 0.5 * dot(s.r)
+hamiltonian(s::HMC_State) = s.lf - 0.5 * dot(s.r, s.r)
 
 function transfer!(s1::HMC_State, s2::HMC_State)
     s1.x = deepcopy(s2.x)
     s1.r[:] .= s2.r[:]
     s1.g[:] .= s2.g[:]
     s1.lf = s2.lf
+    s1.extended = s2.extended
+    s1.nni = s2.nni
     nothing
 end
 

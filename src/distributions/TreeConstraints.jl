@@ -155,7 +155,7 @@ function parse_constraints(filename::S)::Tuple{Vector{Vector{S}}, Vector{Vector{
 end # parse_constraints
 
 
-function topological(constraints::ConstraintDict, tree::FNode)::Bool
+function topological(constraints::ConstraintDict, tree::GeneralNode)::Bool
     isempty(constraints) && return true
     for leaves in constraints[:mono]
         lca = find_lca(tree, leaves)
