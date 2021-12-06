@@ -6,9 +6,7 @@ mutable struct DMHTune <: SamplerTune
 	datakeys::Vector{Symbol}
 	m::Int64
 	scale::Float64
-	link::Function
-	invlink::Function
-  
+
 	DMHTune() = new()
   
 	function DMHTune(f::Union{Function, Missing}, ps, cl, m::Int64, s::Float64;
@@ -29,26 +27,28 @@ mutable struct DMHTune <: SamplerTune
   
   function DMH(params::ElementOrVector{Symbol}, m::Int64, scale::Float64=1.0,
 			   transform::Bool=true; args...)
+	
+	tune = DMHTune(logpdf!, pseudologpdf!, conditional_likelihood!, m, s)
+
+	# samplerfx = function(model::Model, block::Integer)
   
-		samplerfx = function(model::Model, block::Integer)
+	#   tune = gettune(model, block)
+	#   params = asvec(params)
   
-	  tune = gettune(model, block)
-	  params = asvec(params)
+	#   targets = keys(model, :target, params)
+	#   tune.datakeys = targets
+	#   block = SamplingBlock(model, block, transform)
   
-	  targets = keys(model, :target, params)
-	  tune.datakeys = targets
-	  block = SamplingBlock(model, block, transform)
+	#   f = x -> logpdf!(block, x)
+	#   fp = (x, y) -> pseudologpdf!(block, x, y)
+	#   cl = (x, args...) -> conditional_likelihood!(block, x, args...)
+	#   v = Sampler(block, f, fp, cl, targets, m, scale; args...)
   
-	  f = x -> logpdf!(block, x)
-	  fp = (x, y) -> pseudologpdf!(block, x, y)
-	  cl = (x, args...) -> conditional_likelihood!(block, x, args...)
-	  v = Sampler(block, f, fp, cl, targets, m, scale; args...)
+	#   sample!(v::DMHVariate, model)
   
-	  sample!(v::DMHVariate, model)
-  
-	  relist(block, v)
-	end
-	Sampler(params, samplerfx, DMHTune())
+	#   relist(block, v)
+	# end
+	Sampler(params, tune, Symbol[], transform)
   end
   
   sample!(v::DMHVariate, model) = DMH_sample!(v, v.tune, model)
