@@ -39,36 +39,6 @@ Returns a `Sampler{SliceSimplexTune}` type object.
 """
 function SliceSimplex(params::Symbol; scale::Real = 1.0, args...)
   params = asvec(params)
-
-
-  # samplerfx = function(model::Model, block::Integer)
-  #   s = model.samplers[block]
-  #   local node, x
-  #   for key in params
-  #     node = model[key]
-  #     x = unlist(node)
-
-  #     sim = let x = x, s=s, args = args
-  #       function(inds::AbstractRange, logf::Function)
-  #         v = SamplerVariate(x[inds], s, model.iter; args...)
-  #         sample!(v, logf)
-  #       end
-  #     end
-
-  #     logf = let x = x, key = key, model=model,node=node
-  #       function(d::MultivariateDistribution, v::AbstractVector,
-  #                     inds::AbstractRange)
-  #         x[inds] = v
-  #         relist!(model, x, key)
-  #         logpdf(d, v) + logpdf(model, node.targets)
-  #       end
-  #     end
-
-  #     SliceSimplex_sub!(node.distr, sim, logf)
-  #   end
-
-  #   nothing
-  # end
   tune = SliceSimplexTune(Float64[], logpdf!, scale=scale)
   Sampler(params, tune, Symbol[], false)
 end

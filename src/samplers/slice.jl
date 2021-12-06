@@ -92,7 +92,7 @@ constrained or unconstrained.
 Returns `v` updated with simulated values and associated tuning parameters.
 """
 
-function sample!(v::SliceUnivariate{Vector{GeneralNode}}, logf::Function)
+function sample!(v::SliceUnivariate{Vector{GeneralNode}}, logf::Function; kwargs...)
     tree = v.value[1]
 
     logf0 = logf(tree)
@@ -126,7 +126,7 @@ function sample!(v::SliceUnivariate{Vector{GeneralNode}}, logf::Function)
 end
 
 
-function sample!(v::SliceMultivariate{Vector{GeneralNode}}, logf::Function)
+function sample!(v::SliceMultivariate{Vector{GeneralNode}}, logf::Function; kwargs...)
     tree = v.value[1]
 
     p0 = logf(tree) + log(rand())
@@ -160,7 +160,7 @@ end
 
 
 
-function sample!(v::SliceUnivariate{Vector{Float64}}, logf::Function)
+function sample!(v::SliceUnivariate{Vector{Float64}}, logf::Function; kwargs...)
     logf0 = logf(v.value)
 
     n = length(v)
@@ -189,7 +189,7 @@ function sample!(v::SliceUnivariate{Vector{Float64}}, logf::Function)
 end
 
 
-function sample!(v::SliceMultivariate{Vector{Float64}}, logf::Function)
+function sample!(v::SliceMultivariate{Vector{Float64}}, logf::Function; kwargs...)
     p0 = logf(v.value) + log(rand())
     
     n = length(v)

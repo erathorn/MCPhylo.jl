@@ -68,7 +68,7 @@ NNI, SPR, Slide, Swing, :EdgeLength
 
 Returns a `Sampler{RWMTune}` type object.
 """
-function RWM(params::ElementOrVector{Symbol}, moves::ElementOrVector{Symbol}; args...)
+function RWM(params::ElementOrVector{Symbol}, moves::ElementOrVector{Symbol}; kwargs...)
   eligible = [:NNI, :SPR, :Slide, :Swing, :EdgeLength]
   to_use = Symbol[]
   if moves == :all
