@@ -194,17 +194,12 @@ function assign_mcmc_work(
     results_vec = []
     @sync begin
         # check RemoteChannel for new entries and updates the ProgressMeters
-        #@async 
-
         finished_chains = 0
         @async while finished_chains < nchains
             chain = take!(channel)
             chain > 0 ? ProgressMeter.next!(meters[chain]) : finished_chains += 1
         end # while
-
         results_vec = pmap2(f, lsts)
-
-        
     end # @sync
     ASDSF && close.(r_channels)
     if ASDSF

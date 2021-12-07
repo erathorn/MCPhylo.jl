@@ -178,8 +178,8 @@ function ABC(
     kernelpdf = (epsilon, d) -> pdf(kernel(0.0, epsilon), d)
     propose(x) = proposalfun(proposal, scale, x)
     
-    lf(m, args...) = m
-
+    #lf(m, args...) = m
+    lf(args...) = 0
     tune = ABCTune(
         Float64[],
         lf,
@@ -214,13 +214,13 @@ function simulate(model::Model, key::Symbol)
 end
 
 
-function sample!(v::ABCVariate, get_model::Function; gen::Int, kwargs...)
+function sample!(v::ABCVariate, lf::Function; gen::Int, model::Model, kwargs...)
 
     tune = v.tune
 
     # TODO: Look for alternative
     # dummy function to get handle on model...
-    model = get_model(0)
+    #model = get_model(0)
     stochastics = keys(model, :stochastic)
     datakeys = intersect(setdiff(v.targets, tune.params), stochastics)
     if gen == 1

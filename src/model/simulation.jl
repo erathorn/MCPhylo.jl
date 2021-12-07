@@ -376,7 +376,7 @@ end
 function sample!(s::Sampler, m::Model)
     s.value = unlist(m, s.params, transform=s.transform)
     lpdf(x) = s.tune.logf(m, x, s.params, s.targets, s.transform)
-    sample!(s, lpdf, adapt=m.iter < m.burnin, gen=m.iter)
+    sample!(s, lpdf, adapt=m.iter < m.burnin, gen=m.iter, model=m)
     relist(m, s.value, s.params, s.transform)
 end
 
@@ -390,13 +390,12 @@ function pseudologpdf!(
     m::Model,
     x::AbstractArray{T},
     y::AbstractArray,
-    params,
-    targets,
+    params::Vector{Symbol},
+    targets::Vector{Symbol},
     transform::Bool = false,
 ) where {T<:Real}
-    #params = keys(m, :block, block)
-    #targets = keys(m, :target, block)
-    @show params
+    
+    
     m[params] = relist(m, x, params, transform)
     lp = 0.0
     for key in targets
@@ -412,13 +411,13 @@ end
 function conditional_likelihood!(
     m::Model,
     x::AbstractArray{T},
-    params,
-    targets,
+    params::Vector{Symbol},
+    targets::Vector{Symbol},
     args...,
 ) where {T<:Real}
     #params = keys(m, :block, block)
     #targets = keys(m, :target, block)
-    #m[targets] = relist(m, x, targets)
+    m[targets] = relist(m, x, targets)
 
     lp = conditional_likelihood(m, targets, args...)
 

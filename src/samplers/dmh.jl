@@ -38,39 +38,21 @@ function DMH(
     transform::Bool = true;
     args...,
 )
-    lf(m, args...) = m
-    tune = DMHTune(lf, pseudologpdf!, conditional_likelihood!, m, scale)
+    
+    tune = DMHTune(logpdf!, pseudologpdf!, conditional_likelihood!, m, scale)
 
-    # samplerfx = function(model::Model, block::Integer)
-
-    #   tune = gettune(model, block)
-    #   params = asvec(params)
-
-    #   targets = keys(model, :target, params)
-    #   tune.datakeys = targets
-    #   block = SamplingBlock(model, block, transform)
-
-    #   f = x -> logpdf!(block, x)
-    #   fp = (x, y) -> pseudologpdf!(block, x, y)
-    #   cl = (x, args...) -> conditional_likelihood!(block, x, args...)
-    #   v = Sampler(block, f, fp, cl, targets, m, scale; args...)
-
-    #   sample!(v::DMHVariate, model)
-
-    #   relist(block, v)
-    # end
     Sampler(params, tune, Symbol[], transform)
 end
 
 #  sample!(v::DMHVariate, model) = DMH_sample!(v, v.tune, model)
 
-function sample!(v::DMHVariate{T}, get_model::Function; kwargs...) where {T}#tune::DMHTune, model::Model) 
+function sample!(v::DMHVariate{T}, lpdf::Function; model::Model, kwargs...) where {T}#tune::DMHTune, model::Model) 
     # 1. propose theta prime
     # 2. Generate the auxiliary variable using theta prime
 
     tune = v.tune
-    model = get_model(0)
-    lpdf(x) = logpdf!(model, x, v.params, v.targets, v.transform)
+    #model = get_model(0)
+    #lpdf(x) = logpdf!(model, x, v.params, v.targets, v.transform)
     targets = keys(model, :target, v.params)
     data = unlist(model[targets[1]])
     data = reshape(data, size(getindex(model, targets[1])))
@@ -96,10 +78,10 @@ function sample!(v::DMHVariate{T}, get_model::Function; kwargs...) where {T}#tun
 
     #println("real")
     # calculate logpdf values
-    lf_xt = lpdf(v.value)
+    lf_xt = 0.0#lpdf(v.value)
 
     #println("θ_prime $θ_prime")
-    lf_xtp = lpdf(θ_prime)
+    lf_xtp = 0.0#lpdf(θ_prime)
 
     # prematurely assign, to allow computations to go through properly
     v[:] = θ_prime
@@ -133,24 +115,25 @@ function inner_sampler(
     targets,
     model,
 )::Array{N,2} where {N<:Real}
-nfeatures, nlangs = size(X)
-counter = zero(Int64)
+    nfeatures, nlangs = size(X)
+    counter = zero(Int64)
 
-while true
-    #random_language_idx = shuffle(1:nlangs)
-    random_feature_idx = shuffle(1:nfeatures)
-    @inbounds for i in 1:nlangs#random_language_idx
-        @inbounds for f in random_feature_idx
+    while true
+        #random_language_idx = shuffle(1:nlangs)
+        random_feature_idx = shuffle(1:nfeatures)
+        @inbounds for i = 1:nlangs#random_language_idx
+            @inbounds for f in random_feature_idx
+
+                probs = v.tune.condlike(model, X, params, targets, i, f)
+                new_x = sample(1:length(probs), Weights(probs))
+                X[f, i] = new_x
+                #	end
             
-          probs = v.tune.condlike(v, X, i, f)	
-          new_x = sample(1:length(probs), Weights(probs))
-          X[f, i] = new_x
-        #	end
-        end
-        counter += 1
-        if counter > v.tune.m
-            return X
+                counter += 1
+                if counter > v.tune.m
+                    return X
+                end
+            end
         end
     end
-end
 end
