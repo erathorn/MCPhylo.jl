@@ -7,14 +7,14 @@
 See `Chains()`.
 """
 function ModelChains(c::Chains, m::Model, stats::Array{Float64}, stat_names::Vector{AbstractString}, params::SimulationParameters, cs::Union{Nothing, ConvergenceStorage})
-  ModelChains(c.value, c.range, c.names, c.chains, m, c.trees, c.moves, c.tree_names, stats, stat_names, params, cs)
+  ModelChains(c.value, c.range, c.names, c.chains, m, c.trees, c.tree_names, stats, stat_names, params, cs)
 end
 
 
 #################### Conversions ####################
 
 Base.convert(::Type{Chains}, mc::ModelChains) =
-  Chains(mc.value, mc.range, mc.names, mc.chains, mc.trees, mc.moves, mc.tree_names)
+  Chains(mc.value, mc.range, mc.names, mc.chains, mc.trees, mc.tree_names)
 
 
 #################### Indexing ####################
