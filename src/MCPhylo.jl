@@ -285,7 +285,6 @@ struct ModelChains <: AbstractChains
   chains::Vector{Int}
   model::Model
   trees::Array{AbstractString, 3}
-  moves::Array{Int, 1}
   tree_names::Vector{AbstractString}
   stats::Array{Float64, 2}
   stat_names::Vector{AbstractString}
