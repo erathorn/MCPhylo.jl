@@ -275,7 +275,6 @@ struct Chains <: AbstractChains
   names::Vector{AbstractString}
   chains::Vector{Int}
   trees::Array{AbstractString, 3}
-  moves::Array{Int, 1}
   tree_names::Vector{AbstractString}
 end
 

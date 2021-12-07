@@ -415,13 +415,8 @@ function conditional_likelihood!(
     targets::Vector{Symbol},
     args...,
 ) where {T<:Real}
-    #params = keys(m, :block, block)
-    #targets = keys(m, :target, block)
     m[targets] = relist(m, x, targets)
-
-    lp = conditional_likelihood(m, targets, args...)
-
-    lp
+    conditional_likelihood(m, targets, args...)
 end
 
 
@@ -435,15 +430,6 @@ function unlist(m::Model, block::Integer = 0; transform::Bool = false)
     unlist(m, keys(m, :block, block), transform=transform)
 end
 
-function samparas(m::Model)
-    moves = 0
-    for i in m.samplers
-        if typeof(i.tune) == PNUTSTune
-            moves = i.tune.moves
-        end
-    end
-    return moves
-end
 """
     unlist(m::Model, monitoronly::Bool)
 """

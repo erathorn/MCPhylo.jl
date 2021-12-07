@@ -24,9 +24,9 @@ end
 """
 function Chains(value::Array{T, 3},
                start::Integer=1, thin::Integer=1,
-               names::Vector{W}=AbstractString[], chains::Vector{V}=Int[], moves::Vector{V}=Int[0]) where {T<:Real, U<:AbstractString, V<:Integer, W <: AbstractString}
+               names::Vector{W}=AbstractString[], chains::Vector{V}=Int[]) where {T<:Real, U<:AbstractString, V<:Integer, W <: AbstractString}
    Chains(value, Array{String, 3}(undef, size(value)), start=start,
-          thin=thin, names=names, chains=chains, moves=moves)
+          thin=thin, names=names, chains=chains)
 end
 """
     Chains(value::Array{T, 3},
@@ -39,7 +39,7 @@ function Chains(value::Array{T, 3},
                 value2::Array{U,3};
                start::Integer=1, thin::Integer=1,
                names::Vector{W}=AbstractString[], chains::Vector{V}=Int[],
-               moves::Vector{V}=Int[0], tree_names::Vector{X}=AbstractString[]) where {T<:Real, U<:AbstractString, V<:Integer, W <: AbstractString, X <: AbstractString}
+               tree_names::Vector{X}=AbstractString[]) where {T<:Real, U<:AbstractString, V<:Integer, W <: AbstractString, X <: AbstractString}
   n, p, m = size(value)
 
   if isempty(names)
@@ -55,7 +55,7 @@ function Chains(value::Array{T, 3},
   end
 
   v = convert(Array{Float64, 3}, value)
-  Chains(v, range(start, step=thin, length=n), AbstractString[names...], Int[chains...], value2, moves, tree_names)
+  Chains(v, range(start, step=thin, length=n), AbstractString[names...], Int[chains...], value2, tree_names)
 end
 """
     Chains(value::Matrix{T};
@@ -127,12 +127,12 @@ function Base.getindex(c::Chains, window, names, chains)
     Chains(c.value[inds1, inds2, chains], Array{String, length(newsize)}(undef, newsize),
            start = first(c) + (first(inds1) - 1) * step(c),
            thin = step(inds1) * step(c), names = c.names[inds2],
-           chains = c.chains[chains], moves = c.moves)
+           chains = c.chains[chains])
   else
     Chains(c.value[inds1, inds2, chains], c.trees[inds1, :, chains],
            start = first(c) + (first(inds1) - 1) * step(c),
            thin = step(inds1) * step(c), names = c.names[inds2],
-           chains = c.chains[chains], moves = c.moves)
+           chains = c.chains[chains])
   end
 end
 
@@ -243,10 +243,9 @@ function cat1(c1::A, args::A...) where A <: AbstractChains
   else
       trees = c1.trees
   end
-  moves = +(c1.moves, map(c -> c.moves, args)...)
-
+  
   Chains(value, trees, start=first(range), thin=step(range), names=names,
-         chains=chains, moves=moves, tree_names=tree_names)
+         chains=chains, tree_names=tree_names)
 end
 
 function cat2(c1::A, args::A...) where A <: AbstractChains
@@ -273,9 +272,9 @@ function cat2(c1::A, args::A...) where A <: AbstractChains
   else
       trees = c1.trees
   end
-  moves = +(c1.moves, map(c -> c.moves, args)...)
+  
   Chains(value, trees, start=first(range), thin=step(range), names=names,
-         chains=chains, moves=moves)
+         chains=chains)
 end
 
 function cat3(c1::A, args::A...) where A <: AbstractChains
@@ -298,8 +297,8 @@ function cat3(c1::A, args::A...) where A <: AbstractChains
       value2 = c1.trees
   end
 
-  moves = +(c1.moves, map(c -> c.moves, args)...)
-  Chains(value, value2, start=first(range), thin=step(range), names=names, moves=moves, tree_names=tree_names)
+  
+  Chains(value, value2, start=first(range), thin=step(range), names=names, tree_names=tree_names)
 end
 
 Base.hcat(c1::AbstractChains, args::AbstractChains...) = cat(c1, args..., dims=2)
