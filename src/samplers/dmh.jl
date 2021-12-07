@@ -133,24 +133,24 @@ function inner_sampler(
     targets,
     model,
 )::Array{N,2} where {N<:Real}
-    nfeatures, nlangs = size(X)
-    counter = zero(Int64)
+nfeatures, nlangs = size(X)
+counter = zero(Int64)
 
-    while true
-        random_language_idx = shuffle(1:nlangs)
-        random_feature_idx = shuffle(1:nfeatures)
-        @inbounds for i in random_language_idx
-            @inbounds for f in random_feature_idx
-
-                probs = v.tune.condlike(model, X, params, targets, i, f)
-                new_x = sample(1:length(probs), Weights(probs))
-                X[f, i] = new_x
-                #	end
-            end
-            counter += 1
-            if counter > v.tune.m
-                return X
-            end
+while true
+    #random_language_idx = shuffle(1:nlangs)
+    random_feature_idx = shuffle(1:nfeatures)
+    @inbounds for i in 1:nlangs#random_language_idx
+        @inbounds for f in random_feature_idx
+            
+          probs = v.tune.condlike(v, X, i, f)	
+          new_x = sample(1:length(probs), Weights(probs))
+          X[f, i] = new_x
+        #	end
+        end
+        counter += 1
+        if counter > v.tune.m
+            return X
         end
     end
+end
 end
