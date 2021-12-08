@@ -27,9 +27,6 @@ mutable struct NUTSTune <: SamplerTune
   end
 end
 
-#NUTSTune(x::Vector, epsilon::Real; args...) =
-#  NUTSTune(x, epsilon; args...)
-
 
 const NUTSVariate = Sampler{NUTSTune, T} where T
 

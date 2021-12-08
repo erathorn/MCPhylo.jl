@@ -5,43 +5,52 @@
 ##   s2 ~ invgamma(0.001, 0.001)
 ################################################################################
 
-using MCPhylo
+data = Dict(:x => [1, 2, 3, 4, 5], :y => [1, 3, 3, 3, 5])
 
-## Data
-data = Dict(
-  :x => [1, 2, 3, 4, 5],
-  :y => [1, 3, 3, 3, 5]
+model = Model(
+    y = Stochastic(1, (μ, s2) -> UnivariateDistribution[Normal(i, s2) for i in μ], false),
+    μ = Logical(1, (b0, b1, x) -> b0 .+ b1 .* x, false),
+    b0 = Stochastic(() -> Normal(0, 1000), true),
+    b1 = Stochastic(() -> Normal(0, 1000), true),
+    s2 = Stochastic(() -> InverseGamma(0.001, 0.001), true),
 )
 
-## Log-transformed Posterior(b0, b1, log(s2)) + Constant and Gradient Vector
-logfgrad = function(x::DenseVector)
-  b0 = x[1]
-  b1 = x[2]
-  logs2 = x[3]
-  r = data[:y] .- b0 .- b1 .* data[:x]
-  logf = (-0.5 * length(data[:y]) - 0.001) * logs2 -
-           (0.5 * dot(r, r) + 0.001) / exp(logs2) -
-           0.5 * b0^2 / 1000 - 0.5 * b1^2 / 1000
-  grad = [
-    sum(r) / exp(logs2) - b0 / 1000,
-    sum(data[:x] .* r) / exp(logs2) - b1 / 1000,
-    -0.5 * length(data[:y]) - 0.001 + (0.5 * dot(r, r) + 0.001) / exp(logs2)
-  ]
-  logf, grad
+inits = [
+    Dict{Symbol,Any}(
+        :b0 => rand(),
+        :b1 => rand(),
+        :s2 => rand(),
+        :y => data[:y],
+        :x => data[:x],
+    ) for i = 1:2
+]
+
+@testset "Slice" begin
+    samplers = [Slice([:b0, :b1, :s2], 1.0)]
+    setsamplers!(model, samplers)
+
+    sim = mcmc(model, data, inits, 250, burnin = 125, thin = 1, chains = 2, trees = true)
+
 end
 
-## MCMC Simulation with No-U-Turn Sampling
-n = 5000
-burnin = 1000
-sim = Chains(n, 3, start = (burnin + 1), names = ["b0", "b1", "s2"])
-theta = NUTSVariate([0.0, 0.0, 0.0], logfgrad)
-for i in 1:n
-  sample!(theta, adapt = (i <= burnin))
-  if i > burnin
-    sim[i, :, 1] = [theta[1:2]; exp(theta[3])]
-  end
-end
-describe(sim)
+@testset "RWM" begin
+    samplers = [RWM([:b0, :b1, :s2], 1.0)]
+    setsamplers!(model, samplers)
 
-#mark that we got to the end of the test file succesfully
-@test true
+    sim = mcmc(model, data, inits, 250, burnin = 125, thin = 1, chains = 2, trees = true)
+
+end
+
+@testset "NUTS" begin
+    samplers = [NUTS([:b0, :b1, :s2])]
+    setsamplers!(model, samplers)
+
+    sim = mcmc(model, data, inits, 250, burnin = 125, thin = 1, chains = 2, trees = true)
+end
+
+@testset "HMC" begin
+    samplers = [HMC([:b0, :b1, :s2], 0.001, 4)]
+    setsamplers!(model, samplers)
+
+    sim = mcmc(model, data, inits, 250, burnin = 125, thin = 1, chains = 2, trees = true)
+end
