@@ -102,33 +102,6 @@ mutable struct Logical{D<:Union{Real, AbstractArray{T, N} where {T<:Real, N}, Ge
 end
 
 
-# mutable struct ScalarLogical{D<:Real} <: AbstractVariate
-#   value::D
-#   symbol::Symbol
-#   monitor::Vector{Int}
-#   eval::Function
-#   sources::Vector{Symbol}
-#   targets::Vector{Symbol}
-# end
-
-# mutable struct ArrayLogical{D<:AbstractArray{T, N} where {T<: Real, N}} <: AbstractVariate
-#   value::D
-#   symbol::Symbol
-#   monitor::Vector{Int}
-#   eval::Function
-#   sources::Vector{Symbol}
-#   targets::Vector{Symbol}
-# end
-
-# mutable struct TreeLogical{T<:GeneralNode} <: AbstractVariate
-#   value::T
-#   symbol::Symbol
-#   monitor::Vector{Int}
-#   eval::Function
-#   sources::Vector{Symbol}
-#   targets::Vector{Symbol}
-# end
-
 
 mutable struct Stochastic{D<:Union{Real, AbstractArray{T, N} where {T<:Real, N}, GeneralNode}} <: AbstractVariate
   value::D
@@ -139,37 +112,6 @@ mutable struct Stochastic{D<:Union{Real, AbstractArray{T, N} where {T<:Real, N},
   targets::Vector{Symbol}
   distr::DistributionStruct
 end
-
-# mutable struct ScalarStochastic{D<:Real} <: AbstractVariate
-#   value::D
-#   symbol::Symbol
-#   monitor::Vector{Int}
-#   eval::Function
-#   sources::Vector{Symbol}
-#   targets::Vector{Symbol}
-#   distr::UnivariateDistribution
-# end
-
-# mutable struct ArrayStochastic{D<:AbstractArray{T, N} where {T<: Real, N}} <: AbstractVariate
-#   value::D
-#   symbol::Symbol
-#   monitor::Vector{Int}
-#   eval::Function
-#   sources::Vector{Symbol}
-#   targets::Vector{Symbol}
-#   distr::DistributionStruct
-# end
-
-
-# mutable struct TreeStochastic{T<: GeneralNode} <: AbstractVariate
-#     value::T
-#     symbol::Symbol
-#     monitor::Vector{Int}
-#     eval::Function
-#     sources::Vector{Symbol}
-#     targets::Vector{Symbol}
-#     distr::DistributionStruct
-# end
 
 # Specialized Unions
 const ScalarVariate = Union{Stochastic{<:Real}, Logical{<:Real}}

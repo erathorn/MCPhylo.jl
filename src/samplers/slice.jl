@@ -200,7 +200,7 @@ function sample!(v::SliceMultivariate{Vector{Float64}}, logf::Function; kwargs..
     while logf(x) < p0
         @inbounds for i = 1:n
             value = x[i]
-            if value < v[i]
+            if value < v.value[i]
                 lower[i] = value
             else
                 upper[i] = value
