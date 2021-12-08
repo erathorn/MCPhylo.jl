@@ -224,7 +224,10 @@ function gradlogpdf(m::Model, targets::Array{Symbol,1})::Tuple{Float64,Array{Flo
         push!(gradp, grad)
     end
     m.likelihood = vp
-    vp, .+(gradp...)
+    gr = .+(gradp...)
+    
+    
+    vp, gr
 end
 """
     gradlogpdf!(m::Model, x::N, block::Integer=0,transform::Bool=false)::Tuple{Float64, Vector{Float64}}
@@ -244,8 +247,9 @@ function gradlogpdf!(
     v, grad = gradlogpdf(m, targets)
     # prior
     vp, gradp = gradlogpdf(m[params[1]], x)
-
-    vp + v, gradp .+ grad
+    gr = gradp .+ grad
+    gr .= any(isnan.(gr)) ? -Inf : gr[:]
+    vp + v, gr
 end
 # """
 #     logpdf!(m::Model, x::AbstractArray{T}, block::Integer=0,

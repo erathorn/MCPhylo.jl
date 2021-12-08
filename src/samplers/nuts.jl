@@ -52,7 +52,6 @@ Returns a `Sampler{NUTSTune}` type object.
 function NUTS(params::ElementOrVector{Symbol}; epsilon::Real = -Inf, kwargs...)
   tune = NUTSTune(Float64[], epsilon, logpdfgrad!; kwargs...)
   Sampler(Float64[], params, tune, Symbol[], true)
-  #Sampler(params, samplerfx, NUTSTune())
 end
 
 
@@ -110,7 +109,7 @@ function nuts_sub!(v::NUTSVariate{T}, epsilon::Real, logfgrad::Function) where T
   x = deepcopy(v.value)
   logf, grad = logfgrad(x)
   r = randn(n)
-  #x, r, logf, grad = leapfrog(v.value, randn(n), zeros(n), 0.0, logfgrad)
+  
   logp0 = logf - 0.5 * dot(r, r)
   logu0 = logp0 + log(rand())
   xminus = xplus = deepcopy(x)
@@ -201,20 +200,4 @@ function nouturn(xminus::Vector{Float64}, xplus::Vector{Float64},
                  rminus::Vector{Float64}, rplus::Vector{Float64})
   xdiff = xplus - xminus
   dot(xdiff, rminus) >= 0 && dot(xdiff, rplus) >= 0
-end
-
-function nutsepsilon(x::Vector{Float64}, logfgrad::Function, target::Float64)
-  n = length(x)
-  _, r0, logf0, grad0 = leapfrog(x, randn(n), zeros(n), 0.0, logfgrad)
-  epsilon = 1.0
-  _, rprime, logfprime, gradprime = leapfrog(x, r0, grad0, epsilon, logfgrad)
-  prob = exp(logfprime - logf0 - 0.5 * (dot(rprime, rprime) - dot(r0, r0)))
-  pm = 2 * (prob > target) - 1
-  while prob^pm > target^pm
-    epsilon *= 2.0^pm
-    _, rprime, logfprime, _ = leapfrog(x, r0, grad0, epsilon, logfgrad)
-    prob = exp(logfprime - logf0 - 0.5 * (dot(rprime, rprime) - dot(r0, r0)))
-    prob = isnan(prob) ? 0.0 : prob
-  end
-  epsilon
 end

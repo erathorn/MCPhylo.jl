@@ -54,7 +54,7 @@ function relistlength_sub(d::Distribution, s::Stochastic{T}, x::T) where T<:Gene
 end
 
 function relistlength_sub(d::Distribution, s::Stochastic{T}, x::AbstractArray) where T<:GeneralNode
-  relistlength(d, x[1])
+  relistlength(d, x)
 end
 
 relistlength(d::UnivariateDistribution, x::T) where T<:GeneralNode = (x, 1)
@@ -83,6 +83,10 @@ end
 
 link_sub(d::Distribution, x) = link(d, x)
 
+link_sub(d::TreeDistribution, x) = x
+
+invlink_sub(d::TreeDistribution, x) = x
+
 invlink_sub(d::Distribution, x) = invlink(d, x)
 
 
@@ -95,6 +99,24 @@ logpdf(d::Distribution, x, transform::Bool) = logpdf(d, x)
 function logpdf_sub(d::Distribution, x, transform::Bool)
   insupport(d, x) ? logpdf(d, x, transform) : -Inf
 end
+
+# function logpdf_sub(d::TreeDistribution, X::AbstractArray{<:Real, 2}, transform::Bool)
+#   # Y = Bijectors.replace_diag(exp, X)
+#   # Y = Bijectors.getpd(Y)
+#   # tol = 1e-7
+#   # Y[Y .< 0.0] .= tol
+#   # #any(Y .< 0.0) && return -Inf
+#   # #all(Y .> tol) && return -Inf
+#   # tr = cov2tree(Y, string.(collect(1:size(Y, 1))), 1:size(Y, 1), tol=tol)
+#   # number_nodes!(tr)
+#   insupport(d, tr) ? logpdf(d, tr, transform) : -Inf
+# end
+
+function logpdf_sub(d::TreeDistribution, X::AbstractArray{<:Real, 1}, transform::Bool)
+  Y,k = another_relist(X)
+  logpdf_sub(d, Y, transform)
+end
+
 
 function logpdf_sub(d::DiscreteMatrixDistribution, X::AbstractArray, transform::Bool)
   logpdf(d, X)

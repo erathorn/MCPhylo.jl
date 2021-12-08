@@ -98,15 +98,15 @@ mutable struct TreeDistribution <: ContinuousUnivariateDistribution
 end
 
 
-function insupport(d::TreeDistribution, x::FNode)
+function insupport(d::TreeDistribution, x::GeneralNode)
     insupport(d.length_distr, x) && insupport(d.topology_distr, x)
 end
 
-function logpdf(d::TreeDistribution, x::FNode)
+function logpdf(d::TreeDistribution, x::GeneralNode, transform::Bool)
     logpdf(d.length_distr, x) + logpdf(d.topology_distr, x)
 end
 
-function gradlogpdf(d::TreeDistribution, x::FNode)
+function gradlogpdf(d::TreeDistribution, x::GeneralNode)
     rl1, rl2 = gradlogpdf(d.length_distr, x)
     rt1, rt2 = gradlogpdf(d.topology_distr, x)
     return rl1+rt1, rl2 .+ rt2
@@ -114,6 +114,7 @@ end
 
 # placeholder, can be made more elegant using the topology_distr
 function relistlength(d::TreeDistribution, x::AbstractArray)
-    n = length(x)
-    (Array(x), n)
+    #n = length(x)
+    #(Array(x), n)
+    x[1], 1
   end

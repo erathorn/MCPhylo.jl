@@ -27,9 +27,13 @@ using Random
 
 
 
+
 #mt, df = make_tree_with_data("Example.nex", binary=true); # load your own nexus file
 mt, df = make_tree_with_data("untracked_files/simulation_PNUTS_Paper/out_JC_20-600.nex", binary=false); # load your own nexus file
 
+
+mt, df = make_tree_with_data("untracked_files/simulation_PNUTS_Paper/out_Res_20-600.nex", binary=true); # load your own nexus file
+#mt, df = make_tree_with_data("untracked_files/Dravidian.cc.phy.nex"); # load your own nexus file
 
 
 mt2 = deepcopy(mt)
@@ -53,7 +57,7 @@ model =  Model(
 # intial model values
 inits = [ Dict{Symbol, Union{Any, Real}}(
     :mtree => mt,
-    :mypi=> rand(Dirichlet(4,1)),
+    :mypi=> rand(Dirichlet(2,1)),
     :df => my_data[:df],
     :nnodes => my_data[:nnodes],
     :nbase => my_data[:nbase],
@@ -62,7 +66,7 @@ inits = [ Dict{Symbol, Union{Any, Real}}(
     ),
     Dict{Symbol, Union{Any, Real}}(
         :mtree => mt2,
-        :mypi=> rand(Dirichlet(4,1)),
+        :mypi=> rand(Dirichlet(2,1)),
         :df => my_data[:df],
         :nnodes => my_data[:nnodes],
         :nbase => my_data[:nbase],
@@ -71,6 +75,9 @@ inits = [ Dict{Symbol, Union{Any, Real}}(
         )
     ]
 
+scheme = [MCPhylo.PNUTS_Rie(:mtree, target=0.8, targetNNI=0.6, tree_depth=5),
+          #PNUTS(:mtree, target=0.6, targetNNI=0.85, tree_depth=5),
+          #PPHMC(:mtree, 0.01, 10, 0.003),
 scheme = [PNUTS(:mtree),#, target=0.6, targetNNI=4, tree_depth=5),
           #PPHMC(:mtree, 0.001, 10, 0.003),
           SliceSimplex(:mypi),

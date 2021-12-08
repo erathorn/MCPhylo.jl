@@ -1,5 +1,5 @@
-function internal_logpdf(d::CompoundDirichlet, b_lens::Array{Float64},
-                         int_leave_map::Vector{Int64})
+function internal_logpdf(d::CompoundDirichlet, b_lens::Array{T},
+                         int_leave_map::Vector{Int64})::T where T<:Real
 
     blen_int = 0.0
     blen_leave = 0.0
@@ -33,7 +33,7 @@ function internal_logpdf(d::CompoundDirichlet, b_lens::Array{Float64},
 
 end
 
-function gradlogpdf(d::CompoundDirichlet, x::FNode)
+function gradlogpdf(d::CompoundDirichlet, x::GeneralNode)
     int_ext = internal_external(x)
     blv = get_branchlength_vector(x)
     # use let block for proper capturing of variables
@@ -44,7 +44,7 @@ function gradlogpdf(d::CompoundDirichlet, x::FNode)
     return r[1],r[2](1.0)[1]
 end
 
-function gradlogpdf(d::exponentialBL, x::FNode)
+function gradlogpdf(d::exponentialBL, x::GeneralNode)
     bl = get_branchlength_vector(x)
     g(y) = sum(logpdf.(Exponential(d.scale), y))
     r = Zygote.pullback(g, bl)
@@ -52,48 +52,53 @@ function gradlogpdf(d::exponentialBL, x::FNode)
 end
 
 function gradlogpdf(t::Union{UniformConstrained, UniformTopology, UniformBranchLength}, 
-                    x::FNode)::Tuple{Float64, Vector{Float64}}
+                    x::GeneralNode)::Tuple{Float64, Vector{Float64}}
 
     blv = get_branchlength_vector(x)
     0.0, zeros(length(blv))
 end
 
 
-function logpdf(d::CompoundDirichlet, x::FNode)
+function logpdf(d::CompoundDirichlet, x::GeneralNode)
     internal_logpdf(d, get_branchlength_vector(x), internal_external(x))
 end
 
-function logpdf(t::Union{UniformConstrained, UniformTopology, UniformBranchLength}, x::FNode)
+function logpdf(t::Union{UniformConstrained, UniformTopology, UniformBranchLength}, x::GeneralNode)
     0.0
 end
 
-function logpdf(ex::exponentialBL, x::FNode)
+function logpdf(ex::exponentialBL, x::GeneralNode)
     _logpdf(ex, x)
 end
 
-function _logpdf(d::exponentialBL, x::FNode)
+function _logpdf(d::exponentialBL, x::GeneralNode)
     bl = get_branchlength_vector(x)
     sum(logpdf.(Exponential(d.scale), bl))
 end
 
-function logpdf_sub(d::CompoundDirichlet, x::FNode, transform::Bool)
+function logpdf_sub(d::CompoundDirichlet, x::GeneralNode, transform::Bool)
     insupport(LengthDistribution(d), x) ? logpdf(d, x) : -Inf
 end
 
-function insupport(l::LengthDistribution, x::FNode)
+function insupport(l::LengthDistribution, x::GeneralNode)
     bl = get_branchlength_vector(x)
-    all(isfinite.(bl)) && all(0.0 .< bl) && topo_placeholder(x, l) && !any(isnan.(bl))
+    all(isfinite.(bl)) && topo_placeholder(x, l) && !any(isnan.(bl)) && all(0.0 .< bl)
+     #&& 
 end 
 
-function insupport(t::UniformConstrained, x::FNode)::Bool
+function insupport(t::UniformConstrained, x::GeneralNode)::Bool
     topological.constraint_dict(t, x)
 end
 
-function insupport(t::UniformTopology, x::FNode)::Bool
+function insupport(t::UniformTopology, x::GeneralNode)::Bool
     true
 end
 
-function topo_placeholder(x::FNode , l::LengthDistribution)
+function insupport(t::UniformTopology, x::AbstractArray)::Bool
+    true
+end
+
+function topo_placeholder(x::GeneralNode , l::LengthDistribution)
     true
 end
 

@@ -1,11 +1,11 @@
 """
-    parse_and_number(treestring::S)::FNode where S<:AbstractString
+    parse_and_number(treestring::S)::GeneralNode where S<:AbstractString
 
 --- INTERNAL ---
 Parse a newick string and then call set_binary and number_nodes! on the
 resulting tree
 """
-function parse_and_number(treestring::S)::FNode where S<:AbstractString
+function parse_and_number(treestring::S)::GeneralNode where S<:AbstractString
     p_tree2 = parsing_newick_string(string(treestring))
     set_binary!(p_tree2)
     number_nodes!(p_tree2)

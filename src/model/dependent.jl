@@ -387,7 +387,10 @@ Returns the node with its assigned initial values.
 """
 function setinits!(s::Stochastic{<:DenseArray}, m::Model, x::DenseArray)
   s.value = convert(typeof(s.value), copy(x))
-  s.distr = s.eval(m)
+  
+  s.distr = s.eval(m)  
+  
+  
   if isa(s.distr, PhylogeneticDistribution)
     distrdims = dims(s.distr)
     for (ind, di) in enumerate(dims(s))
@@ -525,7 +528,7 @@ function logpdf(s::AbstractStochastic, x::Union{AbstractArray, Real}, transform:
   logpdf_sub(s.distr, x, transform)
 end
 
-function logpdf(s::TreeVariate, x::FNode, transform::Bool=false)
+function logpdf(s::TreeVariate, x::GeneralNode, transform::Bool=false)
   logpdf_sub(s.distr, x, transform)
 end
 

@@ -124,8 +124,8 @@ function insert_node!(mother::T, children::Vector{T})::T where T<:GeneralNode
     return inserted_node
 end
 
-function tree_from_leaves(leaf_nodes::Vector{String}, node_size::Int, final_length::Int64)::Tuple{Vector{FNode}, Int}
-    my_node_list::Array{FNode,1} = []
+function tree_from_leaves(leaf_nodes::Vector{String}, node_size::Int, final_length::Int64)::Tuple{Vector{GeneralNode}, Int}
+    my_node_list::Array{GeneralNode,1} = []
 
     # first create a list of leaf nodes
     for node_name in leaf_nodes
@@ -144,11 +144,11 @@ function tree_from_leaves(leaf_nodes::Vector{String}, node_size::Int, final_leng
         # get two nodes
         # create a new mother node to which the two first nodes are added as children
         # add the new mother node to the list and reshuffle
-        first_child::FNode = pop!(my_node_list)
+        first_child::GeneralNode = pop!(my_node_list)
         first_child.inc_length = rand()
-        second_child::FNode = pop!(my_node_list)
+        second_child::GeneralNode = pop!(my_node_list)
         second_child.inc_length = rand()
-        curr_node::FNode = Node(string(temp_name))
+        curr_node::GeneralNode = Node(string(temp_name))
 
         add_child!(curr_node, first_child)
         add_child!(curr_node, second_child)
@@ -162,7 +162,7 @@ end
 
 
 """
-    create_tree_from_leaves(leaf_nodes::Vector{T})::FNode
+    create_tree_from_leaves(leaf_nodes::Vector{T})::GeneralNode
 
 This function creates a  random binary tree from a list of leaf nodes.
 
@@ -170,11 +170,11 @@ The root node as access point for the tree is returned.
 
 * `leaf_nodes` : vector of leaf nodes.
 """
-function create_tree_from_leaves_bin(leaf_nodes::Vector{String}, node_size::Int)::FNode
+function create_tree_from_leaves_bin(leaf_nodes::Vector{String}, node_size::Int)::GeneralNode
 
     my_node_list, temp_name = tree_from_leaves(leaf_nodes, node_size ,2)
 
-    root::FNode = Node(string(temp_name))
+    root::GeneralNode = Node(string(temp_name))
 
     lchild = pop!(my_node_list)
     lchild.inc_length = rand()
@@ -194,7 +194,7 @@ end # function create_tree_from_leaves
 
 
 """
-    create_tree_from_leaves(leaf_nodes::Vector{T})::FNode
+    create_tree_from_leaves(leaf_nodes::Vector{T})::GeneralNode
 
 This function creates a  random binary tree from a list of leaf nodes.
 
@@ -210,7 +210,7 @@ function create_tree_from_leaves(leaf_nodes::Vector{String}, node_size::Int64 = 
 
     my_node_list, temp_name = tree_from_leaves(leaf_nodes, node_size, 3)
 
-    root::FNode = Node(string(temp_name))
+    root::GeneralNode = Node(string(temp_name))
     lchild = pop!(my_node_list)
     lchild.inc_length = rand()
     mchild = pop!(my_node_list)
@@ -477,7 +477,7 @@ end # function random_node
 
 Get the vector of branch lengths of the tree.
 """
-function get_branchlength_vector(root::N)::Vector{Float64}  where {N <:GeneralNode}
+function get_branchlength_vector(root::GeneralNode{R, Int64})::Vector{R}  where {R <:Real}
     if length(root.blv) == 0
         root.blv = zeros(length(post_order(root))-1)
     end
