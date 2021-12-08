@@ -297,7 +297,9 @@ function logpdf!(
         isfinite(lp) || break
         isnan(lp) && return -Inf
         node = m[key]
-        update!(node, m)
+        un = update!(node, m)
+        #m[key] = node
+        m.nodes[key] = un
         lp += key in params ? logpdf(node, transform) : logpdf(node)
     end
     lp
@@ -447,6 +449,7 @@ function unlist(m::Model, monitoronly::Bool)
         end
     end
     r = vcat(map(f, keys(m, :dependent))..., m.likelihood)
+    r = [isa(i, ForwardDiff.Dual) ? ForwardDiff.value(i) : i for i in r]
     r
 end
 """

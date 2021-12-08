@@ -54,7 +54,7 @@ end
 #################### Sampling Functions ####################
 
 
-function sample!(v::NUTS_Rie_Variate{T}, logfgrad::Function; adapt::Bool = false) where T<: AbstractArray{<: Real}
+function sample!(v::NUTS_Rie_Variate{T}, logfgrad::Function; adapt::Bool = false, kwargs...) where T<: AbstractArray{<: Real}
     tune = v.tune
     adapter = tune.stepsizeadapter
     const_params = tune.stepsizeadapter.params
@@ -76,7 +76,7 @@ function sample!(v::NUTS_Rie_Variate{T}, logfgrad::Function; adapt::Bool = false
         
         adapter.s_bar = (1.0 - η) * adapter.s_bar + η * adaptstat
         x = const_params.μ - adapter.s_bar * sqrt(adapter.m) / const_params.γ
-        #@show exp(x), adapter.s_bar, η
+        
         x_η = adapter.m^-const_params.κ
         adapter.x_bar = (1.0 - x_η) * adapter.x_bar + x_η * x
         tune.epsilon = exp(x)
@@ -225,7 +225,7 @@ function nuts_sub!(v::NUTS_Rie_Variate{T}, epsilon::Float64, logfgrad::Function)
                 acc_p_r += 1
             end
         end
-        log_sum_weight = logsumexp(lsw_t, log_sum_weight)
+        log_sum_weight = logaddexp(lsw_t, log_sum_weight)
         #nni += meta.nni
         
 
@@ -247,15 +247,11 @@ function nuts_sub!(v::NUTS_Rie_Variate{T}, epsilon::Float64, logfgrad::Function)
         
     end
 
-    #@show meta
-    v.tune.stepsizeadapter.metro_acc_prob = meta.alpha / meta.nalpha
-    #@show nni, tnni
-    #v.tune.stepsizeadapter.avg_nni = tnni == 0 ? 0.0 : nni/tnni#/(2^depth)#meta.nni / meta.nalpha
     
+    v.tune.stepsizeadapter.metro_acc_prob = meta.alpha / meta.nalpha
     
     v.value[:] .= z_sample.x[:]
     
-    #push!(v.tune.tree_depth_trace, depth)
     push!(v.tune.acc_p_r, acc_p_r)
     v
 end
@@ -295,7 +291,7 @@ function buildtree(
         meta.alpha += stat#H0 - h > 0 ? 1 : exp(H0 - h)
         meta.nalpha += 1
                 
-        log_sum_weight .= logsumexp(log_sum_weight[1], h-H0)
+        log_sum_weight .= logaddexp(log_sum_weight[1], h-H0)
         
         rho .+= s_prob.r
         p_sharp_beg .= s_prob.r
@@ -333,8 +329,8 @@ function buildtree(
         return false
     end
        
-    log_sum_weight_subtree = logsumexp(log_sum_weight_init[1], log_sum_weight_final[1])
-    log_sum_weight[1] = logsumexp(log_sum_weight[1], log_sum_weight_subtree)
+    log_sum_weight_subtree = logaddexp(log_sum_weight_init[1], log_sum_weight_final[1])
+    log_sum_weight[1] = logaddexp(log_sum_weight[1], log_sum_weight_subtree)
     
     if log_sum_weight_final[1] > log_sum_weight_subtree
         transfer!(s_prob, s_final)

@@ -2,24 +2,13 @@ using Distributed
 @everywhere using Random, Test
 include("utils.jl")
 
-const tutorialtests = [
-   "line"
-]
+# const tutorialtests = [
+#    "line"
+# ]
 
 const samplertests = [
   "abc",
-  #"amm",
-  #"amwg",
-  #"bhmc",
-  #"bia",
-  #"bmc3",
-  #"bmg",
-  "hmc",
-  #"mala",
-  "nuts",
-  "rwm",
-  "slice",
-  "slicesimplex"
+  "linear_model",
 ]
 
 const mcmctests = [
@@ -49,12 +38,12 @@ const parsertests = [
 println("Running tests:")
 #
 @testset "All tests" begin
-@testset "Tutorial" begin
-  @everywhere Random.seed!(123)
-  for t in tutorialtests
-    @runtest "mcmc/" t
-end
-end
+# @testset "Tutorial" begin
+#   @everywhere Random.seed!(123)
+#   for t in tutorialtests
+#     @runtest "mcmc/" t
+# end
+# end
 
 @testset "Samplertest" begin
   @everywhere Random.seed!(123)
@@ -62,18 +51,18 @@ for t in samplertests
     @runtest "samplers/" t
   end
 end
-@testset "mcmctests" begin
-  for t in mcmctests
-    @runtest "mcmc/" t
-  end
-end
+# @testset "mcmctests" begin
+#   for t in mcmctests
+#     @runtest "mcmc/" t
+#   end
+# end
 #
-@testset "extensions" begin
-for t in extensiontests
-  @everywhere Random.seed!(123)
-    @runtest "mcmc/" t
-  end
-end
+# @testset "extensions" begin
+# for t in extensiontests
+#   @everywhere Random.seed!(123)
+#     @runtest "mcmc/" t
+#   end
+# end
 
 @testset "treetests" begin
 for t in treetests

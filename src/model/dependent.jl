@@ -231,9 +231,9 @@ Returns the node with its values updated.
 
 * `m` : model containing the node.
 """
-function update!(l::AbstractLogical, m::Model)
-    l.value = l.eval(m)
-    l
+function update!(l::T, m::Model) where T <: AbstractLogical   
+    l1 = Logical(l.eval(m), l.symbol, l.monitor, l.eval, l.sources, l.targets)
+    l1
 end
 
 

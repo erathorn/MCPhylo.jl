@@ -56,19 +56,20 @@ function nutsepsilon(x::Vector{<:Real}, logfgrad::Function, target::Float64)
     restart = false
     while direction == 1 ? prob > target : prob < target
         epsilon = direction == 1 ? 2 * epsilon : 0.5 * epsilon
-        
+        if isapprox(epsilon, 0)
+            throw("The estimated stepsize is too small. ϵ: $epsilon")
+        elseif epsilon > 1e7
+            throw("The estimated stepsize is too large. ϵ: $epsilon")
+        end
         x2 = transfer(x1)
         leapfrog!(x2, epsilon, logfgrad)
         
         Hp = hamiltonian(x2)
         
         prob = Hp - H0
-        #if epsilon < 1e-7
-        #    restart = true
-        #    break
-        #end
+        
     end
-    @show epsilon
+    
     if restart
         @warn "restarting initialization of ϵ"
         epsilon = nutsepsilon(x, logfgrad, exp(target))
