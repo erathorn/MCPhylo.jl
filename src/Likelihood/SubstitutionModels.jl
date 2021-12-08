@@ -111,7 +111,7 @@ end
 ### Calculate Transition Matrices
 
 
-function calculate_transition(f::typeof(JC), rate::R, mu::R, time<:Real, U::A, Uinv::A, D, pi_::Vector)::Array{R1,2} where {R1<:Real, R<:Real, A<:AbstractArray{<:Real}}
+function calculate_transition(f::typeof(JC), rate::R, mu::R, time::Real, U::A, Uinv::A, D, pi_::Vector)::Array{R1,2} where {R1<:Real, R<:Real, A<:AbstractArray{<:Real}}
     
     t = rate * time
     if t < MCP_TIME_MIN
@@ -130,7 +130,7 @@ function calculate_transition(f::typeof(JC), rate::R, mu::R, time<:Real, U::A, U
 end
 
 
-function calculate_transition(f::typeof(Restriction), rate::R, mu::R, time<:Real, U::A, Uinv::A, D, pi_::Vector)::Array{R1,2} where {R1<:Real, R<:Real, A<:AbstractArray{<:Real}}
+function calculate_transition(f::typeof(Restriction), rate::R, mu::R, time::Real, U::A, Uinv::A, D, pi_::Vector)::Array{R1,2} where {R1<:Real, R<:Real, A<:AbstractArray{<:Real}}
     return_mat = similar(U)
     t = rate *  time
     if t < MCP_TIME_MIN

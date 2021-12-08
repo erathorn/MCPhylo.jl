@@ -130,7 +130,7 @@ function mcmc_master!(m::Model, window::UnitRange{Int},
   sims::Array{Chains}  = Chains[results[k][1] for k in 1:K]
   model::Model = results[1][2]
   samplers = [res[2].samplers for res in results]
-  #m_vect = [res[2] for res in results]
+  
   model.states = ModelState[results[k][3] for k in sortperm(chains)]
   ModelChains(cat(sims..., dims=3), model, stats, statnames, sp, conv_storage, samplers)
 end

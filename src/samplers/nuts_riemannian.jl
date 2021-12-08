@@ -27,7 +27,7 @@ mutable struct NUTS_Rie_Tune <: SamplerTune
     end
 end
 
-const NUTS_Rie_Variate = SamplerVariate{NUTS_Rie_Tune, T} where T
+const NUTS_Rie_Variate = Sampler{NUTS_Rie_Tune, T} where T
 
 
 #################### Sampler Constructor ####################

@@ -6,8 +6,9 @@
 
 See `Chains()`.
 """
-function ModelChains(c::Chains, m::Model, stats::Array{Float64}, stat_names::Vector{AbstractString}, params::SimulationParameters, cs::Union{Nothing, ConvergenceStorage})
-  ModelChains(c.value, c.range, c.names, c.chains, m, c.trees, c.tree_names, stats, stat_names, params, cs)
+function ModelChains(c::Chains, m::Model, stats::Array{Float64}, stat_names::Vector{AbstractString}, params::SimulationParameters, cs::Union{Nothing, ConvergenceStorage},
+  samplers::Vector{Vector{Sampler}})
+  ModelChains(c.value, c.range, c.names, c.chains, m, c.trees, c.tree_names, stats, stat_names, params, cs, samplers)
 end
 
 
