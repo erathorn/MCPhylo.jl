@@ -1,5 +1,6 @@
 using Distributed
-@everywhere using Random, Test
+using MCPhylo
+using Random, Test
 include("utils.jl")
 
 # const tutorialtests = [
@@ -8,18 +9,19 @@ include("utils.jl")
 
 const samplertests = [
   "abc",
-  "linear_model",
+  "linear_model_uvp",
+  "linear_model_mvp"
 ]
 
-const mcmctests = [
-  "discretediag",
-  "readcoda"
-]
+# const mcmctests = [
+#   "discretediag",
+#   "readcoda"
+# ]
 
-const extensiontests = [
-  "newunivardist",
-  "newmultivardist"
-]
+# const extensiontests = [
+#   "newunivardist",
+#   "newmultivardist"
+# ]
 
 const treetests = [
   "basics",
