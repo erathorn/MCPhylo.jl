@@ -1,4 +1,3 @@
-using MCPhylo
 
 @testset "abc exponential" begin
     gs_p = randn()^2
@@ -21,14 +20,15 @@ using MCPhylo
     ]
 
     f = x -> [mean(x), std(x)]
-    scheme = [ABC(:l, 1.0, f, 0.1)]
+    scheme = [ABC(:l, 0.01, f, 0.01, nsim = 3, maxdraw=15)]
 
     setsamplers!(mod, scheme)
 
-    sim = mcmc(mod, data, inits, 10000, burnin=250, thin=5, chains=3)
+    sim = mcmc(mod, data, inits, 100000, burnin=25000, thin=10, chains=2)
     
-    if maximum(gelmandiag(sim).value[:,2,:]) > 1.1
-        sim = mcmc(sim, 5000)
+    while maximum(gelmandiag(sim).value[1,2,:]) > 1.1
+        @show maximum(gelmandiag(sim).value[1,2,:])
+        sim = mcmc(sim, 10000)
     end
     
     m = mean(sim.value[:,1,:])
@@ -54,22 +54,23 @@ end
     inits = [
         Dict{Symbol,Any}(
           :y => data[:y],
-          :m => rand(),
+          :m => gs_m,
           :s => rand(),
         )
         for i in 1:3
     ]
     
     f = x -> [mean(x), std(x)]
-    scheme = [ABC(:m, 1.0, f, 0.1),
-              ABC(:s, 1.0, f, 0.1)]
+    scheme = [ABC(:m, 0.01, f, 0.001, nsim = 3, maxdraw=15),
+              ABC(:s, 0.01, f, 0.001, nsim = 3, maxdraw=15)]
 
     setsamplers!(mod, scheme)
 
-    sim = mcmc(mod, data, inits, 10000, burnin=250, thin=5, chains=3)
+    sim = mcmc(mod, data, inits, 100000, burnin=25000, thin=10, chains=2)
     
-    if maximum(gelmandiag(sim).value[:,2,:]) > 1.1
-        sim = mcmc(sim, 5000)
+    while maximum(gelmandiag(sim).value[1:2,2,:]) > 1.1
+        @show maximum(gelmandiag(sim).value[1:2,2,:])
+        sim = mcmc(sim, 10000)
     end
     
     m = mean(sim.value[:,1,:])

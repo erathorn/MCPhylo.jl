@@ -35,12 +35,13 @@ inits = [
         chains = 2,
         trees = true,
     )
-    if maximum(gelmandiag(sim).value[:, 2, :]) > 1.1
+    while maximum(gelmandiag(sim).value[1:end-1, 2, :]) > 1.1
         sim = mcmc(sim, 5000)
     end
-    r = summarystats(sim).value[2:3, 1, 1]
-    @test 0.58 < r[1] < 0.62
-    @test 0.78 < r[2] < 0.82
+    r_m = summarystats(sim).value[2:3, 1, 1]
+    r_sd = summarystats(sim).value[2:3, 2, 1]
+    @test r_m[1]-r_sd[1] <= 0.60 <= r_m[1]+r_sd[1]
+    @test r_m[2]-r_sd[2] <= 0.80 <= r_m[2]+r_sd[2]
 end
 
 @testset "RWM" begin
@@ -57,12 +58,13 @@ end
         chains = 2,
         trees = true,
     )
-    if maximum(gelmandiag(sim).value[:, 2, :]) > 1.1
+    while maximum(gelmandiag(sim).value[1:end-1, 2, :]) > 1.1
         sim = mcmc(sim, 5000)
     end
-    r = summarystats(sim).value[2:3, 1, 1]
-    @test 0.58 < r[1] < 0.62
-    @test 0.78 < r[2] < 0.82
+    r_m = summarystats(sim).value[2:3, 1, 1]
+    r_sd = summarystats(sim).value[2:3, 2, 1]
+    @test r_m[1]-r_sd[1] <= 0.60 <= r_m[1]+r_sd[1]
+    @test r_m[2]-r_sd[2] <= 0.80 <= r_m[2]+r_sd[2]
 end
 
 @testset "NUTS" begin
@@ -79,13 +81,13 @@ end
         chains = 2,
         trees = true,
     )
-    if maximum(gelmandiag(sim).value[:, 2, :]) > 1.1
+    while maximum(gelmandiag(sim).value[1:end-1, 2, :]) > 1.1
         sim = mcmc(sim, 5000)
     end
-    r = summarystats(sim).value[2:3, 1, 1]
-
-    @test 0.58 < r[1] < 0.62
-    @test 0.78 < r[2] < 0.82
+    r_m = summarystats(sim).value[2:3, 1, 1]
+    r_sd = summarystats(sim).value[2:3, 2, 1]
+    @test r_m[1]-r_sd[1] <= 0.60 <= r_m[1]+r_sd[1]
+    @test r_m[2]-r_sd[2] <= 0.80 <= r_m[2]+r_sd[2]
 end
 
 @testset "HMC" begin
@@ -102,10 +104,11 @@ end
         chains = 2,
         trees = true,
     )
-    if maximum(gelmandiag(sim).value[:, 2, :]) > 1.1
+    while maximum(gelmandiag(sim).value[1:end-1, 2, :]) > 1.1
         sim = mcmc(sim, 5000)
     end
-    r = summarystats(sim).value[2:3, 1, 1]
-    @test 0.58 < r[1] < 0.62
-    @test 0.78 < r[2] < 0.82
+    r_m = summarystats(sim).value[2:3, 1, 1]
+    r_sd = summarystats(sim).value[2:3, 2, 1]
+    @test r_m[1]-r_sd[1] <= 0.60 <= r_m[1]+r_sd[1]
+    @test r_m[2]-r_sd[2] <= 0.80 <= r_m[2]+r_sd[2]
 end

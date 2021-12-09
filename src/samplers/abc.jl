@@ -108,6 +108,7 @@ function ABC(
     nsim::Integer=1,
     decay::Real=1.0,
     randeps::Bool=false,
+    transform::Bool=true,
     args...,
 ) where {T <: Real}
     0 <= decay <= 1 || throw(ArgumentError("decay is not in [0, 1]"))
@@ -133,7 +134,7 @@ function ABC(
         randeps,
         summary
     )
-    Sampler(Float64[], params, tune, Symbol[], false)
+    Sampler(Float64[], params, tune, Symbol[], transform)
 end
 
 """
@@ -170,6 +171,7 @@ function ABC(
     nsim::Integer=1,
     decay::Real=1.0,
     randeps::Bool=false,
+    transform::Bool=true,
     args...,
 )
 0 <= decay <= 1 || throw(ArgumentError("decay is not in [0, 1]"))
@@ -195,7 +197,7 @@ function ABC(
         randeps,
         summary
     )
-    Sampler(Float64[], params, tune, Symbol[], false)
+    Sampler(Float64[], params, tune, Symbol[], transform)
     
     end
 
@@ -265,7 +267,7 @@ function ABC_sample(v::ABCVariate, model::Model, datakeys::Vector{Symbol})
 
     ## current parameter and density values
     theta0::Array{Float64} = v.value
-    logprior0::Float64 = logpdf(model, tune.params, true)
+    logprior0::Float64 = logpdf(model, tune.params, v.transform)
 
     lo::Base.ReentrantLock = Base.ReentrantLock()
     flag = Threads.Atomic{Bool}(true)
@@ -275,20 +277,20 @@ function ABC_sample(v::ABCVariate, model::Model, datakeys::Vector{Symbol})
             ## candidate draw and prior density value
             theta1::Array{Float64} = tune.proposal(theta0)
             other_model = deepcopy(model)
-
-                logprior1::Float64 = mapreduce(
-                keyval -> logpdf(other_model[keyval[1]], keyval[2]),
+            
+            logprior1::Float64 = mapreduce(
+                keyval -> logpdf(other_model[keyval[1]], keyval[2], v.transform),
                 +,
-                relist(other_model, theta1, v.params, true),
+                relist(other_model, theta1, v.params, v.transform),
             )
 
             if logprior1 == -Inf
                 continue
             end
 
-            #relist(other_model, theta1, v.params, true)
+            relist(other_model, theta1, v.params, v.transform)
 
-            my_relist(other_model, theta1, v.params, true)
+            #my_relist(other_model, theta1, v.params, true)
 
             ## tolerances and kernel density
             pi_epsilon1::Float64 = 0.0
@@ -332,6 +334,7 @@ function ABC_sample(v::ABCVariate, model::Model, datakeys::Vector{Symbol})
                     tune.epsilonprime = epsilonprime1
                     Base.unlock(lo)
                 end
+                
             end
         end
     end

@@ -8,15 +8,15 @@ include("utils.jl")
 # ]
 
 const samplertests = [
-  "abc",
+  #"abc",
   "linear_model_uvp",
   "linear_model_mvp"
 ]
 
-# const mcmctests = [
-#   "discretediag",
+const mcmctests = [
+   "discretediag",
 #   "readcoda"
-# ]
+]
 
 # const extensiontests = [
 #   "newunivardist",
@@ -47,17 +47,16 @@ println("Running tests:")
 # end
 # end
 
-@testset "Samplertest" begin
-  @everywhere Random.seed!(123)
+
 for t in samplertests
     @runtest "samplers/" t
   end
+
+@testset "mcmctests" begin
+   for t in mcmctests
+     @runtest "mcmc/" t
+   end
 end
-# @testset "mcmctests" begin
-#   for t in mcmctests
-#     @runtest "mcmc/" t
-#   end
-# end
 #
 # @testset "extensions" begin
 # for t in extensiontests
