@@ -31,7 +31,6 @@ function FelsensteinFunction(tree_postorder::Vector{N}, pi_::Array{Float64}, rat
     @views for node in tree_postorder
         if node.nchild > 0
             res = node_loop(node, mutationArray, data)
-            #@show mutationArray[node.num]
             if !node.root
                 scaler::Array{Float64} = maximum(res, dims=1)
                 rns = rns .+ log.(scaler)
@@ -91,14 +90,13 @@ function FelsensteinFunction(tree_postorder::Vector{N}, pi_::Array{Float64}, rat
                       U::A, D::V, Uinv::A, mu::Float64,
                      data::Array{Float64,3}, substitutionModel::Function,  c_grad::Bool = true) where {N<:GeneralNode, M<:Number, A<:AbstractArray, V<:AbstractVector}
     Nbases, Nsites, Nnodes = size(data)
-    #mutationArray::Array{Float64,3} = zeros(Nbases, Nbases, Nnodes-1)
+    
     
     grv::Vector{Float64} = Vector{Float64}(undef, Nnodes-1)
     Down::Array{Float64,3} = similar(data)
     pre_order_partial::Array{Float64,3} = similar(data)
     ll = fels_ll(tree_postorder, data, D, U, Uinv, rates, mu, Down, pi_, substitutionModel)
-    #ll = recursive_ll(last(tree_postorder), data, D, U, Uinv, rates, mu, Down, pi_, substitutionModel)
-    #@show ll1, ll
+    
     if c_grad
         grv = fels_grad(tree_postorder, data, D, U, Uinv, rates, mu,
                         Down, pi_, pre_order_partial, grv, substitutionModel)

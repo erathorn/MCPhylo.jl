@@ -18,6 +18,7 @@ function modelexprsrc(f::Function, literalargs::Vector{Tuple{Symbol,DataType}})
     argnames = Vector{Any}(undef, m.nargs)
     argnames = Base.method_argnames(m)
     fkeys = Symbol[argnames[2:end]...]
+    
     ftypes = DataType[m.sig.parameters[2:end]...]
     n = length(fkeys)
 
@@ -35,20 +36,22 @@ function modelexprsrc(f::Function, literalargs::Vector{Tuple{Symbol,DataType}})
 
     modelargs = Array{Any}(undef, n)
     for i in nodeinds
-        modelargs[i] = Expr(:ref, :model, QuoteNode(fkeys[i]))
+        modelargs[i] = Expr(:call, MCPhylo.mod_value, Expr(:ref, :model, QuoteNode(fkeys[i])))
     end
     for i in literalinds
         modelargs[i] = fkeys[i]
     end
     expr = Expr(:block, Expr(:(=), :f, f), Expr(:call, :f, modelargs...))
-
     (expr, fkeys[nodeinds])
 end
 
+mod_value(d::AbstractVariate) = d.value
+mod_value(d) = d
 
 #################### Mathematical Operators ####################
 
 # isprobvec(p::AbstractVector) = isprobvec(convert(Vector{Float64}, p))
+isprobvec(s::AbstractVariate) = isprobvec(s.value)
 
 cummean(x::AbstractArray) = mapslices(cummean, x, dims = 1)
 
@@ -62,7 +65,6 @@ function cummean(x::AbstractVector{T}) where {T<:Real}
     y
 end
 
-dot(x) = dot(x, x)
 
 @inline logit(x::Real) = log(x / (1.0 - x))
 @inline invexpit(x::Real) = 1.0 / (x - x^2)
@@ -155,7 +157,7 @@ function assign_mcmc_work(
     # count the number of trees per step per chain
     tree_dim::Int64 = 0
     for i in lsts[1][1].nodes
-        if isa(i[2], TreeStochastic)
+        if isa(i[2], Stochastic{<:GeneralNode})
             push!(statnames, string("asdsf_", string(i[1])))
             tree_dim += 1
         end # if
@@ -192,17 +194,12 @@ function assign_mcmc_work(
     results_vec = []
     @sync begin
         # check RemoteChannel for new entries and updates the ProgressMeters
-        #@async 
-
         finished_chains = 0
         @async while finished_chains < nchains
             chain = take!(channel)
             chain > 0 ? ProgressMeter.next!(meters[chain]) : finished_chains += 1
         end # while
-
         results_vec = pmap2(f, lsts)
-
-        
     end # @sync
     ASDSF && close.(r_channels)
     if ASDSF

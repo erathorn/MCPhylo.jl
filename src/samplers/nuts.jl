@@ -3,7 +3,7 @@
 #################### Types and Constructors ####################
 
 mutable struct NUTSTune <: SamplerTune
-  logfgrad::Union{Function, Missing}
+  logf::Union{Function, Missing}
   adapt::Bool
   alpha::Float64
   epsilon::Float64
@@ -27,16 +27,8 @@ mutable struct NUTSTune <: SamplerTune
   end
 end
 
-NUTSTune(x::Vector{Float64}, logfgrad::Function, ::NullFunction; args...) =
-  NUTSTune(x, nutsepsilon(x, logfgrad); args...)
 
-NUTSTune(x::Vector{Float64}, logfgrad::Function; args...) =
-  NUTSTune(x, nutsepsilon(x, logfgrad), logfgrad; args...)
-
-NUTSTune(x::Vector, epsilon::Real; args...) =
-  NUTSTune(x, epsilon, missing; args...)
-
-const NUTSVariate = SamplerVariate{NUTSTune}
+const NUTSVariate = Sampler{NUTSTune, T} where T
 
 
 #################### Sampler Constructor ####################
@@ -57,15 +49,9 @@ Returns a `Sampler{NUTSTune}` type object.
 
 * `args...`: additional keyword arguments to be passed to the `NUTSVariate` constructor.
 """
-function NUTS(params::ElementOrVector{Symbol}; dtype::Symbol=:forward, args...)
-  samplerfx = function(model::Model, block::Integer)
-    block = SamplingBlock(model, block, true)
-    f = x -> logpdfgrad!(block, x, dtype)
-    v = SamplerVariate(block, f, NullFunction(); args...)
-    sample!(v, f, adapt=model.iter <= model.burnin)
-    relist(block, v)
-  end
-  Sampler(params, samplerfx, NUTSTune())
+function NUTS(params::ElementOrVector{Symbol}; epsilon::Real = -Inf, kwargs...)
+  tune = NUTSTune(Float64[], epsilon, logpdfgrad!; kwargs...)
+  Sampler(Float64[], params, tune, Symbol[], true)
 end
 
 
@@ -80,15 +66,21 @@ are assumed to be continuous and unconstrained.
 
 Returns `v` updated with simulated values and associated tuning parameters.
 """
-function sample!(v::NUTSVariate, logfgrad::Function; adapt::Bool=false)
+function sample!(v::NUTSVariate{T}, logfgrad::Function; adapt::Bool=false, kwargs...) where T<: AbstractArray{<: Real}
   tune = v.tune
+  
+  if tune.m == 0 && isinf(tune.epsilon)
+    tune.epsilon = nutsepsilon(v.value, logfgrad, tune.target)
+  end
   setadapt!(v, adapt)
   if tune.adapt
     tune.m += 1
     nuts_sub!(v, tune.epsilon, logfgrad)
     p = 1.0 / (tune.m + tune.t0)
+    ada = tune.alpha / tune.nalpha
+    ada = ada > 1 ? 1.0 : ada
     tune.Hbar = (1.0 - p) * tune.Hbar +
-                p * (tune.target - tune.alpha / tune.nalpha)
+                p * (tune.target - ada)
     tune.epsilon = exp(tune.mu - sqrt(tune.m) * tune.Hbar / tune.gamma)
     p = tune.m^-tune.kappa
     tune.epsilonbar = exp(p * log(tune.epsilon) +
@@ -101,7 +93,7 @@ function sample!(v::NUTSVariate, logfgrad::Function; adapt::Bool=false)
 end
 
 
-function setadapt!(v::NUTSVariate, adapt::Bool)
+function setadapt!(v::NUTSVariate{T}, adapt::Bool) where T<: AbstractArray{<: Real}
   tune = v.tune
   if adapt && !tune.adapt
     tune.m = 0
@@ -112,14 +104,17 @@ function setadapt!(v::NUTSVariate, adapt::Bool)
 end
 
 
-function nuts_sub!(v::NUTSVariate, epsilon::Real, logfgrad::Function)
+function nuts_sub!(v::NUTSVariate{T}, epsilon::Real, logfgrad::Function) where T<: AbstractArray{<: Real}
   n = length(v)
-  x, r, logf, grad = leapfrog(v.value, randn(n), zeros(n), 0.0, logfgrad)
-  logp0 = logf - 0.5 * dot(r)
+  x = deepcopy(v.value)
+  logf, grad = logfgrad(x)
+  r = randn(n)
+  
+  logp0 = logf - 0.5 * dot(r, r)
   logu0 = logp0 + log(rand())
-  xminus = xplus = x
-  rminus = rplus = r
-  gradminus = gradplus = grad
+  xminus = xplus = deepcopy(x)
+  rminus = rplus = deepcopy(r)
+  gradminus = gradplus = deepcopy(grad)
   j = 0
   n = 1
   s = true
@@ -162,13 +157,14 @@ function buildtree(x::Vector{Float64}, r::Vector{Float64},
   if j == 0
     xprime, rprime, logfprime, gradprime = leapfrog(x, r, grad, pm * epsilon,
                                                     logfgrad)
-    logpprime = logfprime - 0.5 * dot(rprime)
+    logpprime = logfprime - 0.5 * dot(rprime, rprime)
     nprime = Int(logu0 < logpprime)
     sprime = logu0 < logpprime + 1000.0
     xminus = xplus = xprime
     rminus = rplus = rprime
     gradminus = gradplus = gradprime
     alphaprime = min(1.0, exp(logpprime - logp0))
+    alphaprime = isnan(alphaprime) ? 0.0 : alphaprime
     nalphaprime = 1
   else
     xminus, rminus, gradminus, xplus, rplus, gradplus, xprime, nprime, sprime,
@@ -204,22 +200,4 @@ function nouturn(xminus::Vector{Float64}, xplus::Vector{Float64},
                  rminus::Vector{Float64}, rplus::Vector{Float64})
   xdiff = xplus - xminus
   dot(xdiff, rminus) >= 0 && dot(xdiff, rplus) >= 0
-end
-
-
-#################### Auxilliary Functions ####################
-
-function nutsepsilon(x::Vector{Float64}, logfgrad::Function)
-  n = length(x)
-  _, r0, logf0, grad0 = leapfrog(x, randn(n), zeros(n), 0.0, logfgrad)
-  epsilon = 1.0
-  _, rprime, logfprime, gradprime = leapfrog(x, r0, grad0, epsilon, logfgrad)
-  prob = exp(logfprime - logf0 - 0.5 * (dot(rprime) - dot(r0)))
-  pm = 2 * (prob > 0.5) - 1
-  while prob^pm > 0.5^pm
-    epsilon *= 2.0^pm
-    _, rprime, logfprime, _ = leapfrog(x, r0, grad0, epsilon, logfgrad)
-    prob = exp(logfprime - logf0 - 0.5 * (dot(rprime) - dot(r0)))
-  end
-  epsilon
 end

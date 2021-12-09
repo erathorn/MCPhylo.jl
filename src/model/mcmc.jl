@@ -23,13 +23,13 @@ function mcmc(mc::ModelChains, iters::Integer; verbose::Bool=true,
 
   mm = deepcopy(mc.model)
   mc2 = mcmc_master!(mm, mm.iter .+ (1:iters), mc.sim_params, burnin=last(mc),
-                     conv_storage=mc.conv_storage)
+                     conv_storage=mc.conv_storage, samplers=mc.samplers)
 
   if mc2.names != mc.names
     mc2 = mc2[:, mc.names, :]
   end
   ModelChains(vcat(mc, mc2), mc2.model, cat(mc.stats, mc2.stats, dims=1),
-              mc.stat_names, mc.sim_params, mc2.conv_storage)
+              mc.stat_names, mc.sim_params, mc2.conv_storage, mc2.samplers)
 end
 
 
@@ -66,7 +66,6 @@ function mcmc(m::Model, inputs::Dict{Symbol},
               chains::Integer=1, verbose::Bool=true, trees::Bool=false,
               params::SimulationParameters=SimulationParameters()
               )::ModelChains
-
   burnin = burnin == 0 ? params.burnin : burnin
   thin = thin == 1 ? params.thin : thin
   chains = chains == 1 ? params.chains : chains
@@ -102,28 +101,38 @@ builds the ModelChain object from the chains it receives.
 """
 function mcmc_master!(m::Model, window::UnitRange{Int},
                       sp::SimulationParameters; burnin::Int64=-1,
-                      conv_storage::Union{Nothing, ConvergenceStorage}=nothing
+                      conv_storage::Union{Nothing, ConvergenceStorage}=nothing,
+                      samplers::Union{Nothing, Vector{Vector{Sampler}}}= nothing
                       )::ModelChains
 
   chains = 1:sp.chains
-  states::Vector{ModelState} = m.states
-  m.states = ModelState[]
-
   N = length(window)
   K = length(chains)
 
   sp.verbose && println("MCMC Simulation of $N Iterations x $K Chain" * "s"^(K > 1) * "...")
   # this is necessary for additional draws from a model
   burnin = burnin == -1 ? sp.burnin : burnin
-  lsts = [Any[m, states[k], window, burnin, sp.thin, sp.trees, sp.verbose] for k in chains]
+  
+  states::Vector{ModelState} = m.states
+  m.states = ModelState[]
 
+  
+  lsts = [Any[m, states[k], window, burnin, sp.thin, sp.trees, sp.verbose] for k in chains]
+  if !isnothing(samplers)
+    for k in chains
+      lsts[k][1].samplers = samplers[k]
+    end
+  end
+    
   results::Vector{Tuple{Chains, Model, ModelState}}, stats::Array{Float64, 2}, statnames::Vector{AbstractString}, conv_storage::Union{Nothing, ConvergenceStorage} =
     	assign_mcmc_work(mcmc_or_convergence, lsts, sp, conv_storage)
 
   sims::Array{Chains}  = Chains[results[k][1] for k in 1:K]
   model::Model = results[1][2]
+  samplers = [res[2].samplers for res in results]
+  
   model.states = ModelState[results[k][3] for k in sortperm(chains)]
-  ModelChains(cat(sims..., dims=3), model, stats, statnames, sp, conv_storage)
+  ModelChains(cat(sims..., dims=3), model, stats, statnames, sp, conv_storage, samplers)
 end
 
 
@@ -144,12 +153,12 @@ function mcmc_worker!(args::AbstractArray, ASDSF_step::Int64=0,
   m.iter = first(window) - 1
 
   relist!(m, state.value)
-
+  initialize_samplers!(m)
   settune!(m, state.tune)
   pnames = vcat(names(m, true), llname)
   treenodes = Symbol[]
   for i in m.nodes
-    if isa(i[2], TreeStochastic)
+    if isa(i[2], Stochastic{<:GeneralNode})
       push!(treenodes, i[1])
     end
   end
@@ -184,8 +193,6 @@ function mcmc_worker!(args::AbstractArray, ASDSF_step::Int64=0,
   end # for
   # signal to the assign_mcmc_work function, that this chain is finished
   put!(channel[1], -1)
-  mv = samparas(m)
-  sim.moves[1] = sum(mv)
   (sim, m, ModelState(unlist(m), gettune(m)))
 end # mcmc_worker!
 

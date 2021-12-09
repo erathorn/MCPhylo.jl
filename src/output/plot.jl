@@ -43,7 +43,7 @@ function plot(c::AbstractChains, ptype::Vector{Symbol}=[:trace, :density];
   if !isempty(vars)
     indeces = check_vars(c.names, vars)
   else
-    indeces = collect(1:length(c.names))
+    indeces = collect(1:length(c.names)-1)
   end # if / else
   isempty(indeces) && throw(ArgumentError("Input Variables not in Chain object. Exiting function."))
   ilength = length(indeces)

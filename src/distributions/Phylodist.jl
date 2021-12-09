@@ -50,50 +50,28 @@ maximum(d::PhyloDist) = Inf
 Base.size(d::PhyloDist) = (d.nbase, 1, d.nnodes)
 
 function logpdf(d::PhyloDist, x::AbstractArray)
-    mt = post_order(d.tree)
-    #nba, nsi, nno = size(x)
-    #data = Array{Float64, 4}(undef, nba, nsi, length(d.rates), nno)
-    #@inbounds for i in 1:length(d.rates)
-    #    data[:, :, i, :] .= x
-    #end
-    #U, D, Uinv, mu = d.substitution_model(d.base_freq, d.substitution_rates)
-    #FelsensteinFunction(mt, d.base_freq, d.rates, U, D, Uinv, mu, data, false)[1]
-    #r1 = FelsensteinFunction(mt, d.base_freq, 1.0, x, size(x,2), get_branchlength_vector(mt))
+ 
     r2 = __logpdf(d, x)[1]
-    #@show r1, r2
     r2
 end
 
 
 function __logpdf(d::PhyloDist, x::AbstractArray, gradient::Bool=false)
     mt = post_order(d.tree)
-    #nba, nsi, nno = size(x)
-    #data = Array{Float64, 4}(undef, nba, nsi, length(d.rates), nno)
-    #data = [x for i in 1:length(d.rates)]
-    # @inbounds for i in 1:length(d.rates)
-    #     data[:, :, i, :] .= x
-    # end
     U, D, Uinv, mu = d.substitution_model(d.base_freq, d.substitution_rates)
     ll = 0.0
     gr = zeros(size(x,3)-1)
+    
     for r in 1:length(d.rates)
         ll1, gr1, _ = FelsensteinFunction(mt, d.base_freq, d.rates[r], U, D, Uinv, mu, x, d.substitution_model, gradient)
         ll += ll1
         gr .+= gr1
     end
+    
     ll, gr
 end
 
 function gradlogpdf(d::PhyloDist, x::AbstractArray)
-
-    mt = post_order(d.tree)
-    #nba, nsi, nno = size(x)
-#    data = Array{Float64, 4}(undef, nba, nsi, length(d.rates), nno)
-#    @inbounds for i in 1:length(d.rates)
-#        data[:, :, i, :] .= x
-    #end
-    #U, D, Uinv, mu = d.substitution_model(d.base_freq, d.substitution_rates)
-    #resultate = FelsensteinFunction(mt, d.base_freq, d.rates, U, D, Uinv, mu, data)
     __logpdf(d, x, true)
 end
 
