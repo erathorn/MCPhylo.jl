@@ -32,9 +32,9 @@ const mcmctests = [
 #   "spr"
 # ]
 
-const parsertests = [
-  "newick"
-]
+# const parsertests = [
+#   "newick"
+# ]
 
 
 println("Running tests:")
