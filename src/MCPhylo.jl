@@ -428,8 +428,4 @@ export make_tree_with_data,
 
 export cm, inch, mm, pt, px
 
-#################### Deprecated ####################
-
-include("deprecated.jl")
-
 end # module
