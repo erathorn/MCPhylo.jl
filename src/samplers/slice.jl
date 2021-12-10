@@ -47,7 +47,7 @@ end
 
 #################### Sampler Constructor ####################
 """
-Slice(params::ElementOrVector{Symbol},
+    Slice(params::ElementOrVector{Symbol},
                 width::ElementOrVector{T},
                 ::Type{F}=Multivariate;
                 transform::Bool=false) where {T<:Real, F<:SliceForm}
