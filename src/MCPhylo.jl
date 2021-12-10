@@ -259,8 +259,6 @@ include("Likelihood/SubstitutionModels.jl")
 include("distributions/Phylodist.jl")
 include("distributions/TreeConstraints.jl")
 
-include("distributions/transformdistribution.jl")
-
 include("model/dependent.jl")
 include("model/dependent_tree.jl")
 include("model/graph.jl")
@@ -283,7 +281,6 @@ include("output/modelstats.jl")
 include("output/rafterydiag.jl")
 include("output/stats.jl")
 include("output/plot.jl")
-#include("output/tree_plot.jl")
 
 include("samplers/sampler.jl")
 
@@ -310,11 +307,7 @@ include("Parser/Parser.jl")
 include("Parser/ParseCSV.jl")
 include("Parser/ParseNexus.jl")
 
-
-include("Utils/FileIO.jl")
-
 include("Likelihood/LikelihoodCalculator_Node.jl")
-include("Likelihood/Parsimony.jl")
 include("Likelihood/Prior.jl")
 include("Likelihood/Rates.jl")
 #################### Exports ####################
