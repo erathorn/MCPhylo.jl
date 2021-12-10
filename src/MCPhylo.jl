@@ -252,7 +252,6 @@ include("utils.jl")
 include("variate.jl")
 
 include("distributions/TreeDistribution.jl")
-include("distributions/constructors.jl")
 include("distributions/distributionstruct.jl")
 include("distributions/extensions.jl")
 include("distributions/pdmatdistribution.jl")
