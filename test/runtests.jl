@@ -3,9 +3,6 @@ using MCPhylo
 using Random, Test
 include("utils.jl")
 
-# const tutorialtests = [
-#    "line"
-# ]
 
 const samplertests = [
   #"abc",
@@ -23,29 +20,11 @@ const mcmctests = [
 #   "newmultivardist"
 # ]
 
-# const treetests = [
-#   "basics",
-#   "consensus",
-#   "constraints",
-#   "ladderize",
-#   "pruning",
-#   "spr"
-# ]
-
-# const parsertests = [
-#   "newick"
-# ]
 
 
 println("Running tests:")
 #
 @testset "All tests" begin
-# @testset "Tutorial" begin
-#   @everywhere Random.seed!(123)
-#   for t in tutorialtests
-#     @runtest "mcmc/" t
-# end
-# end
 
 
 for t in samplertests
@@ -56,27 +35,6 @@ for t in samplertests
    for t in mcmctests
      @runtest "mcmc/" t
    end
-end
-#
-# @testset "extensions" begin
-# for t in extensiontests
-#   @everywhere Random.seed!(123)
-#     @runtest "mcmc/" t
-#   end
-# end
-
-@testset "treetests" begin
-for t in treetests
-  @everywhere Random.seed!(123)
-    @runtest "Tree/" t
-  end
-end
-
-@testset "parsers" begin
-for t in parsertests
-  @everywhere Random.seed!(123)
-    @runtest "parsers/" t
-  end
 end
 
 end
