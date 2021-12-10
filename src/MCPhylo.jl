@@ -11,11 +11,14 @@ using Serialization
 using Distributed
 using Printf: @sprintf
 using LinearAlgebra
-using Plots
+#using Plots
 @reexport using Plots
 using Plots.PlotMeasures
-using StatsPlots
+#using StatsPlots
 @reexport using StatsPlots
+#using MCPhyloTree
+@reexport using MCPhyloTree
+import MCPhyloTree: internal_external
 using RecipesBase
 import RecipesBase.plot
 using StatsBase
@@ -58,7 +61,7 @@ import Bijectors: link
 
 # include("distributions/pdmats2.jl")
 # using .PDMats2
-include("Tree/Node_Type.jl") # We need this to get the Node type in
+#include("Tree/Node_Type.jl") # We need this to get the Node type in
 
 #################### Types ####################
 
@@ -241,7 +244,7 @@ include("output/modelstats.jl")
 include("output/rafterydiag.jl")
 include("output/stats.jl")
 include("output/plot.jl")
-include("output/tree_plot.jl")
+#include("output/tree_plot.jl")
 
 include("samplers/sampler.jl")
 
@@ -264,24 +267,24 @@ include("samplers/rwm.jl")
 include("samplers/slice.jl")
 include("samplers/slicesimplex.jl")
 
-include("Tree/Tree_Basics.jl")
-include("Tree/Converter.jl")
-include("Tree/Tree_moves.jl")
-include("Tree/Tree_Distance.jl")
-include("Tree/Tree_Traversal.jl")
-include("Tree/Tree_Search.jl")
-include("Tree/Tree_Legacy.jl")
-include("Tree/Tree_Clustering.jl")
-include("Tree/Tree_Ladderizing.jl")
-include("Tree/Tree_Pruning.jl")
-include("Tree/Tree_Consensus.jl")
-include("Tree/Tree_Statistics.jl")
+# include("Tree/Tree_Basics.jl")
+# include("Tree/Converter.jl")
+# include("Tree/Tree_moves.jl")
+# include("Tree/Tree_Distance.jl")
+# include("Tree/Tree_Traversal.jl")
+# include("Tree/Tree_Search.jl")
+# include("Tree/Tree_Legacy.jl")
+# include("Tree/Tree_Clustering.jl")
+# include("Tree/Tree_Ladderizing.jl")
+# include("Tree/Tree_Pruning.jl")
+# include("Tree/Tree_Consensus.jl")
+# include("Tree/Tree_Statistics.jl")
 
 
 include("Parser/Parser.jl")
 include("Parser/ParseCSV.jl")
 include("Parser/ParseNexus.jl")
-include("Parser/ParseNewick.jl")
+#include("Parser/ParseNewick.jl")
 
 
 include("Utils/FileIO.jl")
@@ -392,56 +395,56 @@ export
 
 export
   make_tree_with_data,
-  make_tree_with_data_cu,
   to_file, drop_samples,
-  to_df,
-  to_covariance,
-  to_distance_matrix,
-  node_distance,
-  get_path,
-  cut_samples,
-  NNI!, NNI,
-  SPR!, SPR,
-  slide!, slide,
-  swing!, swing,
-  RF, randomize!,
-  BHV_bounds,
-  get_branchlength_vector,
-  set_branchlength_vector!,
-  post_order,
-  pre_order,
-  level_order,
-  add_child!,
-  remove_child!,
-  delete_node!,
-  insert_node!,
-  find_lca,
-  find_by_binary,
-  find_by_name,
-  find_num,
-  find_name,
-  find_root,
-  create_tree_from_leaves,
-  create_tree_from_leaves_cu,
-  newick,
-  tree_length,
-  tree_height,
-  path_length,
-  get_sister,
-  get_leaves,
-  check_leafsets,
+  # to_df,
+  # to_covariance,
+  # to_distance_matrix,
+  # node_distance,
+  # get_path,
+  #cut_samples,
+  # NNI!, NNI,
+  # SPR!, SPR,
+  # slide!, slide,
+  # swing!, swing,
+  # RF, randomize!,
+  # BHV_bounds,
+  # get_branchlength_vector,
+  # set_branchlength_vector!,
+  # post_order,
+  # pre_order,
+  # level_order,
+  # add_child!,
+  # remove_child!,
+  # delete_node!,
+  # insert_node!,
+  # find_lca,
+  # find_by_binary,
+  # find_by_name,
+  # find_num,
+  # find_name,
+  # find_root,
+  # create_tree_from_leaves,
+  # create_tree_from_leaves_cu,
+  # newick,
+  # tree_length,
+  # tree_height,
+  # path_length,
+  # get_sister,
+  # get_leaves,
+  # check_leafsets,
   generate_constraints,
   generate_constraints!,
   topological,
-  neighbor_joining,
-  upgma,
-  prune_tree!, prune_tree,
-  ladderize_tree!, ladderize_tree,
-  majority_consensus_tree,
+  #neighbor_joining,
+  #upgma,
+  #prune_tree!, prune_tree,
+  #ladderize_tree!, ladderize_tree,
+  #majority_consensus_tree,
   discrete_gamma_rates,
   Restriction, JC, GTR, freeK,
-  ASDSF, parsimony, ParseNewick,
-  cov2tree
+  ASDSF
+  #, parsimony, ParseNewick,
+  #cov2tree
 
 
 export

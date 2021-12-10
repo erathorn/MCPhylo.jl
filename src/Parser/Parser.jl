@@ -49,11 +49,11 @@ function make_tree_with_data(filename::String, dialect::AbstractString="nexus",
 		n_tax, n_sites, gap, miss, symbols, df, langs = ParseCSV(filename, gap, miss, header)
 	end
 	# create random tree
-	if binary
-		new_tree = create_tree_from_leaves_bin(langs, n_sites)
-	else
-		new_tree = create_tree_from_leaves(langs, n_sites)
-	end
+	# if binary
+	# 	new_tree = create_tree_from_leaves_bin(langs, n_sites)
+	# else
+	new_tree = create_tree_from_leaves(langs, binary)
+	#end
 
 	n_nodes = length(post_order(new_tree))
 	n_states = length(symbols)
@@ -63,7 +63,7 @@ function make_tree_with_data(filename::String, dialect::AbstractString="nexus",
 	# iterate through the data frame and get the node information
 	for (ind,row) in enumerate(eachrow(df))
 		#data_vec = zeros(Float64, (2, n_sites))
-		mn = find_name(new_tree, langs[ind])
+		mn = find_by_name(new_tree, langs[ind])
 		mind = mn.num
 		for (ind, i) in enumerate(row)
 			ent = string(i)
