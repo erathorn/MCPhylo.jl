@@ -5,19 +5,18 @@ The Model type is designed to store the set of all model nodes, including parame
 ## Dependent
 
 ```@docs
-Main.MCPhylo.Logical
-Main.MCPhylo.Stochastic
-Main.MCPhylo.setinits!
-Main.MCPhylo.setmonitor!
-Main.MCPhylo.update!
+MCPhylo.Logical
+MCPhylo.Stochastic
+MCPhylo.setinits!
+MCPhylo.setmonitor!
+MCPhylo.update!
 ```
-
 
 ## Graph
 
 ```@docs
-Main.MCPhylo.draw
-Main.MCPhylo.graph2dot
+MCPhylo.draw
+MCPhylo.graph2dot
 ```
 
 ## Initialization

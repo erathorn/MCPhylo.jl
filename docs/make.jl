@@ -1,20 +1,13 @@
-include("../src/MCPhylo.jl")
-using .MCPhylo
 using Documenter
+using MCPhylo
 
-makedocs(root="./",
-    source  = "src",
-    build   = "build",
-    clean   = true,
-    doctest = true,
-    modules = Module[MCPhylo],
-    sitename="MCPhylo",
-    format = Documenter.HTML(prettyurls = false),
+makedocs(
+    modules = MCPhylo,
+    sitename="MCPhylo.jl",
+    format = Documenter.HTML(),
     pages = [
-        "Introduction" => "intro.md",
-        "Tree Functionality" => "tree.md",
+        "Index" => "index.md",
         "Likelihood" => "likelihood.md",
-        "Parser" => "parser.md",
         "Distributions" => "distributions.md",
         "Model" => "model.md",
         "Output" => "output.md",
