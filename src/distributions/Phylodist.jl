@@ -1,3 +1,6 @@
+
+
+
 """
     This structure implements a Distribution whos likelihood is calculated
     according to Felsensteins algorithm.
@@ -28,11 +31,11 @@ function PhyloDist(my_tree::T, base_freq::S, substitution_rates::R, rates::R, su
 end
 
 """
-    function PhyloDist(my_tree::T, base_freq::S, substitution_rates::R, rates::R, substitution_model::Function) where {T<:Node, S<:DenseArray{Float64}, R<:Real}
+    function PhyloDist(my_tree::T, base_freq::S, substitution_rates::R, rates::R, substitution_model::Function) where {T<:GeneralNode, S<:DenseArray{Float64}, R<:Real}
 
 Convenience function which can work with MCPhylo types.
 """
-function PhyloDist(my_tree::T, base_freq::S, substitution_rates::R, rates::R, substitution_model::Function) where {T<:Node, S<:DenseArray{Float64}, R<:Real}
+function PhyloDist(my_tree::T, base_freq::S, substitution_rates::R, rates::R, substitution_model::Function) where {T<:GeneralNode, S<:DenseArray{Float64}, R<:Real}
     PhyloDist(my_tree, Array(base_freq), [substitution_rates], [rates], substitution_model)
 end
 
@@ -50,41 +53,29 @@ maximum(d::PhyloDist) = Inf
 Base.size(d::PhyloDist) = (d.nbase, 1, d.nnodes)
 
 function logpdf(d::PhyloDist, x::AbstractArray)
-    #mt = post_order(d.tree)
-    #nba, nsi, nno = size(x)
-    #data = Array{Float64, 4}(undef, nba, nsi, length(d.rates), nno)
-    #@inbounds for i in 1:length(d.rates)
-    #    data[:, :, i, :] .= x
-    #end
-    #U, D, Uinv, mu = d.substitution_model(d.base_freq, d.substitution_rates)
-    #FelsensteinFunction(mt, d.base_freq, d.rates, U, D, Uinv, mu, data, false)[1]
-    __logpdf(d, x)[1]
+ 
+    r2 = __logpdf(d, x)[1]
+    r2
 end
 
 
 function __logpdf(d::PhyloDist, x::AbstractArray, gradient::Bool=false)
     mt = post_order(d.tree)
-    nba, nsi, nno = size(x)
-    data = Array{Float64, 4}(undef, nba, nsi, length(d.rates), nno)
-    @inbounds for i in 1:length(d.rates)
-        data[:, :, i, :] .= x
-    end
     U, D, Uinv, mu = d.substitution_model(d.base_freq, d.substitution_rates)
-    FelsensteinFunction(mt, d.base_freq, d.rates, U, D, Uinv, mu, data, gradient)
+    ll = 0.0
+    gr = zeros(size(x,3)-1)
+    
+    for r in 1:length(d.rates)
+        ll1, gr1, _ = FelsensteinFunction(mt, d.base_freq, d.rates[r], U, D, Uinv, mu, x, d.substitution_model, gradient)
+        ll += ll1
+        gr .+= gr1
+    end
+    
+    ll, gr
 end
 
 function gradlogpdf(d::PhyloDist, x::AbstractArray)
-
-    #mt = post_order(d.tree)
-    #nba, nsi, nno = size(x)
-#    data = Array{Float64, 4}(undef, nba, nsi, length(d.rates), nno)
-#    @inbounds for i in 1:length(d.rates)
-#        data[:, :, i, :] .= x
-    #end
-    #U, D, Uinv, mu = d.substitution_model(d.base_freq, d.substitution_rates)
-    #resultate = FelsensteinFunction(mt, d.base_freq, d.rates, U, D, Uinv, mu, data)
     __logpdf(d, x, true)
-
 end
 
 
@@ -225,3 +216,6 @@ function __logpdf(d::MultiplePhyloDist, x::AbstractArray)
     end
     res
 end
+
+
+const PhylogeneticDistribution = Union{PhyloDist, MultiplePhyloDist}

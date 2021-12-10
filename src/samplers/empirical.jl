@@ -4,49 +4,45 @@
 
 
 mutable struct EmpiricalTune <: SamplerTune
+    logf::Function
     samplerfun::Union{Function, Missing}
     width::Int64
     replacement::Bool
 
-    EmpiricalTune() = new()
-
-    EmpiricalTune(samplerfun::Union{Function, Missing}, width::Int64, replacement::Bool=false)=
-        new(samplerfun, width, false)
 end
 
-EmpiricalTune(x::Vector, width::Int64, replacement::Bool=false)=
-    EmpiricalTune(missing, width, replacement)
+EmpiricalTune(x::Vector, logf::Function, samplerfun::Function, width::Int64, replacement::Bool=false)=
+    EmpiricalTune(logf, samplerfun, width, replacement)
 
-const EmpiricalVariate = SamplerVariate{EmpiricalTune}
+const EmpiricalVariate = Sampler{EmpiricalTune, T} where T
 
 
 #################### Sampler Constructor ####################
 """
 
-function Empirical(params::ElementOrVector{Symbol}, width::Int64; args...)
+function Empirical(params::ElementOrVector{Symbol}, width::Int64; replace::Bool=false)
 
 This Sampler generates Samples from a distribution by selecting a random value
-from this distribution. The move will always be accepted.
+from this distribution. The move will always be accepted. Sampling can be done with or without replacement.
 """
 function Empirical(params::ElementOrVector{Symbol},
                 width::Int64;
-                args...)
-    samplerfx = function(model::Model, block::Integer)
-        block = SamplingBlock(model, block)
-        v = SamplerVariate(block, width, args...)
-        sample!(v, x -> rand!(block, x))
-        relist(block, v)
-    end
-    Sampler(params, samplerfx, EmpiricalTune())
+                replace::Bool=false)
+    
+    tune = EmpiricalTune(logpdf!, rand, width, replace)
+    
+    Sampler(Float64[], asvec(params), tune, Symbol[], false)
 end
 
-sample!(v::EmpiricalVariate) = sample(v, v.tune.samplerfun)
-function sample!(v::EmpiricalVariate, sampler_func::Function)
+
+function sample!(v::EmpiricalVariate{T}, lpdf::Function; model::Model=model, kwargs...) where T
     width = v.tune.width
-    sam = sampler_func(width)
+    samfun = v.tune.sampler_fun
+    params = v.params
+    sam = samfun(model, params, x)
     if width > 1 && v.tune.replacement
         while length(Set(sam)) != width
-            sam = sampler_func(width)
+            sam = samfun(model, params, x)
         end
     end
     v[:] = sam

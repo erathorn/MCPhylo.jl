@@ -1,18 +1,19 @@
+const MCP_TIME_MIN = 1.0E-11
+const MCP_TIME_MAX = 100.0
 
 
 """
     Restriction(base_freq::Vector{Float64},
                 SubstitutionRates::Vector{Float64})::Tuple{Array{Float64,2}, Array{Float64,1}, Array{Float64,2}}
-
 Calculate the eigenvalue decomposition of the Q matrix of the restriction site model.
 The `SubstitutionRates` are ignored, and just for call stability.
 
 The function returns the Eigenvectors, Eigenvalues, inverse of eigenvectors and
     the scale factor for expected number changes per site
 """
-function Restriction(base_freq::Vector{Float64}, SubstitutionRates::Vector{Float64})::Tuple{Array{Float64,2}, Array{Float64,1}, Array{Float64,2}, Float64}
+function Restriction(base_freq::Vector{Float64}, SubstitutionRates::Vector{Float64})
     Nbases = length(base_freq)
-    Q::Array{Float64,2} = ones(Nbases,Nbases)
+    Q = ones(Nbases,Nbases)
     Q[diagind(Nbases,Nbases)] .= -1
     Q .*= reverse(base_freq)
     D, U = eigen(Q)
@@ -20,7 +21,6 @@ function Restriction(base_freq::Vector{Float64}, SubstitutionRates::Vector{Float
     mu::Float64 =  1.0 / (2.0 * prod(base_freq))
     return U, D, Uinv, mu
 end
-
 
 
 """
@@ -32,17 +32,16 @@ The `SubstitutionRates` are ignored, and just for call stability.
 
 The function returns the Eigenvectors, Eigenvalues and inverse of eigenvectors.
 """
-function JC(base_freq::Vector{Float64}, SubstitutionRates::Vector{Float64})::Tuple{Array{Float64,2}, Array{Float64,1}, Array{Float64,2}, Float64}
+function JC(base_freq::Vector{Float64}, SubstitutionRates::Vector{Float64})#::Tuple{Array{Float64,2}, Array{Float64,1}, Array{Float64,2}, Float64}
     Nbases = length(base_freq)
     Q::Array{Float64,2} = ones(Nbases,Nbases)
-    μ = SubstitutionRates[1]
-    off_diag = μ/Nbases
+    off_diag = 1.0/(Nbases-1)
     diag = off_diag * (Nbases-1)
     Q .= off_diag
     Q[diagind(Nbases,Nbases)] .= -diag
     D, U = eigen(Q)
     Uinv = inv(U)
-    mu = 1.0
+    mu = 1/sum(diag)
     return U, D, Uinv, mu
 end
 
@@ -104,4 +103,81 @@ function setmatrix(vec_vals::Array{T,1})::Array{T,2} where T
     k = 0
     Q = [ i<j ? (k+=1; vec_vals[k]) : 0 for i=1:s, j=1:s ]
     Q.+transpose(Q)
+end
+
+
+### Calculate Transition Matrices
+
+
+function calculate_transition(f::typeof(JC), rate::R, mu::R, time::R1, U::A, Uinv::A, D, pi_::Vector)::Array{R1,2} where {R1<:Real, R<:Real, A<:AbstractArray{<:Real}}
+    
+    t = rate * time
+    if t < MCP_TIME_MIN
+        return_mat = similar(U)
+        return_mat .= 0.0
+        return_mat[diagind(return_mat)] .= 1.0
+        return return_mat
+    elseif t > MCP_TIME_MAX
+        return_mat = similar(U)
+        return_mat .= 1.0/length(pi_)
+        return return_mat
+    else
+        return (U * diagm(exp.(D .* t))) * Uinv
+    end
+    #return_mat
+end
+
+
+function calculate_transition(f::typeof(Restriction), rate::R, mu::R, time::Real, U::A, Uinv::A, D, pi_::Vector)::Array{R1,2} where {R1<:Real, R<:Real, A<:AbstractArray{<:Real}}
+    return_mat = similar(U)
+    t = rate *  time
+    if t < MCP_TIME_MIN
+        return_mat .= 0.0
+        return_mat[diagind(return_mat)] .= 1.0
+    elseif t > MCP_TIME_MAX
+        return_mat .= reverse(pi_)
+    else
+        t *= mu
+        return (U * diagm(exp.(D .* t))) * Uinv
+        
+    end
+    return_mat
+end
+
+
+
+function calculate_transition(f, rate::R, mu::R, time::R, U::A, Uinv::A, D::Vector, pi_::Vector)::Array{Float64,2} where {R<:Real, A<:AbstractArray{<:Complex}}
+    return_mat = Array{Float64,2}(undef, length(pi_),length(pi_))
+    t = rate * mu * time
+    return_mat .= abs.(BLAS.gemm('N', 'N', 1.0, BLAS.symm('R', 'L', diagm(exp.(D .* t)), U), Uinv))
+    return return_mat
+end
+
+function calculate_transition(f::typeof(JC), rate::R, mu::R, time::R, U::A, Uinv::A, D::Vector, pi_::Vector)::Array{Float64,2} where {R<:Real, A<:AbstractArray{<:Complex}}
+    return_mat = similar(U)
+    t = rate * time
+    if t < MCP_TIME_MIN
+        return_mat .= 0.0
+        return_mat[diagind(return_mat)] .= 1.0
+    elseif t > MCP_TIME_MAX
+        return_mat .= 1.0/length(pi_)
+    else
+        return_mat .= abs.(BLAS.gemm('N', 'N', 1.0, BLAS.symm('R', 'L', diagm(exp.(D .* t)), U), Uinv))
+    end
+    return_mat
+end
+
+function calculate_transition(f::typeof(Restriction), rate::R, mu::R, time::R, U::A, Uinv::A, D::Vector, pi_::Vector)::Array{Float64,2} where {R<:Real, A<:AbstractArray{<:Complex}}
+    return_mat = similar(U)
+    t = rate * time
+    if t < MCP_TIME_MIN
+        return_mat .= 0.0
+        return_mat[diagind(return_mat)] .= 1.0
+    elseif t > MCP_TIME_MAX
+        return_mat .= reverse(pi_)
+    else
+        t *= mu
+        return_mat .= abs.(BLAS.gemm('N', 'N', 1.0, BLAS.symm('R', 'L', diagm(exp.(D .* t)), U), Uinv))
+    end
+    return_mat
 end
