@@ -1,3 +1,6 @@
+
+const PhylogeneticDistribution = Union{PhyloDist, MultiplePhyloDist}
+
 """
     This structure implements a Distribution whos likelihood is calculated
     according to Felsensteins algorithm.
