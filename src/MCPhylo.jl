@@ -268,6 +268,7 @@ include("model/model.jl")
 include("model/simulation.jl")
 include("model/simulation_statistics.jl")
 
+include("output/asdsf.jl")
 include("output/chains.jl")
 include("output/chainsummary.jl")
 include("output/discretediag.jl")
@@ -341,7 +342,8 @@ export AbstractChains,
 export BDiagNormal,
     Flat, SymUniform, CompoundDirichlet, PhyloDist, MultiplePhyloDist, exponentialBL
 
-export autocor,
+export ASDSF,
+    autocor,
     changerate,
     contourplot,
     cor,
@@ -421,8 +423,7 @@ export make_tree_with_data,
     Restriction,
     JC,
     GTR,
-    freeK,
-    ASDSF
+    freeK
 
 
 export cm, inch, mm, pt, px
