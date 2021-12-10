@@ -23,14 +23,14 @@ const mcmctests = [
 #   "newmultivardist"
 # ]
 
-const treetests = [
-  "basics",
-  "consensus",
-  "constraints",
-  "ladderize",
-  "pruning",
-  "spr"
-]
+# const treetests = [
+#   "basics",
+#   "consensus",
+#   "constraints",
+#   "ladderize",
+#   "pruning",
+#   "spr"
+# ]
 
 const parsertests = [
   "newick"
