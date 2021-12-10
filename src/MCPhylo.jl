@@ -11,11 +11,11 @@ using Serialization
 using Distributed
 using Printf: @sprintf
 using LinearAlgebra
-using Plots
 @reexport using Plots
 using Plots.PlotMeasures
-using StatsPlots
 @reexport using StatsPlots
+@reexport using MCPhyloTree
+import MCPhyloTree: internal_external
 using RecipesBase
 import RecipesBase.plot
 using StatsBase
@@ -39,30 +39,59 @@ import Base: Matrix, names, summary
 
 import Statistics: cor
 import Distributions:
-#        ## Generic Types
-       Continuous, ContinuousUnivariateDistribution, Distribution,
-       MatrixDistribution, Multivariate, MultivariateDistribution, PDiagMat,
-       PDMat, ScalMat, Truncated, Univariate, UnivariateDistribution,
-       ValueSupport,
-       # Functions
-       cdf, dim, gradlogpdf, insupport, isprobvec, logpdf, logpdf!, maximum,
-       minimum, pdf, quantile, rand, sample!, support, length
+    #        ## Generic Types
+    Continuous,
+    ContinuousUnivariateDistribution,
+    Distribution,
+    MatrixDistribution,
+    Multivariate,
+    MultivariateDistribution,
+    PDiagMat,
+    PDMat,
+    ScalMat,
+    Truncated,
+    Univariate,
+    UnivariateDistribution,
+    ValueSupport,
+    # Functions
+    cdf,
+    dim,
+    gradlogpdf,
+    insupport,
+    isprobvec,
+    logpdf,
+    logpdf!,
+    maximum,
+    minimum,
+    pdf,
+    quantile,
+    rand,
+    sample!,
+    support,
+    length
 
-using LightGraphs: DiGraph, add_edge!, outneighbors,
-       topological_sort_by_dfs, vertices
-import StatsBase: autocor, autocov, countmap, counts, describe, predict,
-       quantile, sample, sem, summarystats
+using LightGraphs: DiGraph, add_edge!, outneighbors, topological_sort_by_dfs, vertices
+import StatsBase:
+    autocor,
+    autocov,
+    countmap,
+    counts,
+    describe,
+    predict,
+    quantile,
+    sample,
+    sem,
+    summarystats
 
 import Bijectors: link
 
 
 # include("distributions/pdmats2.jl")
 # using .PDMats2
-include("Tree/Node_Type.jl") # We need this to get the Node type in
 
 #################### Types ####################
 
-ElementOrVector{T} = Union{T, Vector{T}}
+ElementOrVector{T} = Union{T,Vector{T}}
 
 
 #################### Variate Types ####################
@@ -72,59 +101,73 @@ abstract type AbstractVariate end
 
 #################### Distribution Types ####################
 
-const DistributionStruct = Union{Distribution,
-                                 Array{UnivariateDistribution},
-                                 Array{MultivariateDistribution}}
+const DistributionStruct =
+    Union{Distribution,Array{UnivariateDistribution},Array{MultivariateDistribution}}
 
 
 #################### Dependent Types ####################
 
-mutable struct Logical{D<:Union{Real, AbstractArray{T, N} where {T<:Real, N}, GeneralNode}} <: AbstractVariate
-  value::D
-  symbol::Symbol
-  monitor::Vector{Int}
-  eval::Function
-  sources::Vector{Symbol}
-  targets::Vector{Symbol}
+mutable struct Logical{D<:Union{Real,AbstractArray{T,N} where {T<:Real,N},GeneralNode}} <:
+               AbstractVariate
+    value::D
+    symbol::Symbol
+    monitor::Vector{Int}
+    eval::Function
+    sources::Vector{Symbol}
+    targets::Vector{Symbol}
 end
 
 
 
-mutable struct Stochastic{D<:Union{Real, AbstractArray{T, N} where {T<:Real, N}, GeneralNode}} <: AbstractVariate
-  value::D
-  symbol::Symbol
-  monitor::Vector{Int}
-  eval::Function
-  sources::Vector{Symbol}
-  targets::Vector{Symbol}
-  distr::DistributionStruct
+mutable struct Stochastic{
+    D<:Union{Real,AbstractArray{T,N} where {T<:Real,N},GeneralNode},
+} <: AbstractVariate
+    value::D
+    symbol::Symbol
+    monitor::Vector{Int}
+    eval::Function
+    sources::Vector{Symbol}
+    targets::Vector{Symbol}
+    distr::DistributionStruct
 end
 
 # Specialized Unions
-const ScalarVariate = Union{Stochastic{<:Real}, Logical{<:Real}}
-const VectorVariate = Union{Stochastic{<:AbstractArray{<:Real, 1}}, Logical{<:AbstractArray{<:Real, 1}}}
-const MatrixVariate = Union{Stochastic{<:AbstractArray{<:Real, 2}}, Logical{<:AbstractArray{<:Real, 2}}}
-const TreeVariate = Union{Logical{<:GeneralNode}, Stochastic{<:GeneralNode}}
+const ScalarVariate = Union{Stochastic{<:Real},Logical{<:Real}}
+const VectorVariate =
+    Union{Stochastic{<:AbstractArray{<:Real,1}},Logical{<:AbstractArray{<:Real,1}}}
+const MatrixVariate =
+    Union{Stochastic{<:AbstractArray{<:Real,2}},Logical{<:AbstractArray{<:Real,2}}}
+const TreeVariate = Union{Logical{<:GeneralNode},Stochastic{<:GeneralNode}}
 
 # General Union
-const ArrayVariate = Union{Stochastic{<:AbstractArray{<:Real,  N}} where N, Logical{<:AbstractArray{<:Real, N} where N}}
+const ArrayVariate = Union{
+    Stochastic{<:AbstractArray{<:Real,N}} where N,
+    Logical{<:AbstractArray{<:Real,N} where {N}},
+}
 
 
-const AbstractLogical = Union{Logical{<:Real}, Logical{<:AbstractArray{<:Real, N} where N}}
-const AbstractStochastic = Union{Stochastic{<:Real}, Stochastic{<:AbstractArray{<:Real, N} where N}}
+const AbstractLogical = Union{Logical{<:Real},Logical{<:AbstractArray{<:Real,N} where {N}}}
+const AbstractStochastic =
+    Union{Stochastic{<:Real},Stochastic{<:AbstractArray{<:Real,N} where {N}}}
 
-const AbstractDependent = Union{AbstractLogical, AbstractStochastic, TreeVariate}
+const AbstractDependent = Union{AbstractLogical,AbstractStochastic,TreeVariate}
 
-const ConstraintDict{S} = Dict{Symbol, Union{Vector{Vector{S}}, Vector{Tuple{Vector{S}, Vector{S}}}} where S<:AbstractString} 
+const ConstraintDict{S} = Dict{
+    Symbol,
+    Union{Vector{Vector{S}},Vector{Tuple{Vector{S},Vector{S}}}} where S<:AbstractString,
+}
 #################### Sampler Types ####################
 
 abstract type SamplerTune end
-mutable struct Sampler{T<:SamplerTune, R<:AbstractArray{S} where S<:Union{Real, GeneralNode}} <: AbstractVariate
-  value::R
-  params::Vector{Symbol}
-  tune::T
-  targets::Vector{Symbol}
-  transform::Bool
+mutable struct Sampler{
+    T<:SamplerTune,
+    R<:AbstractArray{S} where {S<:Union{Real,GeneralNode}},
+} <: AbstractVariate
+    value::R
+    params::Vector{Symbol}
+    tune::T
+    targets::Vector{Symbol}
+    transform::Bool
 end
 
 
@@ -135,43 +178,43 @@ Base.length(s::Sampler) = length(s.value)
 #################### Model Types ####################
 
 struct ModelGraph
-  graph::DiGraph
-  keys::Vector{Symbol}
+    graph::DiGraph
+    keys::Vector{Symbol}
 end
 
 struct ModelState
-  value::Vector
-  tune::Vector{Any}
+    value::Vector
+    tune::Vector{Any}
 end
 
 mutable struct Model
-  nodes::Dict{Symbol, Any}
-  samplers::Vector{Sampler}
-  states::Vector{ModelState}
-  iter::Int
-  burnin::Int
-  hasinputs::Bool
-  hasinits::Bool
-  likelihood::Float64
+    nodes::Dict{Symbol,Any}
+    samplers::Vector{Sampler}
+    states::Vector{ModelState}
+    iter::Int
+    burnin::Int
+    hasinputs::Bool
+    hasinits::Bool
+    likelihood::Float64
 end
 
 
 ############## Additional Structs ################
 struct SimulationParameters
-  burnin::Int64
-  thin::Int64
-  chains::Int64
-  verbose::Bool
-  trees::Bool
-  asdsf::Bool
-  freq::Int64
-  min_splits::Float64
+    burnin::Int64
+    thin::Int64
+    chains::Int64
+    verbose::Bool
+    trees::Bool
+    asdsf::Bool
+    freq::Int64
+    min_splits::Float64
 end
 
 struct ConvergenceStorage
-  splitsQueue::Vector{Accumulator{Tuple{String, String}, Int64}}
-  splitsQueues::Vector{Vector{Accumulator{Tuple{String, String}, Int64}}}
-  run::Int64
+    splitsQueue::Vector{Accumulator{Tuple{String,String},Int64}}
+    splitsQueues::Vector{Vector{Accumulator{Tuple{String,String},Int64}}}
+    run::Int64
 end
 
 #################### Chains Type ####################
@@ -179,27 +222,27 @@ end
 abstract type AbstractChains end
 
 struct Chains <: AbstractChains
-  value::Array{Float64, 3}
-  range::StepRange{Int, Int}
-  names::Vector{AbstractString}
-  chains::Vector{Int}
-  trees::Array{AbstractString, 3}
-  tree_names::Vector{AbstractString}
+    value::Array{Float64,3}
+    range::StepRange{Int,Int}
+    names::Vector{AbstractString}
+    chains::Vector{Int}
+    trees::Array{AbstractString,3}
+    tree_names::Vector{AbstractString}
 end
 
 struct ModelChains <: AbstractChains
-  value::Array{Float64, 3}
-  range::StepRange{Int, Int}
-  names::Vector{AbstractString}
-  chains::Vector{Int}
-  model::Model
-  trees::Array{AbstractString, 3}
-  tree_names::Vector{AbstractString}
-  stats::Array{Float64, 2}
-  stat_names::Vector{AbstractString}
-  sim_params::SimulationParameters
-  conv_storage::Union{Nothing, ConvergenceStorage}
-  samplers::Vector{Vector{Sampler}}
+    value::Array{Float64,3}
+    range::StepRange{Int,Int}
+    names::Vector{AbstractString}
+    chains::Vector{Int}
+    model::Model
+    trees::Array{AbstractString,3}
+    tree_names::Vector{AbstractString}
+    stats::Array{Float64,2}
+    stat_names::Vector{AbstractString}
+    sim_params::SimulationParameters
+    conv_storage::Union{Nothing,ConvergenceStorage}
+    samplers::Vector{Vector{Sampler}}
 end
 
 #################### Includes ####################
@@ -209,15 +252,12 @@ include("utils.jl")
 include("variate.jl")
 
 include("distributions/TreeDistribution.jl")
-include("distributions/constructors.jl")
 include("distributions/distributionstruct.jl")
 include("distributions/extensions.jl")
 include("distributions/pdmatdistribution.jl")
 include("Likelihood/SubstitutionModels.jl")
 include("distributions/Phylodist.jl")
 include("distributions/TreeConstraints.jl")
-
-include("distributions/transformdistribution.jl")
 
 include("model/dependent.jl")
 include("model/dependent_tree.jl")
@@ -228,6 +268,7 @@ include("model/model.jl")
 include("model/simulation.jl")
 include("model/simulation_statistics.jl")
 
+include("output/asdsf.jl")
 include("output/chains.jl")
 include("output/chainsummary.jl")
 include("output/discretediag.jl")
@@ -241,7 +282,6 @@ include("output/modelstats.jl")
 include("output/rafterydiag.jl")
 include("output/stats.jl")
 include("output/plot.jl")
-include("output/tree_plot.jl")
 
 include("samplers/sampler.jl")
 
@@ -254,9 +294,9 @@ include("samplers/abc.jl")
 include("samplers/dmh.jl")
 include("samplers/empirical.jl")
 include("samplers/hmc.jl")
-
 include("samplers/miss.jl")
 include("samplers/nuts.jl")
+include("samplers/nuts_classical.jl")
 include("samplers/nuts_riemannian.jl")
 include("samplers/pnuts.jl")
 include("samplers/pphmc.jl")
@@ -264,195 +304,128 @@ include("samplers/rwm.jl")
 include("samplers/slice.jl")
 include("samplers/slicesimplex.jl")
 
-include("Tree/Tree_Basics.jl")
-include("Tree/Converter.jl")
-include("Tree/Tree_moves.jl")
-include("Tree/Tree_Distance.jl")
-include("Tree/Tree_Traversal.jl")
-include("Tree/Tree_Search.jl")
-include("Tree/Tree_Legacy.jl")
-include("Tree/Tree_Clustering.jl")
-include("Tree/Tree_Ladderizing.jl")
-include("Tree/Tree_Pruning.jl")
-include("Tree/Tree_Consensus.jl")
-include("Tree/Tree_Statistics.jl")
-
-
 include("Parser/Parser.jl")
 include("Parser/ParseCSV.jl")
 include("Parser/ParseNexus.jl")
-include("Parser/ParseNewick.jl")
-
-
-include("Utils/FileIO.jl")
 
 include("Likelihood/LikelihoodCalculator_Node.jl")
-include("Likelihood/Parsimony.jl")
 include("Likelihood/Prior.jl")
 include("Likelihood/Rates.jl")
 #################### Exports ####################
 
-export
-  AbstractChains,
-  AbstractDependent,
-  AbstractLogical,
-  AbstractStochastic,
-  AbstractVariate,
-  ArrayVariate,
-  ConstraintDict,
-  ConvergenceStorage,
-  TreeVariate,
-  GeneralNode,
-  AbstractNode,
-  Node,
-  Chains,
-  FileSyntaxError,
-  Logical,
-  MatrixVariate,
-  Model,
-  ModelChains,
-  Sampler,
-  SamplerTune,
-  ScalarVariate,
-  SimulationParameters,
-  Stochastic,
-  TreeDistribution,
-  VectorVariate
+export AbstractChains,
+    AbstractDependent,
+    AbstractLogical,
+    AbstractStochastic,
+    AbstractVariate,
+    ArrayVariate,
+    ConstraintDict,
+    ConvergenceStorage,
+    TreeVariate,
+    GeneralNode,
+    AbstractNode,
+    Node,
+    Chains,
+    FileSyntaxError,
+    Logical,
+    MatrixVariate,
+    Model,
+    ModelChains,
+    Sampler,
+    SamplerTune,
+    ScalarVariate,
+    SimulationParameters,
+    Stochastic,
+    TreeDistribution,
+    VectorVariate
 
-export
-  BDiagNormal,
-  Flat,
-  SymUniform,
-  CompoundDirichlet,
-  PhyloDist,
-  MultiplePhyloDist,
-  exponentialBL
+export BDiagNormal,
+    Flat, SymUniform, CompoundDirichlet, PhyloDist, MultiplePhyloDist, exponentialBL
 
-export
-  autocor,
-  changerate,
-  contourplot,
-  cor,
-  describe,
-  dic,
-  discretediag,
-  draw,
-  gelmandiag,
-  gettune,
-  gewekediag,
-  gradlogpdf,
-  gradlogpdf!,
-  graph,
-  graph2dot,
-  heideldiag,
-  hpd,
-  insupport,
-  invlink,
-  invlogit,
-  link,
-  logit,
-  logpdf,
-  logpdf!,
-  mcmc,
-  mcse,
-  plot,
-  plot_asdsf,
-  predict,
-  quantile,
-  rafterydiag,
-  rand,
-  readcoda,
-  relist,
-  relist!,
-  sample!,
-  setinits!,
-  setinputs!,
-  setmonitor!,
-  setsamplers!,
-  summarystats,
-  unlist,
-  update!
+export ASDSF,
+    autocor,
+    changerate,
+    contourplot,
+    cor,
+    describe,
+    dic,
+    discretediag,
+    draw,
+    gelmandiag,
+    gettune,
+    gewekediag,
+    gradlogpdf,
+    gradlogpdf!,
+    graph,
+    graph2dot,
+    heideldiag,
+    hpd,
+    insupport,
+    invlink,
+    invlogit,
+    link,
+    logit,
+    logpdf,
+    logpdf!,
+    mcmc,
+    mcse,
+    plot,
+    plot_asdsf,
+    predict,
+    quantile,
+    rafterydiag,
+    rand,
+    readcoda,
+    relist,
+    relist!,
+    sample!,
+    setinits!,
+    setinputs!,
+    setmonitor!,
+    setsamplers!,
+    summarystats,
+    unlist,
+    update!
 
 @static if VERSION >= v"1.0.0"
-  export showall
+    export showall
 end
 
-export
-  ABC,
-  HMC, HMCVariate,
-  MISS,
-  NUTS, NUTSVariate,
-  RWM, RWMVariate,
-  Slice, SliceMultivariate, SliceUnivariate,
-  SliceSimplex, SliceSimplexVariate,
-  DMH, DMHVariate,
-  PNUTS, PNUTSVariate,
-  PPHMC, PPHMCVariate,
-  Empirical, EmpiricalVariate
+export ABC,
+    HMC,
+    HMCVariate,
+    MISS,
+    NUTS,
+    NUTSVariate,
+    RWM,
+    RWMVariate,
+    Slice,
+    SliceMultivariate,
+    SliceUnivariate,
+    SliceSimplex,
+    SliceSimplexVariate,
+    DMH,
+    DMHVariate,
+    PNUTS,
+    PNUTSVariate,
+    PPHMC,
+    PPHMCVariate,
+    Empirical,
+    EmpiricalVariate
 
-export
-  make_tree_with_data,
-  make_tree_with_data_cu,
-  to_file, drop_samples,
-  to_df,
-  to_covariance,
-  to_distance_matrix,
-  node_distance,
-  get_path,
-  cut_samples,
-  NNI!, NNI,
-  SPR!, SPR,
-  slide!, slide,
-  swing!, swing,
-  RF, randomize!,
-  BHV_bounds,
-  get_branchlength_vector,
-  set_branchlength_vector!,
-  post_order,
-  pre_order,
-  level_order,
-  add_child!,
-  remove_child!,
-  delete_node!,
-  insert_node!,
-  find_lca,
-  find_by_binary,
-  find_by_name,
-  find_num,
-  find_name,
-  find_root,
-  create_tree_from_leaves,
-  create_tree_from_leaves_cu,
-  newick,
-  tree_length,
-  tree_height,
-  path_length,
-  get_sister,
-  get_leaves,
-  check_leafsets,
-  generate_constraints,
-  generate_constraints!,
-  topological,
-  neighbor_joining,
-  upgma,
-  prune_tree!, prune_tree,
-  ladderize_tree!, ladderize_tree,
-  majority_consensus_tree,
-  discrete_gamma_rates,
-  Restriction, JC, GTR, freeK,
-  ASDSF, parsimony, ParseNewick,
-  cov2tree
+export make_tree_with_data,
+    to_file,
+    drop_samples,
+    generate_constraints,
+    generate_constraints!,
+    topological,
+    discrete_gamma_rates,
+    Restriction,
+    JC,
+    GTR,
+    freeK
 
 
-export
-  cm,
-  inch,
-  mm,
-  pt,
-  px
-
-#################### Deprecated ####################
-
-include("deprecated.jl")
+export cm, inch, mm, pt, px
 
 end # module

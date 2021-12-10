@@ -16,7 +16,6 @@ function Restriction(base_freq::Vector{Float64}, SubstitutionRates::Vector{Float
     Q = ones(Nbases,Nbases)
     Q[diagind(Nbases,Nbases)] .= -1
     Q .*= reverse(base_freq)
-    Q = Matrix{Nbases,Nbases}(Q)
     D, U = eigen(Q)
     Uinv = inv(U)
     mu::Float64 =  1.0 / (2.0 * prod(base_freq))
@@ -40,7 +39,6 @@ function JC(base_freq::Vector{Float64}, SubstitutionRates::Vector{Float64})#::Tu
     diag = off_diag * (Nbases-1)
     Q .= off_diag
     Q[diagind(Nbases,Nbases)] .= -diag
-    Q = Matrix{Nbases,Nbases}(Q)
     D, U = eigen(Q)
     Uinv = inv(U)
     mu = 1/sum(diag)
@@ -111,7 +109,7 @@ end
 ### Calculate Transition Matrices
 
 
-function calculate_transition(f::typeof(JC), rate::R, mu::R, time::Real, U::A, Uinv::A, D, pi_::Vector)::Array{R1,2} where {R1<:Real, R<:Real, A<:AbstractArray{<:Real}}
+function calculate_transition(f::typeof(JC), rate::R, mu::R, time::R1, U::A, Uinv::A, D, pi_::Vector)::Array{R1,2} where {R1<:Real, R<:Real, A<:AbstractArray{<:Real}}
     
     t = rate * time
     if t < MCP_TIME_MIN

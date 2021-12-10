@@ -22,6 +22,7 @@ inits = [
 ]
 
 @testset "Slice" begin
+    Random.seed!(123)
     samplers = [Slice([:β, :s2], 1.0)]
     setsamplers!(model, samplers)
 
@@ -35,9 +36,7 @@ inits = [
         chains = 2,
         trees = true,
     )
-    while maximum(gelmandiag(sim).value[1:end-1, 2, :]) > 1.1
-        sim = mcmc(sim, 5000)
-    end
+    
     r_m = summarystats(sim).value[2:3, 1, 1]
     r_sd = summarystats(sim).value[2:3, 2, 1]
     @test r_m[1]-r_sd[1] <= 0.60 <= r_m[1]+r_sd[1]
@@ -45,6 +44,7 @@ inits = [
 end
 
 @testset "RWM" begin
+    Random.seed!(123)
     samplers = [RWM([:β, :s2], 1.0)]
     setsamplers!(model, samplers)
 
@@ -58,17 +58,16 @@ end
         chains = 2,
         trees = true,
     )
-    while maximum(gelmandiag(sim).value[1:end-1, 2, :]) > 1.1
-        sim = mcmc(sim, 5000)
-    end
+    
     r_m = summarystats(sim).value[2:3, 1, 1]
     r_sd = summarystats(sim).value[2:3, 2, 1]
     @test r_m[1]-r_sd[1] <= 0.60 <= r_m[1]+r_sd[1]
     @test r_m[2]-r_sd[2] <= 0.80 <= r_m[2]+r_sd[2]
 end
 
-@testset "NUTS" begin
-    samplers = [MCPhylo.NUTS_Rie([:β, :s2])]
+@testset "NUTS_Classic" begin
+    Random.seed!(123)
+    samplers = [NUTS([:β, :s2], variant=:classic)]
     setsamplers!(model, samplers)
 
     sim = mcmc(
@@ -81,9 +80,29 @@ end
         chains = 2,
         trees = true,
     )
-    while maximum(gelmandiag(sim).value[1:end-1, 2, :]) > 1.1
-        sim = mcmc(sim, 5000)
-    end
+    
+    r_m = summarystats(sim).value[2:3, 1, 1]
+    r_sd = summarystats(sim).value[2:3, 2, 1]
+    @test r_m[1]-r_sd[1] <= 0.60 <= r_m[1]+r_sd[1]
+    @test r_m[2]-r_sd[2] <= 0.80 <= r_m[2]+r_sd[2]
+end
+
+@testset "NUTS_Riemann" begin
+    Random.seed!(123)
+    samplers = [NUTS([:β, :s2], variant=:riemann)]
+    setsamplers!(model, samplers)
+
+    sim = mcmc(
+        model,
+        data,
+        inits,
+        100000,
+        burnin = 50000,
+        thin = 10,
+        chains = 2,
+        trees = true,
+    )
+    
     r_m = summarystats(sim).value[2:3, 1, 1]
     r_sd = summarystats(sim).value[2:3, 2, 1]
     @test r_m[1]-r_sd[1] <= 0.60 <= r_m[1]+r_sd[1]
@@ -91,6 +110,7 @@ end
 end
 
 @testset "HMC" begin
+    Random.seed!(123)
     samplers = [HMC([:β, :s2], 0.007, 8)]
     setsamplers!(model, samplers)
 
@@ -104,9 +124,7 @@ end
         chains = 2,
         trees = true,
     )
-    while maximum(gelmandiag(sim).value[1:end-1, 2, :]) > 1.1
-        sim = mcmc(sim, 5000)
-    end
+    
     r_m = summarystats(sim).value[2:3, 1, 1]
     r_sd = summarystats(sim).value[2:3, 2, 1]
     @test r_m[1]-r_sd[1] <= 0.60 <= r_m[1]+r_sd[1]

@@ -1,3 +1,6 @@
+
+
+
 """
     This structure implements a Distribution whos likelihood is calculated
     according to Felsensteins algorithm.
@@ -213,3 +216,6 @@ function __logpdf(d::MultiplePhyloDist, x::AbstractArray)
     end
     res
 end
+
+
+const PhylogeneticDistribution = Union{PhyloDist, MultiplePhyloDist}

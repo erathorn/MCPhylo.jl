@@ -22,7 +22,7 @@ mutable struct PNUTSTune <: SamplerTune
         logfgrad::Union{Function,Missing};
         target::Real = 0.6,
         tree_depth::Int = 10,
-        targetNNI::Float64 = 5.0,
+        targetNNI::Float64 = 0.5,
         delta::Float64 = 0.003,
     ) where {T<:GeneralNode}
 

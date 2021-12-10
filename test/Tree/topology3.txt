@@ -1,2 +1,0 @@
-not_mono:    C,D,E:
-# test error throwing on more than one colon

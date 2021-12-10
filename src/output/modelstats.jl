@@ -14,14 +14,18 @@ such that ``\\mathcal{L}(\\bar{\\Theta})`` is the log-likelihood of model output
 * `mc` : sampler output from a model fit with the `mcmc()` function.
 """
 function dic(mc::ModelChains)
-  nodekeys = keys(mc.model, :output)
+    nodekeys = keys(mc.model, :output)
 
-  Dhat = -2.0 * logpdf(mc, mean, nodekeys)
-  D = -2.0 * logpdf(mc, nodekeys).value
-  p = [mean(D) - Dhat, 0.5 * var(D)]
+    Dhat = -2.0 * logpdf(mc, mean, nodekeys)
+    D = -2.0 * logpdf(mc, nodekeys).value
+    p = [mean(D) - Dhat, 0.5 * var(D)]
 
-  ChainSummary([Dhat .+ 2.0 .* p  p], ["pD", "pV"],
-               ["DIC", "Effective Parameters"], header(mc))
+    ChainSummary(
+        [Dhat .+ 2.0 .* p p],
+        ["pD", "pV"],
+        ["DIC", "Effective Parameters"],
+        header(mc),
+    )
 end
 
 """
@@ -38,18 +42,18 @@ Returns a `ModelChains` object of resulting summed log-densities at each MCMC it
 * `f` : ??
 """
 function logpdf(mc::ModelChains, f::Function, nodekeys::Vector{Symbol})
-  m = mc.model
+    m = mc.model
 
-  relistkeys, updatekeys = getsimkeys(mc, nodekeys)
-  relistkeys = union(relistkeys, intersect(nodekeys, keys(m, :block)))
-  inds = names2inds(mc, relistkeys)
-  for key in relistkeys
-      isa(m[key], Stochastic{<:GeneralNode}) && throw("not possible with tree objects")
-  end
+    relistkeys, updatekeys = getsimkeys(mc, nodekeys)
+    relistkeys = union(relistkeys, intersect(nodekeys, keys(m, :block)))
+    inds = names2inds(mc, relistkeys)
+    for key in relistkeys
+        isa(m[key], Stochastic{<:GeneralNode}) && throw("not possible with tree objects")
+    end
 
-  m[relistkeys] = relist(m, map(i -> f(mc.value[:, i, :]), inds), relistkeys)
-  update!(m, updatekeys)
-  mapreduce(key -> logpdf(m[key]), +, nodekeys)
+    m[relistkeys] = relist(m, map(i -> f(mc.value[:, i, :]), inds), relistkeys)
+    update!(m, updatekeys)
+    mapreduce(key -> logpdf(m[key]), +, nodekeys)
 end
 
 
@@ -59,59 +63,78 @@ logpdf(mc::ModelChains, nodekey::Symbol) = logpdf(mc, [nodekey])
            nodekeys::Vector{Symbol}=keys(mc.model, :stochastic))
 
 """
-function logpdf(mc::ModelChains,
-                nodekeys::Vector{Symbol}=keys(mc.model, :stochastic))
-  N = length(mc.range)
-  K = size(mc, 3)
+function logpdf(mc::ModelChains, nodekeys::Vector{Symbol} = keys(mc.model, :stochastic))
+    N = length(mc.range)
+    K = size(mc, 3)
 
-  relistkeys, updatekeys = getsimkeys(mc, nodekeys)
-  relistkeys = union(relistkeys, intersect(nodekeys, keys(mc.model, :block)))
-  inds = names2inds(mc, relistkeys)
+    relistkeys, updatekeys = getsimkeys(mc, nodekeys)
+    relistkeys = union(relistkeys, intersect(nodekeys, keys(mc.model, :block)))
+    inds = names2inds(mc, relistkeys)
 
-  println("MCMC Processing of $N Iterations x $K Chain" * "s"^(K > 1) * "...")
+    println("MCMC Processing of $N Iterations x $K Chain" * "s"^(K > 1) * "...")
 
-  # set up 1 RemoteChannel & a ProgressMeter for each Chain
-  channel = RemoteChannel(() -> Channel{Integer}(1))
-  meters = [Progress(size(mc.value, 1); dt=0.5, desc="Chain $k: ", enabled=true, offset=k-1, showspeed=true) for k in 1:K]
+    # set up 1 RemoteChannel & a ProgressMeter for each Chain
+    channel = RemoteChannel(() -> Channel{Integer}(1))
+    meters = [
+        Progress(
+            size(mc.value, 1);
+            dt = 0.5,
+            desc = "Chain $k: ",
+            enabled = true,
+            offset = k - 1,
+            showspeed = true,
+        ) for k = 1:K
+    ]
 
-  lsts = [
-    Any[mc[:, :, [k]], nodekeys, relistkeys, inds, updatekeys, (channel, k)]
-    for k in 1:K
-  ]
+    lsts = [
+        Any[mc[:, :, [k]], nodekeys, relistkeys, inds, updatekeys, (channel, k)] for
+        k = 1:K
+    ]
 
-  sims::Vector{Chains} = []
-  @sync begin
-      # check RemoteChannel for new entries and update the ProgressMeters
-      finished_chains = 0
-      # loop until all ProgressMeters are finished
-      @async while finished_chains < K
-          chain = take!(channel)
-          chain > 0 ? ProgressMeter.next!(meters[chain]) : finished_chains += 1
-      end # while
-      @async sims = pmap2(logpdf_modelchains_worker, lsts)
-  end # @sync
-  println("\n")
-  ModelChains(cat(sims..., dims=3), mc.model, mc.stats, mc.stat_names,
-              mc.sim_params, mc.conv_storage)
+    sims::Vector{Chains} = []
+    @sync begin
+        # check RemoteChannel for new entries and update the ProgressMeters
+        finished_chains = 0
+        # loop until all ProgressMeters are finished
+        @async while finished_chains < K
+            chain = take!(channel)
+            chain > 0 ? ProgressMeter.next!(meters[chain]) : finished_chains += 1
+        end # while
+        @async sims = pmap2(logpdf_modelchains_worker, lsts)
+    end # @sync
+    println("\n")
+    ModelChains(
+        cat(sims..., dims = 3),
+        mc.model,
+        mc.stats,
+        mc.stat_names,
+        mc.sim_params,
+        mc.conv_storage,
+    )
 end
 
 
 function logpdf_modelchains_worker(args::Vector)
-  mc::ModelChains, nodekeys::Vector{Symbol}, relistkeys::Vector{Symbol}, inds::Vector{Int}, updatekeys::Vector{Symbol}, channel::Tuple{RemoteChannel, Integer} = args
-  m = mc.model
+    mc::ModelChains,
+    nodekeys::Vector{Symbol},
+    relistkeys::Vector{Symbol},
+    inds::Vector{Int},
+    updatekeys::Vector{Symbol},
+    channel::Tuple{RemoteChannel,Integer} = args
+    m = mc.model
 
-  sim = Chains(size(mc, 1), 1, start=first(mc), thin=step(mc), names=["logpdf"])
+    sim = Chains(size(mc, 1), 1, start = first(mc), thin = step(mc), names = ["logpdf"])
 
-  for i in 1:size(mc.value, 1)
-      m[relistkeys] = relist(m, mc.value[i, inds, 1], relistkeys)
-      update!(m, updatekeys)
-      sim.value[i, 1, 1] = mapreduce(key -> logpdf(m[key]), +, nodekeys)
-      # send update to RemoteChannel so that the ProgressMeter can be updated in logpdf
-      put!(channel[1], channel[2])
-  end
-  # signal to the logpdf function, that this chain is finished
-  put!(channel[1], -1)
-  sim
+    for i = 1:size(mc.value, 1)
+        m[relistkeys] = relist(m, mc.value[i, inds, 1], relistkeys)
+        update!(m, updatekeys)
+        sim.value[i, 1, 1] = mapreduce(key -> logpdf(m[key]), +, nodekeys)
+        # send update to RemoteChannel so that the ProgressMeter can be updated in logpdf
+        put!(channel[1], channel[2])
+    end
+    # signal to the logpdf function, that this chain is finished
+    put!(channel[1], -1)
+    sim
 end
 
 
@@ -132,69 +155,79 @@ where ``\\tilde{y}`` is an unknown observation on the node, ``p(\\tilde{y} | \\T
 
 * `nodekey/nodekeys` : observed Stochastic model node(s) for which to generate draws from the predictive distribution (default: all observed data nodes).
 """
-function predict(mc::ModelChains,
-                 nodekeys::Vector{Symbol}=keys(mc.model, :output))
-  m = mc.model
+function predict(mc::ModelChains, nodekeys::Vector{Symbol} = keys(mc.model, :output))
+    m = mc.model
 
-  outputs = keys(m, :output)
-  all(key -> key in outputs, nodekeys) ||
-    throw(ArgumentError(string(
-      "nodekeys are not all observed Stochastic nodess : ",
-      join(map(string, outputs), ", ")
-    )))
+    outputs = keys(m, :output)
+    all(key -> key in outputs, nodekeys) || throw(
+        ArgumentError(
+            string(
+                "nodekeys are not all observed Stochastic nodess : ",
+                join(map(string, outputs), ", "),
+            ),
+        ),
+    )
 
-  nodenames = names(m, nodekeys)
-  relistkeys, updatekeys = getsimkeys(mc, nodekeys)
-  for key in relistkeys
-    isa(m[key], Stochastic{<:GeneralNode}) && throw("not possible with tree objects")
-  end
-
-  inds = names2inds(mc, relistkeys)
-
-  c = Chains(size(mc, 1), length(nodenames), chains=size(mc, 3),
-             start=first(mc), thin=step(mc), names=nodenames)
-
-  iters, _, chains = size(c.value)
-  for k in 1:chains
-    for i in 1:iters
-      m[relistkeys] = relist(m, mc.value[i, inds, k], relistkeys)
-      update!(m, updatekeys)
-      f = key -> unlist(m[key], rand(m[key]))
-      c.value[i, :, k] = vcat(map(f, nodekeys)...)
+    nodenames = names(m, nodekeys)
+    relistkeys, updatekeys = getsimkeys(mc, nodekeys)
+    for key in relistkeys
+        isa(m[key], Stochastic{<:GeneralNode}) && throw("not possible with tree objects")
     end
-  end
 
-  ModelChains(c, m, c.stats, c.stat_names)
+    inds = names2inds(mc, relistkeys)
+
+    c = Chains(
+        size(mc, 1),
+        length(nodenames),
+        chains = size(mc, 3),
+        start = first(mc),
+        thin = step(mc),
+        names = nodenames,
+    )
+
+    iters, _, chains = size(c.value)
+    for k = 1:chains
+        for i = 1:iters
+            m[relistkeys] = relist(m, mc.value[i, inds, k], relistkeys)
+            update!(m, updatekeys)
+            f = key -> unlist(m[key], rand(m[key]))
+            c.value[i, :, k] = vcat(map(f, nodekeys)...)
+        end
+    end
+
+    ModelChains(c, m, c.stats, c.stat_names)
 end
 
 
 #################### Auxiliary Functions ####################
 
-function getsimkeys(mc::ModelChains, nodekeys::Vector{Symbol}
-                   )::Tuple{Vector{Symbol}, Vector{Symbol}}
+function getsimkeys(
+    mc::ModelChains,
+    nodekeys::Vector{Symbol},
+)::Tuple{Vector{Symbol},Vector{Symbol}}
 
-  relistkeys = Symbol[]
-  updatekeys = Symbol[]
+    relistkeys = Symbol[]
+    updatekeys = Symbol[]
 
-  m = mc.model
-  dag = ModelGraph(m)
+    m = mc.model
+    dag = ModelGraph(m)
 
-  nodekeys = intersect(nodekeys, keys(m, :stochastic))
-  blockkeys = keys(m, :block)
-  dynamickeys = union(blockkeys, keys(m, :target, blockkeys))
-  terminalkeys = union(keys(m, :stochastic), keys(mc, :dependent))
+    nodekeys = intersect(nodekeys, keys(m, :stochastic))
+    blockkeys = keys(m, :block)
+    dynamickeys = union(blockkeys, keys(m, :target, blockkeys))
+    terminalkeys = union(keys(m, :stochastic), keys(mc, :dependent))
 
-  for v in vertices(dag.graph)
-    vkey = dag.keys[v]
-    if vkey in dynamickeys
-      if any(key -> key in nodekeys, gettargets(dag, v, terminalkeys))
-        vkey in terminalkeys ?
-          push!(relistkeys, vkey) :
-          push!(updatekeys, vkey)
-      end
+    for v in vertices(dag.graph)
+        vkey = dag.keys[v]
+        if vkey in dynamickeys
+            if any(key -> key in nodekeys, gettargets(dag, v, terminalkeys))
+                vkey in terminalkeys ? push!(relistkeys, vkey) : push!(updatekeys, vkey)
+            end
+        end
     end
-  end
-  if !isempty(relistkeys) append!(updatekeys, nodekeys) end
+    if !isempty(relistkeys)
+        append!(updatekeys, nodekeys)
+    end
 
-  relistkeys, intersect(keys(m, :dependent), updatekeys)
+    relistkeys, intersect(keys(m, :dependent), updatekeys)
 end

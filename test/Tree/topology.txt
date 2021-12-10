@@ -1,5 +1,0 @@
-mono:        A,B; C,D;
-# this line will be ignored, throws no warning
-not_mono:    C,D,E
-exc :         E,F!G;
-TEST:        A,B;
