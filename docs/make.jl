@@ -7,7 +7,7 @@ makedocs(
     format = Documenter.HTML(),
     pages = [
         "Index" => "index.md",
-        "Likelihood" => "likelihood1.md",
+        "Likelihood" => "likelihood.md",
         "Distributions" => "distributions.md",
         "Model" => "model.md",
         "Output" => "output.md",
