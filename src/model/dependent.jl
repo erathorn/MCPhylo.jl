@@ -176,7 +176,7 @@ function Logical(
     f::Function,
     monitor::Union{Bool,Vector{Int}} = true,
 ) where {T<:GeneralNode}
-    value = T()
+    value = Node()
     fx, src = modelfxsrc(depfxargs, f)
     l = Logical(value, :nothing, Int[], fx, src, Symbol[])
     setmonitor!(l, monitor)

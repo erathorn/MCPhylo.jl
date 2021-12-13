@@ -12,6 +12,7 @@ const samplertests = [
 
 const mcmctests = [
    "discretediag",
+   "modelbuilding"
 #   "readcoda"
 ]
 

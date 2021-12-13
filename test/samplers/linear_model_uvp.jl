@@ -34,7 +34,7 @@ inits = [
         burnin = 50000,
         thin = 10,
         chains = 2,
-        trees = true,
+        verbose=false
     )
     
     r_m = summarystats(sim).value[2:3, 1, 1]
@@ -56,7 +56,7 @@ end
         burnin = 50000,
         thin = 10,
         chains = 2,
-        trees = true,
+        verbose=false
     )
     
     r_m = summarystats(sim).value[2:3, 1, 1]
@@ -78,7 +78,7 @@ end
         burnin = 50000,
         thin = 10,
         chains = 2,
-        trees = true,
+        verbose=false
     )
     
     r_m = summarystats(sim).value[2:3, 1, 1]
@@ -100,7 +100,7 @@ end
         burnin = 50000,
         thin = 10,
         chains = 2,
-        trees = true,
+        verbose=false
     )
 
     r_m = summarystats(sim).value[2:3, 1, 1]
@@ -122,7 +122,7 @@ end
         burnin = 50000,
         thin = 10,
         chains = 2,
-        trees = true,
+        verbose=false
     )
     
     r_m = summarystats(sim).value[2:3, 1, 1]

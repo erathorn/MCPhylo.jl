@@ -19,6 +19,7 @@ import MCPhyloTree: internal_external
 using RecipesBase
 import RecipesBase.plot
 using StatsBase
+import StatsBase: predict
 using Zygote
 using FiniteDiff
 using ForwardDiff

@@ -32,6 +32,7 @@ MCPhylo.BirthDeathSimplified
 
 ```@docs
 MCPhylo.UniformConstrained
+MCPhylo.UniformTopology
 ```
 
 ## Gamma Rates

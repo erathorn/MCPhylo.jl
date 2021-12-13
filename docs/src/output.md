@@ -1,17 +1,9 @@
-# output
-
-
-
+# Output
 
 ## Chains
+
 ```@docs
-Main.MCPhylo.Chains
-Main.MCPhylo.getindex
-Main.MCPhylo.setindex!
-Main.MCPhylo.Base.cat
-Main.MCPhylo.Base.keys(::Main.MCPhylo.AbstractChains)
-Main.MCPhylo.Base.show(::IO, ::Main.MCPhylo.AbstractChains)
-Main.MCPhylo.Base.size
+MCPhylo.Chains
 ```
 
 ## File I/O
@@ -47,25 +39,31 @@ Main.MCPhylo.gewekediag
 ## Heidel Diagnostic
 
 ```@docs
-Main.MCPhylo.heideldiag
+MCPhylo.heideldiag
 ```
 
 ## Raftery and Lewis Diagnostic
 
 ```@docs
-Main.MCPhylo.rafterydiag
+MCPhylo.rafterydiag
+```
+
+## Average Standard Deviation of Split Frequencies
+
+```@docs
+MCPhylo.ASDSF
 ```
 
 ## Monte Carlo Standard Errors
 
 ```@docs
-Main.MCPhylo.mcse
+MCPhylo.mcse
 ```
 
 ## ModelChains
 
 ```@docs
-Main.MCPhylo.ModelChains
+MCPhylo.ModelChains
 ```
 
 ## Model-Based Inference
