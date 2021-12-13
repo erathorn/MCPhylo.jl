@@ -10,7 +10,7 @@
     @test isa(l, Logical)
 
     s = Logical(Node(), (x)->x, true)
-    @test isa(s, Stochastic)
+    @test isa(s, Logical)
 end
 
 @testset "Stochastic" begin
@@ -27,13 +27,13 @@ end
     @test isa(s, Stochastic)
 end
 
-@testset"Model" begin
+@testset "Model" begin
     model = Model(
     y = Stochastic(1, (μ, s2) -> MultivariateNormal(μ, s2), false),
     μ = Logical(1, (β, xmat) -> xmat * β, false),
     β = Stochastic(1, () -> Normal(0, sqrt(1000)), true),
-    s2 = Stochastic(() -> InverseGamma(0.001, 0.001), true),
-)
+    s2 = Stochastic(() -> InverseGamma(0.001, 0.001), true), 
+        )
 
-    @test isa(mode, Model)
+    @test isa(model, Model)
 end
