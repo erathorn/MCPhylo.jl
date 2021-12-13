@@ -15,3 +15,9 @@ makedocs(
         "Utils" => "utils.md",
         "Links" => "links.md"]
    )
+
+deploydocs(
+    repo = "github.com/erathorn/MCPhylo.jl.git",
+    devbranch="main"
+     )
+
