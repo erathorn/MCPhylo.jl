@@ -13,7 +13,8 @@ makedocs(
         "Output" => "output.md",
         "Samplers" => "samplers.md",
         "Utils" => "utils.md",
-        "Links" => "links.md"]
+        "Links" => "links.md",
+        "For Developers" => "developers.md"],
    )
 
 deploydocs(

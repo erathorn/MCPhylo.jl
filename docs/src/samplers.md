@@ -53,11 +53,11 @@ MCPhylo.RWM
 ## Slice
 
 ```@docs
-Main.MCPhylo.Slice
+MCPhylo.Slice
 ```
 
 ## SliceSimplex
 
 ```@docs
-Main.MCPhylo.SliceSimplex
+MCPhylo.SliceSimplex
 ```

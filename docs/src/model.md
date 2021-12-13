@@ -7,9 +7,6 @@ The Model type is designed to store the set of all model nodes, including parame
 ```@docs
 MCPhylo.Logical
 MCPhylo.Stochastic
-MCPhylo.setinits!
-MCPhylo.setmonitor!
-MCPhylo.update!
 ```
 
 ## Graph
@@ -20,12 +17,12 @@ MCPhylo.graph2dot
 ```
 
 ## Initialization
+
 ```@autodocs
 Modules = [MCPhylo]
 Pages   = ["initialization.jl"]
 Filter =
 ```
-
 
 ## MCMC
 
@@ -33,27 +30,8 @@ Filter =
 Main.MCPhylo.mcmc
 ```
 
-## Model
+## Model Building
 
 ```@docs
-Main.MCPhylo.Model
-Main.MCPhylo.Base.keys
-Main.MCPhylo.Base.show
-Main.MCPhylo.showall
-```
-
-## Simulation
-```@docs
-Main.MCPhylo.gettune
-Main.MCPhylo.settune!
-
-Main.MCPhylo.gradlogpdf
-Main.MCPhylo.gradlogpdf!
-Main.MCPhylo.logpdf
-Main.MCPhylo.logpdf!
-Main.MCPhylo.sample!(::Main.MCPhylo.Model, ::Integer)
-Main.MCPhylo.unlist
-Main.MCPhylo.relist
-Main.MCPhylo.relist!
-Main.MCPhylo.update!
+MCPhylo.Model
 ```
