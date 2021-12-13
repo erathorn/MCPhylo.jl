@@ -28,7 +28,6 @@ using Markdown
 using Random
 using DataStructures
 using ProgressMeter
-using StaticArrays
 using Bijectors
 using LogExpFunctions
 
