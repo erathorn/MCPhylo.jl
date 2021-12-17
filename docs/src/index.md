@@ -4,7 +4,6 @@
 This package does phylogenetic computations in Julia. It is an extension of the `Mamba` package which does Markov Chain Monte Carlo (MCMC) sampling for Bayesian analysis. ([https://mambajl.readthedocs.io/en/latest/](https://mambajl.readthedocs.io/en/latest/))
 **MCPhylo** extends `Mamba` by a tree module to perform phylogenetic computations.
 
-which currently supports the output of newick strings for tree structures.
 The goal is to facilitate phylogenetic computations in computational historical
 linguistics. To facilitate the inference of phylogenetic trees,
 _Probabilistic Path Hamiltonian Dynamics_ (<https://arxiv.org/pdf/1702.07814.pdf>)
@@ -30,4 +29,4 @@ Pkg.add("https://github.com/erathorn/MCPhylo.jl")
 
 ## Tree Functionalities
 
-The tree functionalities within this package are reexported from `MCPhyloTree`[https://erathorn.github.io/MCPhyloTree.jl/stable/]. The the respective documentation for more details.
+The tree functionalities within this package are reexported from `MCPhyloTree`[https://erathorn.github.io/MCPhyloTree.jl/stable/](https://erathorn.github.io/MCPhyloTree.jl/stable/). The the respective documentation for more details.

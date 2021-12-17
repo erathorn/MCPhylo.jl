@@ -8,7 +8,7 @@ resulting tree
 function parse_and_number(treestring::S)::GeneralNode where S<:AbstractString
     p_tree2 = parsing_newick_string(string(treestring))
     set_binary!(p_tree2)
-    number_nodes!(p_tree2)
+    MCPhyloTree.number_nodes!(p_tree2)
     p_tree2
 end # parse_and_number
 
