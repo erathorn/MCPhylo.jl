@@ -7,7 +7,7 @@ This package offers the functionality for phylogenetic computations in Julia. It
 
 **This module is build on a forked instance of Mamba 0.12.0**
 
-The documentatian can be found [here](https://erathorn.github.io/MCPhylo.jl/dev/).
+The documentation can be found [here](https://erathorn.github.io/MCPhylo.jl/dev/).
 
 ------
 ## Citation
