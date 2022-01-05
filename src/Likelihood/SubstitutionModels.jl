@@ -35,7 +35,7 @@ The function returns the Eigenvectors, Eigenvalues and inverse of eigenvectors.
 function JC(base_freq::Vector{Float64}, SubstitutionRates::Vector{Float64})#::Tuple{Array{Float64,2}, Array{Float64,1}, Array{Float64,2}, Float64}
     Nbases = length(base_freq)
     Q::Array{Float64,2} = ones(Nbases,Nbases)
-    off_diag = 1.0/(Nbases-1)
+    off_diag = 1.0/Nbases
     diag = off_diag * (Nbases-1)
     Q .= off_diag
     Q[diagind(Nbases,Nbases)] .= -diag
@@ -109,7 +109,7 @@ end
 ### Calculate Transition Matrices
 
 
-function calculate_transition(f::typeof(JC), rate::R, mu::R, time::R1, U::A, Uinv::A, D, pi_::Vector)::Array{R1,2} where {R1<:Real, R<:Real, A<:AbstractArray{<:Real}}
+function calculate_transition(f::typeof(JC), rate::R, mu::R, time::R1, U::A, Uinv::A, D::Vector, pi_::Vector)::Array{R1,2} where {R1<:Real, R<:Real, A<:AbstractArray{<:Real}}
     
     t = rate * time
     if t < MCP_TIME_MIN
@@ -122,13 +122,14 @@ function calculate_transition(f::typeof(JC), rate::R, mu::R, time::R1, U::A, Uin
         return_mat .= 1.0/length(pi_)
         return return_mat
     else
+        t *= mu
         return (U * diagm(exp.(D .* t))) * Uinv
     end
     #return_mat
 end
 
 
-function calculate_transition(f::typeof(Restriction), rate::R, mu::R, time::R1, U::A, Uinv::A, D, pi_::Vector)::Array{R1,2} where {R1<:Real, R<:Real, A<:AbstractArray{<:Real}}
+function calculate_transition(f::typeof(Restriction), rate::R, mu::R, time::R1, U::A, Uinv::A, D::Vector, pi_::Vector)::Array{R1,2} where {R1<:Real, R<:Real, A<:AbstractArray{<:Real}}
     return_mat = similar(U)
     t = rate *  time
     if t < MCP_TIME_MIN
@@ -162,6 +163,7 @@ function calculate_transition(f::typeof(JC), rate::R, mu::R, time::R, U::A, Uinv
     elseif t > MCP_TIME_MAX
         return_mat .= 1.0/length(pi_)
     else
+        t *= mu
         return_mat .= abs.(BLAS.gemm('N', 'N', 1.0, BLAS.symm('R', 'L', diagm(exp.(D .* t)), U), Uinv))
     end
     return_mat
