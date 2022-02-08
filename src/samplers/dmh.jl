@@ -78,10 +78,10 @@ function sample!(v::DMHVariate{T}, lpdf::Function; model::Model, kwargs...) wher
 
     #println("real")
     # calculate logpdf values
-    lf_xt = 0.0#lpdf(v.value)
+    lf_xt = lpdf(v.value)
 
     #println("θ_prime $θ_prime")
-    lf_xtp = 0.0#lpdf(θ_prime)
+    lf_xtp =lpdf(θ_prime)
 
     # prematurely assign, to allow computations to go through properly
     v[:] = θ_prime
@@ -90,8 +90,8 @@ function sample!(v::DMHVariate{T}, lpdf::Function; model::Model, kwargs...) wher
     y = inner_sampler(v, deepcopy(data), v.params, targets, model) #xobs
 
     # calculate logpdfs based on pseudo observations
-    lf_ytp = tune.pseudolog(model, v.value, y, v.params, targets)
-    lf_yt = tune.pseudolog(model, θ, y, v.params, targets)
+    lf_ytp = tune.pseudolog(model, v.value, y, v.params, targets, true)
+    lf_yt = tune.pseudolog(model, θ, y, v.params, targets, true)
 
     # calculate acceptance probability (proposal distribution?)
     r = exp((lf_yt + lf_xtp) - (lf_xt + lf_ytp))
@@ -119,15 +119,14 @@ function inner_sampler(
     counter = zero(Int64)
 
     while true
-        #random_language_idx = shuffle(1:nlangs)
+        random_language_idx = shuffle(1:nlangs)
         random_feature_idx = shuffle(1:nfeatures)
-        @inbounds for i = 1:nlangs#random_language_idx
+        @inbounds for i in random_language_idx
             @inbounds for f in random_feature_idx
 
                 probs = v.tune.condlike(model, X, params, targets, i, f)
                 new_x = sample(1:length(probs), Weights(probs))
                 X[f, i] = new_x
-                #	end
             
                 counter += 1
                 if counter > v.tune.m
