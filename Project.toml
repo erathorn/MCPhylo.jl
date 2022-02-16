@@ -1,7 +1,7 @@
 name = "MCPhylo"
 uuid = "af0ac7d2-842d-415f-bd76-8183c117c674"
 authors = ["erathorn"]
-version = "0.9"
+version = "0.9.1"
 
 [deps]
 Bijectors = "76274a88-744f-5084-9051-94815aaf08c4"
@@ -41,8 +41,7 @@ FiniteDiff = "2.8"
 ForwardDiff = "0.10.23"
 LightGraphs = "1.3"
 LogExpFunctions = "0.3.5"
-MCPhyloTree = "0.9.7"
-PDMats = "0.11.0"
+MCPhyloTree = "1.0.0"
 Plots = "1.11"
 ProgressMeter = "1.6"
 RecipesBase = "1.1"
