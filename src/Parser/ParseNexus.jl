@@ -13,7 +13,7 @@ function ParseNexus(filename::String)
     end # do
 
     if lowercase(content[1]) != "#nexus"
-        throw("$filename is not a Nexus file!")
+        throw(FileSyntaxError("$filename is not a Nexus file!"))
     end # if
 
     while true
