@@ -1,5 +1,3 @@
-using Test
-
 @testset "ParseNexus.jl" begin
 
     matrix = ['1' '1' '1' '0' '0' '0' '0' '0' '0' '-' ;
@@ -10,9 +8,9 @@ using Test
     langs = ["Lang1", "Lang2", "Lang3", "Lang4", "Lang5"]
 
     @testset "ParseNexus" begin
-        nex = MCPhylo.ParseNexus("Example.nex")
-        nex_target = (5, 10, "-", "?", ["0", "1"], matrix, langs)
-        @test nex == nex_target
+        data = MCPhylo.ParseNexus("test/parser/example.nex")
+        data_target = (5, 10, "-", "?", ["0", "1"], matrix, langs)
+        @test data == data_target
         @test_throws FileSyntaxError MCPhylo.ParseNexus("topology.txt")
     end
     
