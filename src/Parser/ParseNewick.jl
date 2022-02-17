@@ -52,8 +52,7 @@ function parsing_newick_string(newick::String)::GeneralNode
         throw("$newick is not correctly formatted!")
     end # if
     tree = nwk_parser(string(newick))
-    set_binary!(tree)
-    number_nodes!(tree)
+    initialize_tree!(tree)
     tree
 end
 
