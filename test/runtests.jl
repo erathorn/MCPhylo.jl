@@ -16,27 +16,39 @@ const mcmctests = [
 #   "readcoda"
 ]
 
+
+const parsertests = [
+  "csv",
+  "nexus"
+]
+
+
 # const extensiontests = [
 #   "newunivardist",
 #   "newmultivardist"
 # ]
 
-
-
 println("Running tests:")
-#
+
+
 @testset "All tests" begin
 
-
-for t in samplertests
-    @runtest "samplers/" t
+  @testset "sampler tests" begin
+    for t in samplertests 
+      @runtest "samplers/" t
+    end
   end
 
-@testset "mcmctests" begin
-   for t in mcmctests
-     @runtest "mcmc/" t
-   end
-end
+  @testset "mcmc tests" begin
+    for t in mcmctests
+      @runtest "mcmc/" t
+    end
+  end
+
+  @testset "parser tests" begin
+    for t in parsertests
+      @runtest "parser/" t
+    end
+  end
 
 end
-#all sets test set
