@@ -1,19 +1,4 @@
 """
-    parse_and_number(treestring::S)::GeneralNode where S<:AbstractString
-
---- INTERNAL ---
-Parse a newick string and then call set_binary and number_nodes! on the
-resulting tree
-"""
-function parse_and_number(treestring::S)::GeneralNode where S<:AbstractString
-    p_tree2 = parsing_newick_string(string(treestring))
-    set_binary!(p_tree2)
-    MCPhyloTree.number_nodes!(p_tree2)
-    p_tree2
-end # parse_and_number
-
-
-"""
     ASDSF(args::String...; freq::Int64=1, check_leaves::Bool=true,
           min_splits::Float64=0.1, show_progress::Bool=true)::Vector{Float64}
 
@@ -178,8 +163,8 @@ function ASDSF_int(splitsQueue, splitsQueues, iter, tree_dims, ASDSF_vals, freq,
                 line = [take!(rc) for rc in r_channels]
             end
             for td in tree_dims
-                trees = basic ? [parse_and_number(tree) for tree in line] :
-                                [parse_and_number(tree[td]) for tree in line]
+                trees = basic ? [ParseNewick(tree) for tree in line] :
+                                [ParseNewick(tree[td]) for tree in line]
                 check_leaves && check_leafsets(trees)
 
                 # get all bipartitions
