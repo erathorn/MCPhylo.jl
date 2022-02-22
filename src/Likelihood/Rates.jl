@@ -8,7 +8,7 @@ such that each category is of equal proportion.
 See: Yang, 1994, Maximum likelihood phylogenetic estimation from DNA sequences
 with variable rates over sites: Approximate methods. (https://doi.org/10.1007/BF00160154)
 """
-function discrete_gamma_rates(α::T, β::S,k::Int64; method::Symbol=:mean, sig::Int64=1)::Array{Float64} where {T<:Real, S<:Real}
+function discrete_gamma_rates(α::T, β::S, k::Int64; method::Symbol=:mean, sig::Int64=1)::Array{Float64} where {T<:Real, S<:Real}
     meanvals = Array{Float64, 1}(undef, k)
     factor::Float64 = α/β*k
 
