@@ -126,8 +126,8 @@ gradlogpdf(d::AbstractDependent, x=nothing, transform::Bool=false) = 0.0
 """
     Logical(f::Function, monitor::Union{Bool, Vector{Int}}=true)
 
-Constructor for a Logical model node. This function assumes a the output of the
-logical operation to be scalar.
+Constructor for a Logical model node. This function assumes the output of the
+logical operation to be a scalar.
 
 * `f`: Function specifying the deterministic operation performed on its arguments. These arguments are other nodes of the model.
 
@@ -273,7 +273,7 @@ end
 """
     Stochastic(f::Function, monitor::Union{Bool, Vector{Int}}=true)
 
-Constructor for a Stochastic model node. This function assumes a the output of the
+Constructor for a Stochastic model node. This function assumes the output of the
 logical operation to be scalar.
 
 * `f` : Specifies the distributional relationship between the arguments and the node. These arguments are other nodes of the model.
