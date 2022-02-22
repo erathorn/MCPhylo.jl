@@ -185,7 +185,7 @@ end
 ScalarLogical(x::T) where {T<:Real} = x
 
 function Logical(a::Logical, value::T)::Logical{T} where T
-    Logical(value, a.symbol, a.monitor, a.eval, a.sources, a.targets, a.distr)
+    Logical(value, a.symbol, a.monitor, a.eval, a.sources, a.targets)
 end
 
 #################### Updating ####################
