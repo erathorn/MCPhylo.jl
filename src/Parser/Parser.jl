@@ -5,8 +5,10 @@
 							 gap::Union{Missing, AbstractString}=missing,
 							 miss::Union{Missing,AbstractString}=missing,
 							 header::Bool=false)
+
 General parsing function; user specifies type of file to parse.
 Returns root Node of tree derived from data, as well as a DataFrame.
+
 * `filename` : Name of file to parse.
 * `dialect` : Specifies filetype to parse; currently accepts EITHER "nexus" or "csv" as inputs.
 * `gap` : specifies gap symbol for a CSV file; if "dialect" == "csv", this input is required, can be ommitted otherwise.
@@ -18,13 +20,14 @@ function make_tree_with_data(filename::String, dialect::AbstractString="nexus",
                              gap::Union{Missing, AbstractString}=missing,
                              miss::Union{Missing,AbstractString}=missing,
                              header::Bool=false;
-							 binary::Bool=true)
+							 binary::Bool=true)::Tuple{GeneralNode, Array{Float64}}
+
     # get all the information from the input file
 	if lowercase(dialect) == "nexus"
 		n_tax, n_sites, gap, miss, symbols, df, langs = ParseNexus(filename)
 	elseif lowercase(dialect) == "csv"
-		ismissing(gap) && throw("Please specify the gap symbol for a CSV file")
-		ismissing(miss) && throw("Please specify the missing symbol for a CSV file")
+		ismissing(gap) && throw(ArgumentError("Please specify the gap symbol for a CSV file"))
+		ismissing(miss) && throw(ArgumentError("Please specify the missing symbol for a CSV file"))
 		n_tax, n_sites, gap, miss, symbols, df, langs = ParseCSV(filename, gap, miss, header)
 	end
 	# create random tree
