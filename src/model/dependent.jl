@@ -204,8 +204,9 @@ function setinits!(l::Logical, m::Model, ::Any = nothing)
     l.value = l.eval(m)
     setmonitor!(l, l.monitor)
 end
+
 """
-    setinits!(d::TreeLogical, m::Model, x::T) where {T<:GeneralNode}
+    setinits!(d::Logical{T}, m::Model, x::T) where {T<:GeneralNode}
 
 Set initial values for a logical node.
 
