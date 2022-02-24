@@ -43,9 +43,34 @@
         @test l.value == 3
     end
 
+    @testset "logpdf" begin
+        # @test logpdf(PNUTSexample[:mtree]) == -25.102234863523872
+        # tree = ParseNewick("((A,(B,(C,(D,E)))),(F,(G,H)));")
+        # @test MCPhylo.logpdf(PNUTSexample[:mtree], tree) == -35.37127304837715
+    end
+
+    @testset "rand" begin
+        # result = rand(PNUTSexample[:mypi], 5)
+        # @test size(result) == (2, 5) 
+        # result = rand(PNUTSexample[:mypi])
+        # @test isa(result, Vector{Float64})
+        # @test length(result) == 2
+    end
+
+    @testset "gradlogpdf" begin
+        tree = ParseNewick("((A,(B,(C,(D,E)))),(F,(G,H)));")
+        result = (-35.37127304837715, [-0.9571428571428571, -0.9571428571428571, -0.9571428571428571,
+                  -0.9571428571428571, -0.9571428571428571, -0.9571428571428571, -0.9571428571428571,
+                  -0.9571428571428571, -0.9571428571428571, -0.9571428571428571, -0.9571428571428571, 
+                  -0.9571428571428571, -0.9571428571428571, -0.9571428571428571])
+        # @test MCPhylo.gradlogpdf(PNUTSexample[:mtree], tree) == result
+    end
     @testset "set_inits!" begin
     end
 
+
+
     s = Stochastic(5, () -> Normal(0, sqrt(1000)), true)
     showall(s)
+    println()
 end
