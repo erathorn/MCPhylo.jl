@@ -11,13 +11,18 @@
 
     @testset "relist" begin
         @test relist(s, [1,2,3]) == 1
+        s = Stochastic(5, () -> Normal(0, sqrt(1000)), true)
+        @test relist(s, [1,2,3]) == Array{Int64, 5}(undef, 0, 0, 0, 0, 0)
+
         l = Logical((x)->x, Node(), true)
         l = Logical(l, 3)
         @test MCPhylo.relistlength(l, [3,2,1]) == (3, 1)
         l = Logical(l, [1,2])
         @test MCPhylo.relistlength(l, [-1, -2, -3]) == ([-1, -2], 2)
-        s = Stochastic(5, () -> Normal(0, sqrt(1000)), true)
-        @test relist(s, [1,2,3]) == Array{Int64, 5}(undef, 0, 0, 0, 0, 0)
+        node = Node()
+        node.num = 42
+        s = Stochastic(Node(), () -> Normal(0, sqrt(1000)), true)
+        @test MCPhylo.relistlength(s, node) == (node, 1) 
     end
 
     @testset "gradlogpdf" begin
