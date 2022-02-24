@@ -250,7 +250,7 @@ iters2inds(c::AbstractChains, iters::Vector{T}) where {T<:Real} =
 
 names2inds(c::AbstractChains, names) = names
 names2inds(c::AbstractChains, ::Colon) = 1:size(c.value, 2)
-names2inds(c::AbstractChains, name::Real) = [name]
+names2inds(c::AbstractChains, name::Int) = [name]
 names2inds(c::AbstractChains, name::AbstractString) = names2inds(c, [name])
 names2inds(c::AbstractChains, names::Vector{T}) where {T<:AbstractString} =
     indexin(names, c.names)
