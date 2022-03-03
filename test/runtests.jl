@@ -22,28 +22,22 @@ const parsertests = [
   "nexus"
 ]
 
-
-# const extensiontests = [
-#   "newunivardist",
-#   "newmultivardist"
-# ]
-
 println("Running tests:")
 
 
 @testset "All tests" begin
 
-  @testset "sampler tests" begin
-    for t in samplertests 
-      @runtest "samplers/" t
-    end
-  end
+  # @testset "sampler tests" begin
+  #   for t in samplertests 
+  #     @runtest "samplers/" t
+  #   end
+  # end
 
-  @testset "mcmc tests" begin
-    for t in mcmctests
-      @runtest "mcmc/" t
-    end
-  end
+  # @testset "mcmc tests" begin
+  #   for t in mcmctests
+  #     @runtest "mcmc/" t
+  #   end
+  # end
 
   @testset "parser tests" begin
     for t in parsertests
