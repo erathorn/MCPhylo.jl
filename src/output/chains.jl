@@ -148,10 +148,10 @@ function Chains(
 ) where {T<:Real,U<:AbstractString}
     Chains(
         reshape(value, length(value), 1, 1),
-        start = start,
-        thin = thin,
-        names = U[names],
-        chains = Int[chains],
+        start,
+        thin,
+        U[names],
+        Int[chains],
     )
 end
 
