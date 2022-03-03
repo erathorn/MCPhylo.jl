@@ -28,8 +28,8 @@ Random.seed!(42)
 
 
 
-#mt, df = make_tree_with_data("Example.nex", binary=true); # load your own nexus file
-mt, df = make_tree_with_data("untracked_files/simulation_PNUTS_Paper/out_JC_20-600.nex", binary=false); # load your own nexus file
+mt, df = make_tree_with_data("Example.nex", binary=true); # load your own nexus file
+# mt, df = make_tree_with_data("untracked_files/simulation_PNUTS_Paper/out_JC_20-600.nex", binary=false); # load your own nexus file
 
 
 #mt, df = make_tree_with_data("untracked_files/simulation_PNUTS_Paper/out_Res_20-600.nex", binary=true); # load your own nexus file
@@ -50,14 +50,14 @@ my_data = Dict{Symbol, Any}(
 
 # model setup
 model =  Model(
-    df = Stochastic(3, (mtree, mypi) ->  PhyloDist(mtree, mypi, [1.0], [1.0], JC), false),
-    mypi = Stochastic(1, () -> Dirichlet(4,1)),
+    df = Stochastic(3, (mtree, mypi) ->  PhyloDist(mtree, mypi, [1.0], [1.0], Restriction), false),
+    mypi = Stochastic(1, () -> Dirichlet(2,1)),
     mtree = Stochastic(Node(), () -> TreeDistribution(CompoundDirichlet(1.0,1.0,0.100,1.0)), true)
      )
 # intial model values
 inits = [ Dict{Symbol, Union{Any, Real}}(
     :mtree => mt,
-    :mypi=> rand(Dirichlet(4,1)),
+    :mypi=> rand(Dirichlet(2,1)),
     :df => my_data[:df],
     :nnodes => my_data[:nnodes],
     :nbase => my_data[:nbase],
@@ -66,7 +66,7 @@ inits = [ Dict{Symbol, Union{Any, Real}}(
     ),
     Dict{Symbol, Union{Any, Real}}(
         :mtree => mt2,
-        :mypi=> rand(Dirichlet(4,1)),
+        :mypi=> rand(Dirichlet(2,1)),
         :df => my_data[:df],
         :nnodes => my_data[:nnodes],
         :nbase => my_data[:nbase],
@@ -93,10 +93,3 @@ sim = mcmc(model, my_data, inits, 100, burnin=50,thin=1, chains=2, trees=true)
 
 # # write the output to a path specified as the second argument
 # to_file(sim, "example_run")
-
-
-# using BenchmarkTools
-pd = PhyloDist(mt, [0.25,0.25,0.25,0.25], [1.0], [1.0], JC)
-
-gradlogpdf(pd, df)
-# @timev logpdf(pd, df)
