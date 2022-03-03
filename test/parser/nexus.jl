@@ -8,10 +8,10 @@
     langs = ["Lang1", "Lang2", "Lang3", "Lang4", "Lang5"]
 
     @testset "ParseNexus" begin
-        data = MCPhylo.ParseNexus("test/parser/example.nex")
+        data = MCPhylo.ParseNexus("./parser/example.nex")
         data_target = (5, 10, "-", "?", ["0", "1"], matrix, langs)
         @test data == data_target
-        @test_throws FileSyntaxError MCPhylo.ParseNexus("topology.txt")
+        @test_throws FileSyntaxError MCPhylo.ParseNexus("./parser/topology.txt")
     end
     
     content = ["DIMENSIONS ntax=5 NCHAR=10;", "FORMAT DATATYPE=Restriction GAP=- MISSING=? interleave=yes;",
