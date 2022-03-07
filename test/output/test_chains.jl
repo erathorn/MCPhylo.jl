@@ -20,6 +20,4 @@
             @test getindex(c, :, [1, 2], [true, true, true]).value == v
         end
     end
-    show(c)
-    println()
 end

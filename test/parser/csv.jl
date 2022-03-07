@@ -6,7 +6,7 @@
     langs = ["Swedish_0", "Welsh_N_0", "Sardinian_N_0"]
 
     @testset "ParseCSV" begin
-        data = MCPhylo.ParseCSV("./parser/example.csv", "-", "?") 
+        data = MCPhylo.ParseCSV("./parser/example.csv", "-", "?", false) 
         data_target = (3, 23, "-", "?", ["0", "1"], matrix, langs)
         @test data == data_target
     end
