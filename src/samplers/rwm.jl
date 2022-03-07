@@ -81,8 +81,8 @@ function RWM(params::ElementOrVector{Symbol}, moves::ElementOrVector{Symbol}; kw
     end
   end
   
-  tune = RWMTune(Float64[], logpdf!, 1.0, to_use)
-  Sampler(params, tune, Symbol[], transform)
+  tune = RWMTune(Float64[], 1.0, logpdf!, to_use)
+  Sampler(params, tune, Symbol[], false)
 end
 
 
@@ -99,11 +99,11 @@ Propose a new tree by randomly performing a move from the ones specified in `mov
 
 Returns `v` updated with simulated values and associated tuning parameters.
 """
-function sample!(v::RWMVariate{T}, logf::Function; kwargs...) where T<:GeneralNode
+function sample!(v::RWMVariate{Vector{T}}, logf::Function; kwargs...) where T<:GeneralNode
   tree = v[1]
   tc = deepcopy(tree)
 
-  move = rand(v.elegible)
+  move = rand(v.tune.eligible)
   if move == :NNI
     NNI!(tree)
   elseif move == :SPR
@@ -117,7 +117,7 @@ function sample!(v::RWMVariate{T}, logf::Function; kwargs...) where T<:GeneralNo
   else
     throw("Tree move not elegible ")
   end
-  if rand() < exp(logf(tree) - logf(tc))
+  if rand() < exp(logf([tree]) - logf([tc]))
     v[1] = tree
   else
     v[1] = tc

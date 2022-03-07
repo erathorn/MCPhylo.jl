@@ -150,7 +150,7 @@ function logpdf(
     x::AbstractArray{T},
     block::Integer = 0,
     transform::Bool = false,
-) where {T<:Real}
+) where T #{T<:Real}
     x0 = unlist(m, block)
     lp = logpdf!(m, x, block, transform)
     relist!(m, x0, block)
@@ -285,7 +285,7 @@ function logpdf!(
     params::Array{Symbol},
     targets::Array{Symbol},
     transform::Bool = false,
-) where {T<:Real}
+) where T# {T<:Real}
     m[params] = relist(m, x, params, transform)
     
     df = [i for i in params if i ∉ targets]
