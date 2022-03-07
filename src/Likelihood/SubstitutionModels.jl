@@ -12,6 +12,7 @@ The function returns the Eigenvectors, Eigenvalues, inverse of eigenvectors and
     the scale factor for expected number changes per site
 """
 function Restriction(base_freq::Vector{Float64}, SubstitutionRates::Vector{Float64})
+    @assert length(base_freq) == 2
     Nbases = length(base_freq)
     Q = ones(Nbases,Nbases)
     Q[diagind(Nbases,Nbases)] .= -1
