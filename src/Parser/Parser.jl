@@ -4,7 +4,7 @@
 	make_tree_with_data(filename::String, dialect::AbstractString="nexus",
 							 gap::Union{Missing, AbstractString}=missing,
 							 miss::Union{Missing,AbstractString}=missing,
-							 header::Bool=false)
+							 header::Bool=false; binary::Bool=true)::Tuple{GeneralNode, Array{Float64}}
 
 General parsing function; user specifies type of file to parse.
 Returns root Node of tree derived from data, as well as a DataFrame.
@@ -30,13 +30,9 @@ function make_tree_with_data(filename::String, dialect::AbstractString="nexus",
 		ismissing(miss) && throw(ArgumentError("Please specify the missing symbol for a CSV file"))
 		n_tax, n_sites, gap, miss, symbols, df, langs = ParseCSV(filename, gap, miss, header)
 	end
-	# create random tree
-	# if binary
-	# 	new_tree = create_tree_from_leaves_bin(langs, n_sites)
-	# else
+	
 	new_tree = create_tree_from_leaves(langs, binary)
-	#end
-
+	
 	n_nodes = length(post_order(new_tree))
 	n_states = length(symbols)
 	my_df = Array{Float64}(undef, n_states, n_sites, n_nodes)
