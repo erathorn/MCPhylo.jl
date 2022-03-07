@@ -19,7 +19,7 @@ function ParseCSV(filename::String, gap::AbstractString, miss::AbstractString, h
         global content = readlines(file)
     end # do
     # remove the header if necessary
-    header ||  popfirst!(content)
+    header && popfirst!(content)
     langs,df = create_csvdf(content)
     dimensions = size(df)
     ntax = dimensions[1]
