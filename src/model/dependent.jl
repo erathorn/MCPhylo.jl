@@ -206,22 +206,6 @@ function setinits!(l::Logical, m::Model, ::Any = nothing)
 end
 
 """
-    setinits!(d::Logical{T}, m::Model, x::T) where {T<:GeneralNode}
-
-Set initial values for a logical node.
-
-Returns the result of a call to `setmonitor!(l, l.monitor)` or `setmonitor!(d, d.monitor)`.
-
-* `l`  : logical node to which to assign initial values.
-
-* `m`  : model containing the node.
-"""
-function setinits!(d::Logical{T}, m::Model, x::T) where {T<:GeneralNode}
-    d.value = d.eval(m)
-    setmonitor!(d, d.monitor)
-end # function
-
-"""
     update!(l::AbstractLogical, m::Model)
 
 Update the values of a logical node according to its relationship with others in a model.
