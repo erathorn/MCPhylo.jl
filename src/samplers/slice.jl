@@ -81,7 +81,7 @@ end
 
 #################### Sampling Functions ####################
 
-sample!(v::Union{SliceUnivariate,SliceMultivariate}, logf::Function; args...) = sample!(v, logf)
+#sample!(v::Union{SliceUnivariate,SliceMultivariate}, logf::Function; args...) = sample!(v, logf)
 """
     sample!(v::Union{SliceUnivariate, SliceMultivariate}, logf::Function)
 
@@ -92,10 +92,10 @@ constrained or unconstrained.
 Returns `v` updated with simulated values and associated tuning parameters.
 """
 
-function sample!(v::SliceUnivariate{Vector{GeneralNode}}, logf::Function; kwargs...)
+function sample!(v::SliceUnivariate{Vector{T}}, logf::Function; kwargs...) where T<:GeneralNode
     tree = v.value[1]
 
-    logf0 = logf(tree)
+    logf0 = logf(v.value)
     blv = get_branchlength_vector(tree)
 
     n = length(blv)
@@ -110,7 +110,7 @@ function sample!(v::SliceUnivariate{Vector{GeneralNode}}, logf::Function; kwargs
         blv[i] = rand(Uniform(lower[i], upper[i]))
         while true
             set_branchlength_vector!(tree, blv)
-            logf0 = logf(tree)
+            logf0 = logf([tree])
             logf0 < p0 || break
             value = blv[i]
             if value < x
@@ -126,10 +126,10 @@ function sample!(v::SliceUnivariate{Vector{GeneralNode}}, logf::Function; kwargs
 end
 
 
-function sample!(v::SliceMultivariate{Vector{GeneralNode}}, logf::Function; kwargs...)
+function sample!(v::SliceMultivariate{Vector{T}}, logf::Function; kwargs...) where T <: GeneralNode
     tree = v.value[1]
 
-    p0 = logf(tree) + log(rand())
+    p0 = logf(v.value) + log(rand())
     blv = get_branchlength_vector(tree)
     org = deepcopy(blv)
 
@@ -141,7 +141,7 @@ function sample!(v::SliceMultivariate{Vector{GeneralNode}}, logf::Function; kwar
 
     blv = v.tune.width .* rand(n) + lower
     set_branchlength_vector!(tree, blv)
-    @inbounds while logf(tree) < p0
+    @inbounds while logf([tree]) < p0
         for i = 1:n
             value = blv[i]
             if value < org[i]
