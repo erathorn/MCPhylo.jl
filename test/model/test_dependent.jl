@@ -65,12 +65,12 @@
                   -0.9571428571428571, -0.9571428571428571, -0.9571428571428571])
         # @test MCPhylo.gradlogpdf(PNUTSexample[:mtree], tree) == result
     end
+
     @testset "set_inits!" begin
     end
 
-
-
-    s = Stochastic(5, () -> Normal(0, sqrt(1000)), true)
-    showall(s)
-    println()
+    @testset "conditional_likelihood" begin
+        s = Stochastic(5, () -> Normal(0, sqrt(1000)), true)
+        @test_throws ArgumentError MCPhylo.conditional_likelihood(s)
+    end
 end

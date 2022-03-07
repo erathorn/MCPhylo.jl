@@ -102,7 +102,7 @@ invlink_sub(d::TreeDistribution, x) = x
 invlink_sub(d::Distribution, x) = invlink(d, x)
 
 
-logcond(d, x, args...) = logcond(d, x, args...)
+logcond(d, x, args...) = throw(ArgumentError("User-defined logcond function necessary"))
 
 #################### Logpdf Fallbacks ####################
 
