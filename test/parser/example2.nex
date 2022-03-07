@@ -1,0 +1,12 @@
+#NEXUS
+
+BEGIN DATA;
+DIMENSIONS ntax=3 NCHAR=23;
+FORMAT DATATYPE=Restriction GAP=- MISSING=? interleave=yes;
+MATRIX
+
+Swedish_0       00000-00001100-00?00?00
+Welsh_N_0       0-0000?0000??00?0001??0
+Sardinian_N_0   0010000000-000100?00000
+;
+End;
