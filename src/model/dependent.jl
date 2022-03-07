@@ -482,15 +482,12 @@ end
 
 function relistlength(s::TreeVariate, x::N, transform::Bool=false) where N<:GeneralNode
     value, n = relistlength_sub(s.distr, s, x)
-    (transform ? invlink_sub(s.distr, value) : value, n)
-    #=
     if transform
         return invlink_sub(s.distr, value)
     else
         return value, n
-    end #if/else
-    =#
-end #relistlength
+    end # if/else
+end # relistlength
 
 function logpdf(s::AbstractStochastic, transform::Bool=false)
     logpdf(s, s.value, transform)
