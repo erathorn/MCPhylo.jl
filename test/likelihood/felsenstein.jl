@@ -1,6 +1,6 @@
 @testset "Felsenstein" begin
     
-    ntax, nchar, gap, miss, symbols, df, langs = MCPhylo.ParseNexus("primates.nex")
+    ntax, nchar, gap, miss, symbols, df, langs = MCPhylo.ParseNexus("./likelihood/primates.nex")
 
 
     primates_tree = ParseNewick(
@@ -14,5 +14,5 @@
     pden = ones(4)/4
     pd = PhyloDist(primates_tree, pden, [1.0], [1.0], JC)
 
-    @test logpdf(pd, df) ≈ -8677.360097312567
+    @test logpdf(pd, df) ≈ -8677.360274116634
 end
