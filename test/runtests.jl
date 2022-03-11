@@ -6,7 +6,8 @@ include("utils.jl")
 
 const likelihoodtests = [
   "rates",
-  "substitutionmodels"
+  "substitutionmodels",
+  "felsenstein"
 ]
 
 const mcmctests = [
