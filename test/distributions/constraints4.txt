@@ -1,0 +1,2 @@
+# additional exclamation mark cause error
+exc :        E,!F!G;

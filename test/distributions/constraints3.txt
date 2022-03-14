@@ -1,0 +1,3 @@
+mono:        A,B; C,D;
+# missing colon in next line causes error
+mono        E,F;
