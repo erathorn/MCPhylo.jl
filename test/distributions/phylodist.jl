@@ -17,9 +17,13 @@
     @testset "PhyloDist" begin
         s = Stochastic(Node(), () -> Normal(0, sqrt(1000)), true)
         s.value = primates_tree
+
+        # Constructors
         pd2 = PhyloDist(s, pden, [1.0], [1.0], JC)
         pd3 = PhyloDist(s, pden, 1.0, 1.0, JC)
         pd4 = PhyloDist(primates_tree, pden, 1.0, 1.0, JC)
+
+        # freeK Constructor
         pd5 = PhyloDist(primates_tree, [1.0], [1.0], freeK)
         @test pd5.substitution_model == freeK
         @test pd5.base_freq == [1.0]
@@ -27,7 +31,10 @@
         pd5.substitution_model = JC
         pd5.base_freq = [0.25, 0.25, 0.25, 0.25]
         pd5.nbase = 4
+
+        # all Constructors should produce the same result
         @test all(y -> y == pd, [pd2, pd3, pd4, pd5])
+
         @test minimum(pd) == -Inf
         @test maximum(pd) == Inf
         @test size(pd) == (4, 1, 22)
@@ -39,11 +46,13 @@
         rates = zeros(Float64, 1, 2)
         rates[:] .= 1.0
         
+        # Constructors
         mpd = MultiplePhyloDist(trees, freqs, rates, rates, JC)
         mpd2 = MultiplePhyloDist(trees, pden, [1.0], [1.0], JC)
         mpd3 = MultiplePhyloDist(trees, freqs, [1.0], [1.0], JC)
         mpd4 = MultiplePhyloDist(trees, freqs, rates, [1.0], JC)
         mpd5 = MultiplePhyloDist(trees, freqs, [1.0], rates, JC)
+        # freeK Constructors
         mpd6 = MultiplePhyloDist(trees, [1.0], [1.0], freeK)
         mpd7 = MultiplePhyloDist(trees, rates, [1.0], freeK)
 
@@ -62,9 +71,12 @@
         mpd6.DistCollector[2].base_freq = [0.25, 0.25, 0.25, 0.25]
         mpd6.DistCollector[1].nbase = 4
         mpd6.DistCollector[2].nbase = 4
-        @test all(y -> y == mpd, [mpd2, mpd3, mpd4, mpd5, mpd6])
-        incompatible_rates = reshape([1.0,2.0,3.0], 1,3)
 
+        # all Constructors should produce the same result
+        @test all(y -> y == mpd, [mpd2, mpd3, mpd4, mpd5, mpd6])
+
+        # check error throwing
+        incompatible_rates = reshape([1.0,2.0,3.0], 1,3)
         @test_throws DimensionMismatch MultiplePhyloDist(trees, [0.25 0.25 0.25 ; 0.25 0.25 0.25], [1.0], [1.0], JC)
         @test_throws DimensionMismatch MultiplePhyloDist(trees, freqs, incompatible_rates, [1.0], JC)
         @test_throws DimensionMismatch MultiplePhyloDist(trees, freqs, [1.0], incompatible_rates, JC)
