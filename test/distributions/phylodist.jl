@@ -45,7 +45,10 @@
         mpd4 = MultiplePhyloDist(trees, freqs, rates, [1.0], JC)
         mpd5 = MultiplePhyloDist(trees, freqs, [1.0], rates, JC)
         mpd6 = MultiplePhyloDist(trees, [1.0], [1.0], freeK)
+        mpd7 = MultiplePhyloDist(trees, rates, [1.0], freeK)
 
+        # test freeK Constructors
+        @test mpd6 == mpd7
         @test mpd6.DistCollector[1].substitution_model == freeK
         @test mpd6.DistCollector[2].substitution_model == freeK
         @test mpd6.DistCollector[1].base_freq == [1.0]
