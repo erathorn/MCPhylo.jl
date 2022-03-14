@@ -71,6 +71,10 @@
         @test maximum(mpd) == Inf
         @test size(mpd) == (4, 1, 22, 2)
 
-        @test logpdf(mpd, cat(df, df, dims=4)) ≈ -8677.360274116634 * 2
+        # test logpdf functions
+        mdf = cat(df, df, dims=4)
+        @test logpdf(mpd, mdf) ≈ -8677.360274116634 * 2
+        @test MCPhylo.__logpdf(mpd, mdf)[1][1] ≈ -8677.360274116634
+        @test MCPhylo.__logpdf(mpd, mdf)[2][1] ≈ -8677.360274116634
     end
 end
