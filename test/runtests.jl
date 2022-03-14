@@ -3,37 +3,40 @@ using MCPhylo
 using Random, Test
 include("utils.jl")
 
+const distributionstests = [
+    "phylodist"
+]
 
 const likelihoodtests = [
-  "rates",
-  "substitutionmodels",
-  "felsenstein"
+    "rates",
+    "substitutionmodels",
+    "felsenstein"
 ]
 
 const mcmctests = [
-   "discretediag",
-   "modelbuilding"
+    "discretediag",
+    "modelbuilding"
 #   "readcoda"
 ]
 
 const modeltests = [
-  "test_dependent"
+    "test_dependent"
 ]
 
 const outputtests = [
-  "test_chains"
+    "test_chains"
 ]
 
 const parsertests = [
-  "csv",
-  "nexus",
-  "parser"
+    "csv",
+    "nexus",
+    "parser"
 ]
 
 const samplertests = [
-  #"abc",
-  "linear_model_uvp",
-  "linear_model_mvp"
+    #"abc",
+    "linear_model_uvp",
+    "linear_model_mvp"
 ]
 
 println("Running tests:")
@@ -41,6 +44,12 @@ println("Running tests:")
 
 @testset "All tests" begin
 
+    @testset "distributions tests" begin
+        for t in distributionstests
+            @runtest "distributions/" t
+        end
+    end
+    
     @testset "likelihood tests" begin
         for t in likelihoodtests
             @runtest "likelihood/" t
