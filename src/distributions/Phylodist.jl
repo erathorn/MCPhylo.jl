@@ -124,7 +124,7 @@ function MultiplePhyloDist(tree_array::Array{T},
         base_freq_l .= base_freq
     elseif size(base_freq, 2) == 1
         for i in 1:n_t
-            base_freq_l[:, n_t] .= base_freq
+            base_freq_l[:, i] .= base_freq
         end
     else
         throw("size of base_freq and tree_array are incompatible")
