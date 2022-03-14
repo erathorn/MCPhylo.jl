@@ -20,11 +20,11 @@ const mcmctests = [
 ]
 
 const modeltests = [
-    "test_dependent"
+    "dependent"
 ]
 
 const outputtests = [
-    "test_chains"
+    "chains"
 ]
 
 const parsertests = [
