@@ -110,7 +110,7 @@ function MultiplePhyloDist(tree_array::Array{T},
                             base_freq::S,
                             substitution_rates::R,
                             rates::U,
-                            substutuion_model::Function) where{
+                            substitution_model::Function) where{
                             T <: GeneralNode,
                             S <: DenseArray{Float64},
                             R <: DenseArray{Float64},
@@ -127,7 +127,7 @@ function MultiplePhyloDist(tree_array::Array{T},
             base_freq_l[:, i] .= base_freq
         end
     else
-        throw("size of base_freq and tree_array are incompatible")
+        throw(DimensionMismatch("Size of base_freq and tree_array are incompatible"))
     end
 
     if size(substitution_rates, 2) == n_t
@@ -137,7 +137,7 @@ function MultiplePhyloDist(tree_array::Array{T},
             substitution_rates_l[:, i] .= substitution_rates
         end
     else
-        throw("size of substitution_rates and tree_array are incompatible")
+        throw(DimensionMismatch("Size of substitution_rates and tree_array are incompatible"))
     end
 
     if size(rates, 2) == n_t
@@ -147,16 +147,16 @@ function MultiplePhyloDist(tree_array::Array{T},
             rates_l[:, i] .= rates
         end
     else
-        throw("size of rates and tree_array are incompatible")
+        throw(DimensionMismatch("Size of rates and tree_array are incompatible"))
     end
-    MultiplePhyloDist(tree_array, base_freq_l, substitution_rates_l, rates_l, substutuion_model)
+    MultiplePhyloDist(tree_array, base_freq_l, substitution_rates_l, rates_l, substitution_model)
 end
 
 
 function MultiplePhyloDist(tree_array::Array{T},
                             substitution_rates::R,
                             rates::S,
-                            substutuion_model::K) where{
+                            substitution_model::K) where{
                             T <: GeneralNode,
                             S <: DenseArray{Float64},
                             R <: DenseArray{Float64},
@@ -187,10 +187,10 @@ function MultiplePhyloDist(tree_array::Array{T},
             base_freq_l[:, i] .= eq
         end
     else
-        throw("size of substitution_rates and tree_array are incompatible")
+        throw(DimensionMismatch("Size of substitution_rates and tree_array are incompatible"))
     end
 
-    MultiplePhyloDist(tree_array, base_freq_l, substitution_rates_l, rates, substutuion_model)
+    MultiplePhyloDist(tree_array, base_freq_l, substitution_rates_l, rates, substitution_model)
 end
 
 
