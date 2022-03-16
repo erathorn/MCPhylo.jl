@@ -17,12 +17,13 @@ model = Model(
     s2 = Stochastic(() -> InverseGamma(0.001, 0.001), true),
 )
 
-inits = [
-    Dict{Symbol,Any}(:y => data[:y], :β => rand(Normal(0, 1), 2), :s2 => rand(Gamma(1, 1))) for i = 1:2
-]
+
 
 @testset "Slice" begin
     Random.seed!(123)
+    inits = [
+    Dict{Symbol,Any}(:y => data[:y], :β => rand(Normal(0, 1), 2), :s2 => rand(Gamma(1, 1))) for i = 1:2
+]
     samplers = [Slice([:β, :s2], 1.0)]
     setsamplers!(model, samplers)
 
@@ -45,6 +46,9 @@ end
 
 @testset "RWM" begin
     Random.seed!(123)
+    inits = [
+    Dict{Symbol,Any}(:y => data[:y], :β => rand(Normal(0, 1), 2), :s2 => rand(Gamma(1, 1))) for i = 1:2
+]
     samplers = [RWM([:β, :s2], 1.0)]
     setsamplers!(model, samplers)
 
@@ -67,6 +71,9 @@ end
 
 @testset "NUTS_Classic" begin
     Random.seed!(123)
+    inits = [
+    Dict{Symbol,Any}(:y => data[:y], :β => rand(Normal(0, 1), 2), :s2 => rand(Gamma(1, 1))) for i = 1:2
+]
     samplers = [NUTS([:β, :s2], variant=:classic)]
     setsamplers!(model, samplers)
 
@@ -89,6 +96,9 @@ end
 
 @testset "NUTS_Riemann" begin
     Random.seed!(123)
+    inits = [
+    Dict{Symbol,Any}(:y => data[:y], :β => rand(Normal(0, 1), 2), :s2 => rand(Gamma(1, 1))) for i = 1:2
+]
     samplers = [NUTS([:β, :s2], variant=:riemann)]
     setsamplers!(model, samplers)
 
@@ -111,6 +121,9 @@ end
 
 @testset "HMC" begin
     Random.seed!(123)
+    inits = [
+    Dict{Symbol,Any}(:y => data[:y], :β => rand(Normal(0, 1), 2), :s2 => rand(Gamma(1, 1))) for i = 1:2
+]
     samplers = [HMC([:β, :s2], 0.007, 8)]
     setsamplers!(model, samplers)
 
