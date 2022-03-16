@@ -80,14 +80,13 @@ function ASDSF(model::ModelChains; freq::Int64=1, check_leaves::Bool=true,
         end # for
     end # for
     trees = Array{Vector{AbstractString}, 2}(undef, size(model.trees, 1), nchains)
-    if length(tree_dims) > 1
-        trees = Array{Vector{AbstractString}, 2}(undef, size(model.trees, 1), nchains)
+    #if length(tree_dims) > 1
         for i in 1:size(model.trees, 1)
             for j in 1:nchains
                 trees[i, j] = model.trees[i,:,j]
             end # for
         end # for
-    end # if
+    #end # if
     iter = zip([trees[:,c] for c in 1:nchains]...)
     ASDSF_vals::Vector{Vector{Float64}} = [zeros(Int(floor(length(iter) / freq))) for x in tree_dims]
     ASDSF_int(splitsQueue, splitsQueues, iter, tree_dims, ASDSF_vals, freq,
