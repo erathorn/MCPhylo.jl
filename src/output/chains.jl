@@ -176,6 +176,9 @@ A value of `:` can be specified for any of the dimensions to indicate no subsett
 function Base.getindex(c::Chains, window, names, chains)
     inds1 = window2inds(c, window)
     inds2 = names2inds(c, names)
+    if isa(chains, Integer) 
+        chains = [chains]
+    end
     if !isdefined(c.trees, 1)
         newsize = size(c.value[inds1, inds2, chains])
         Chains(
