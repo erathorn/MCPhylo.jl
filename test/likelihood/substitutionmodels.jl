@@ -5,11 +5,22 @@
                   [-0.7615773105863908 0.7615773105863908; -0.4242640687119285 -0.9899494936611665], 
                   2.380952380952381)
         result = Restriction([0.3, 0.7], [0.0])
-        @test result[1] ≈ target[1]
-        @test result[2] ≈ target[2]
-        @test result[3] ≈ target[3]
-        @test result[4] ≈ target[4]  
-        @test_throws AssertionError MCPhylo.Restriction(ones(3) / 3, [0.1])
+        @testset "Decomposition of Q matrix" begin
+            @test result[1] ≈ target[1]
+            @test result[2] ≈ target[2]
+            @test result[3] ≈ target[3]
+            @test result[4] ≈ target[4]  
+            @test_throws AssertionError MCPhylo.Restriction(ones(3) / 3, [0.1])
+        end
+
+        @testset "Calculate transition matrix" begin
+            U, D, Uinv, mu = result
+            Q = U * diagm(D) * Uinv
+            P = exp(Q * mu)
+            @test P ≈ MCPhylo.calculate_transition(Restriction, 1.0, mu, 1.0, U, Uinv, D, [])
+            @test [1.0 0.0; 0.0 1.0] == MCPhylo.calculate_transition(Restriction, 1.0, mu, 1.0e-12, U, Uinv, D, [])
+            @test [1.0 0.0; 0.0 1.0] == MCPhylo.calculate_transition(Restriction, 1.0, mu, 1.0e-12, [1im 2im; 0im 3im], [1im 2im; 2im 3im], D, [])  
+        end
     end  
     
     @testset "JC" begin
@@ -18,10 +29,24 @@
                   [0.7071067811865476 -0.7071067811865475 0.0; -0.4082482904638629 -0.408248290463863 0.816496580927726; -0.5773502691896256 -0.5773502691896257 -0.5773502691896258], 
                   1.5)
         result = JC([0.15, 0.45, 0.4], [0.0])
-        @test result[1] ≈ target[1]
-        @test result[2] ≈ target[2]
-        @test result[3] ≈ target[3]
-        @test result[4] ≈ target[4]  
+        @testset "Decomposition of Q matrix" begin
+            @test result[1] ≈ target[1]
+            @test result[2] ≈ target[2]
+            @test result[3] ≈ target[3]
+            @test result[4] ≈ target[4]
+        end  
+
+        @testset "Calculate transition matrix" begin
+            U, D, Uinv, mu = result
+            Q = U * diagm(D) * Uinv
+            P = exp(Q * mu)
+            @test P ≈ MCPhylo.calculate_transition(JC, 1.0, mu, 1.0, U, Uinv, D, [])
+            min_result = [1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0]
+            @test min_result == MCPhylo.calculate_transition(JC, 1.0, mu, 1.0e-12, U, Uinv, D, [])
+            @test min_result == MCPhylo.calculate_transition(JC, 1.0, mu, 1.0e-12, [0.0im 2.0im 0.0im; 0.0im 2.0im 0.0im; 0.0im 2.0im 0.0im], [1.0im 2.0im; 1.0im 2.0im], D, [])
+            max_result = [0.2 0.2 0.2; 0.2 0.2 0.2; 0.2 0.2 0.2]
+            @test max_result == MCPhylo.calculate_transition(JC, 1.0, mu, 101.1, [0.0im 2.0im 0.0im; 0.0im 2.0im 0.0im; 0.0im 2.0im 0.0im], [1.0im 2.0im; 1.0im 2.0im], D, [1, 1, 1, 1, 1])
+        end
     end
 
     @testset "GTR" begin
