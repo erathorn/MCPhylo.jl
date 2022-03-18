@@ -339,8 +339,9 @@ function nouturn(
 )
     curr_l, curr_h = BHV_bounds(xminus.x, xplus.x)
 
-    nni_m = refraction!(xminus, -epsilon, logfgrad, delta)
+    temp = @spawn refraction!(xminus, -epsilon, logfgrad, delta)
     nni_p = refraction!(xplus, epsilon, logfgrad, delta)
+    nni_m = fetch(temp)
     xminus.extended = true
     xplus.extended = true
     xminus.nni = nni_m
