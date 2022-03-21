@@ -26,6 +26,7 @@ const modeltests = [
 ]
 
 const outputtests = [
+    "asdsf"
     "chains"
 ]
 
@@ -38,7 +39,8 @@ const parsertests = [
 const samplertests = [
     #"abc",
     "linear_model_uvp",
-    "linear_model_mvp"
+    "linear_model_mvp",
+    "tree_samplers"
 ]
 
 println("Running tests:")
