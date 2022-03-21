@@ -52,7 +52,7 @@ function ASDSF(args::Vector{String}...; freq::Int64=1, check_leaves::Bool=true,
     ASDSF_vals = [zeros(Int(length(iter) / freq))]
     # tree_dims is hardcoded to 1 because there are no multiple dims in Vectors
     ASDSF_int(splitsQueue, splitsQueues, iter, 1, ASDSF_vals, freq, check_leaves,
-              min_splits, show_progress; basic=true)[1]
+              min_splits, show_progress; basic=true)[1][1]
 end # ASDSF
 
 
