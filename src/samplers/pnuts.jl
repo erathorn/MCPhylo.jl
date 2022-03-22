@@ -124,6 +124,7 @@ function sample!(
     if adapter.m == 0 && isinf(tune.epsilon)
         tune.epsilon = nutsepsilon(v.value[1], logfgrad, tune.delta, const_params.δ)
     end
+    
     setadapt!(v, adapt)
     if tune.adapt
         adapter.m += 1
@@ -132,12 +133,8 @@ function sample!(
 
         adaptstat = adapter.metro_acc_prob > 1 ? 1 : adapter.metro_acc_prob
 
-        HT = const_params.δ - adaptstat
+        HT = const_params.δ - adaptstat - (const_params.τ - adapter.avg_nni)
 
-        HT2 = const_params.τ - adapter.avg_nni
-
-
-        HT -= abs_adapter(HT2)
         HT /= 2
 
         η = 1.0 / (adapter.m + const_params.t0)
