@@ -64,11 +64,19 @@ function __logpdf(d::PhyloDist, x::AbstractArray, gradient::Bool=false)
     U, D, Uinv, mu = d.substitution_model(d.base_freq, d.substitution_rates)
     ll = 0.0
     gr = zeros(size(x,3)-1)
+    nsites = size(x, 2)
+    lck = Threads.SpinLock()
+    minparts = min(nsites, 200)
+    parts = max(minparts, Int(nsites/Threads.nthreads()))
     
     for r in 1:length(d.rates)
-        ll1, gr1, _ = FelsensteinFunction(mt, d.base_freq, d.rates[r], U, D, Uinv, mu, x, d.substitution_model, gradient)
-        ll += ll1
-        gr .+= gr1
+        Threads.@threads for chunk in collect(Iterators.partition(1:nsites, parts))
+            ll1, gr1, _ = FelsensteinFunction(mt, d.base_freq, d.rates[r], U, D, Uinv, mu, x[:, chunk, :], d.substitution_model, gradient)
+            lock(lck) do
+                ll += ll1
+                gr .+= gr1
+            end
+        end
     end
     
     ll, gr
