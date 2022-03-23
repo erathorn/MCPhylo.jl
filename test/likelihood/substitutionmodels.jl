@@ -19,7 +19,9 @@
             P = exp(Q * mu)
             @test P ≈ MCPhylo.calculate_transition(Restriction, 1.0, mu, 1.0, U, Uinv, D, [])
             @test [1.0 0.0; 0.0 1.0] == MCPhylo.calculate_transition(Restriction, 1.0, mu, 1.0e-12, U, Uinv, D, [])
-            @test [1.0 0.0; 0.0 1.0] == MCPhylo.calculate_transition(Restriction, 1.0, mu, 1.0e-12, [1im 2im; 0im 3im], [1im 2im; 2im 3im], D, [])  
+            @test [1.0 1.0; 2.0 2.0] == MCPhylo.calculate_transition(Restriction, 1.0, mu, 110.0, U, Uinv, D, [2.0, 1.0])
+            @test [1.0 0.0; 0.0 1.0] == MCPhylo.calculate_transition(Restriction, 1.0, mu, 1.0e-12, [1im 2im; 0im 3im], [1im 2im; 2im 3im], D, [])
+            @test [2.0 2.0; 1.0 1.0] == MCPhylo.calculate_transition(Restriction, 1.0, mu, 110.0, [1im 2im; 0im 3im], [1im 2im; 2im 3im], D, [1.0, 2.0])  
         end
     end  
     
