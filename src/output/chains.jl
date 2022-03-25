@@ -179,7 +179,7 @@ function Base.getindex(c::Chains, window, names, chains)
     if isa(chains, Integer) 
         chains = [chains]
     end
-    if !isdefined(c.trees, 1)
+    if !isassigned(c.trees, 1)
         newsize = size(c.value[inds1, inds2, chains])
         Chains(
             c.value[inds1, inds2, chains],
@@ -227,7 +227,7 @@ end
 
 macro mapiters(iters, c)
     return esc(quote
-        ($iters .- first($c)) ./ step($c) .+ 1.0
+        ($iters ./ step($c))
     end)
 end
 

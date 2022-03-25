@@ -228,7 +228,7 @@ function mcmc_worker!(
         sample!(m)
         if i > burnin
             if (i - burnin) % thin == 0
-                sim[i, :, 1] = unlist(m, true)
+                sim[i - burnin, :, 1] = unlist(m, true)
                 if store_trees
                     for (ind, tree_node) in enumerate(treenodes)
                         sim.trees[treeind, ind, 1] = newick(m[tree_node].value)
