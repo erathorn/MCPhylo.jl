@@ -1,4 +1,25 @@
-@testset "varaite.jl" begin
+@testset "variate.jl" begin
+
+    @testset "conversion scalar" begin
+        y = Logical(()->1, true)
+        y.value = 1
+        @test convert(Bool, y) == true
+        @test convert(Int, y) == one(Int)
+        @test Float64(y) == one(Float64)
+    end
+
+    @testset "conversion array" begin
+        y = Logical(1, ()->1, true)
+        y.value = ones(2)
+        @test convert(Vector, y) == ones(2)
+    end
+
+    @testset "indexing" begin
+        y = Logical(()->1, true)
+        y.value = 1
+        @test y[1] == 1
+    end
+
 
     @testset "ScalarLogical 1" begin
         x = rand()
@@ -63,7 +84,7 @@
         s1.value = x
         s2 = Stochastic(1, () -> Normal(), true)
         s2.value = y
-        
+
         @test s1 + s2 == x+y
         @test s1 - s2 == x-y
         @test s1 / s2 == x/y
