@@ -133,10 +133,10 @@ function sample!(
 
         adaptstat = adapter.metro_acc_prob > 1 ? 1 : adapter.metro_acc_prob
 
-        HT = const_params.δ - adaptstat - (const_params.τ - adapter.avg_nni)
-
+        HT = const_params.δ - adaptstat  - (const_params.τ - adapter.avg_nni)
+        
         HT /= 2
-
+        
         η = 1.0 / (adapter.m + const_params.t0)
 
         adapter.s_bar = (1.0 - η) * adapter.s_bar + η * HT
@@ -218,7 +218,7 @@ function nuts_sub!(
 
         end#if pm
         v.tune.stepsizeadapter.metro_acc_prob = meta.alpha / meta.nalpha
-
+        
         tnni += meta.nni
         if !sprime
             break
@@ -243,7 +243,7 @@ function nuts_sub!(
             break
         end
     end
-    v.tune.stepsizeadapter.avg_nni = tnni == 0 ? 0.0 : nni / tnni
+    v.tune.stepsizeadapter.avg_nni = meta.nni == 0 ? 0.0 : meta.accnni / meta.nni
     push!(v.tune.moves, nni)
     push!(v.tune.tree_depth_trace, j)
     push!(v.tune.acc_p_r, acc_p_r)
