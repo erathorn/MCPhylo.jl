@@ -17,12 +17,17 @@ model = Model(
     s2 = Stochastic(() -> InverseGamma(0.001, 0.001), true),
 )
 
-inits = [
-    Dict{Symbol,Any}(:y => data[:y], :β => rand(Normal(0, 1), 2), :s2 => rand(Gamma(1, 1))) for i = 1:2
-]
 
 @testset "Slice" begin
     Random.seed!(123)
+    inits = [
+        Dict{Symbol,Any}(
+            :y => data[:y],
+            :β => rand(Normal(0, 1), 2),
+            :s2 => rand(Gamma(1, 1)),
+        ) for i = 1:2
+    ]
+
     samplers = [Slice([:β, :s2], 1.0)]
     setsamplers!(model, samplers)
 
@@ -34,17 +39,25 @@ inits = [
         burnin = 50000,
         thin = 10,
         chains = 2,
-        verbose=false
+        verbose = false,
     )
-    
+
     r_m = summarystats(sim).value[2:3, 1, 1]
     r_sd = summarystats(sim).value[2:3, 2, 1]
-    @test r_m[1]-r_sd[1] <= 0.60 <= r_m[1]+r_sd[1]
-    @test r_m[2]-r_sd[2] <= 0.80 <= r_m[2]+r_sd[2]
+    @test r_m[1] - r_sd[1] <= 0.60 <= r_m[1] + r_sd[1]
+    @test r_m[2] - r_sd[2] <= 0.80 <= r_m[2] + r_sd[2]
 end
 
 @testset "RWM" begin
     Random.seed!(123)
+    inits = [
+        Dict{Symbol,Any}(
+            :y => data[:y],
+            :β => rand(Normal(0, 1), 2),
+            :s2 => rand(Gamma(1, 1)),
+        ) for i = 1:2
+    ]
+
     samplers = [RWM([:β, :s2], 1.0)]
     setsamplers!(model, samplers)
 
@@ -56,18 +69,26 @@ end
         burnin = 50000,
         thin = 10,
         chains = 2,
-        verbose=false
+        verbose = false,
     )
-    
+
     r_m = summarystats(sim).value[2:3, 1, 1]
     r_sd = summarystats(sim).value[2:3, 2, 1]
-    @test r_m[1]-r_sd[1] <= 0.60 <= r_m[1]+r_sd[1]
-    @test r_m[2]-r_sd[2] <= 0.80 <= r_m[2]+r_sd[2]
+    @test r_m[1] - r_sd[1] <= 0.60 <= r_m[1] + r_sd[1]
+    @test r_m[2] - r_sd[2] <= 0.80 <= r_m[2] + r_sd[2]
 end
 
 @testset "NUTS_Classic" begin
     Random.seed!(123)
-    samplers = [NUTS([:β, :s2], variant=:classic)]
+    inits = [
+        Dict{Symbol,Any}(
+            :y => data[:y],
+            :β => rand(Normal(0, 1), 2),
+            :s2 => rand(Gamma(1, 1)),
+        ) for i = 1:2
+    ]
+
+    samplers = [NUTS([:β, :s2], variant = :classic)]
     setsamplers!(model, samplers)
 
     sim = mcmc(
@@ -78,18 +99,26 @@ end
         burnin = 50000,
         thin = 10,
         chains = 2,
-        verbose=false
+        verbose = false,
     )
-    
+
     r_m = summarystats(sim).value[2:3, 1, 1]
     r_sd = summarystats(sim).value[2:3, 2, 1]
-    @test r_m[1]-r_sd[1] <= 0.60 <= r_m[1]+r_sd[1]
-    @test r_m[2]-r_sd[2] <= 0.80 <= r_m[2]+r_sd[2]
+    @test r_m[1] - r_sd[1] <= 0.60 <= r_m[1] + r_sd[1]
+    @test r_m[2] - r_sd[2] <= 0.80 <= r_m[2] + r_sd[2]
 end
 
 @testset "NUTS_Riemann" begin
     Random.seed!(123)
-    samplers = [NUTS([:β, :s2], variant=:riemann)]
+    inits = [
+        Dict{Symbol,Any}(
+            :y => data[:y],
+            :β => rand(Normal(0, 1), 2),
+            :s2 => rand(Gamma(1, 1)),
+        ) for i = 1:2
+    ]
+
+    samplers = [NUTS([:β, :s2], variant = :riemann)]
     setsamplers!(model, samplers)
 
     sim = mcmc(
@@ -100,17 +129,25 @@ end
         burnin = 50000,
         thin = 10,
         chains = 2,
-        verbose=false
+        verbose = false,
     )
-    
+
     r_m = summarystats(sim).value[2:3, 1, 1]
     r_sd = summarystats(sim).value[2:3, 2, 1]
-    @test r_m[1]-r_sd[1] <= 0.60 <= r_m[1]+r_sd[1]
-    @test r_m[2]-r_sd[2] <= 0.80 <= r_m[2]+r_sd[2]
+    @test r_m[1] - r_sd[1] <= 0.60 <= r_m[1] + r_sd[1]
+    @test r_m[2] - r_sd[2] <= 0.80 <= r_m[2] + r_sd[2]
 end
 
 @testset "HMC" begin
     Random.seed!(123)
+    inits = [
+        Dict{Symbol,Any}(
+            :y => data[:y],
+            :β => rand(Normal(0, 1), 2),
+            :s2 => rand(Gamma(1, 1)),
+        ) for i = 1:2
+    ]
+
     samplers = [HMC([:β, :s2], 0.007, 8)]
     setsamplers!(model, samplers)
 
@@ -122,11 +159,11 @@ end
         burnin = 50000,
         thin = 10,
         chains = 2,
-        verbose=false
+        verbose = false,
     )
-    
+
     r_m = summarystats(sim).value[2:3, 1, 1]
     r_sd = summarystats(sim).value[2:3, 2, 1]
-    @test r_m[1]-r_sd[1] <= 0.60 <= r_m[1]+r_sd[1]
-    @test r_m[2]-r_sd[2] <= 0.80 <= r_m[2]+r_sd[2]
+    @test r_m[1] - r_sd[1] <= 0.60 <= r_m[1] + r_sd[1]
+    @test r_m[2] - r_sd[2] <= 0.80 <= r_m[2] + r_sd[2]
 end

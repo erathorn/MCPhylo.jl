@@ -148,10 +148,10 @@ function Chains(
 ) where {T<:Real,U<:AbstractString}
     Chains(
         reshape(value, length(value), 1, 1),
-        start = start,
-        thin = thin,
-        names = U[names],
-        chains = Int[chains],
+        start,
+        thin,
+        U[names],
+        Int[chains],
     )
 end
 
@@ -176,7 +176,10 @@ A value of `:` can be specified for any of the dimensions to indicate no subsett
 function Base.getindex(c::Chains, window, names, chains)
     inds1 = window2inds(c, window)
     inds2 = names2inds(c, names)
-    if !isdefined(c.trees, 1)
+    if isa(chains, Integer) 
+        chains = [chains]
+    end
+    if !isassigned(c.trees, 1)
         newsize = size(c.value[inds1, inds2, chains])
         Chains(
             c.value[inds1, inds2, chains],
@@ -224,7 +227,7 @@ end
 
 macro mapiters(iters, c)
     return esc(quote
-        ($iters .- first($c)) ./ step($c) .+ 1.0
+        ($iters ./ step($c))
     end)
 end
 
@@ -250,7 +253,7 @@ iters2inds(c::AbstractChains, iters::Vector{T}) where {T<:Real} =
 
 names2inds(c::AbstractChains, names) = names
 names2inds(c::AbstractChains, ::Colon) = 1:size(c.value, 2)
-names2inds(c::AbstractChains, name::Real) = [name]
+names2inds(c::AbstractChains, name::Int) = [name]
 names2inds(c::AbstractChains, name::AbstractString) = names2inds(c, [name])
 names2inds(c::AbstractChains, names::Vector{T}) where {T<:AbstractString} =
     indexin(names, c.names)

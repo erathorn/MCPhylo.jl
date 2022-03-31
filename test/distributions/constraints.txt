@@ -1,0 +1,9 @@
+# the lone A causes the first warning
+mono:        A,B; C,D; A
+mono:        E,F;
+# final semicolon is optional
+not_mono:    C,D,E
+# second constraint here causes the second warning
+exc:        E,F!G; E!G
+# throws a unsupported constraint type warning
+test:

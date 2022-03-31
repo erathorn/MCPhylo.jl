@@ -1,12 +1,16 @@
 """
     ParseCSV(filename::String, gap::AbstractString, miss::AbstractString, header::Bool=true)
+
 This function parses a CSV file containing input for the MCMC compuation.
 The file should follow the conventions used for MrBayes. For example:
+
     Swedish_0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,?,0,0,?,0,0
     Welsh_N_0,0,0,0,0,0,0,?,0,0,0,0,?,?,0,0,?,0,0,0,1,?,?,0
     Sardinian_N_0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1,0,0,?,0,0,0,0,0
- Set input for "header" to false if no header is present in the file.
+
+Set input for "header" to false if no header is present in the file.
 Returns ntax, nchar as Integer values, gap as a String; df is returned as a DataFrame, and stores language names and data.
+
 * `filename` : Name of CSV file to parse.
 * `header` : Boolean value. "true" denotes there is a header to be skipped; input "false" if the file does not contain a header.
 """
@@ -15,7 +19,7 @@ function ParseCSV(filename::String, gap::AbstractString, miss::AbstractString, h
         global content = readlines(file)
     end # do
     # remove the header if necessary
-    header ||  popfirst!(content)
+    header && popfirst!(content)
     langs,df = create_csvdf(content)
     dimensions = size(df)
     ntax = dimensions[1]
@@ -26,7 +30,8 @@ end # function ParseCSV
 
 
 """
-    function create_csvdf(filecontnt::Array{String}, separator::AbstractString=",")::Tuple{Array{SubString}, Array{Char}}
+    function create_csvdf(filecontnt::Array{String}, separator::AbstractString=",")::Tuple{Array{String}, Array{Char}}
+
 This function parses a CSV file and returns its content as a DataFrame.
 NOTE: May later on be replaced by the respective DataFrames function.
 """

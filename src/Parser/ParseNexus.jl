@@ -13,7 +13,7 @@ function ParseNexus(filename::String)
     end # do
 
     if lowercase(content[1]) != "#nexus"
-        throw("$filename is not a Nexus file!")
+        throw(FileSyntaxError("$filename is not a Nexus file!"))
     end # if
 
     while true
@@ -62,7 +62,7 @@ function extract_meta_info(content::Array{String})
     missing_representation::String = "?"
     while true
         line = popfirst!(content)
-        if lowercase(line)=="matrix"
+        if occursin("matrix", lowercase(line))
             # meta info is done, data begins now
             break
         else
@@ -112,7 +112,7 @@ function create_nexusdf(filecontent::Array{String})::Tuple{Array{String}, Array{
         line = popfirst!(filecontent)
         if line == ""
             continue
-        elseif line == ";"
+        elseif line[end] == ';'
             break
         else
             lang, raw = split(line)

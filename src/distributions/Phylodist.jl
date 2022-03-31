@@ -64,11 +64,19 @@ function __logpdf(d::PhyloDist, x::AbstractArray, gradient::Bool=false)
     U, D, Uinv, mu = d.substitution_model(d.base_freq, d.substitution_rates)
     ll = 0.0
     gr = zeros(size(x,3)-1)
+    nsites = size(x, 2)
+    lck = Threads.SpinLock()
+    minparts = min(nsites, 200)
+    parts = max(minparts, Int(round(nsites/Threads.nthreads())))
     
     for r in 1:length(d.rates)
-        ll1, gr1, _ = FelsensteinFunction(mt, d.base_freq, d.rates[r], U, D, Uinv, mu, x, d.substitution_model, gradient)
-        ll += ll1
-        gr .+= gr1
+        Threads.@threads for chunk in collect(Iterators.partition(1:nsites, parts))
+            ll1, gr1, _ = FelsensteinFunction(mt, d.base_freq, d.rates[r], U, D, Uinv, mu, x[:, chunk, :], d.substitution_model, gradient)
+            lock(lck) do
+                ll += ll1
+                gr .+= gr1
+            end
+        end
     end
     
     ll, gr
@@ -110,7 +118,7 @@ function MultiplePhyloDist(tree_array::Array{T},
                             base_freq::S,
                             substitution_rates::R,
                             rates::U,
-                            substutuion_model::Function) where{
+                            substitution_model::Function) where{
                             T <: GeneralNode,
                             S <: DenseArray{Float64},
                             R <: DenseArray{Float64},
@@ -124,10 +132,10 @@ function MultiplePhyloDist(tree_array::Array{T},
         base_freq_l .= base_freq
     elseif size(base_freq, 2) == 1
         for i in 1:n_t
-            base_freq_l[:, n_t] .= base_freq
+            base_freq_l[:, i] .= base_freq
         end
     else
-        throw("size of base_freq and tree_array are incompatible")
+        throw(DimensionMismatch("Size of base_freq and tree_array are incompatible"))
     end
 
     if size(substitution_rates, 2) == n_t
@@ -137,7 +145,7 @@ function MultiplePhyloDist(tree_array::Array{T},
             substitution_rates_l[:, i] .= substitution_rates
         end
     else
-        throw("size of substitution_rates and tree_array are incompatible")
+        throw(DimensionMismatch("Size of substitution_rates and tree_array are incompatible"))
     end
 
     if size(rates, 2) == n_t
@@ -147,16 +155,16 @@ function MultiplePhyloDist(tree_array::Array{T},
             rates_l[:, i] .= rates
         end
     else
-        throw("size of rates and tree_array are incompatible")
+        throw(DimensionMismatch("Size of rates and tree_array are incompatible"))
     end
-    MultiplePhyloDist(tree_array, base_freq_l, substitution_rates_l, rates_l, substutuion_model)
+    MultiplePhyloDist(tree_array, base_freq_l, substitution_rates_l, rates_l, substitution_model)
 end
 
 
 function MultiplePhyloDist(tree_array::Array{T},
                             substitution_rates::R,
                             rates::S,
-                            substutuion_model::K) where{
+                            substitution_model::K) where{
                             T <: GeneralNode,
                             S <: DenseArray{Float64},
                             R <: DenseArray{Float64},
@@ -187,10 +195,10 @@ function MultiplePhyloDist(tree_array::Array{T},
             base_freq_l[:, i] .= eq
         end
     else
-        throw("size of substitution_rates and tree_array are incompatible")
+        throw(DimensionMismatch("Size of substitution_rates and tree_array are incompatible"))
     end
 
-    MultiplePhyloDist(tree_array, base_freq_l, substitution_rates_l, rates, substutuion_model)
+    MultiplePhyloDist(tree_array, base_freq_l, substitution_rates_l, rates, substitution_model)
 end
 
 

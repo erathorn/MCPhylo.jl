@@ -19,9 +19,9 @@ Returns a `Sampler{NUTSTune}` type object.
 """
 function NUTS(params::ElementOrVector{Symbol}; variant::Symbol=:classic, epsilon::Real = -Inf, kwargs...)
     if variant == :classic
-        return NUTS_classical(params, epsilon=epsilon, kwargs...)
+        return NUTS_classical(params; epsilon=epsilon, kwargs...)
     elseif variant == :riemann
-        return NUTS_Rie(params, epsilon=epsilon, kwargs...)      
+        return NUTS_Rie(params; epsilon=epsilon, kwargs...)      
     else
         throw(ArgumentError("Unrecognized variant: $variant"))
     end

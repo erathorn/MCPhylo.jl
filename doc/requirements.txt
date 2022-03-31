@@ -1,2 +1,0 @@
--e git+https://github.com/JuliaLang/JuliaDoc.git#egg=JuliaDoc
--e git+https://github.com/mcmtroffaes/sphinxcontrib-bibtex.git#egg=sphinxcontrib-bibtex

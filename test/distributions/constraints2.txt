@@ -1,0 +1,3 @@
+mono:        D,F;
+not_mono:    A,B,C
+exc :        A,E!F;

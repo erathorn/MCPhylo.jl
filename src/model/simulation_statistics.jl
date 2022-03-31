@@ -2,7 +2,8 @@
 """
 calculate_convergence(sm::SimulationParameters, args...)::Vector{Vector{Float64}}
 
-Function that checks which
+Function that checks if asdsf needs to be calculated and if a ConvergenceStorage struct 
+needs to be dispatched.
 """
 function calculate_convergence(sm::SimulationParameters,
                            conv_storage::Union{Nothing,ConvergenceStorage},

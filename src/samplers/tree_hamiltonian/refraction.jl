@@ -64,7 +64,7 @@ function ref_NNI!(
 
             set_branchlength_vector!(s.x, molifier.(blv, delta))
 
-            U_before_nni, _ = logfgrad(s.x) # still with molified branch length
+            temp = @spawn logfgrad(s.x) # still with molified branch length
 
             v_copy = deepcopy(s.x)
 
@@ -73,7 +73,7 @@ function ref_NNI!(
             if tmp_NNI_made != 0
 
                 U_after_nni, _ = logfgrad(v_copy)
-
+                U_before_nni, _ = fetch(temp)
                 delta_U = 2.0 * (U_before_nni - U_after_nni)
                 my_v = s.r[ref_index]^2
 
@@ -82,7 +82,10 @@ function ref_NNI!(
                     s.r[ref_index] = sqrt(my_v - delta_U)
                     s.x = v_copy
                 end # if my_v
+            else
+                U_before_nni, _ =fetch(temp)
             end #if NNI
+            
         end #non leave
 
         t = abs(epsilon) + timelist[ref_index]

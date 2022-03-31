@@ -126,8 +126,8 @@ gradlogpdf(d::AbstractDependent, x=nothing, transform::Bool=false) = 0.0
 """
     Logical(f::Function, monitor::Union{Bool, Vector{Int}}=true)
 
-Constructor for a Logical model node. This function assumes a the output of the
-logical operation to be scalar.
+Constructor for a Logical model node. This function assumes the output of the
+logical operation to be a scalar.
 
 * `f`: Function specifying the deterministic operation performed on its arguments. These arguments are other nodes of the model.
 
@@ -185,7 +185,7 @@ end
 ScalarLogical(x::T) where {T<:Real} = x
 
 function Logical(a::Logical, value::T)::Logical{T} where T
-    Logical(value, a.symbol, a.monitor, a.eval, a.sources, a.targets, a.distr)
+    Logical(value, a.symbol, a.monitor, a.eval, a.sources, a.targets)
 end
 
 #################### Updating ####################
@@ -204,21 +204,6 @@ function setinits!(l::Logical, m::Model, ::Any = nothing)
     l.value = l.eval(m)
     setmonitor!(l, l.monitor)
 end
-"""
-    setinits!(d::TreeLogical, m::Model, x::T) where {T<:GeneralNode}
-
-Set initial values for a logical node.
-
-Returns the result of a call to `setmonitor!(l, l.monitor)` or `setmonitor!(d, d.monitor)`.
-
-* `l`  : logical node to which to assign initial values.
-
-* `m`  : model containing the node.
-"""
-function setinits!(d::Logical{T}, m::Model, x::T) where {T<:GeneralNode}
-    d.value = d.eval(m)
-    setmonitor!(d, d.monitor)
-end # function
 
 """
     update!(l::AbstractLogical, m::Model)
@@ -272,7 +257,7 @@ end
 """
     Stochastic(f::Function, monitor::Union{Bool, Vector{Int}}=true)
 
-Constructor for a Stochastic model node. This function assumes a the output of the
+Constructor for a Stochastic model node. This function assumes the output of the
 logical operation to be scalar.
 
 * `f` : Specifies the distributional relationship between the arguments and the node. These arguments are other nodes of the model.
@@ -404,9 +389,7 @@ function setinits!(s::Stochastic{<:DenseArray}, m::Model, x::DenseArray)
   setmonitor!(s, s.monitor)
 end
 
-# function setinits!(s::Stochastic, m::Model, x)
-#     throw(ArgumentError("incompatible initial value for node : $(s.symbol)"))
-# end
+
 """
     setinits!(d::TreeStochastic, m::Model, x::T) where {T<:GeneralNode}
 
@@ -479,18 +462,21 @@ function relistlength(s::AbstractVariate,
     #(transform ? invlink_sub(s.distr, value) : value, n)
 end
 
-function relistlength(s::TreeVariate, x::N,
-  transform::Bool=false) where N<:GeneralNode
-value, n = relistlength_sub(s.distr, s, x)
-(transform ? invlink_sub(s.distr, value) : value, n)
-end
+function relistlength(s::TreeVariate, x::N, transform::Bool=false) where N<:GeneralNode
+    value, n = relistlength_sub(s.distr, s, x)
+    if transform
+        return invlink_sub(s.distr, value)
+    else
+        return value, n
+    end # if/else
+end # relistlength
 
 function logpdf(s::AbstractStochastic, transform::Bool=false)
-  logpdf(s, s.value, transform)
+    logpdf(s, s.value, transform)
 end
 
 function logpdf(s::TreeVariate, transform::Bool=false)
-  logpdf(s, s.value, transform)
+    logpdf(s, s.value, transform)
 end
 
 function conditional_likelihood(s::AbstractStochastic, args...)
@@ -517,7 +503,7 @@ end
 
 function gradlogpdf(s::TreeVariate, x::N, transform::Bool=false
                    ) where N <: GeneralNode
-  gradlogpdf(s.distr, x)
+   gradlogpdf(s.distr, x)
 end
 
 function gradlogpdf(s::AbstractStochastic, x::AbstractArray)
