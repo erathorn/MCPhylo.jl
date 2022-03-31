@@ -67,7 +67,7 @@ function __logpdf(d::PhyloDist, x::AbstractArray, gradient::Bool=false)
     nsites = size(x, 2)
     lck = Threads.SpinLock()
     minparts = min(nsites, 200)
-    parts = max(minparts, Int(nsites/Threads.nthreads()))
+    parts = max(minparts, Int(round(nsites/Threads.nthreads())))
     
     for r in 1:length(d.rates)
         Threads.@threads for chunk in collect(Iterators.partition(1:nsites, parts))
