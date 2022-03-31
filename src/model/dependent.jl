@@ -389,9 +389,7 @@ function setinits!(s::Stochastic{<:DenseArray}, m::Model, x::DenseArray)
   setmonitor!(s, s.monitor)
 end
 
-# function setinits!(s::Stochastic, m::Model, x)
-#     throw(ArgumentError("incompatible initial value for node : $(s.symbol)"))
-# end
+
 """
     setinits!(d::TreeStochastic, m::Model, x::T) where {T<:GeneralNode}
 

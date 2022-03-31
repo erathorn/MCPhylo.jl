@@ -23,6 +23,7 @@ const mcmctests = [
 
 const modeltests = [
     "dependent"
+    "variate"
 ]
 
 const outputtests = [
