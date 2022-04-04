@@ -114,7 +114,7 @@ function to_file(df::Array, tdf::Array, outpath::AbstractString,
 
     to_file(df, outpath, run, thin, names)
     for (ind, n_name) in enumerate(tree_names)
-        io = open(string(outpath, "trees_"*n_name*"_"*run*".nwk"), "w")
+        io = open(string(outpath, n_name*"_"*run*".nwk"), "w")
         for x = 1:length(tdf[:,ind])
             write(io, tdf[x,ind])
             write(io, "\n")
