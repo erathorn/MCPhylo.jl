@@ -343,6 +343,7 @@ export BDiagNormal,
     Flat, SymUniform, CompoundDirichlet, PhyloDist, MultiplePhyloDist, exponentialBL
 
 export ASDSF,
+    PNUTS_monitor,
     autocor,
     changerate,
     contourplot,
