@@ -1,11 +1,12 @@
 
 
-function nutsepsilon(x::GeneralNode, logfgrad::Function, delta::Float64, target::Float64)
+function nutsepsilon(x::GeneralNode, logfgrad::Function,logf::Function, delta::Float64, target::Float64)
     n = size(x)[1] - 1
     log_target = log(target)
+    
     # molifier is necessary!
-    # blv = get_branchlength_vector(x)
-    # set_branchlength_vector!(x, molifier.(blv, delta))
+    blv = get_branchlength_vector(x)
+    set_branchlength_vector!(x, molifier.(blv, delta))
     
     logf0, gr = logfgrad(x)
     
@@ -14,7 +15,7 @@ function nutsepsilon(x::GeneralNode, logfgrad::Function, delta::Float64, target:
     x1 = transfer(x0)
     H0 = hamiltonian(x0)
     epsilon = 1.0
-    _ = refraction!(x0, epsilon, logfgrad, delta)
+    _ = refraction!(x0, epsilon, logfgrad, logf, delta)
     Hp = hamiltonian(x0)
     
     prob = Hp - H0
@@ -24,7 +25,7 @@ function nutsepsilon(x::GeneralNode, logfgrad::Function, delta::Float64, target:
         epsilon = direction == 1 ? 2 * epsilon : 0.5 * epsilon
         
         x2 = transfer(x1)
-        _ = refraction!(x2, epsilon, logfgrad, delta)
+        _ = refraction!(x2, epsilon, logfgrad, logf, delta)
         
         Hp = hamiltonian(x2)
         

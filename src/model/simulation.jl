@@ -360,18 +360,12 @@ Returns the model updated with the MCMC sample and, in the case of `block=0`, th
 
 
 """
-function sample!(m::Model, block::Integer = 0)
+function sample!(m::Model)
     m.iter += 1
-    #isoneblock = block != 0
-    #blocks = isoneblock ? block : 1:length(m.samplers)
-    #for b in blocks
     for sampler in m.samplers
-        #sampler = m.samplers[b]
-        #value = sampler.eval(m::Model, b::Int)
         res = sample!(sampler, m)
         if res !== nothing
             m[sampler.params] = res
-       #     update!(m, b)
         end
     end
     #m.iter# -= isoneblock
@@ -382,7 +376,8 @@ end
 function sample!(s::Sampler, m::Model)
     s.value = unlist(m, s.params, transform=s.transform)
     lpdf(x) = s.tune.logf(m, x, s.params, s.targets, s.transform)
-    sample!(s, lpdf, adapt=m.iter < m.burnin, gen=m.iter, model=m)
+    grlpdf(x) = s.tune.logfgrad(m, x, s.params, s.targets, s.transform)
+    sample!(s, lpdf, grlpdf=grlpdf, adapt=m.iter < m.burnin, gen=m.iter, model=m)
     relist(m, s.value, s.params, s.transform)
 end
 
@@ -480,10 +475,10 @@ end
 """
 function relist(
     m::Model,
-    x::AbstractArray{T},
+    x::T,
     block::Integer = 0,
     transform::Bool = false,
-) where {T<:Real}
+) where {T<:AbstractVector{<:Real}}
     relist(m, x, keys(m, :block, block), transform)
 end
 """
@@ -492,10 +487,10 @@ end
 """
 function relist(
     m::Model,
-    x::AbstractArray{T},
+    x::T,
     block::Integer = 0,
     transform::Bool = false,
-) where {T<:GeneralNode}
+) where {T<:AbstractVector{<:GeneralNode}}
 
     relist(m, x, keys(m, :block, block), transform)
 end
@@ -506,10 +501,10 @@ end
 """
 function relist(
     m::Model,
-    x::AbstractArray{T},
+    x::T,
     nodekeys::Vector{Symbol},
     transform::Bool = false,
-) where {T<:Any}
+) where {T<:AbstractVector}
     values = Dict{Symbol,Union{Any,Real}}()
 
     N = length(x)
@@ -554,10 +549,10 @@ end
 """
 function relist!(
     m::Model,
-    x::AbstractArray{T},
+    x::T,
     block::Integer = 0,
     transform::Bool = false,
-) where {T<:Any}
+) where {T<:AbstractVector}
     nodekeys = keys(m, :block, block)
     values = relist(m, x, nodekeys, transform)
     for key in nodekeys
@@ -600,10 +595,10 @@ Returns `m`, with values copied to the nodes.
 """
 function relist!(
     m::Model,
-    x::AbstractArray{T},
+    x::T,
     nodekey::Symbol,
     transform::Bool = false,
-) where {T<:Real}
+) where {T<:AbstractArray{<:Real}}
     node = m[nodekey]
     m[nodekey] = relist(node, x, transform)
     update!(m, node.targets)

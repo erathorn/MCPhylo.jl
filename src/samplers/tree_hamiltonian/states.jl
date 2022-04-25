@@ -12,7 +12,7 @@ mutable struct Tree_HMC_State{T<:GeneralNode} <: HMC_State
 end
 
 function Tree_HMC_State(tree::T, r::Vector{Float64}, g::Vector{Float64}, lf::Float64)::Tree_HMC_State{T} where T<:GeneralNode
-    Tree_HMC_State(tree, r, g, lf, false, 0)
+    Tree_HMC_State{T}(tree, r, g, lf, false, 0)
 end
 
 
@@ -33,7 +33,7 @@ end
 
 hamiltonian(s::HMC_State) = s.lf - 0.5 * dot(s.r, s.r)
 
-function transfer!(s1::HMC_State, s2::HMC_State)
+function transfer!(s1::Tree_HMC_State{T}, s2::Tree_HMC_State{T}) where T
     s1.x = deepcopy(s2.x)
     s1.r[:] .= s2.r[:]
     s1.g[:] .= s2.g[:]

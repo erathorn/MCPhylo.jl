@@ -201,6 +201,25 @@ function logpdfgrad!(
 end
 
 
+function logpdf!(
+    m::Model,
+    x::T,
+    params::ElementOrVector{Symbol},
+    target::ElementOrVector{Symbol},
+    transform::Bool,
+) where {T<:GeneralNode}
+
+    m[params] = relist(m, x, params, transform)
+
+    # likelihood
+    v = logpdf(m, target)
+    # prior
+    vp = logpdf(m[params[1]], x)
+
+    vp + v
+end
+
+
 
 
 

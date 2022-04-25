@@ -5,18 +5,18 @@
     This structure implements a Distribution whos likelihood is calculated
     according to Felsensteins algorithm.
 """
-mutable struct PhyloDist{T<:GeneralNode, A<:AbstractArray, I<:Int, F<:Function} <: DiscreteMatrixDistribution
-    tree::T
-    base_freq::A
-    substitution_rates::A
-    rates::A
-    substitution_model::F
-    nbase::I
-    nnodes::I
+struct PhyloDist <: DiscreteMatrixDistribution
+    tree::T where T <: GeneralNode
+    base_freq::Vector{Float64}
+    substitution_rates::Vector{Float64}
+    rates::Vector{Float64}
+    substitution_model::Function
+    nbase::Int64
+    nnodes::Int64
 
     function PhyloDist(tree::T, base_freq::A, substitution_rates::A,
                        rates::A, substitution_model::Function) where {T <: GeneralNode, A<:AbstractArray{<:Real}}
-        new{T,A,Int, Function}(tree, base_freq, substitution_rates,rates, substitution_model,
+        new(tree, base_freq, substitution_rates,rates, substitution_model,
             length(base_freq), length(post_order(tree)))
     end
 
@@ -52,16 +52,29 @@ maximum(d::PhyloDist) = Inf
 
 Base.size(d::PhyloDist) = (d.nbase, 1, d.nnodes)
 
-function logpdf(d::PhyloDist, x::AbstractArray)
+function logpdf(d::PhyloDist, x::AbstractArray)::Float64
+    mt = post_order(d.tree)
+    U, D, Uinv, mu = d.substitution_model(d.base_freq, d.substitution_rates)::Tuple{Matrix, Vector, Matrix, Float64}
+    ll = zero(Float64)
+    nsites = size(x, 2)
+    lck = Threads.SpinLock()
+    minparts = min(nsites, 200)
+    parts = max(minparts, Int(round(nsites/Threads.nthreads())))
     
-    r2 = __logpdf(d, x, gradient=false)[1]
-    
-    r2
+    @inbounds for r in 1:length(d.rates)
+        Threads.@threads for chunk in collect(Iterators.partition(1:nsites, parts))
+            ll1 = FelsensteinFunction(mt, d.base_freq, d.rates[r], U, D, Uinv, mu, x[:, chunk, :], d.substitution_model)
+            lock(lck) do
+                ll += ll1
+            end
+        end
+    end
+
+    ll
 end
 
-
-function __logpdf(d::PhyloDist{T, A, I, F}, x::AbstractArray; gradient::Bool=false)::Tuple{Float64, Vector{Float64}} where {T, A, I, F}
-    mt::Vector{T} = post_order(d.tree)
+function gradlogpdf(d::PhyloDist, x::AbstractArray)
+    mt = post_order(d.tree)
     U, D, Uinv, mu = d.substitution_model(d.base_freq, d.substitution_rates)::Tuple{Matrix, Vector, Matrix, Float64}
     ll = zero(Float64)
     gr = zeros(size(x,3)-1)
@@ -72,7 +85,7 @@ function __logpdf(d::PhyloDist{T, A, I, F}, x::AbstractArray; gradient::Bool=fal
     
     @inbounds for r in 1:length(d.rates)
         Threads.@threads for chunk in collect(Iterators.partition(1:nsites, parts))
-            ll1, gr1, _ = FelsensteinFunction(mt, d.base_freq, d.rates[r], U, D, Uinv, mu, x[:, chunk, :], d.substitution_model, gradient)
+            ll1, gr1, _ = FelsensteinFunction_wg(mt, d.base_freq, d.rates[r], U, D, Uinv, mu, x[:, chunk, :], d.substitution_model)
             lock(lck) do
                 ll += ll1
                 gr .+= gr1
@@ -81,12 +94,6 @@ function __logpdf(d::PhyloDist{T, A, I, F}, x::AbstractArray; gradient::Bool=fal
     end
     
     ll, gr
-end
-
-function gradlogpdf(d::PhyloDist, x::AbstractArray)
-    
-    __logpdf(d, x, gradient=true)
-    
 end
 
 

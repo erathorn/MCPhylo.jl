@@ -1,10 +1,11 @@
 
 function refraction!(
-    s::Tree_HMC_State,
+    s::Tree_HMC_State{T},
     epsilon::Float64,
     logfgrad::Function,
+    logf::Function,
     delta::Float64,
-)
+)::Int where T
 
     blenvec = get_branchlength_vector(s.x)
     fac = scale_fac.(blenvec, delta)
@@ -13,11 +14,11 @@ function refraction!(
 
     tmpB = @. blenvec + (epsilon * s.r)
 
-    nni = 0
+    #nni = 0
 
-    if minimum(tmpB) <= 0
-        tmpB, nni = ref_NNI!(s, tmpB, abs(epsilon), blenvec, delta, logfgrad)
-    end
+    #if minimum(tmpB) <= 0
+    tmpB, nni = ref_NNI!(s, tmpB, abs(epsilon), blenvec, delta, logf)
+    #end
 
     blenvec = molifier.(tmpB, delta)
 
@@ -37,17 +38,17 @@ end
 
 
 function ref_NNI!(
-    s::Tree_HMC_State,
-    tmpB::Vector{Float64},
+    s::Tree_HMC_State{T},
+    tmpB::V,
     epsilon::Float64,
-    blv::Vector{Float64},
+    blv::V,
     delta::Float64,
-    logfgrad::Function,
-)
+    logf::Function,
+)::Tuple{V, Int} where {V<:AbstractVector{Float64}, T}
 
     intext = internal_external(s.x)
     t = 0.0
-    nni = 0
+    nni = zero(Int)
     pm = epsilon > 0 ? 1 : -1
 
     while minimum(tmpB) <= 0.0
@@ -63,17 +64,13 @@ function ref_NNI!(
         if intext[ref_index] == 1
 
             set_branchlength_vector!(s.x, molifier.(blv, delta))
-
-            temp = @spawn logfgrad(s.x) # still with molified branch length
-
+            U_before_nni = logf(s.x) # still with molified branch length
             v_copy = deepcopy(s.x)
-
             tmp_NNI_made = NNI!(v_copy, ref_index)
 
             if tmp_NNI_made != 0
 
-                U_after_nni, _ = logfgrad(v_copy)
-                U_before_nni, _ = fetch(temp)
+                U_after_nni = logf(v_copy)
                 delta_U = 2.0 * (U_before_nni - U_after_nni)
                 my_v = s.r[ref_index]^2
 
@@ -82,8 +79,8 @@ function ref_NNI!(
                     s.r[ref_index] = sqrt(my_v - delta_U)
                     s.x = v_copy
                 end # if my_v
-            else
-                U_before_nni, _ =fetch(temp)
+            #else
+            #    U_before_nni =fetch(temp)
             end #if NNI
             
         end #non leave

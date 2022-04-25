@@ -107,7 +107,7 @@ const DistributionStruct =
 
 #################### Dependent Types ####################
 
-mutable struct Logical{D<:Union{Real,AbstractArray{T,N} where {T<:Real,N},GeneralNode}} <:
+mutable struct Logical{D<:Union{Float64,<:AbstractArray{Float64,N} where N,GeneralNode}} <:
                AbstractVariate
     value::D
     symbol::Symbol
@@ -120,7 +120,7 @@ end
 
 
 mutable struct Stochastic{
-    D<:Union{Real,AbstractArray{T,N} where {T<:Real,N},GeneralNode},
+    D<:Union{Float64,<:AbstractArray{Float64,N} where N,GeneralNode},
 } <: AbstractVariate
     value::D
     symbol::Symbol
@@ -132,23 +132,23 @@ mutable struct Stochastic{
 end
 
 # Specialized Unions
-const ScalarVariate = Union{Stochastic{<:Real},Logical{<:Real}}
+const ScalarVariate = Union{Stochastic{Float64},Logical{Float64}}
 const VectorVariate =
-    Union{Stochastic{<:AbstractArray{<:Real,1}},Logical{<:AbstractArray{<:Real,1}}}
+    Union{Stochastic{<:AbstractArray{Float64,1}},Logical{<:AbstractArray{Float64,1}}}
 const MatrixVariate =
-    Union{Stochastic{<:AbstractArray{<:Real,2}},Logical{<:AbstractArray{<:Real,2}}}
+    Union{Stochastic{<:AbstractArray{Float64,2}},Logical{<:AbstractArray{Float64,2}}}
 const TreeVariate = Union{Logical{<:GeneralNode},Stochastic{<:GeneralNode}}
 
 # General Union
 const ArrayVariate = Union{
-    Stochastic{<:AbstractArray{<:Real,N}} where N,
-    Logical{<:AbstractArray{<:Real,N} where {N}},
+    Stochastic{<:AbstractArray{Float64,N}} where N,
+    Logical{<:AbstractArray{Float64,N} where {N}},
 }
 
 
-const AbstractLogical = Union{Logical{<:Real},Logical{<:AbstractArray{<:Real,N} where {N}}}
+const AbstractLogical = Union{Logical{Float64},Logical{<:AbstractArray{Float64,N} where {N}}}
 const AbstractStochastic =
-    Union{Stochastic{<:Real},Stochastic{<:AbstractArray{<:Real,N} where {N}}}
+    Union{Stochastic{Float64},Stochastic{<:AbstractArray{Float64,N} where {N}}}
 
 const AbstractDependent = Union{AbstractLogical,AbstractStochastic,TreeVariate}
 
@@ -188,7 +188,7 @@ struct ModelState
 end
 
 mutable struct Model
-    nodes::Dict{Symbol,Any}
+    nodes::Dict{Symbol,AbstractDependent}
     samplers::Vector{Sampler}
     states::Vector{ModelState}
     iter::Int

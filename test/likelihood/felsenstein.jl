@@ -12,7 +12,7 @@
         18:0.015879,(M_sylvanus:0.100663,Saimiri_sciureus:0.0112774)19:0.2727)20:0.0448203);",
     )
 
-    df = MCPhylo.datafortree(df, langs, primates_tree, symbols, gap, miss)
+    df = MCPhylo.datafortree(df, langs, primates_tree, symbols, gap, miss, log_space=false)
     pden = ones(4) / 4
     pd = PhyloDist(primates_tree, pden, [1.0], [1.0], JC)
 
@@ -26,7 +26,7 @@ end
     )
     ntax, nchar, gap, miss, symbols, df, langs =
         MCPhylo.ParseNexus("./likelihood/simudata.nex")
-    df = MCPhylo.datafortree(df, langs, tree, symbols, gap, miss)
+    df = MCPhylo.datafortree(df, langs, tree, symbols, gap, miss, log_space=false)
     pden = ones(4) / 4
     pd = PhyloDist(tree, pden, [1.0], [1.0], JC)
     ll1, grad1 = gradlogpdf(pd, df)

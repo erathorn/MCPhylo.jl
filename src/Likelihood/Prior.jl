@@ -113,12 +113,12 @@ Strict Molecular Clock - BirthDeath
 Implemented following Yang & Rannala 1997
 doi.org/10.1093/oxfordjournals.molbev.a025811
 """
-mutable struct BirthDeath <: ContinuousMultivariateDistribution
+struct BirthDeath <: ContinuousMultivariateDistribution
     s::Int64
     rho::Float64
     mu::Float64
     lambd::Float64
-end # mutable struct
+end # struct
 
 length(d::BirthDeath) = d.s - 1
 
@@ -143,11 +143,11 @@ Strict Molecular Clock - Simplified Birth Death
 Implemented folloing Yang & Rannala 1996
 doi.org/10.1007/BF02338839
 """
-mutable struct BirthDeathSimplified <: ContinuousMultivariateDistribution
+struct BirthDeathSimplified <: ContinuousMultivariateDistribution
     s::Int64
     mu::Float64
     lambd::Float64
-end # mutable struct
+end # struct
 
 length(d::BirthDeathSimplified) = d.s - 1
 

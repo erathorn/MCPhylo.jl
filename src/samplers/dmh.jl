@@ -44,9 +44,9 @@ function DMH(
     Sampler(params, tune, Symbol[], transform)
 end
 
-#  sample!(v::DMHVariate, model) = DMH_sample!(v, v.tune, model)
 
-function sample!(v::DMHVariate{T}, lpdf::Function; model::Model, kwargs...) where {T}#tune::DMHTune, model::Model) 
+
+function sample!(v::DMHVariate{T}, lpdf::Function; model::Model, kwargs...) where {T}
     # 1. propose theta prime
     # 2. Generate the auxiliary variable using theta prime
 

@@ -5,7 +5,7 @@
 
 This structure implememts an exponential prior on the branch lengths of a tree.
 """
-mutable struct exponentialBL <: ContinuousUnivariateDistribution
+struct exponentialBL <: ContinuousUnivariateDistribution
     scale::Float64
     constraints::Union{Dict, Missing}
 
@@ -22,7 +22,7 @@ end
 This structure implememts the CompoundDirichlet distribution described
 in Zhang, Rannala and Yang 2012. (DOI:10.1093/sysbio/sys030)
 """
-mutable struct CompoundDirichlet <: ContinuousUnivariateDistribution
+struct CompoundDirichlet <: ContinuousUnivariateDistribution
     alpha::Float64
     a::Float64
     beta::Float64
@@ -57,7 +57,7 @@ const LengthDistribution = Union{CompoundDirichlet, exponentialBL, UniformBranch
 Wrapper struct for the topology distribution. Contains a dictionary with constraints.
 Empty constructor results in an empty dictionary as a fallback.
 """
-mutable struct UniformConstrained <: ContinuousUnivariateDistribution
+struct UniformConstrained <: ContinuousUnivariateDistribution
     constraint_dict::ConstraintDict
 
     UniformConstrained() = 
@@ -83,7 +83,7 @@ distribution. Can be constructed with no arguments, one of the distributions, or
 them. Fallbacks are UniformBranchLength for the length distribution & and UniformTopology
 for the topology distribution.
 """
-mutable struct TreeDistribution <: ContinuousUnivariateDistribution
+struct TreeDistribution <: ContinuousUnivariateDistribution
     length_distr::LengthDistribution
     topology_distr::TopologyDistribution
 
