@@ -352,7 +352,7 @@ Returns the node with its assigned initial values.
 
 * `x` : values to assign to the node.
 """
-function setinits!(s::Stochastic{Float64}, m::Model, x::R) where R <: Real
+function setinits!(s::Stochastic{T}, m::Model, x::R) where R <: Real where T
     s.value = convert(Float64, x)
     s.distr = s.eval(m)
     setmonitor!(s, s.monitor)

@@ -1,6 +1,7 @@
 
 mutable struct PPHMCTune <: SamplerTune
     logf::Union{Function,Missing}
+    logfgrad::Union{Function,Missing}
     epsilon::Float64
     delta::Float64
     nleap::Int64
@@ -11,8 +12,8 @@ mutable struct PPHMCTune <: SamplerTune
 
     PPHMCTune() = new()
 
-    function PPHMCTune(x::Vector{T}, logfgrad::Union{Function,Missing}, epsilon::Float64, nleap::Int64; delta::Float64=0.003, adapter::Float64=0.4, randomization::Bool=true) where T <: GeneralNode
-        new(logfgrad, epsilon, delta, nleap, 0, randomization, adapter,Int[])
+    function PPHMCTune(x::Vector{T}, logf::Union{Function, Missing}, logfgrad::Union{Function,Missing}, epsilon::Float64, nleap::Int64; delta::Float64=0.003, adapter::Float64=0.4, randomization::Bool=true) where T <: GeneralNode
+        new(logf, logfgrad, epsilon, delta, nleap, 0, randomization, adapter,Int[])
     end
 end
 
@@ -41,6 +42,7 @@ function PPHMC(params::ElementOrVector{Symbol}, epsilon::Float64, nleap::Int64; 
     
     tune = PPHMCTune(
         GeneralNode[],
+        logpdf!,
         logpdfgrad!,
         epsilon,
         nleap,
@@ -52,7 +54,9 @@ function PPHMC(params::ElementOrVector{Symbol}, epsilon::Float64, nleap::Int64; 
 end
 
 
-function sample!(v::PPHMCVariate{<:Vector{<:GeneralNode}}, logfgrad::Function; adapt::Bool, model::Model, kwargs...)
+function sample!(v::PPHMCVariate{<:Vector{<:GeneralNode}}, logfun::Function;
+            grlpdf::Function, adapt::Bool, model::Model, kwargs...)
+    
     bi = model.burnin
     mt = v.value[1]
     nl = size(mt)[1] - 1
@@ -61,7 +65,7 @@ function sample!(v::PPHMCVariate{<:Vector{<:GeneralNode}}, logfgrad::Function; a
     r = randn(nl)
     blv = get_branchlength_vector(mt)
     set_branchlength_vector!(mt, molifier.(blv, delta))
-    lf, grad = logfgrad(mt)
+    lf, grad = grlpdf(mt)
     s = Tree_HMC_State(deepcopy(mt), r, grad, lf)
     
     currH = hamiltonian(s)
@@ -73,7 +77,7 @@ function sample!(v::PPHMCVariate{<:Vector{<:GeneralNode}}, logfgrad::Function; a
     nl = v.tune.randomization ? rand(1:v.tune.nleap) : v.tune.nleap
     
     for i in 1:nl
-        nni = refraction!(s, epsilon, logfgrad, delta)
+        nni = refraction!(s, epsilon, grlpdf, logfun, delta)
         ovnni += nni
     end
     

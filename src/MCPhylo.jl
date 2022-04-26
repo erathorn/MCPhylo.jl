@@ -107,8 +107,8 @@ const DistributionStruct =
 
 #################### Dependent Types ####################
 
-mutable struct Logical{D<:Union{Float64,<:AbstractArray{Float64,N} where N,GeneralNode}} <:
-               AbstractVariate
+mutable struct Logical{D<:Union{Real,AbstractArray{T,N} where {T<:Real,N},GeneralNode}} <:
+    AbstractVariate
     value::D
     symbol::Symbol
     monitor::Vector{Int}
@@ -120,7 +120,7 @@ end
 
 
 mutable struct Stochastic{
-    D<:Union{Float64,<:AbstractArray{Float64,N} where N,GeneralNode},
+    D<:Union{Real,AbstractArray{T,N} where {T<:Real,N},GeneralNode},
 } <: AbstractVariate
     value::D
     symbol::Symbol
@@ -131,25 +131,23 @@ mutable struct Stochastic{
     distr::DistributionStruct
 end
 
-# Specialized Unions
-const ScalarVariate = Union{Stochastic{Float64},Logical{Float64}}
+const ScalarVariate = Union{Stochastic{<:Real},Logical{<:Real}}
 const VectorVariate =
-    Union{Stochastic{<:AbstractArray{Float64,1}},Logical{<:AbstractArray{Float64,1}}}
+    Union{Stochastic{<:AbstractArray{<:Real,1}},Logical{<:AbstractArray{<:Real,1}}}
 const MatrixVariate =
-    Union{Stochastic{<:AbstractArray{Float64,2}},Logical{<:AbstractArray{Float64,2}}}
+    Union{Stochastic{<:AbstractArray{<:Real,2}},Logical{<:AbstractArray{<:Real,2}}}
 const TreeVariate = Union{Logical{<:GeneralNode},Stochastic{<:GeneralNode}}
 
 # General Union
 const ArrayVariate = Union{
-    Stochastic{<:AbstractArray{Float64,N}} where N,
-    Logical{<:AbstractArray{Float64,N} where {N}},
+    Stochastic{<:AbstractArray{<:Real,N}} where N,
+    Logical{<:AbstractArray{<:Real,N} where {N}},
 }
 
 
-const AbstractLogical = Union{Logical{Float64},Logical{<:AbstractArray{Float64,N} where {N}}}
+const AbstractLogical = Union{Logical{<:Real},Logical{<:AbstractArray{<:Real,N} where {N}}}
 const AbstractStochastic =
-    Union{Stochastic{Float64},Stochastic{<:AbstractArray{Float64,N} where {N}}}
-
+    Union{Stochastic{<:Real},Stochastic{<:AbstractArray{<:Real,N} where {N}}}
 const AbstractDependent = Union{AbstractLogical,AbstractStochastic,TreeVariate}
 
 const ConstraintDict{S} = Dict{

@@ -230,7 +230,7 @@ function __logpdf(d::MultiplePhyloDist, x::AbstractArray)
     res = Tuple[]
     @inbounds for (ind, s) in enumerate(d.size_array)
         xt = x[:, :, 1:s, ind]
-        push!(res, __logpdf(d.DistCollector[ind], xt))
+        push!(res, gradlogpdf(d.DistCollector[ind], xt))
     end
     res
 end

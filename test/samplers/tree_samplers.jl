@@ -61,7 +61,7 @@ inits = [ Dict{Symbol, Union{Any, Real}}(
         trees=true
     )
 
-    mcmc(sim, 500; verbose=false, trees=true)
+    mcmc(sim, 500)
 
     r_m = summarystats(sim).value[5, 1, 1]
     r_sd = summarystats(sim).value[5, 2, 1]

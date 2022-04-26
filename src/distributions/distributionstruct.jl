@@ -66,7 +66,7 @@ relistlength(d::UnivariateDistribution, x::T) where {T<:GeneralNode} = (x, 1)
 
 function relistlength_sub(
     d::Union{Array{UnivariateDistribution},UnivariateDistribution},
-    s::Stochastic{<:AbstractArray{Float64,N} where {N}},
+    s::Stochastic{<:AbstractArray{<:Real,N} where {N}},
     X::AbstractArray,
 )
     n = length(s)
