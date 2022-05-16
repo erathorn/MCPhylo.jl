@@ -53,7 +53,7 @@ inits = [ Dict{Symbol, Union{Any, Real}}(
         model,
         my_data,
         inits,
-        500,
+        1000,
         burnin = 50,
         thin = 1,
         chains = 2,
@@ -61,7 +61,7 @@ inits = [ Dict{Symbol, Union{Any, Real}}(
         trees=true
     )
 
-    mcmc(sim, 750)
+    mcmc(sim, 1500)
 
     r_m = summarystats(sim).value[5, 1, 1]
     r_sd = summarystats(sim).value[5, 2, 1]

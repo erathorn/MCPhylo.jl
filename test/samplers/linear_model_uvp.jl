@@ -168,3 +168,35 @@ end
     @test r_m[1]-r_sd[1] <= 0.60 <= r_m[1]+r_sd[1]
     @test r_m[2]-r_sd[2] <= 0.80 <= r_m[2]+r_sd[2]
 end
+
+
+@testset "HMC Sigma" begin
+    Random.seed!(123)
+    inits = [
+        Dict{Symbol,Any}(
+            :y => data[:y],
+            :β => rand(Normal(0, 1), 2),
+            :s2 => rand(Gamma(1, 1)),
+        ) for i = 1:2
+    ]
+
+    samplers = [HMC([:β, :s2], 0.007, 8, diagm(2.0 * ones(3)))]
+    setsamplers!(model, samplers)
+
+    sim = mcmc(
+        model,
+        data,
+        inits,
+        10000,
+        burnin = 500,
+        thin = 10,
+        chains = 2,
+        verbose = false,
+    )
+
+    r_m = summarystats(sim).value[2:3, 1, 1]
+    r_sd = summarystats(sim).value[2:3, 2, 1]
+    @test r_m[1] - r_sd[1] <= 0.60 <= r_m[1] + r_sd[1]
+    @test r_m[2] - r_sd[2] <= 0.80 <= r_m[2] + r_sd[2]
+end
+

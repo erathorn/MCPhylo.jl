@@ -5,6 +5,6 @@
 
     trees1 = newick.(ParseNewick("./output/trees1.nwk"))
     trees2 = newick.(ParseNewick("./output/trees2.nwk"))
-    result = ASDSF(trees1, trees2, show_progress=true)
+    result = ASDSF(trees1, trees2, show_progress=false)
     @test result ≈ target
 end
