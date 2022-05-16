@@ -13,7 +13,7 @@
     end
 
     @testset "mean_boundaries" begin
-        target_vec = [0.10153104426762159, 0.45493642311957283, 1.3233036969314669, 1.3018825e-315]
-        @test MCPhylo.mean_boundaries(0.5, 0.5, 4) ≈ target_vec
+        target_vec = [0.10153104426762159, 0.45493642311957283, 1.3233036969314669,0.0]
+        @test MCPhylo.mean_boundaries(0.5, 0.5, 4) ≈ target_vec[1:3]
     end
 end
