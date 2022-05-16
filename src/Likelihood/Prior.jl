@@ -46,9 +46,7 @@ end
 
 function gradlogpdf(d::exponentialBL, x::GeneralNode)
     bl = get_branchlength_vector(x)
-    g(y) = sum(logpdf.(Exponential(d.scale), y))
-    r = Zygote.pullback(g, bl)
-    r[1],r[2](1.0)[1]
+        sum(logpdf.(Exponential(d.scale), bl)), -ones(length(bl))
 end
 
 function gradlogpdf(t::Union{UniformConstrained, UniformTopology, UniformBranchLength}, 
@@ -68,13 +66,10 @@ function logpdf(t::Union{UniformConstrained, UniformTopology, UniformBranchLengt
 end
 
 function logpdf(ex::exponentialBL, x::GeneralNode)
-    _logpdf(ex, x)
+    bl = get_branchlength_vector(x)
+    sum(logpdf.(Exponential(ex.scale), bl))
 end
 
-function _logpdf(d::exponentialBL, x::GeneralNode)
-    bl = get_branchlength_vector(x)
-    sum(logpdf.(Exponential(d.scale), bl))
-end
 
 function logpdf_sub(d::CompoundDirichlet, x::GeneralNode, transform::Bool)
     insupport(LengthDistribution(d), x) ? logpdf(d, x) : -Inf
