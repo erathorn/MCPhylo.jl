@@ -46,7 +46,7 @@ inits = [ Dict{Symbol, Union{Any, Real}}(
 @testset "PNUTS" begin
     Random.seed!(123)
 
-    scheme = [PNUTS(:mtree, tree_depth=5), SliceSimplex(:mypi)]
+    scheme = [PNUTS(:mtree, target=0.8, targetNNI=0.6 tree_depth=5), SliceSimplex(:mypi)]
 
     setsamplers!(model, scheme)
     sim = mcmc(

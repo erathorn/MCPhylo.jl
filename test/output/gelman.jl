@@ -41,3 +41,7 @@ model = Model(
     @test 0.9 < minv < 1.1
     @test 1.0 < maxv < 1.2
 end
+
+@testset "heideldiag" begin
+    1.0 == heideldiag(randn(500))[2]
+end
