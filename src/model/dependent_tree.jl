@@ -44,11 +44,11 @@ function link_sub(d::TreeDistribution, X::N) where N<:GeneralNode
     another_unlist(Bijectors.pd_link(com))
 end
 
-function relistlength_sub(d::TreeDistribution, s::Stochastic{<:AbstractArray{<:Real, N} where N}, X::AbstractArray{<:Real})
+function relistlength_sub(d::TreeDistribution, s::Stochastic{<:AbstractArray{Float64, N} where N}, X::AbstractArray{<:Real})
     another_relist(X)
 end
 
-function relistlength(d::TreeDistribution, s::Stochastic{<:AbstractArray{<:Real, N} where N}, X::AbstractArray{<:Real} )
+function relistlength(d::TreeDistribution, s::Stochastic{<:AbstractArray{Float64, N} where N}, X::AbstractArray{<:Real} )
     another_relist(X)
 end
 

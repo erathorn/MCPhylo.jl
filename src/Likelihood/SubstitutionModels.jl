@@ -11,7 +11,7 @@ The `SubstitutionRates` are ignored, and just for call stability.
 The function returns the Eigenvectors, Eigenvalues, inverse of eigenvectors and
     the scale factor for expected number changes per site
 """
-function Restriction(base_freq::Vector{Float64}, SubstitutionRates::Vector{Float64})
+function Restriction(base_freq::Vector{Float64}, SubstitutionRates::Vector{Float64})::Tuple{Array{Float64,2}, Array{Float64,1}, Array{Float64,2}, Float64}
     @assert length(base_freq) == 2
     Nbases = length(base_freq)
     Q = ones(Nbases,Nbases)
@@ -33,7 +33,7 @@ The `SubstitutionRates` are ignored, and just for call stability.
 
 The function returns the Eigenvectors, Eigenvalues and inverse of eigenvectors.
 """
-function JC(base_freq::Vector{Float64}, SubstitutionRates::Vector{Float64})#::Tuple{Array{Float64,2}, Array{Float64,1}, Array{Float64,2}, Float64}
+function JC(base_freq::Vector{Float64}, SubstitutionRates::Vector{Float64})::Tuple{Array{Float64,2}, Array{Float64,1}, Array{Float64,2}, Float64}
     Nbases = length(base_freq)
     Q::Array{Float64,2} = ones(Nbases,Nbases)
     off_diag = 1.0/Nbases
@@ -110,7 +110,7 @@ end
 ### Calculate Transition Matrices
 
 
-function calculate_transition(f::typeof(JC), rate::R, mu::R, time::R1, U::A, Uinv::A, D::Vector, pi_::Vector)::Array{Float64,2} where {R1<:Real, R<:Real, A<:AbstractArray{<:Real}}
+function calculate_transition(f::typeof(JC), rate::R, mu::R, time::R1, U::A, Uinv::A, D::Vector, pi_::Vector)::Array{R1,2} where {R1<:Real, R<:Real, A<:AbstractArray{<:Real}}
     
     t = rate * time
     if t < MCP_TIME_MIN
@@ -130,7 +130,8 @@ function calculate_transition(f::typeof(JC), rate::R, mu::R, time::R1, U::A, Uin
 end
 
 
-function calculate_transition(f::typeof(Restriction), rate::R, mu::R, time::R1, U::A, Uinv::A, D::Vector, pi_::Vector)::Array{R1,2} where {R1<:Real, R<:Real, A<:AbstractArray{<:Real}}
+
+function calculate_transition(f::typeof(Restriction), rate::R, mu::R, time::R1, U::A, Uinv::A, D::Vector, pi_::Vector)::Array{Float64,2} where {R1<:Real, R<:Real, A<:AbstractArray{<:Real}}
     return_mat = similar(U)
     t = rate *  time
     if t < MCP_TIME_MIN

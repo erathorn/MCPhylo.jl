@@ -36,7 +36,7 @@ end
 function mean_boundaries(α::T, β::S, k::Int64)::Array{Float64} where {T<:Real, S<:Real}
     ch = Chisq((2*α)/(2*β))
     boundaries = Array{Float64, 1}(undef, k)
-    for i in 1:k-1
+    @inbounds for i in 1:k-1
         boundaries[i] = quantile(ch, i/k)/(2*β)
     end
     boundaries
@@ -45,7 +45,7 @@ end
 function median_boundaries(α::T, β::S, k::Int64)::Array{Float64} where {T<:Real, S<:Real}
     ch = Chisq((2*α)/(2*β))
     boundaries = Array{Float64, 1}(undef, k)
-    for i in 1:k
+    @inbounds for i in 1:k
         boundaries[i] = quantile(ch, ((i-1)*2+1)/(2*k))
     end
     return boundaries

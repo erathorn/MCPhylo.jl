@@ -15,9 +15,9 @@
         @test relist(s, [1,2,3]) == Array{Int64, 5}(undef, 0, 0, 0, 0, 0)
 
         l = Logical((x)->x, Node(), true)
-        l = Logical(l, 3)
+        l = Logical(l, 3.0)
         @test MCPhylo.relistlength(l, [3,2,1]) == (3, 1)
-        l = Logical(l, [1,2])
+        l = Logical(l, [1.0,2.0])
         @test MCPhylo.relistlength(l, [-1, -2, -3]) == ([-1, -2], 2)
         node = Node()
         node.num = 42

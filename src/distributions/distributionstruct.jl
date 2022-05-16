@@ -11,15 +11,15 @@ end
 
 #################### List Fallbacks ####################
 
-unlist(d::Distribution, x::AbstractArray) = vec(x)
+unlist(d::Distribution, x) = vec(x)
 
-unlist_sub(d::Distribution, x::AbstractArray) = unlist(d, x)
+unlist_sub(d::Distribution, x) = unlist(d, x)
 
-unlist_sub(d::UnivariateDistribution, X::AbstractArray) = vec(X)
+unlist_sub(d::UnivariateDistribution, X) = vec(X)
 
-unlist_sub(D::Array{UnivariateDistribution}, X::AbstractArray) = vec(X)
+unlist_sub(D::Array{UnivariateDistribution}, X) = vec(X)
 
-function unlist_sub(D::Array{MultivariateDistribution}, X::AbstractArray)
+function unlist_sub(D::Array{MultivariateDistribution}, X::A) where A<:AbstractArray
     y = similar(X, length(X))
     offset = 0
     for sub in CartesianIndices(size(D))

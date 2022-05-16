@@ -49,10 +49,11 @@ function datafortree(
     df::Matrix{Char},
     leave_names::Vector{A},
     tree::T,
-    symbols::Vector{A},
+    symbols::Vector{C},
     gap::A,
-    miss::A,
-)::Array{Float64} where {T<:GeneralNode, A<:AbstractString}
+    miss::A;
+    log_space::Bool=false
+)::Array{Float64} where {T<:GeneralNode, A<:AbstractString, B<:AbstractString, C<:AbstractString}
     n_nodes = length(post_order(tree))
     n_states = length(symbols)
     n_sites = size(df, 2)
@@ -69,13 +70,13 @@ function datafortree(
             index = findfirst(x -> x == ent, symbols)
             if index === nothing
                 if ent == gap || ent == miss
-                    my_df[:, ind, mind] .= 1.0
+                    my_df[:, ind, mind] .= log_space ? log(1.0) : 1.0
                 else
                     throw("unknown symbol $ent, $symbols")
                 end
             else
-                my_df[:, ind, mind] .= 0.0
-                my_df[index, ind, mind] = 1.0
+                my_df[:, ind, mind] .= log_space ? log(0.0) : 0.0
+                my_df[index, ind, mind] = log_space ? log(1.0) : 1.0
             end # if
         end # for
     end # for

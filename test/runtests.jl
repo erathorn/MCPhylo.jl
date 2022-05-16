@@ -5,8 +5,9 @@ using Random, Test
 include("utils.jl")
 
 const distributionstests = [
-    "phylodist"
-    "treeconstraints"
+    "phylodist",
+    "treeconstraints",
+    "treedists"
 ]
 
 const likelihoodtests = [
@@ -22,13 +23,14 @@ const mcmctests = [
 ]
 
 const modeltests = [
-    "dependent"
+    "dependent",
     "variate"
 ]
 
 const outputtests = [
-    "asdsf"
-    "chains"
+    "asdsf",
+    "chains",
+    "gelman"
 ]
 
 const parsertests = [

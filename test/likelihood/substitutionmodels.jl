@@ -48,6 +48,7 @@
             @test min_result == MCPhylo.calculate_transition(JC, 1.0, mu, 1.0e-12, [0.0im 2.0im 0.0im; 0.0im 2.0im 0.0im; 0.0im 2.0im 0.0im], [1.0im 2.0im; 1.0im 2.0im], D, [])
             max_result = [0.2 0.2 0.2; 0.2 0.2 0.2; 0.2 0.2 0.2]
             @test max_result == MCPhylo.calculate_transition(JC, 1.0, mu, 101.1, [0.0im 2.0im 0.0im; 0.0im 2.0im 0.0im; 0.0im 2.0im 0.0im], [1.0im 2.0im; 1.0im 2.0im], D, [1, 1, 1, 1, 1])
+            @test ones(3,3) .* 1/3 == MCPhylo.calculate_transition(JC, 1.0, mu, 101.1, U, Uinv, D, [0.15, 0.45, 0.4])
         end
     end
 

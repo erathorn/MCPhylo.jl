@@ -46,9 +46,7 @@ end
 
 function gradlogpdf(d::exponentialBL, x::GeneralNode)
     bl = get_branchlength_vector(x)
-    g(y) = sum(logpdf.(Exponential(d.scale), y))
-    r = Zygote.pullback(g, bl)
-    r[1],r[2](1.0)[1]
+        sum(logpdf.(Exponential(d.scale), bl)), -ones(length(bl))
 end
 
 function gradlogpdf(t::Union{UniformConstrained, UniformTopology, UniformBranchLength}, 
@@ -68,13 +66,10 @@ function logpdf(t::Union{UniformConstrained, UniformTopology, UniformBranchLengt
 end
 
 function logpdf(ex::exponentialBL, x::GeneralNode)
-    _logpdf(ex, x)
+    bl = get_branchlength_vector(x)
+    sum(logpdf.(Exponential(ex.scale), bl))
 end
 
-function _logpdf(d::exponentialBL, x::GeneralNode)
-    bl = get_branchlength_vector(x)
-    sum(logpdf.(Exponential(d.scale), bl))
-end
 
 function logpdf_sub(d::CompoundDirichlet, x::GeneralNode, transform::Bool)
     insupport(LengthDistribution(d), x) ? logpdf(d, x) : -Inf
@@ -87,7 +82,7 @@ function insupport(l::LengthDistribution, x::GeneralNode)
 end 
 
 function insupport(t::UniformConstrained, x::GeneralNode)::Bool
-    topological.constraint_dict(t, x)
+    topological(t, x)
 end
 
 function insupport(t::UniformTopology, x::GeneralNode)::Bool
@@ -113,12 +108,12 @@ Strict Molecular Clock - BirthDeath
 Implemented following Yang & Rannala 1997
 doi.org/10.1093/oxfordjournals.molbev.a025811
 """
-mutable struct BirthDeath <: ContinuousMultivariateDistribution
+struct BirthDeath <: ContinuousMultivariateDistribution
     s::Int64
     rho::Float64
     mu::Float64
     lambd::Float64
-end # mutable struct
+end # struct
 
 length(d::BirthDeath) = d.s - 1
 
@@ -143,11 +138,11 @@ Strict Molecular Clock - Simplified Birth Death
 Implemented folloing Yang & Rannala 1996
 doi.org/10.1007/BF02338839
 """
-mutable struct BirthDeathSimplified <: ContinuousMultivariateDistribution
+struct BirthDeathSimplified <: ContinuousMultivariateDistribution
     s::Int64
     mu::Float64
     lambd::Float64
-end # mutable struct
+end # struct
 
 length(d::BirthDeathSimplified) = d.s - 1
 

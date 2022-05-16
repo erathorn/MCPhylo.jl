@@ -3,6 +3,7 @@
 #################### Types and Constructors ####################
 mutable struct PNUTSTune <: SamplerTune
     logf::Union{Function,Missing}
+    logfgrad::Union{Function,Missing}
     stepsizeadapter::NUTSstepadapter
     adapt::Bool
     epsilon::Float64
@@ -19,6 +20,7 @@ mutable struct PNUTSTune <: SamplerTune
     function PNUTSTune(
         x::Vector{T},
         epsilon::Float64,
+        logf::Union{Function,Missing},
         logfgrad::Union{Function,Missing};
         target::Real = 0.6,
         tree_depth::Int = 10,
@@ -27,6 +29,7 @@ mutable struct PNUTSTune <: SamplerTune
     ) where {T<:GeneralNode}
 
         new(
+            logf,
             logfgrad,
             NUTSstepadapter(
                 0,
@@ -47,13 +50,14 @@ end
 
 PNUTSTune(
     x::Vector{T},
+    logf::Function,
     logfgrad::Function,
     ::NullFunction,
     delta::Float64 = 0.003,
     target::Real = 0.6;
     args...,
 ) where {T<:GeneralNode} =
-    PNUTSTune(x, nutsepsilon(x[1], logfgrad, delta, target), logfgrad; args...)
+    PNUTSTune(x, nutsepsilon(x[1], logfgrad, logf, delta, target), logf, logfgrad; args...)
 
 PNUTSTune(
     x::Vector{T},
@@ -62,11 +66,12 @@ PNUTSTune(
     target::Real;
     args...,
 ) where {T<:GeneralNode} =
-    PNUTSTune(x, nutsepsilon(x[1], logfgrad, delta, target), logfgrad; args...)
+    PNUTSTune(x, nutsepsilon(x[1], logfgrad, logf, delta, target), logf, logfgrad; args...)
 
-PNUTSTune(x::Vector; epsilon::Real, args...) = PNUTSTune(x, epsilon, missing, args...)
+PNUTSTune(x::Vector; epsilon::Real, args...) =
+    PNUTSTune(x, epsilon, missing, missing, args...)
 
-const PNUTSVariate = Sampler{PNUTSTune,T} where {T<:GeneralNode}
+const PNUTSVariate = Sampler{PNUTSTune,Vector{T}} where {T<:GeneralNode}
 
 
 #################### Sampler Constructor ####################
@@ -91,9 +96,11 @@ function PNUTS(
     epsilon::Float64 = -Inf,
     args...,
 )
+
     tune = PNUTSTune(
         GeneralNode[],
         epsilon,
+        logpdf!,
         logpdfgrad!;
         delta = delta,
         target = target,
@@ -109,11 +116,10 @@ end
 
 #################### Sampling Functions ####################
 
-sample!(v::PNUTSVariate; args...) = sample!(v, v.tune.logfgrad; args...)
-
 function sample!(
-    v::PNUTSVariate{<:Vector{<:GeneralNode}},
-    logfgrad::Function;
+    v::PNUTSVariate,
+    logfun::Function;
+    grlpdf::Function,
     adapt::Bool = false,
     args...,
 )
@@ -122,21 +128,20 @@ function sample!(
     const_params = tune.stepsizeadapter.params
 
     if adapter.m == 0 && isinf(tune.epsilon)
-        tune.epsilon = nutsepsilon(v.value[1], logfgrad, tune.delta, const_params.δ)
+        tune.epsilon = nutsepsilon(v.value[1], grlpdf, logfun, tune.delta, const_params.δ)
     end
-    
     setadapt!(v, adapt)
     if tune.adapt
         adapter.m += 1
-
-        nuts_sub!(v, tune.epsilon, logfgrad)
+    
+        nuts_sub!(v, tune.epsilon, grlpdf, logfun)
 
         adaptstat = adapter.metro_acc_prob > 1 ? 1 : adapter.metro_acc_prob
 
-        HT = const_params.δ - adaptstat  - (const_params.τ - adapter.avg_nni)
-        
+        HT = const_params.δ - adaptstat - (const_params.τ - adapter.avg_nni)
+
         HT /= 2
-        
+
         η = 1.0 / (adapter.m + const_params.t0)
 
         adapter.s_bar = (1.0 - η) * adapter.s_bar + η * HT
@@ -150,14 +155,13 @@ function sample!(
         if (adapter.m > 0)
             tune.epsilon = exp(adapter.x_bar)
         end
-
-        nuts_sub!(v, tune.epsilon, logfgrad)
+        nuts_sub!(v, tune.epsilon, grlpdf, logfun)
     end
     v
 end
 
 
-function setadapt!(v::PNUTSVariate{<:Vector{<:GeneralNode}}, adapt::Bool)
+function setadapt!(v::PNUTSVariate, adapt::Bool)
     tune = v.tune
     if adapt && !tune.adapt
         tune.stepsizeadapter.m = 0
@@ -169,14 +173,15 @@ function setadapt!(v::PNUTSVariate{<:Vector{<:GeneralNode}}, adapt::Bool)
 end
 
 
-
-
-
 function nuts_sub!(
-    v::PNUTSVariate{<:AbstractArray{<:GeneralNode}},
+    v::PNUTSVariate,
     epsilon::Float64,
     logfgrad::Function,
-)
+    logfun::Function,
+)::PNUTSVariate
+
+    
+
     x = deepcopy(v.value[1])
     delta = v.tune.delta
     blv = get_branchlength_vector(x)
@@ -187,7 +192,8 @@ function nuts_sub!(
     logf, grad = logfgrad(x)
     xminus = Tree_HMC_State(deepcopy(x), r, grad, logf)
     xplus = Tree_HMC_State(deepcopy(x), r, grad, logf)
-
+    
+    
     lu = log(rand())
     logp0 = hamiltonian(xminus)
 
@@ -197,7 +203,7 @@ function nuts_sub!(
     n = 1
 
     meta = NUTSMeta()
-
+    log_sum_weight = 0.0
     acc_p_r = 0
     while j < v.tune.tree_depth
         pm = 2 * (rand() > 0.5) - 1
@@ -205,39 +211,41 @@ function nuts_sub!(
         meta.nalpha = 0
         meta.accnni = 0
         meta.nni = 0
+        log_sum_weight_subtree = -Inf
+        worker = pm == -1 ? xminus : xplus 
+
+        worker, nprime, sprime, log_sum_weight_subtree = buildtree(worker, pm, j, epsilon, logfgrad, logfun, logp0, lu, delta, meta, log_sum_weight_subtree)
+
         if pm == -1
-
-            xminus, _, xprime, nprime, sprime =
-                buildtree(xminus, pm, j, epsilon, logfgrad, logp0, lu, delta, meta)
-
+            xminus = worker
         else
-
-            _, xplus, xprime, nprime, sprime =
-                buildtree(xplus, pm, j, epsilon, logfgrad, logp0, lu, delta, meta)
-
-
-        end#if pm
+            xplus = worker
+        end
+       
         v.tune.stepsizeadapter.metro_acc_prob = meta.alpha / meta.nalpha
-        
+
         tnni += meta.nni
         if !sprime
             break
         end
         # sprime is true so checking is not necessary
-
-        if rand() < nprime / n
+        if log_sum_weight_subtree > log_sum_weight
             acc_p_r += 1
-            v.value[1] = xprime.x
+            v.value[1] = worker.x
+        else
+            accprob = exp(log_sum_weight_subtree - log_sum_weight)
+            if rand() < accprob
+                acc_p_r += 1
+                v.value[1] = worker.x
+            end
         end
-
+        log_sum_weight= logaddexp(log_sum_weight, log_sum_weight_subtree)
         n += nprime
         nni += meta.nni
 
-
         j += 1
 
-
-        s = nouturn(xminus, xplus, epsilon, logfgrad, delta)
+        s = nouturn(xminus, xplus, epsilon, logfgrad, logfun, delta)
 
         if !s
             break
@@ -259,18 +267,25 @@ function buildtree(
     j::Integer,
     epsilon::Float64,
     logfgrad::Function,
+    logfun::Function,
     logp0::Real,
     lu::Real,
     delta::Float64,
     meta::NUTSMeta,
-) where {T<:GeneralNode}
+    log_sum_weight_subtree::Float64
+)::Tuple{
+    Tree_HMC_State{T},
+    Int,
+    Bool,
+    Float64
+} where {T<:GeneralNode}
 
 
     if j == 0
         xprime = transfer(x)
         nni = 0.0
         if !xprime.extended
-            nni = refraction!(xprime, pm * epsilon, logfgrad, delta)
+            nni = refraction!(xprime, pm * epsilon, logfgrad, logfun, delta)
         else
             nni = xprime.nni
             xprime.extended = false
@@ -278,14 +293,13 @@ function buildtree(
 
         logpprime = hamiltonian(xprime)
 
+        log_sum_weight_subtree = logaddexp(log_sum_weight_subtree, logpprime-logp0)
+
         nprime = Int((logp0 + lu) < logpprime)
         sprime = (logp0 + lu) < logpprime + 1000.0
 
-        meta.nni = nni
+        meta.nni += nni
 
-
-        xminus = transfer(xprime)
-        xplus = transfer(xprime)
         meta.alpha = min(1.0, exp(logpprime - logp0))
         if rand() < meta.alpha
             meta.accnni += nni
@@ -293,57 +307,97 @@ function buildtree(
         meta.nalpha = 1
 
     else
-        xminus, xplus, xprime, nprime, sprime =
-            buildtree(x, pm, j - 1, epsilon, logfgrad, logp0, lu, delta, meta)
-        if sprime
-            meta1 = NUTSMeta()
-            if pm == -1
-                xminus, _, xprime2, nprime2, sprime2 =
-                    buildtree(xminus, pm, j - 1, epsilon, logfgrad, logp0, lu, delta, meta1)
-            else
+        log_sum_weight_init = -Inf
+        log_sum_weight_final = -Inf
+        
+        #if sprime
+        meta1 = NUTSMeta()
+        xprime = transfer(x)
+        worker = transfer(x)
 
-                _, xplus, xprime2, nprime2, sprime2 =
-                    buildtree(xplus, pm, j - 1, epsilon, logfgrad, logp0, lu, delta, meta1)
-            end # if pm
+        worker, nprime, sprime2, log_sum_weight_init = buildtree(
+            worker,
+            pm,
+            j - 1,
+            epsilon,
+            logfgrad,
+            logfun,
+            logp0,
+            lu,
+            delta,
+            meta1,
+            log_sum_weight_init
+        )
+
+        worker_final = transfer(worker)
+        meta2 = NUTSMeta()
+        worker_final, nprime2, sprime2, log_sum_weight_final = buildtree(
+            worker_final,
+            pm,
+            j - 1,
+            epsilon,
+            logfgrad,
+            logfun,
+            logp0,
+            lu,
+            delta,
+            meta2,
+            log_sum_weight_final
+        )
             update!(meta, meta1)
-            if rand() < nprime2 / (nprime + nprime2)
-                transfer!(xprime, xprime2)
-            end
-            nprime += nprime2
-
-            xminus_bar = transfer(xminus)
-            xplus_bar = transfer(xplus)
-            sprime = sprime2 && nouturn(xminus_bar, xplus_bar, epsilon, logfgrad, delta)
-            if pm == -1
-                transfer!(xminus, xminus_bar)
+            update!(meta, meta2)
+            if log_sum_weight_init > log_sum_weight_subtree
+                transfer!(xprime, worker_final)
             else
-                transfer!(xplus, xplus_bar)
+                accprob = exp(log_sum_weight_init - log_sum_weight_subtree)
+                if rand() < accprob
+                    transfer!(xprime, worker_final)
+                end
+            end
+            
+            log_sum_weight_subtree = logaddexp(log_sum_weight_subtree, log_sum_weight_init)
+            nprime += nprime2
+            if pm == -1
+                x2 = transfer(x)
+                x1 = transfer(xprime)
+            else
+                x1 = transfer(x)
+                x2 = transfer(xprime)
+            end
+            sprime =
+                sprime2 && nouturn(x1, x2, epsilon, logfgrad, logfun, delta)
+            if pm == -1
+                transfer!(xprime, x1)
+            else
+                transfer!(xprime, x2)
             end
 
-        end #if sprime
+        #end #if sprime
     end #if j
 
-    xminus, xplus, xprime, nprime, sprime
+    xprime, nprime, sprime, log_sum_weight_subtree
 end
 
 
 function nouturn(
-    xminus::Tree_HMC_State,
-    xplus::Tree_HMC_State,
+    xminus::Tree_HMC_State{T},
+    xplus::Tree_HMC_State{T},
     epsilon::Float64,
     logfgrad::Function,
+    logfun::Function,
     delta::Float64,
-)
-    curr_l, curr_h = BHV_bounds(xminus.x, xplus.x)
+)::Bool where {T}
+    _, curr_h = BHV_bounds(xminus.x, xplus.x)
 
-    temp = @spawn refraction!(xminus, -epsilon, logfgrad, delta)
-    nni_p = refraction!(xplus, epsilon, logfgrad, delta)
-    nni_m = fetch(temp)
+    #temp = @spawnat :any refraction!(xminus, -epsilon, logfgrad, logfun, delta)
+    nni_m = refraction!(xminus, -epsilon, logfgrad, logfun, delta)
+    nni_p = refraction!(xplus, epsilon, logfgrad, logfun, delta)
+    #nni_m = fetch(temp)
     xminus.extended = true
     xplus.extended = true
     xminus.nni = nni_m
     xplus.nni = nni_p
-    curr_t_l, curr_t_h = BHV_bounds(xminus.x, xplus.x)
+    curr_t_l, _ = BHV_bounds(xminus.x, xplus.x)
     return curr_h < curr_t_l
 end
 

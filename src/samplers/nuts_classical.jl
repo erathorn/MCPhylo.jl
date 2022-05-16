@@ -41,7 +41,7 @@ end
 
 #################### Sampling Functions ####################
 
-sample!(v::NUTSVariate; args...) = sample!(v, v.tune.logfgrad; args...)
+#sample!(v::NUTSVariate; args...) = sample!(v, v.tune.logfgrad; args...)
 """
     sample!(v::NUTSVariate, logfgrad::Function; adapt::Bool=false)
 

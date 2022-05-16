@@ -46,22 +46,22 @@ inits = [ Dict{Symbol, Union{Any, Real}}(
 @testset "PNUTS" begin
     Random.seed!(123)
 
-    scheme = [PNUTS(:mtree, tree_depth=5), SliceSimplex(:mypi)]
+    scheme = [PNUTS(:mtree, target=0.8, targetNNI=0.6, tree_depth=5), SliceSimplex(:mypi)]
 
     setsamplers!(model, scheme)
     sim = mcmc(
         model,
         my_data,
         inits,
-        500,
-        burnin = 50,
+        1000,
+        burnin = 500,
         thin = 1,
         chains = 2,
         verbose=false,
         trees=true
     )
 
-    mcmc(sim, 500; verbose=false, trees=true)
+    mcmc(sim, 250)
 
     r_m = summarystats(sim).value[5, 1, 1]
     r_sd = summarystats(sim).value[5, 2, 1]

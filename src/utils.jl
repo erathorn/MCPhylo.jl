@@ -66,30 +66,6 @@ function cummean(x::AbstractVector{T}) where {T<:Real}
 end
 
 
-@inline logit(x::Real) = log(x / (1.0 - x))
-@inline invexpit(x::Real) = 1.0 / (x - x^2)
-@inline invlogit(x::Real, λ::Real = 1.0) = 1.0 / (exp(-λ * x) + 1.0)
-@inline loginvlogit(x::Real, λ::Real = 1.0) = -log(exp(-λ * x) + 1.0)
-
-
-function loginvlogitder(x::T, λ::T)::T where {T<:Real}
-    λ / (exp(λ * x) + 1)
-end
-
-function invlogder(x::T, λ::T)::T where {T<:Real}
-    invlogit(x, λ) * invlogit(-x, λ)
-end
-
-Zygote.@adjoint function invlogit(x::Real, λ::Real)
-    invlogit(x, λ), Δ -> (nothing, invlogder(Δ, λ))
-end
-
-Zygote.@adjoint function loginvlogit(x::Real, λ::Real)
-    loginvlogit(x, λ), Δ -> (nothing, loginvlogitder(Δ, λ))
-end
-
-
-
 ## Csorgo S and Faraway JJ. The exact and asymptotic distributions of the
 ## Cramer-von Mises statistic. Journal of the Royal Statistical Society,
 ## Series B, 58: 221-234, 1996.
@@ -110,7 +86,7 @@ end
 ## instead to avoid the error handling issue.  In multi-processor mode, pmap is
 ## called and will apply its error processing.
 
-function pmap2(f::Function, lsts::AbstractArray)
+function pmap2(f::Function, lsts::Vector)
     if (nprocs() > 1)
         pmap(f, lsts)
     else
@@ -142,18 +118,18 @@ starts parallel ASDSF - if possible and requested by the user.
 """
 function assign_mcmc_work(
     f::Function,
-    lsts::AbstractArray,
+    lsts::Vector,
     sp::SimulationParameters,
-    conv_storage::Union{Nothing,ConvergenceStorage},
-)::Tuple{
-    Vector{Tuple{Chains,Model,ModelState}},
-    Array{Float64,2},
-    Vector{AbstractString},
-    Union{Nothing,ConvergenceStorage},
-}
+    conv_storage::Union{Nothing,ConvergenceStorage}
+ )::Tuple{
+     Vector{Tuple{Chains,Model,ModelState}},
+     Array{Float64,2},
+     Vector{AbstractString},
+     Union{Nothing,ConvergenceStorage},
+ }
 
     ASDSF::Bool = sp.asdsf
-    statnames::Vector{AbstractString} = []
+    statnames::Vector{String} = []
     # count the number of trees per step per chain
     tree_dim::Int64 = 0
     for i in lsts[1][1].nodes
@@ -162,6 +138,7 @@ function assign_mcmc_work(
             tree_dim += 1
         end # if
     end # for
+    
     nchains::Int64 = length(lsts)
     ntrees::Int64 = ASDSF ? floor((last(lsts[1][3]) - lsts[1][4]) / sp.freq) : 0
     results = Dict{Int64,Tuple{Chains,Model,ModelState}}()

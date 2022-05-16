@@ -108,7 +108,7 @@ const DistributionStruct =
 #################### Dependent Types ####################
 
 mutable struct Logical{D<:Union{Real,AbstractArray{T,N} where {T<:Real,N},GeneralNode}} <:
-               AbstractVariate
+    AbstractVariate
     value::D
     symbol::Symbol
     monitor::Vector{Int}
@@ -131,7 +131,6 @@ mutable struct Stochastic{
     distr::DistributionStruct
 end
 
-# Specialized Unions
 const ScalarVariate = Union{Stochastic{<:Real},Logical{<:Real}}
 const VectorVariate =
     Union{Stochastic{<:AbstractArray{<:Real,1}},Logical{<:AbstractArray{<:Real,1}}}
@@ -149,13 +148,13 @@ const ArrayVariate = Union{
 const AbstractLogical = Union{Logical{<:Real},Logical{<:AbstractArray{<:Real,N} where {N}}}
 const AbstractStochastic =
     Union{Stochastic{<:Real},Stochastic{<:AbstractArray{<:Real,N} where {N}}}
-
 const AbstractDependent = Union{AbstractLogical,AbstractStochastic,TreeVariate}
 
 const ConstraintDict{S} = Dict{
     Symbol,
     Union{Vector{Vector{S}},Vector{Tuple{Vector{S},Vector{S}}}} where S<:AbstractString,
 }
+
 #################### Sampler Types ####################
 
 abstract type SamplerTune end
@@ -340,9 +339,10 @@ export AbstractChains,
     VectorVariate
 
 export BDiagNormal,
-    Flat, SymUniform, CompoundDirichlet, PhyloDist, MultiplePhyloDist, exponentialBL
+    Flat, SymUniform, CompoundDirichlet, PhyloDist, MultiplePhyloDist, exponentialBL, UniformBranchLength, UniformTopology, UniformConstrained
 
 export ASDSF,
+    PNUTS_monitor,
     autocor,
     changerate,
     contourplot,
@@ -362,9 +362,7 @@ export ASDSF,
     hpd,
     insupport,
     invlink,
-    invlogit,
     link,
-    logit,
     logpdf,
     logpdf!,
     mcmc,

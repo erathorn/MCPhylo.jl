@@ -20,16 +20,16 @@ const EmpiricalVariate = Sampler{EmpiricalTune, T} where T
 #################### Sampler Constructor ####################
 """
 
-function Empirical(params::ElementOrVector{Symbol}, width::Int64; replace::Bool=false)
+function Empirical(params::Symbol, width::Int64; replace::Bool=false)
 
 This Sampler generates Samples from a distribution by selecting a random value
 from this distribution. The move will always be accepted. Sampling can be done with or without replacement.
 """
-function Empirical(params::ElementOrVector{Symbol},
+function Empirical(params::Symbol,
                 width::Int64;
                 replace::Bool=false)
     
-    tune = EmpiricalTune(logpdf!, rand, width, replace)
+    tune = EmpiricalTune(Float64[], logpdf!, rand, width, replace)
     
     Sampler(Float64[], asvec(params), tune, Symbol[], false)
 end
@@ -37,12 +37,12 @@ end
 
 function sample!(v::EmpiricalVariate{T}, lpdf::Function; model::Model=model, kwargs...) where T
     width = v.tune.width
-    samfun = v.tune.sampler_fun
+    samfun = v.tune.samplerfun
     params = v.params
-    sam = samfun(model, params, x)
+    sam = samfun(model, params, 1)
     if width > 1 && v.tune.replacement
         while length(Set(sam)) != width
-            sam = samfun(model, params, x)
+            sam = samfun(model, params, 1)
         end
     end
     v[:] = sam
