@@ -54,14 +54,14 @@ inits = [ Dict{Symbol, Union{Any, Real}}(
         my_data,
         inits,
         1000,
-        burnin = 50,
+        burnin = 500,
         thin = 1,
         chains = 2,
         verbose=false,
         trees=true
     )
 
-    mcmc(sim, 1500)
+    mcmc(sim, 250)
 
     r_m = summarystats(sim).value[5, 1, 1]
     r_sd = summarystats(sim).value[5, 2, 1]
