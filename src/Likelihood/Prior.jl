@@ -87,7 +87,7 @@ function insupport(l::LengthDistribution, x::GeneralNode)
 end 
 
 function insupport(t::UniformConstrained, x::GeneralNode)::Bool
-    topological.constraint_dict(t, x)
+    topological(t, x)
 end
 
 function insupport(t::UniformTopology, x::GeneralNode)::Bool

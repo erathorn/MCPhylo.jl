@@ -154,6 +154,7 @@ const ConstraintDict{S} = Dict{
     Symbol,
     Union{Vector{Vector{S}},Vector{Tuple{Vector{S},Vector{S}}}} where S<:AbstractString,
 }
+
 #################### Sampler Types ####################
 
 abstract type SamplerTune end
@@ -338,7 +339,7 @@ export AbstractChains,
     VectorVariate
 
 export BDiagNormal,
-    Flat, SymUniform, CompoundDirichlet, PhyloDist, MultiplePhyloDist, exponentialBL
+    Flat, SymUniform, CompoundDirichlet, PhyloDist, MultiplePhyloDist, exponentialBL, UniformBranchLength, UniformTopology, UniformConstrained
 
 export ASDSF,
     PNUTS_monitor,

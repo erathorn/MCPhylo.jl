@@ -6,7 +6,8 @@ include("utils.jl")
 
 const distributionstests = [
     "phylodist",
-    "treeconstraints"
+    "treeconstraints",
+    "treedists"
 ]
 
 const likelihoodtests = [

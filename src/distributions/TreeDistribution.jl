@@ -62,6 +62,8 @@ struct UniformConstrained <: ContinuousUnivariateDistribution
 
     UniformConstrained() = 
         new(ConstraintDict()) 
+    UniformConstrained(x::Dict) = 
+        new(ConstraintDict(x)) 
 end
 
 """
@@ -87,12 +89,15 @@ struct TreeDistribution <: ContinuousUnivariateDistribution
     length_distr::LengthDistribution
     topology_distr::TopologyDistribution
 
-    TreeDistribution(l::LengthDistribution, c::ConstraintDict) =
-        new(l, UniformConstrained(c))
+
     TreeDistribution(l::LengthDistribution) =
         new(l, UniformTopology())
+    TreeDistribution(l::LengthDistribution, c::Dict) =
+        new(l, UniformConstrained(ConstraintDict(c)))
     TreeDistribution(c::ConstraintDict) =
         new(UniformBranchLength(), UniformConstrained(c))
+    TreeDistribution(c::Dict) =
+        new(UniformBranchLength(), UniformConstrained(ConstraintDict(c)))
     TreeDistribution() = 
         new(UniformBranchLength(), UniformTopology())
 end
