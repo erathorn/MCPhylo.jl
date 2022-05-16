@@ -239,7 +239,7 @@ function nuts_sub!(
                 v.value[1] = worker.x
             end
         end
-        log_sum_weight= logsumexp(log_sum_weight, log_sum_weight_subtree)
+        log_sum_weight= logaddexp(log_sum_weight, log_sum_weight_subtree)
         n += nprime
         nni += meta.nni
 
@@ -293,7 +293,7 @@ function buildtree(
 
         logpprime = hamiltonian(xprime)
 
-        log_sum_weight_subtree = logsumexp(log_sum_weight_subtree, logpprime-logp0)
+        log_sum_weight_subtree = logaddexp(log_sum_weight_subtree, logpprime-logp0)
 
         nprime = Int((logp0 + lu) < logpprime)
         sprime = (logp0 + lu) < logpprime + 1000.0
@@ -355,7 +355,7 @@ function buildtree(
                 end
             end
             
-            log_sum_weight_subtree = logsumexp(log_sum_weight_subtree, log_sum_weight_init)
+            log_sum_weight_subtree = logaddexp(log_sum_weight_subtree, log_sum_weight_init)
             nprime += nprime2
             if pm == -1
                 x2 = transfer(x)
