@@ -251,33 +251,7 @@ function gradlogpdf!(
     gr .= any(isnan.(gr)) ? -Inf : gr[:]
     vp + v, gr
 end
-# """
-#     logpdf!(m::Model, x::AbstractArray{T}, block::Integer=0,
-#                   transform::Bool=false) where {T<:Real}
 
-# Compute the sum of log-densities for stochastic nodes.
-
-# The resulting numeric value of summed log-densities. Method `logpdf!()` additionally updates model `m` with supplied values `x`.
-# """
-# function logpdf!(
-#     m::Model,
-#     x::AbstractArray{T},
-#     block::Integer = 0,
-#     transform::Bool = false,
-# ) where {T<:Real}
-#     params = keys(m, :block, block)
-#     targets = keys(m, :target, block)
-#     m[params] = relist(m, x, params, transform)
-#     lp = logpdf(m, setdiff(params, targets), transform)
-#     lp = isnan(lp) ? -Inf : lp
-#     for key in targets
-#         isfinite(lp) || break
-#         node = m[key]
-#         update!(node, m)
-#         lp += key in params ? logpdf(node, transform) : logpdf(node)
-#     end
-#     lp
-# end
 
 function logpdf!(
     m::Model,
@@ -368,12 +342,10 @@ function sample!(m::Model)
             m[sampler.params] = res
         end
     end
-    #m.iter# -= isoneblock
-#    m.likelihood = final_likelihood(m)
     m
 end
 
-function sample!(s::Sampler, m::Model)
+function sample!(s::Sampler{T, R}, m::Model) where {T<:SamplerTune, R}
     s.value = unlist(m, s.params, transform=s.transform)
     lpdf(x) = s.tune.logf(m, x, s.params, s.targets, s.transform)
     grlpdf(x) = s.tune.logfgrad(m, x, s.params, s.targets, s.transform)
