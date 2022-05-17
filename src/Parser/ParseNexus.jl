@@ -117,7 +117,7 @@ function create_nexusdf(filecontent::Array{String})::Tuple{Array{String}, Array{
         else
             lang, raw = split(line, limit=2)
             push!(languages,lang)
-            raw = join(raw)
+            raw = join(strip(raw))
             ntax = length(raw)
             data = append!(data,raw)
             nlangs += 1
