@@ -52,7 +52,7 @@ maximum(d::PhyloDist) = Inf
 
 Base.size(d::PhyloDist) = (d.nbase, 1, d.nnodes)
 
-function logpdf(d::PhyloDist, x::AbstractArray)::Float64
+function logpdf(d::PhyloDist, x::AbstractArray{<:Real, 3})::Float64
     mt = post_order(d.tree)
     U, D, Uinv, mu = d.substitution_model(d.base_freq, d.substitution_rates)::Tuple{Matrix, Vector, Matrix, Float64}
     ll = zero(Float64)
@@ -217,7 +217,7 @@ maximum(d::MultiplePhyloDist) = Inf
 
 Base.size(d::MultiplePhyloDist) = (size(d.DistCollector[1].base_freq,1), 1, maximum(d.size_array), length(d.size_array))
 
-function logpdf(d::MultiplePhyloDist, x::AbstractArray)
+function logpdf(d::MultiplePhyloDist, x::AbstractArray{<:Real, 4})::Float64
     res = zero(Float64)
     @inbounds for (ind, s) in enumerate(d.size_array)
         xt = x[:, :, 1:s, ind]
