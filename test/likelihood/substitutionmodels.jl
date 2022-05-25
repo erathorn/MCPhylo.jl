@@ -35,7 +35,6 @@
         end  
 
         @testset "Calculate transition matrix" begin
-            U, D, Uinv, mu = result
             Q = U * diagm(D) * Uinv
             P = exp(Q * mu)
             @test P ≈ MCPhylo.calculate_transition(JC, 1.0, mu, 1.0, U, Uinv, D, [])
