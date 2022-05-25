@@ -4,16 +4,16 @@
 ##   b0, b1 ~ N(0, 1000)
 ##   s2 ~ invgamma(0.001, 0.001)
 ################################################################################
-
+using LinearAlgebra
 data = Dict{Symbol,Any}(
     :x => [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
     :y => [1, 3, 3, 3, 5, 5, 7, 7, 7, 9],
 )
 data[:xmat] = [ones(10) data[:x]]
 model = Model(
-    y = Stochastic(1, (μ, s2) -> MultivariateNormal(μ, s2), false),
+    y = Stochastic(1, (μ, s2) -> MultivariateNormal(μ, s2*I), false),
     μ = Logical(1, (β, xmat) -> xmat * β, false),
-    β = Stochastic(1, () -> MultivariateNormal(2, sqrt(1000)), true),
+    β = Stochastic(1, () -> MultivariateNormal(zeros(2), sqrt(1000)*I), true),
     s2 = Stochastic(() -> InverseGamma(0.001, 0.001), true),
 )
 
