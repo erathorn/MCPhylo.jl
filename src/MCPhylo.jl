@@ -30,7 +30,8 @@ using DataStructures
 using ProgressMeter
 using Bijectors
 using LogExpFunctions
-
+using LoopVectorization
+using Base.Threads
 
 using PDMats
 
@@ -310,6 +311,9 @@ include("Parser/ParseNexus.jl")
 include("Likelihood/LikelihoodCalculator_Node.jl")
 include("Likelihood/Prior.jl")
 include("Likelihood/Rates.jl")
+
+include("distributions/PhyloDistFast.jl")
+include("Likelihood/LikelihoodCalculator_Fast.jl")
 #################### Exports ####################
 
 export AbstractChains,
