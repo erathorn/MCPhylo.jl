@@ -50,15 +50,21 @@ function my_repeat(
     data::Array{F,N},
     nrates::Int,
     linds::Vector{T},
+    nlinds::Vector{T}
 )::Array{F,4} where {F,N,T}
     x, y, z = size(data)
     out = Array{F,4}(undef, x, y, nrates, z)
-    @turbo for l in eachindex(linds),
+    @tturbo for l in eachindex(linds),
         rind = 1:nrates,
         xs in axes(out, 1),
         ys in axes(out, 2)
-
         out[xs, ys, rind, linds[l]] = data[xs, ys, linds[l]]
+    end
+    @tturbo for l in eachindex(nlinds),
+        rind = 1:nrates,
+        xs in axes(out, 1),
+        ys in axes(out, 2)
+        out[xs, ys, rind, nlinds[l]] = one(eltype(out))
     end
     out
 end

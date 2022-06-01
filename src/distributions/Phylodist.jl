@@ -61,8 +61,9 @@ function logpdf(d::PhyloDist, x::AbstractArray{<:Real,3})::Float64
     )::Tuple{Matrix,Vector,Matrix,Float64}
     
     blv = get_branchlength_vector(last(mt))
-    data_ext =
-        my_repeat(x, length(d.rates), [l.num for l in get_leaves(last(mt))])
+    leaveinds = [l.num for l in get_leaves(last(mt))]
+    nleaveinds = [l.num for l in mt if l.nchild > 0]
+    data_ext = my_repeat(x, length(d.rates), leaveinds, nleaveinds)
     Down = deepcopy(data_ext)
     trans_probs = parallel_transition_prob(U, D, Uinv, d.rates, mu, blv)
     FelsensteinFunction(mt, data_ext, Down, d.base_freq, trans_probs)
@@ -75,8 +76,9 @@ function gradlogpdf(d::PhyloDist, x::AbstractArray)
         d.substitution_rates,
     )::Tuple{Matrix,Vector,Matrix,Float64}
     blv = get_branchlength_vector(last(mt))
-    data_ext =
-        my_repeat(x, length(d.rates), [l.num for l in get_leaves(last(mt))])
+    leaveinds = [l.num for l in get_leaves(last(mt))]
+    nleaveinds = [l.num for l in mt if l.nchild > 0]
+    data_ext = my_repeat(x, length(d.rates), leaveinds, nleaveinds)
     Down = deepcopy(data_ext)
     trans_probs = parallel_transition_prob(U, D, Uinv, d.rates, mu, blv)
     ptg = zeros(size(trans_probs))

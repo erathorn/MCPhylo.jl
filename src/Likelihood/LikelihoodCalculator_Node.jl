@@ -64,29 +64,25 @@ function FelsensteinFunction(
 
         c_node = tree_postorder[node_ind]
         if c_node.nchild > 0
-
+            
             c1num = c_node.children[1].num
             c2num = c_node.children[2].num
             pnum = c_node.num
-
-            sum_product_loop!(Down, data, trans_probs, c1num)
-            sum_product_loop!(Down, data, trans_probs, c2num)
-            turbo_mul!(data, Down, pnum, c1num, c2num)
+            for child in c_node.children
+                sum_product_loop!(Down, data, trans_probs, child.num)
+                turbo_mul!(data, Down, pnum, child.num)
+            end
             ll = by_max!(data, ll, pnum)
 
         end #if
     end # for
-
+    
     c_node = last(tree_postorder)
-    c1_ind = c_node.children[1].num
-    c2_ind = c_node.children[2].num
-    c3_ind = c_node.children[3].num
-    sum_product_loop!(Down, data, trans_probs, c1_ind)
-    sum_product_loop!(Down, data, trans_probs, c2_ind)
-    sum_product_loop!(Down, data, trans_probs, c3_ind)
-
-    turbo_mul!(data, Down, c_node.num, c1_ind, c2_ind, c3_ind)
-
+    
+    for child in c_node.children
+        sum_product_loop!(Down, data, trans_probs, child.num) 
+        turbo_mul!(data, Down, c_node.num, child.num)
+    end
 
     ll = root_sum(data, pi_, c_node.num, ll)
 
