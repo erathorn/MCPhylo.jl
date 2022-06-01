@@ -308,10 +308,9 @@ include("Parser/Parser.jl")
 include("Parser/ParseCSV.jl")
 include("Parser/ParseNexus.jl")
 
-include("Likelihood/LikelihoodCalculator_Node.jl")
 include("Likelihood/Prior.jl")
 include("Likelihood/Rates.jl")
-
+include("Likelihood/VectorizedFunctions.jl")
 include("distributions/PhyloDistFast.jl")
 include("Likelihood/LikelihoodCalculator_Fast.jl")
 #################### Exports ####################
