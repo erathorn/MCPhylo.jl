@@ -311,8 +311,7 @@ include("Parser/ParseNexus.jl")
 include("Likelihood/Prior.jl")
 include("Likelihood/Rates.jl")
 include("Likelihood/VectorizedFunctions.jl")
-include("distributions/PhyloDistFast.jl")
-include("Likelihood/LikelihoodCalculator_Fast.jl")
+include("Likelihood/LikelihoodCalculator_Node.jl")
 #################### Exports ####################
 
 export AbstractChains,
