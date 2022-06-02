@@ -52,47 +52,41 @@ maximum(d::PhyloDist) = Inf
 
 Base.size(d::PhyloDist) = (d.nbase, 1, d.nnodes)
 
-function logpdf(d::PhyloDist, x::AbstractArray{<:Real, 3})::Float64
+function logpdf(d::PhyloDist, x::AbstractArray{<:Real,3})::Float64
     mt = post_order(d.tree)
-    U, D, Uinv, mu = d.substitution_model(d.base_freq, d.substitution_rates)::Tuple{Matrix, Vector, Matrix, Float64}
-    ll = zero(Float64)
-    nsites = size(x, 2)
-    lck = Threads.SpinLock()
-    minparts = min(nsites, 200)
-    parts = max(minparts, Int(round(nsites/Threads.nthreads())))
     
-    @inbounds for r in 1:length(d.rates)
-        Threads.@threads for chunk in collect(Iterators.partition(1:nsites, parts))
-            ll1 = FelsensteinFunction(mt, d.base_freq, d.rates[r], U, D, Uinv, mu, x[:, chunk, :], d.substitution_model)
-            lock(lck) do
-                ll += ll1
-            end
-        end
-    end
-
-    ll
+    U, D, Uinv, mu = d.substitution_model(
+        d.base_freq,
+        d.substitution_rates,
+    )::Tuple{Matrix,Vector,Matrix,Float64}
+    
+    blv = get_branchlength_vector(last(mt))
+    leaveinds = [l.num for l in get_leaves(last(mt))]
+    nleaveinds = [l.num for l in mt if l.nchild > 0]
+    data_ext = my_repeat(x, length(d.rates), leaveinds, nleaveinds)
+    Down = deepcopy(data_ext)
+    trans_probs = parallel_transition_prob(U, D, Uinv, d.rates, mu, blv)
+    FelsensteinFunction(mt, data_ext, Down, d.base_freq, trans_probs)
 end
 
 function gradlogpdf(d::PhyloDist, x::AbstractArray)
     mt = post_order(d.tree)
-    U, D, Uinv, mu = d.substitution_model(d.base_freq, d.substitution_rates)::Tuple{Matrix, Vector, Matrix, Float64}
-    ll = zero(Float64)
-    gr = zeros(size(x,3)-1)
-    nsites = size(x, 2)
-    lck = Threads.SpinLock()
-    minparts = min(nsites, 200)
-    parts = max(minparts, Int(round(nsites/Threads.nthreads())))
-    
-    @inbounds for r in 1:length(d.rates)
-        Threads.@threads for chunk in collect(Iterators.partition(1:nsites, parts))
-            ll1, gr1, _ = FelsensteinFunction_wg(mt, d.base_freq, d.rates[r], U, D, Uinv, mu, x[:, chunk, :], d.substitution_model)
-            lock(lck) do
-                ll += ll1
-                gr .+= gr1
-            end
-        end
-    end
-    
+    U, D, Uinv, mu = d.substitution_model(
+        d.base_freq,
+        d.substitution_rates,
+    )::Tuple{Matrix,Vector,Matrix,Float64}
+    blv = get_branchlength_vector(last(mt))
+    leaveinds = [l.num for l in get_leaves(last(mt))]
+    nleaveinds = [l.num for l in mt if l.nchild > 0]
+    data_ext = my_repeat(x, length(d.rates), leaveinds, nleaveinds)
+    Down = deepcopy(data_ext)
+    trans_probs = parallel_transition_prob(U, D, Uinv, d.rates, mu, blv)
+    ptg = zeros(size(trans_probs))
+    out2 = similar(ptg)
+    diagonalizer_ptg!(ptg, D, blv, mu, d.rates)
+    R_gemmturbo_large!(out2, U, ptg)
+    L_gemmturbo_large!(ptg, out2, Uinv)
+    ll, gr = FelsensteinFunction(mt, data_ext, Down, d.base_freq, trans_probs, ptg)
     ll, gr
 end
 
