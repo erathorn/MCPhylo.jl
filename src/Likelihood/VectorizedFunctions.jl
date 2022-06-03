@@ -199,7 +199,7 @@ function sum_product_loop!(tmp_data::A, data::A, transprobs::A, num::N)::Nothing
     @tturbo for s in axes(data, 1), c in axes(data, 2), r in axes(data, 3)
         tmp = zero(eltype(data))
         for s1 in axes(data, 1)
-            tmp += data[s1, c, r, num] * transprobs[s1, s, r, num]
+            tmp += data[s1, c, r, num] * transprobs[s, s1, r, num]
         end
         tmp_data[s, c, r, num] = tmp
     end

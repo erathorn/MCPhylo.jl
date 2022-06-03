@@ -133,7 +133,7 @@ function sample!(
     setadapt!(v, adapt)
     if tune.adapt
         adapter.m += 1
-    
+
         nuts_sub!(v, tune.epsilon, grlpdf, logfun)
 
         adaptstat = adapter.metro_acc_prob > 1 ? 1 : adapter.metro_acc_prob
@@ -180,7 +180,7 @@ function nuts_sub!(
     logfun::Function,
 )::PNUTSVariate
 
-    
+
 
     x = deepcopy(v.value[1])
     delta = v.tune.delta
@@ -192,8 +192,8 @@ function nuts_sub!(
     logf, grad = logfgrad(x)
     xminus = Tree_HMC_State(deepcopy(x), r, grad, logf)
     xplus = Tree_HMC_State(deepcopy(x), r, grad, logf)
-    
-    
+
+
     lu = log(rand())
     logp0 = hamiltonian(xminus)
 
@@ -212,16 +212,28 @@ function nuts_sub!(
         meta.accnni = 0
         meta.nni = 0
         log_sum_weight_subtree = -Inf
-        worker = pm == -1 ? xminus : xplus 
+        worker = pm == -1 ? xminus : xplus
 
-        worker, nprime, sprime, log_sum_weight_subtree = buildtree(worker, pm, j, epsilon, logfgrad, logfun, logp0, lu, delta, meta, log_sum_weight_subtree)
+        worker, nprime, sprime, log_sum_weight_subtree = buildtree(
+            worker,
+            pm,
+            j,
+            epsilon,
+            logfgrad,
+            logfun,
+            logp0,
+            lu,
+            delta,
+            meta,
+            log_sum_weight_subtree,
+        )
 
         if pm == -1
             xminus = worker
         else
             xplus = worker
         end
-       
+
         v.tune.stepsizeadapter.metro_acc_prob = meta.alpha / meta.nalpha
 
         tnni += meta.nni
@@ -239,7 +251,7 @@ function nuts_sub!(
                 v.value[1] = worker.x
             end
         end
-        log_sum_weight= logaddexp(log_sum_weight, log_sum_weight_subtree)
+        log_sum_weight = logaddexp(log_sum_weight, log_sum_weight_subtree)
         n += nprime
         nni += meta.nni
 
@@ -272,13 +284,8 @@ function buildtree(
     lu::Real,
     delta::Float64,
     meta::NUTSMeta,
-    log_sum_weight_subtree::Float64
-)::Tuple{
-    Tree_HMC_State{T},
-    Int,
-    Bool,
-    Float64
-} where {T<:GeneralNode}
+    log_sum_weight_subtree::Float64,
+)::Tuple{Tree_HMC_State{T},Int,Bool,Float64} where {T<:GeneralNode}
 
 
     if j == 0
@@ -293,7 +300,7 @@ function buildtree(
 
         logpprime = hamiltonian(xprime)
 
-        log_sum_weight_subtree = logaddexp(log_sum_weight_subtree, logpprime-logp0)
+        log_sum_weight_subtree = logaddexp(log_sum_weight_subtree, logpprime - logp0)
 
         nprime = Int((logp0 + lu) < logpprime)
         sprime = (logp0 + lu) < logpprime + 1000.0
@@ -309,7 +316,7 @@ function buildtree(
     else
         log_sum_weight_init = -Inf
         log_sum_weight_final = -Inf
-        
+
         #if sprime
         meta1 = NUTSMeta()
         xprime = transfer(x)
@@ -326,7 +333,7 @@ function buildtree(
             lu,
             delta,
             meta1,
-            log_sum_weight_init
+            log_sum_weight_init,
         )
 
         worker_final = transfer(worker)
@@ -342,37 +349,35 @@ function buildtree(
             lu,
             delta,
             meta2,
-            log_sum_weight_final
+            log_sum_weight_final,
         )
-            update!(meta, meta1)
-            update!(meta, meta2)
-            if log_sum_weight_init > log_sum_weight_subtree
+        update!(meta, meta1)
+        update!(meta, meta2)
+        if log_sum_weight_init > log_sum_weight_subtree
+            transfer!(xprime, worker_final)
+        else
+            accprob = exp(log_sum_weight_init - log_sum_weight_subtree)
+            if rand() < accprob
                 transfer!(xprime, worker_final)
-            else
-                accprob = exp(log_sum_weight_init - log_sum_weight_subtree)
-                if rand() < accprob
-                    transfer!(xprime, worker_final)
-                end
             end
-            
-            log_sum_weight_subtree = logaddexp(log_sum_weight_subtree, log_sum_weight_init)
-            nprime += nprime2
-            if pm == -1
-                x2 = transfer(x)
-                x1 = transfer(xprime)
-            else
-                x1 = transfer(x)
-                x2 = transfer(xprime)
-            end
-            sprime =
-                sprime2 && nouturn(x1, x2, epsilon, logfgrad, logfun, delta)
-            if pm == -1
-                transfer!(xprime, x1)
-            else
-                transfer!(xprime, x2)
-            end
+        end
 
-        #end #if sprime
+        log_sum_weight_subtree = logaddexp(log_sum_weight_subtree, log_sum_weight_init)
+        nprime += nprime2
+        if pm == -1
+            x2 = transfer(x)
+            x1 = transfer(xprime)
+        else
+            x1 = transfer(x)
+            x2 = transfer(xprime)
+        end
+        sprime = sprime2 && nouturn(x1, x2, epsilon, logfgrad, logfun, delta)
+        if pm == -1
+            transfer!(xprime, x1)
+        else
+            transfer!(xprime, x2)
+        end
+
     end #if j
 
     xprime, nprime, sprime, log_sum_weight_subtree

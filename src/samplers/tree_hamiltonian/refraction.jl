@@ -14,11 +14,7 @@ function refraction!(
 
     tmpB = @. blenvec + (epsilon * s.r)
 
-    #nni = 0
-
-    #if minimum(tmpB) <= 0
     tmpB, nni = ref_NNI!(s, tmpB, abs(epsilon), blenvec, delta, logf)
-    #end
 
     blenvec = molifier.(tmpB, delta)
 
@@ -79,8 +75,6 @@ function ref_NNI!(
                     s.r[ref_index] = sqrt(my_v - delta_U)
                     s.x = v_copy
                 end # if my_v
-            #else
-            #    U_before_nni =fetch(temp)
             end #if NNI
             
         end #non leave
