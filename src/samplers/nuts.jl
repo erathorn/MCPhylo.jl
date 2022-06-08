@@ -23,6 +23,6 @@ function NUTS(params::ElementOrVector{Symbol}; variant::Symbol=:classic, epsilon
     elseif variant == :riemann
         return NUTS_Rie(params; epsilon=epsilon, kwargs...)      
     else
-        throw(ArgumentError("Unrecognized variant: $variant"))
+        throw(ArgumentError("Unrecognized variant: $variant, allowed variants :classic & :riemann"))
     end
 end

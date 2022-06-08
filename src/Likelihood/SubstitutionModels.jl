@@ -11,15 +11,15 @@ The `SubstitutionRates` are ignored, and just for call stability.
 The function returns the Eigenvectors, Eigenvalues, inverse of eigenvectors and
     the scale factor for expected number changes per site
 """
-function Restriction(base_freq::Vector{Float64}, SubstitutionRates::Vector{Float64})::Tuple{Array{Float64,2}, Array{Float64,1}, Array{Float64,2}, Float64}
+function Restriction(base_freq::Vector{T}, SubstitutionRates::Vector)::Tuple{Array{T,2}, Array{T,1}, Array{T,2}, T} where T<:Real
     @assert length(base_freq) == 2
     Nbases = length(base_freq)
-    Q = ones(Nbases,Nbases)
+    Q = ones(T, Nbases,Nbases)
     Q[diagind(Nbases,Nbases)] .= -1
     Q .*= reverse(base_freq)
     D, U = eigen(Q)
     Uinv = inv(U)
-    mu::Float64 =  1.0 / (2.0 * prod(base_freq))
+    mu::T =  1.0 / (2.0 * prod(base_freq))
     return U, D, Uinv, mu
 end
 
@@ -33,9 +33,9 @@ The `SubstitutionRates` are ignored, and just for call stability.
 
 The function returns the Eigenvectors, Eigenvalues and inverse of eigenvectors.
 """
-function JC(base_freq::Vector{Float64}, SubstitutionRates::Vector{Float64})::Tuple{Array{Float64,2}, Array{Float64,1}, Array{Float64,2}, Float64}
+function JC(base_freq::Vector{T}, SubstitutionRates::Vector)::Tuple{Array{T,2}, Array{T,1}, Array{T,2}, T}
     Nbases = length(base_freq)
-    Q::Array{Float64,2} = ones(Nbases,Nbases)
+    Q= ones(T, Nbases,Nbases)
     off_diag = 1.0/Nbases
     diag = off_diag * (Nbases-1)
     Q .= off_diag
@@ -56,9 +56,9 @@ Calculate the eigenvalue decomposition of the Q matrix of the General Time Rever
 
 The function returns the Eigenvectors, Eigenvalues and inverse of eigenvectors.
 """
-function GTR(base_freq::Vector{Float64}, SubstitutionRates::Vector{Float64})::Tuple{Array{Float64,2}, Array{Float64,1}, Array{Float64,2}, Float64}
+function GTR(base_freq::Vector{T}, SubstitutionRates::Vector{T})::Tuple{Array{T,2}, Array{T,1}, Array{T,2}, T}
     Nbases = length(base_freq)
-    Q::Array{Float64,2} = setmatrix(SubstitutionRates)
+    Q = setmatrix(SubstitutionRates)
     Q = mapslices(x-> x.*base_freq, Q, dims=2)
     dia = sum(Q, dims=2)
     Q[diagind(Nbases,Nbases)] = -dia

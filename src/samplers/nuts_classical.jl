@@ -183,5 +183,5 @@ end
 function nouturn(xminus::Vector{Float64}, xplus::Vector{Float64},
                  rminus::Vector{Float64}, rplus::Vector{Float64})
   xdiff = xplus - xminus
-  dot(xdiff, rminus) >= 0 && dot(xdiff, rplus) >= 0
+  turbo_dot(xdiff, rminus) >= 0 && turbo_dot(xdiff, rplus) >= 0
 end
