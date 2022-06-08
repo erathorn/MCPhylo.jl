@@ -31,7 +31,7 @@ function transfer(s1::T)::T where T<:Array_HMC_State
     T(s1.x[:], s1.r[:],s1.g[:],s1.lf)
 end
 
-hamiltonian(s::HMC_State) = s.lf - 0.5 * dot(s.r, s.r)
+hamiltonian(s::HMC_State) = s.lf - 0.5 * turbo_dot(s.r, s.r)
 
 function transfer!(s1::Tree_HMC_State{T}, s2::Tree_HMC_State{T}) where T
     s1.x = deepcopy(s2.x)

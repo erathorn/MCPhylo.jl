@@ -55,7 +55,7 @@ end
 function SliceSimplex_sub!(D::Array{MultivariateDistribution}, sim::Function,
                            logf::Function)
   inds = 0:0
-  for i in 1:length(D)
+  @inbounds for i in 1:length(D)
     d = D[i]
     inds = last(inds) .+ (1:length(d))
     sim(inds, v -> logf(d, v, inds))
@@ -90,9 +90,9 @@ function sample!(v::SliceSimplexVariate, logf::Function; args...)
   xb = rand(d)
   x = vertices * xb
   while any(x .< 0.0) || any(x .> 1.0) || logf(x) < p0
-    if ct > 10
-      return v
-    end
+    #if ct > 10
+    #  return v
+    #end
     vertices = shrinksimplex(vb, xb, v.value, x, vertices)
     vb = vertices \ v.value
     xb = rand(d)
@@ -115,7 +115,7 @@ end
 function shrinksimplex(bx::AbstractVector{Float64}, bc::AbstractVector{Float64},
                        cx::AbstractVector{Float64}, cc::AbstractVector{Float64},
                        vertices::AbstractMatrix{Float64})
-  @inbounds for i in findall(bc .< bx)
+  @inbounds @fastmath for i in findall(bc .< bx)
     inds = [1:(i - 1); (i + 1):size(vertices, 2)]
     vertices[:, inds] += bc[i] * (vertices[:, i] .- vertices[:, inds])
     bc = vertices \ cc

@@ -76,7 +76,7 @@ function Base.show(io::IO, s::ChainSummary)
     charv = mapslices(showoff, s.value, dims = 1)
     colwid = 1 .+ max.(cnwid, vec(maximum(map(length, charv), dims = [1, 3])))
     m, n, f = size(charv)
-    for k = 1:f
+    @inbounds for k = 1:f
         ## write the column headers centered on the column widths
         wrtsp(io, mxrnwid)
         for j = 1:n

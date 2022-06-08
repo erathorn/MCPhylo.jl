@@ -82,13 +82,9 @@ end
 
 
 @inline function scale_fac(x::T, delta::T)::T where {T<:Real}
-    x < delta ? x/delta : 1.0
+    x < delta ? x/delta : one(T)
 end
 
 @inline function molifier(x::T, delta::Real)::T where {T<:Real}
     x >= delta ? x : (x^2 + delta^2) / (2.0 * delta)
 end # function
-
-@inline function abs_adapter(x::R)::Float64 where R <:Real
-    x / (1+abs(x))
-end

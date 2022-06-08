@@ -364,7 +364,7 @@ function nouturn(
     rho::Vector{Float64},
     rminus::Vector{Float64},
     rplus::Vector{Float64})::Bool
-    return dot(rminus, rho) > 0 && dot(rplus, rho) > 0
+    return turbo_dot(rminus, rho) > 0 && turbo_dot(rplus, rho) > 0
 end
 
 

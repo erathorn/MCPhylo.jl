@@ -592,8 +592,8 @@ Returns the model with updated nodes.
 * `nodekeys` : nodes to be updated in the given order.
 """
 function update!(m::Model, nodekeys::Vector{Symbol})
-    for key in nodekeys
-        update!(m[key], m)
+    @inbounds for key_ind in eachindex(nodekeys)
+        update!(m[nodekeys[key_ind]], m)
     end
     m
 end

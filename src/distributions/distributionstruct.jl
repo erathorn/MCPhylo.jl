@@ -123,12 +123,19 @@ function logpdf_sub(d::DiscreteMatrixDistribution, X::AbstractArray, transform::
 end
 
 function logpdf_sub(d::UnivariateDistribution, X::AbstractArray, transform::Bool)
-    lp = sum([logpdf_sub(d, X[i], transform) for i = 1:length(X)])
+    lp = 0.0
+    @inbounds @fastmath for i in eachindex(X)
+        lp += logpdf_sub(d, X[i], transform)
+    end
+    
     lp
 end
 
 function logpdf_sub(D::Array{UnivariateDistribution}, X::AbstractArray, transform::Bool)
-    @inbounds lp = sum([logpdf_sub(D[i], X[i], transform) for i = 1:length(D)])
+    lp = 0.0
+    @inbounds @fastmath for i in eachindex(X)
+        lp += logpdf_sub(D[i], X[i], transform)
+    end
     lp
 end
 

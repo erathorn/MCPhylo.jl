@@ -205,3 +205,12 @@ function sum_product_loop!(tmp_data::A, data::A, transprobs::A, num::N)::Nothing
     end
     nothing
 end
+
+
+function turbo_dot(x::Vector{T}, y::Vector{T})::T where T
+    res = zero(T)
+    @turbo for i in eachindex(x)
+        res += x[i] * y[i]
+    end
+    res
+end

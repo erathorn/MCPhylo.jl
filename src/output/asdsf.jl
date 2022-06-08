@@ -81,10 +81,8 @@ function ASDSF(model::ModelChains; freq::Int64=1, check_leaves::Bool=true,
     end # for
     trees = Array{Vector{AbstractString}, 2}(undef, size(model.trees, 1), nchains)
     #if length(tree_dims) > 1
-    for i in 1:size(model.trees, 1)
-        for j in 1:nchains
-            trees[i, j] = model.trees[i,:,j]
-        end # for
+    @inbounds for i in 1:size(model.trees, 1), j in 1:nchains
+        trees[i, j] = model.trees[i,:,j]
     end # for
     #end # if
     iter = zip([trees[:,c] for c in 1:nchains]...)
