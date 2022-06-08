@@ -33,7 +33,7 @@ The `SubstitutionRates` are ignored, and just for call stability.
 
 The function returns the Eigenvectors, Eigenvalues and inverse of eigenvectors.
 """
-function JC(base_freq::Vector{T}, SubstitutionRates::Vector)::Tuple{Array{T,2}, Array{T,1}, Array{T,2}, T}
+function JC(base_freq::Vector{T}, SubstitutionRates::Vector)::Tuple{Array{T,2}, Array{T,1}, Array{T,2}, T} where T<:Real
     Nbases = length(base_freq)
     Q= ones(T, Nbases,Nbases)
     off_diag = 1.0/Nbases
@@ -56,7 +56,7 @@ Calculate the eigenvalue decomposition of the Q matrix of the General Time Rever
 
 The function returns the Eigenvectors, Eigenvalues and inverse of eigenvectors.
 """
-function GTR(base_freq::Vector{T}, SubstitutionRates::Vector{T})::Tuple{Array{T,2}, Array{T,1}, Array{T,2}, T}
+function GTR(base_freq::Vector{T}, SubstitutionRates::Vector{T})::Tuple{Array{T,2}, Array{T,1}, Array{T,2}, T} where T<:Real
     Nbases = length(base_freq)
     Q = setmatrix(SubstitutionRates)
     Q = mapslices(x-> x.*base_freq, Q, dims=2)
