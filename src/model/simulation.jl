@@ -407,7 +407,8 @@ function unlist(m::Model, monitoronly::Bool)
             monitoronly ? lvalue[node.monitor] : lvalue
         end
     end
-    r = vcat(map(f, keys(m, :dependent))..., m.likelihood)
+    ll = sum(getfield.([m[k] for k  in keys_output(m)], :lpdf))
+    r = vcat(map(f, keys(m, :dependent))...,ll)
     r = [isa(i, ForwardDiff.Dual) ? ForwardDiff.value(i) : i for i in r]
     r
 end

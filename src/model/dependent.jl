@@ -275,6 +275,7 @@ function Stochastic(f::Function, monitor::Union{Bool,Vector{Int}} = true)
         src,
         Symbol[],
         NullUnivariateDistribution(),
+        -Inf
     )
     setmonitor!(s, monitor)
 end
@@ -295,6 +296,7 @@ function Stochastic(d::Integer, f::Function, monitor::Union{Bool,Vector{Int}} = 
         src,
         Symbol[],
         NullUnivariateDistribution(),
+        -Inf
     )
     setmonitor!(s, monitor)
 end
@@ -329,12 +331,13 @@ function Stochastic(
         src,
         Symbol[],
         NullUnivariateDistribution(),
+        -Inf,
     )
     setmonitor!(s, monitor)
 end
 
 function Stochastic(a::Stochastic, value::T)::Stochastic{T} where T
-    Stochastic(value, a.symbol, a.monitor, a.eval, a.sources, a.targets, a.distr)
+    Stochastic(value, a.symbol, a.monitor, a.eval, a.sources, a.targets, a.distr, a.lpdf)
 end
 
 
@@ -472,11 +475,16 @@ function relistlength(s::TreeVariate, x::N, transform::Bool=false) where N<:Gene
 end # relistlength
 
 function logpdf(s::AbstractStochastic, transform::Bool=false)
-    logpdf(s, s.value, transform)
+    ll = logpdf(s, s.value, transform)
+    
+    s.lpdf = isa(ll, ForwardDiff.Dual) ? ForwardDiff.value(ll) : ll
+    ll
 end
 
 function logpdf(s::TreeVariate, transform::Bool=false)
-    logpdf(s, s.value, transform)
+    ll = logpdf(s, s.value, transform)
+    s.lpdf = ll
+    ll
 end
 
 function conditional_likelihood(s::AbstractStochastic, args...)

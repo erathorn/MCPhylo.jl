@@ -7,7 +7,7 @@ function FelsensteinFunction(
     pi_::Array{F},
     trmat::Array{F, 4},
     ptg::Array{F, 4},
-)::Tuple{F, Vector{F}} where {N<:GeneralNode,R<:Real} where F <: Real
+)::Tuple{F, Vector{F}} where {N<:GeneralNode, F <: Real}
     ll = FelsensteinFunction(tree_postorder, data, Down, pi_, trmat)
     grv= Vector{F}(undef, size(data,4) - 1)
     pre_order_partial::Array{Float64,4} = similar(data)
@@ -91,26 +91,26 @@ end
 
 
 
-function FelsensteinFunction(
-    tree_postorder::Vector{N},
-    pi_::Array{Float64},
-    rates::Vector{Float64},
-    U::Matrix,
-    D::Vector,
-    Uinv::Matrix,
-    mu::Float64,
-    data::Array{Float64,3},
-    substitutionModel::Function,
-) where {N<:GeneralNode}
+# function FelsensteinFunction(
+#     tree_postorder::Vector{N},
+#     pi_::Array{Float64},
+#     rates::Vector{Float64},
+#     U::Matrix,
+#     D::Vector,
+#     Uinv::Matrix,
+#     mu::Float64,
+#     data::Array{Float64,3},
+#     substitutionModel::Function,
+# ) where {N<:GeneralNode}
     
-    ll = fels_ll(
-        tree_postorder,
-        data_ext,
-        Down,
-        pi_,
-        trans_probs
-    )
-    gr = fels_grad(tree_postorder, data_ext, D, U, Uinv, rates, mu, Down, pi_, blv, trans_probs, blv)
-    return ll, gr
-end
+#     ll = fels_ll(
+#         tree_postorder,
+#         data_ext,
+#         Down,
+#         pi_,
+#         trans_probs
+#     )
+#     gr = fels_grad(tree_postorder, data_ext, D, U, Uinv, rates, mu, Down, pi_, blv, trans_probs, blv)
+#     return ll, gr
+# end
 
