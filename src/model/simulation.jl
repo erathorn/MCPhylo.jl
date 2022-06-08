@@ -118,8 +118,6 @@ function logpdf(m::Model, nodekeys::Vector{Symbol}, transform::Bool = false)
         lp += logpdf(m[key], transform)
         isfinite(lp) || break
     end
-    #m.likelihood = isnan(lp) ? -Inf : lp
-    #m.likelihood
     lp
 end
 
@@ -272,7 +270,7 @@ function logpdf!(
         isnan(lp) && return -Inf
         node = m[key]
         un = update!(node, m)
-        #m[key] = node
+        
         m.nodes[key] = un
         lp += key in params ? logpdf(node, transform) : logpdf(node)
     end
@@ -291,20 +289,14 @@ function mylogpdf!(
     targets = keys(m, :target, block)
     diff = setdiff(params, targets)
     myfun(y) = begin
-        #v = relist(m, x, params, transform)
-        m[params] = relist(m, y, params, transform)
-        #lp = sum(y)
-        
+        m[params] = relist(m, y, params, transform)        
         lp = logpdf(m, diff, transform)
-        # lp = isnan(lp) ? -Inf : lp
-        #lp = 0.0
         for key in targets
             isfinite(lp) || break
             node = m[key]
             update!(node, m)
             lp += key in params ? logpdf(node, transform) : logpdf(node)
         end
-        #lp = 0.0
         lp
     end
     lp = myfun(x)

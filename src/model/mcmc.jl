@@ -235,16 +235,7 @@ function mcmc_worker!(
         
         track(i, burnin, thin, sim, m, store_trees, treenodes)
         asdsf_track(rc,m, i, burnin, ASDSF_step, treenodes)
-        # if i > burnin    
-        #     if !isnothing(rc) && (i - burnin) % ASDSF_step == 0
-        #         trees::Vector{String} = []
-        #         for (ind, tree_node) in enumerate(treenodes)
-        #             push!(trees, newick(m[tree_node].value))
-        #         end # for
-        #         # send trees to a RemoteChannel, so that convergence statistics can be calculated on a different worker 
-        #         put!(rc, trees)
-        #     end # if
-        # end # if
+        
         # send update to RemoteChannel --> while loop in logpdf function updates the ProgressMeter of this chain
         put!(channel[1], channel[2])
     end # for

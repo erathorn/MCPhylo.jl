@@ -284,11 +284,11 @@ function buildtree(
         h = isnan(h) ? -Inf : h
         
         
-        divergent = (h-H0) < -1000# ? true : false
+        divergent = (h-H0) < -1000
         
         stat = (h - H0) > 0 ? 1 : exp(h - H0)
         
-        meta.alpha += stat#H0 - h > 0 ? 1 : exp(H0 - h)
+        meta.alpha += stat
         meta.nalpha += 1
                 
         log_sum_weight .= logaddexp(log_sum_weight[1], h-H0)
