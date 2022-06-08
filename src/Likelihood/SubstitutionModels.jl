@@ -1,6 +1,31 @@
 const MCP_TIME_MIN = 1.0E-11
 const MCP_TIME_MAX = 100.0
 
+# import ForwardDiff: Dual
+# import LinearAlgebra: eigvals 
+
+# function eigvals(A::Array{<:Dual{Tg,T,N}}) where {Tg,T<:Real,N}
+#     λ,Q = eigen(Symmetric(getproperty.(parent(A), :value)))
+#     partials = ntuple(j -> diag(Q' * getindex.(getproperty.(A, :partials), j) * Q), N)
+#     Dual{Tg}.(λ, tuple.(partials...))
+# end
+# function _lyap_div!(A, λ)
+#     for (j,μ) in enumerate(λ), (k,λ) in enumerate(λ)
+#         if k ≠ j
+#             A[k,j] /= μ - λ
+#         end
+#     end
+#     A
+# end
+
+# function eigen(A::Array{<:Dual{Tg,T,N}}; permute::Bool=true, scale::Bool=true, sortby) where {Tg,T<:Real,N}
+#     λ = eigvals(A)
+#     _,Q = eigen(Symmetric(ForwardDiff.value.(parent(A))))
+#     parts = ntuple(j -> Q*_lyap_div!(Q' * getindex.(ForwardDiff.partials.(A), j) * Q - Diagonal(getindex.(ForwardDiff.partials.(λ), j)), ForwardDiff.value.(λ)), N)
+#     Eigen(λ,Dual{Tg}.(Q, tuple.(parts...)))
+# end
+
+
 
 """
     Restriction(base_freq::Vector{Float64},
@@ -13,11 +38,9 @@ The function returns the Eigenvectors, Eigenvalues, inverse of eigenvectors and
 """
 function Restriction(base_freq::Vector{T}, SubstitutionRates::Vector)::Tuple{Array{T,2}, Array{T,1}, Array{T,2}, T} where T<:Real
     @assert length(base_freq) == 2
-    Nbases = length(base_freq)
-    Q = ones(T, Nbases,Nbases)
-    Q[diagind(Nbases,Nbases)] .= -1
-    Q .*= reverse(base_freq)
-    D, U = eigen(Q)
+    D = [-one(T), zero(T)]
+    U = [base_freq[2] base_freq[2]; -one(T)+base_freq[2] zero(T)+base_freq[2]]
+    
     Uinv = inv(U)
     mu::T =  1.0 / (2.0 * prod(base_freq))
     return U, D, Uinv, mu
