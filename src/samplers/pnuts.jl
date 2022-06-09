@@ -394,10 +394,10 @@ function nouturn(
 )::Bool where {T}
     _, curr_h = BHV_bounds(xminus.x, xplus.x)
 
-    #temp = @spawnat :any refraction!(xminus, -epsilon, logfgrad, logfun, delta)
-    nni_m = refraction!(xminus, -epsilon, logfgrad, logfun, delta)
+    temp = @spawnat :any refraction!(xminus, -epsilon, logfgrad, logfun, delta)
+    #nni_m = refraction!(xminus, -epsilon, logfgrad, logfun, delta)
     nni_p = refraction!(xplus, epsilon, logfgrad, logfun, delta)
-    #nni_m = fetch(temp)
+    nni_m = fetch(temp)
     xminus.extended = true
     xplus.extended = true
     xminus.nni = nni_m
