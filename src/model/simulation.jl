@@ -474,7 +474,7 @@ function relist(
 
     N = length(x)
     offset = 0
-    for key in nodekeys
+    @inbounds for key in nodekeys
         value, n = relistlength(m[key], view(x, (offset+1):N), transform)
         values[key] = value
         offset += n
@@ -498,7 +498,7 @@ function relist(
 ) where {N<:GeneralNode}
     values = Dict{Symbol,Any}()
     offset = 0
-    for key in nodekeys
+    @inbounds for key in nodekeys
         value, n = relistlength(m[key], x, transform)
         values[key] = value
         offset += n
@@ -520,7 +520,7 @@ function relist!(
 ) where {T<:AbstractVector}
     nodekeys = keys(m, :block, block)
     values = relist(m, x, nodekeys, transform)
-    for key in nodekeys
+    @inbounds for key in nodekeys
         assign!(m, key, values[key])
     end
     update!(m, block)
@@ -542,8 +542,8 @@ function assign!(m::Model, key::Symbol, value::T) where {T<:Array}
         @assert size(m[key].value) == size(value)
         d = similar(m[key].value)
     end
-    for (ind, elem) in enumerate(value)
-        d[ind] = elem
+    @inbounds for ind in eachindex(value)
+        d[ind] = value[ind]
     end
     m[key].value = d
 end
