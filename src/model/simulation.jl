@@ -408,7 +408,7 @@ function unlist(m::Model, monitoronly::Bool)
         end
     end
     ll = sum(getfield.([m[k] for k  in keys_output(m)], :lpdf))
-    r = vcat(map(f, keys(m, :dependent))...,ll)
+    r = vcat(vmap(f, keys(m, :dependent))...,ll)
     r = [isa(i, ForwardDiff.Dual) ? ForwardDiff.value(i) : i for i in r]
     r
 end
@@ -431,7 +431,7 @@ function unlist(m::Model, nodekeys::Vector{Symbol}; transform::Bool = false)
     f = let m = m, transform = transform
         key -> unlist(m[key], transform)
     end
-    vcat(map(f, nodekeys)...)
+    vcat(vmap(f, nodekeys)...)
 end
 
 """
