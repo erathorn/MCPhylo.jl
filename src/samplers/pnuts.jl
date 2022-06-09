@@ -394,7 +394,7 @@ function nouturn(
 )::Bool where {T}
     _, curr_h = BHV_bounds(xminus.x, xplus.x)
 
-    temp = @spawnat :any refraction!(xminus, -epsilon, logfgrad, logfun, delta)
+    temp = Threads.@spawn refraction!($xminus, -1*$epsilon, $logfgrad, $logfun, $delta)
     #nni_m = refraction!(xminus, -epsilon, logfgrad, logfun, delta)
     nni_p = refraction!(xplus, epsilon, logfgrad, logfun, delta)
     nni_m = fetch(temp)
