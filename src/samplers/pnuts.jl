@@ -137,12 +137,12 @@ function sample!(
         nuts_sub!(v, tune.epsilon, grlpdf, logfun)
 
         adaptstat = adapter.metro_acc_prob > 1 ? 1 : adapter.metro_acc_prob
+        
 
-        HT = const_params.δ - adaptstat - (const_params.τ - adapter.avg_nni)
-
-        HT /= 2
+        HT = 0.5 * (const_params.δ - adaptstat) - 0.5 * (const_params.τ - adapter.avg_nni)
 
         η = 1.0 / (adapter.m + const_params.t0)
+        
 
         adapter.s_bar = (1.0 - η) * adapter.s_bar + η * HT
         x = const_params.μ - adapter.s_bar * sqrt(adapter.m) / const_params.γ
@@ -207,10 +207,7 @@ function nuts_sub!(
     acc_p_r = 0
     while j < v.tune.tree_depth
         pm = 2 * (rand() > 0.5) - 1
-        meta.alpha = 0
-        meta.nalpha = 0
-        meta.accnni = 0
-        meta.nni = 0
+        
         log_sum_weight_subtree = -Inf
         worker = pm == -1 ? xminus : xplus
 
@@ -233,7 +230,7 @@ function nuts_sub!(
         else
             xplus = worker
         end
-
+        
         v.tune.stepsizeadapter.metro_acc_prob = meta.alpha / meta.nalpha
 
         tnni += meta.nni
@@ -244,16 +241,20 @@ function nuts_sub!(
         if log_sum_weight_subtree > log_sum_weight
             acc_p_r += 1
             v.value[1] = worker.x
+            meta.accnni += meta.nni
+            nni += meta.nni
         else
             accprob = exp(log_sum_weight_subtree - log_sum_weight)
             if rand() < accprob
                 acc_p_r += 1
                 v.value[1] = worker.x
+                meta.accnni += meta.nni
+                nni += meta.nni
             end
         end
         log_sum_weight = logaddexp(log_sum_weight, log_sum_weight_subtree)
         n += nprime
-        nni += meta.nni
+        
 
         j += 1
 
@@ -263,7 +264,7 @@ function nuts_sub!(
             break
         end
     end
-    v.tune.stepsizeadapter.avg_nni = meta.nni == 0 ? 0.0 : meta.accnni / meta.nni
+    v.tune.stepsizeadapter.avg_nni = tnni == 0 ? 0.0 : meta.accnni / tnni
     push!(v.tune.moves, nni)
     push!(v.tune.tree_depth_trace, j)
     push!(v.tune.acc_p_r, acc_p_r)
@@ -297,7 +298,7 @@ function buildtree(
             nni = xprime.nni
             xprime.extended = false
         end
-
+        
         logpprime = hamiltonian(xprime)
 
         log_sum_weight_subtree = logaddexp(log_sum_weight_subtree, logpprime - logp0)
@@ -306,19 +307,15 @@ function buildtree(
         sprime = (logp0 + lu) < logpprime + 1000.0
 
         meta.nni += nni
-
-        meta.alpha = min(1.0, exp(logpprime - logp0))
-        if rand() < meta.alpha
-            meta.accnni += nni
-        end
-        meta.nalpha = 1
+        meta.alpha += min(1.0, exp(logpprime - logp0))
+        meta.nalpha += 1
 
     else
         log_sum_weight_init = -Inf
         log_sum_weight_final = -Inf
 
         #if sprime
-        meta1 = NUTSMeta()
+        
         xprime = transfer(x)
         worker = transfer(x)
 
@@ -332,14 +329,12 @@ function buildtree(
             logp0,
             lu,
             delta,
-            meta1,
+            meta,
             log_sum_weight_init,
         )
 
-        worker_final = transfer(worker)
-        meta2 = NUTSMeta()
         worker_final, nprime2, sprime2, log_sum_weight_final = buildtree(
-            worker_final,
+            worker,
             pm,
             j - 1,
             epsilon,
@@ -348,14 +343,11 @@ function buildtree(
             logp0,
             lu,
             delta,
-            meta2,
+            meta,
             log_sum_weight_final,
         )
-        update!(meta, meta1)
-        update!(meta, meta2)
-
+        
         ls_final = logsumexp(log_sum_weight_init, log_sum_weight_final)
-        #ls2 = logsumexp(log_sum_weight_subtree, ls_final)
         if log_sum_weight_final > ls_final
             transfer!(xprime, worker_final)
         else
@@ -371,17 +363,9 @@ function buildtree(
         
         nprime += nprime2
         if pm == -1
-            x2 = transfer(x)
-            x1 = transfer(xprime)
+            sprime = sprime2 && nouturn(xprime, x, epsilon, logfgrad, logfun, delta)
         else
-            x1 = transfer(x)
-            x2 = transfer(xprime)
-        end
-        sprime = sprime2 && nouturn(x1, x2, epsilon, logfgrad, logfun, delta)
-        if pm == -1
-            transfer!(xprime, x1)
-        else
-            transfer!(xprime, x2)
+            sprime = sprime2 && nouturn(x, xprime, epsilon, logfgrad, logfun, delta)
         end
 
     end #if j
