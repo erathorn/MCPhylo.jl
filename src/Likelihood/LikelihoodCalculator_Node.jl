@@ -26,12 +26,6 @@ function FelsensteinFunction(
         end
         c_nums = [c.num for c in mother.children if c.num != n_num]
         turbo_mul!(pre_order_partial, Down, n_num, c_nums)
-        # for c in 1:mother.nchild
-        #     child = mother.children[c]
-        #     if child.num != n_num
-        #         turbo_mul!(pre_order_partial, Down, n_num, child.num)
-        #     end
-        # end
         mygemmturbo!(tmp_arr, ptg, data, n_num)
         myred!(gradi, pre_order_partial, tmp_arr, n_num)
         mygemmturbo_tr!(tmp_arr, trmat, pre_order_partial, n_num)
