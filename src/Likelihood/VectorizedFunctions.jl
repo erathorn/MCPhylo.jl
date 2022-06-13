@@ -35,7 +35,7 @@ end
 
 function comb(po, data, gradi, lind)
     res = zero(eltype(data))
-    @turbo for k in axes(data,3), j in axes(data,2)
+    @turbo for k in axes(data, 3), j in axes(data, 2)
         tmp = zero(eltype(data))
         for i in axes(data, 1)
             tmp += data[i, j, k, lind] * po[i, j, k]
@@ -50,7 +50,7 @@ function my_repeat(
     data::Array{F,N},
     nrates::Int,
     linds::Vector{T},
-    nlinds::Vector{T}
+    nlinds::Vector{T},
 )::Array{F,4} where {F,N,T}
     x, y, z = size(data)
     out = Array{F,4}(undef, x, y, nrates, z)
@@ -58,12 +58,14 @@ function my_repeat(
         rind = 1:nrates,
         xs in axes(out, 1),
         ys in axes(out, 2)
+
         out[xs, ys, rind, linds[l]] = data[xs, ys, linds[l]]
     end
     @tturbo for l in eachindex(nlinds),
         rind = 1:nrates,
         xs in axes(out, 1),
         ys in axes(out, 2)
+
         out[xs, ys, rind, nlinds[l]] = one(eltype(out))
     end
     out
@@ -71,7 +73,7 @@ end
 
 function by_max!(m::Array, ll::F, nodenum::Int)::F where {F<:Real}
     @inbounds maxi = m[1, :, :, nodenum]
-    @inbounds for k in axes(m, 3),j in axes(m, 2), i in axes(m, 1)[2:end]
+    @inbounds for k in axes(m, 3), j in axes(m, 2), i in axes(m, 1)[2:end]
         maxi[j, k] = maxi[j, k] < m[i, j, k, nodenum] ? m[i, j, k, nodenum] : maxi[j, k]
     end
     @turbo for i in eachindex(maxi)
@@ -88,14 +90,14 @@ end
 
 function bymax!(out, m, nodenum)
     @inbounds maxi = m[:, 1, :]
-    @inbounds for r in axes(m,3),j in axes(m,2)[2:end],  i in axes(m, 1)
+    @inbounds for r in axes(m, 3), j in axes(m, 2)[2:end], i in axes(m, 1)
         maxi[i, r] = maxi[i, r] < m[i, j, r] ? m[i, j, r] : maxi[i, r]
     end
 
-    @turbo for r in axes(m, 3) , i in axes(m,1)
+    @turbo for r in axes(m, 3), i in axes(m, 1)
         tmp = 1 / maxi[i, r]
         for j in axes(m, 2)
-            out[i, j, r, nodenum] = m[i, j, r]*tmp
+            out[i, j, r, nodenum] = m[i, j, r] * tmp
         end
     end
     nothing
@@ -169,26 +171,14 @@ function parallel_transition_prob(
     out
 end
 
-function turbo_mul!(data::A, tmp_data::A, pnum::D, c1num::D, c2num::D)::Nothing where {A, D}
-    @turbo for r in axes(tmp_data, 3), c in axes(tmp_data, 2), s in axes(tmp_data, 1)
-        data[s, c, r, pnum] = tmp_data[s, c, r, c1num] * tmp_data[s, c, r, c2num]
-    end
-    nothing
-end
+function turbo_mul!(data::A, tmp_data::A, pnum::D, nums::Vector{D})::Nothing where {A,D}
+    @tturbo for num_ind in eachindex(nums),
+        r in axes(tmp_data, 3),
+        c in axes(tmp_data, 2),
+        s in axes(tmp_data, 1)
 
-
-function turbo_mul!(data::A, tmp_data::A, pnum::D, c1num::D)::Nothing where {A, D}
-    @turbo for r in axes(tmp_data, 3), c in axes(tmp_data, 2), s in axes(tmp_data, 1)
-        data[s, c, r, pnum] *= tmp_data[s, c, r, c1num]
-    end
-    nothing
-end
-
-
-function turbo_mul!(data::A, tmp_data::A, pnum::D, c1num::D, c2num::D, c3num::D)::Nothing where {A, D}
-    @turbo for s in axes(tmp_data, 1), c in axes(tmp_data, 2), r in axes(tmp_data, 3)
-        data[s, c, r, pnum] =
-            tmp_data[s, c, r, c1num] * tmp_data[s, c, r, c2num] * tmp_data[s, c, r, c3num]
+        num = nums[num_ind]
+        data[s, c, r, pnum] *= tmp_data[s, c, r, num]
     end
     nothing
 end
@@ -207,10 +197,39 @@ function sum_product_loop!(tmp_data::A, data::A, transprobs::A, num::N)::Nothing
 end
 
 
-function turbo_dot(x::Vector{T}, y::Vector{T})::T where T
+function turbo_dot(x::Vector{T}, y::Vector{T})::T where {T}
     res = zero(T)
     @turbo for i in eachindex(x)
         res += x[i] * y[i]
     end
     res
+end
+
+
+
+function comb_sum_product_loop!(
+    tmp_data::A,
+    data::A,
+    transprobs::A,
+    nums::Vector{N},
+    pnum::N,
+)::Nothing where {A,N}
+
+    @tturbo for num_ind in eachindex(nums),
+        s in axes(data, 1),
+        c in axes(data, 2),
+        r in axes(data, 3)
+
+        tmp = zero(eltype(data))
+        num = nums[num_ind]
+        mul_red = zero(eltype(data))
+        mul_red += data[s, c, r, pnum]
+        for s1 in axes(data, 1)
+            tmp += data[s1, c, r, num] * transprobs[s, s1, r, num]
+        end
+        tmp_data[s, c, r, num] = tmp
+        data[s, c, r, pnum] = mul_red * tmp
+    end
+    nothing
+
 end
