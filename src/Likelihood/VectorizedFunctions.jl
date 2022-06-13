@@ -1,6 +1,6 @@
 
 function myred!(out, d1, d2, lind)
-    @turbo for j in axes(d1, 2), r in axes(d1, 3)
+    @tturbo for j in axes(d1, 2), r in axes(d1, 3)
         tmp = zero(eltype(out))
         for i in axes(d1, 1)
             tmp += d1[i, j, r, lind] * d2[i, j, r]
@@ -11,7 +11,7 @@ end
 
 
 function mygemmturbo!(C, A, B, lind)
-    @turbo for m ∈ axes(A, 1), n ∈ axes(B, 2), r in axes(B, 3)
+    @tturbo for m ∈ axes(A, 1), n ∈ axes(B, 2), r in axes(B, 3)
         Cmn = zero(eltype(C))
         for k ∈ axes(A, 2)
             Cmn += A[m, k, r, lind] * B[k, n, r, lind]
@@ -21,7 +21,7 @@ function mygemmturbo!(C, A, B, lind)
 end
 
 function mygemmturbo_tr!(C, A, B, lind)
-    @turbo for m ∈ axes(A, 1), n ∈ axes(B, 2), r in axes(B, 3)
+    @tturbo for m ∈ axes(A, 1), n ∈ axes(B, 2), r in axes(B, 3)
         Cmn = zero(eltype(C))
         for k ∈ axes(A, 2)
             Cmn += A[k, m, r, lind] * B[k, n, r, lind]
@@ -35,7 +35,7 @@ end
 
 function comb(po, data, gradi, lind)
     res = zero(eltype(data))
-    @turbo for k in axes(data, 3), j in axes(data, 2)
+    @tturbo for k in axes(data, 3), j in axes(data, 2)
         tmp = zero(eltype(data))
         for i in axes(data, 1)
             tmp += data[i, j, k, lind] * po[i, j, k]
@@ -76,12 +76,12 @@ function by_max!(m::Array, ll::F, nodenum::Int)::F where {F<:Real}
     @inbounds for k in axes(m, 3), j in axes(m, 2), i in axes(m, 1)[2:end]
         maxi[j, k] = maxi[j, k] < m[i, j, k, nodenum] ? m[i, j, k, nodenum] : maxi[j, k]
     end
-    @turbo for i in eachindex(maxi)
+    @tturbo for i in eachindex(maxi)
         ll += log(maxi[i])
         maxi[i] = 1 / maxi[i]
     end
 
-    @turbo for k in axes(m, 3), j in axes(m, 2), i in axes(m, 1)
+    @tturbo for k in axes(m, 3), j in axes(m, 2), i in axes(m, 1)
         m[i, j, k, nodenum] *= maxi[j, k]
     end
     ll
@@ -94,7 +94,7 @@ function bymax!(out, m, nodenum)
         maxi[i, r] = maxi[i, r] < m[i, j, r] ? m[i, j, r] : maxi[i, r]
     end
 
-    @turbo for r in axes(m, 3), i in axes(m, 1)
+    @tturbo for r in axes(m, 3), i in axes(m, 1)
         tmp = 1 / maxi[i, r]
         for j in axes(m, 2)
             out[i, j, r, nodenum] = m[i, j, r] * tmp
@@ -106,7 +106,7 @@ end
 
 function root_sum(data, pi_, lind, ll::F)::F where {F}
 
-    @turbo for k in axes(data, 3), j in axes(data, 2)
+    @tturbo for k in axes(data, 3), j in axes(data, 2)
         tmp = zero(F)
         for i in axes(data, 1)
             tmp += data[i, j, k, lind] * pi_[i]
@@ -119,14 +119,14 @@ end
 
 
 function diagonalizer!(out, D, blv, mu, rates)::Nothing
-    @turbo for i in eachindex(blv), r in eachindex(rates), d in eachindex(D)
+    @tturbo for i in eachindex(blv), r in eachindex(rates), d in eachindex(D)
         out[d, d, r, i] = exp(mu * blv[i] * D[d] * rates[r])
     end
     nothing
 end
 
 function diagonalizer_ptg!(out, D, blv, mu, rates)::Nothing
-    @turbo for i in eachindex(blv), r in eachindex(rates), d in eachindex(D)
+    @tturbo for i in eachindex(blv), r in eachindex(rates), d in eachindex(D)
         out[d, d, r, i] = D[d] * rates[r] * mu * exp(mu * blv[i] * D[d] * rates[r])
     end
     nothing
