@@ -353,16 +353,22 @@ function buildtree(
         )
         update!(meta, meta1)
         update!(meta, meta2)
-        if log_sum_weight_init > log_sum_weight_subtree
+
+        ls_final = logsumexp(log_sum_weight_init, log_sum_weight_final)
+        #ls2 = logsumexp(log_sum_weight_subtree, ls_final)
+        if log_sum_weight_final > ls_final
             transfer!(xprime, worker_final)
         else
-            accprob = exp(log_sum_weight_init - log_sum_weight_subtree)
+            accprob = exp(log_sum_weight_final - ls_final)
             if rand() < accprob
                 transfer!(xprime, worker_final)
             end
         end
 
         log_sum_weight_subtree = logaddexp(log_sum_weight_subtree, log_sum_weight_init)
+        
+        
+        
         nprime += nprime2
         if pm == -1
             x2 = transfer(x)
