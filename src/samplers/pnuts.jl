@@ -9,6 +9,7 @@ mutable struct PNUTSTune <: SamplerTune
     epsilon::Float64
     delta::Float64
     moves::Vector{Int}
+    att_moves::Vector{Int}
     tree_depth::Int
     tree_depth_trace::Vector{Int}
     acc_p_r::Vector{Int}
@@ -40,6 +41,7 @@ mutable struct PNUTSTune <: SamplerTune
             false,
             epsilon,
             delta,
+            Int[],
             Int[],
             tree_depth,
             Int[],
@@ -137,10 +139,9 @@ function sample!(
         nuts_sub!(v, tune.epsilon, grlpdf, logfun)
 
         adaptstat = adapter.metro_acc_prob > 1 ? 1 : adapter.metro_acc_prob
+
+        HT = 1/3 * (const_params.δ - adaptstat) - 1/3 * (const_params.τ - adapter.avg_nni) + v.tune.att_moves[end] < 1 ?  - 1/3 : 1/3
         
-
-        HT = 0.5 * (const_params.δ - adaptstat) - 0.5 * (const_params.τ - adapter.avg_nni)
-
         η = 1.0 / (adapter.m + const_params.t0)
         
 
@@ -241,14 +242,14 @@ function nuts_sub!(
         if log_sum_weight_subtree > log_sum_weight
             acc_p_r += 1
             v.value[1] = worker.x
-            meta.accnni += meta.nni
+            #meta.accnni += meta.nni
             nni += meta.nni
         else
             accprob = exp(log_sum_weight_subtree - log_sum_weight)
             if rand() < accprob
                 acc_p_r += 1
                 v.value[1] = worker.x
-                meta.accnni += meta.nni
+                #meta.accnni += meta.nni
                 nni += meta.nni
             end
         end
@@ -264,8 +265,10 @@ function nuts_sub!(
             break
         end
     end
-    v.tune.stepsizeadapter.avg_nni = tnni == 0 ? 0.0 : meta.accnni / tnni
+    v.tune.stepsizeadapter.avg_nni = meta.nni == 0 ? 0.0 : meta.accnni / meta.nni
+    
     push!(v.tune.moves, nni)
+    push!(v.tune.att_moves, tnni)
     push!(v.tune.tree_depth_trace, j)
     push!(v.tune.acc_p_r, acc_p_r)
     v
@@ -307,7 +310,11 @@ function buildtree(
         sprime = (logp0 + lu) < logpprime + 1000.0
 
         meta.nni += nni
-        meta.alpha += min(1.0, exp(logpprime - logp0))
+        alphaprime = min(1.0, exp(logpprime - logp0))
+        meta.alpha += alphaprime
+        if rand() < alphaprime
+            meta.accnni += nni
+        end
         meta.nalpha += 1
 
     else
