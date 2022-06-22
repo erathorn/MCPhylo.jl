@@ -1,7 +1,7 @@
 name = "MCPhylo"
 uuid = "af0ac7d2-842d-415f-bd76-8183c117c674"
 authors = ["erathorn"]
-version = "0.9.2"
+version = "0.9.3"
 
 [deps]
 Bijectors = "76274a88-744f-5084-9051-94815aaf08c4"
