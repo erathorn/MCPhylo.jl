@@ -354,7 +354,7 @@ function buildtree(
             log_sum_weight_final,
         )
         
-        ls_final = logsumexp(log_sum_weight_init, log_sum_weight_final)
+        ls_final = logaddexp(log_sum_weight_init, log_sum_weight_final)
         if log_sum_weight_final > ls_final
             transfer!(xprime, worker_final)
         else
