@@ -56,9 +56,9 @@ isprobvec(s::AbstractVariate) = isprobvec(s.value)
 cummean(x::AbstractArray) = mapslices(cummean, x, dims = 1)
 
 function cummean(x::AbstractVector{T}) where {T<:Real}
-    y = similar(x, Float64)
-    xs = 0.0
-    for i = 1:length(x)
+    y = similar(x, T)
+    xs = zero(T)
+    @inbounds @fastmath for i = 1:length(x)
         xs += x[i]
         y[i] = xs / i
     end

@@ -14,11 +14,7 @@ function refraction!(
 
     tmpB = @. blenvec + (epsilon * s.r)
 
-    #nni = 0
-
-    #if minimum(tmpB) <= 0
     tmpB, nni = ref_NNI!(s, tmpB, abs(epsilon), blenvec, delta, logf)
-    #end
 
     blenvec = molifier.(tmpB, delta)
 
@@ -64,13 +60,15 @@ function ref_NNI!(
         if intext[ref_index] == 1
 
             set_branchlength_vector!(s.x, molifier.(blv, delta))
-            U_before_nni = logf(s.x) # still with molified branch length
+            
+            temp = Threads.@spawn logf($s.x)
             v_copy = deepcopy(s.x)
             tmp_NNI_made = NNI!(v_copy, ref_index)
 
             if tmp_NNI_made != 0
 
                 U_after_nni = logf(v_copy)
+                U_before_nni = fetch(temp)
                 delta_U = 2.0 * (U_before_nni - U_after_nni)
                 my_v = s.r[ref_index]^2
 
@@ -79,8 +77,8 @@ function ref_NNI!(
                     s.r[ref_index] = sqrt(my_v - delta_U)
                     s.x = v_copy
                 end # if my_v
-            #else
-            #    U_before_nni =fetch(temp)
+            else
+                _ = fetch(temp) # fetch to free handle
             end #if NNI
             
         end #non leave

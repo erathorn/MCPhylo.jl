@@ -27,7 +27,7 @@ function Model(;
 )
 
     nodedict = Dict{Symbol,Any}()
-    for (key, value) in nodes
+    @inbounds for (key, value) in nodes
         isa(value, AbstractDependent) ||
             throw(ArgumentError("nodes are not all Dependent types"))
         node = deepcopy(value)
@@ -69,7 +69,7 @@ end
 
 
 function Base.setindex!(m::Model, values::Dict, nodekeys::Vector{Symbol})
-    for key in nodekeys
+    @inbounds for key in nodekeys
         m[key] = values[key]
     end
 end
@@ -131,7 +131,7 @@ end
 
 function keys_all(m::Model)::Array{Symbol}
     values = Symbol[]
-    for key in keys(m)
+    @inbounds for key in keys(m)
         node = m[key]
         if isa(node, AbstractDependent)
             push!(values, key)
@@ -146,7 +146,7 @@ function keys_assigned(m::Model)::Array{Symbol}
         values = keys(m)
     else
         values = Symbol[]
-        for key in keys(m)
+        @inbounds for key in keys(m)
             if !isa(m[key], AbstractDependent)
                 push!(values, key)
             end
@@ -161,7 +161,7 @@ end
 
 function keys_block0(m::Model)::Array{Symbol}
     values = Symbol[]
-    for sampler in m.samplers
+    @inbounds for sampler in m.samplers
         append!(values, sampler.params)
     end
     unique(values)
@@ -169,7 +169,7 @@ end
 
 function keys_dependent(m::Model)::Array{Symbol}
     values = Symbol[]
-    for key in keys(m)
+    @inbounds for key in keys(m)
         if isa(m[key], AbstractDependent)
             push!(values, key)
         end
@@ -179,7 +179,7 @@ end
 
 function keys_independent(m::Model)::Array{Symbol}
     deps = Symbol[]
-    for key in keys(m)
+    @inbounds for key in keys(m)
         if isa(m[key], AbstractDependent)
             push!(deps, key)
         end
@@ -189,7 +189,7 @@ end
 
 function keys_logical(m::Model)::Array{Symbol}
     values = Symbol[]
-    for key in keys(m)
+    @inbounds for key in keys(m)
         if isa(m[key], AbstractLogical) || isa(m[key], TreeLogical)
             push!(values, key)
         end
@@ -199,7 +199,7 @@ end
 
 function keys_monitor(m::Model)::Array{Symbol}
     values = Symbol[]
-    for key in keys(m)
+    @inbounds for key in keys(m)
         node = m[key]
         if isa(node, AbstractDependent) && !isempty(node.monitor)
             push!(values, key)
@@ -211,7 +211,7 @@ end
 function keys_output(m::Model)::Array{Symbol}
     values = Symbol[]
     dag = ModelGraph(m)
-    for v in vertices(dag.graph)
+    @inbounds for v in vertices(dag.graph)
         vkey = dag.keys[v]
         if isa(m[vkey], AbstractStochastic) && !any_stochastic(dag, v, m)
             push!(values, vkey)
@@ -224,7 +224,7 @@ keys_source(m::Model, nodekey::Symbol)::Array{Symbol} = m[nodekey].sources
 
 function keys_source(m::Model, nodekeys::Vector{Symbol})::Array{Symbol}
     values = Symbol[]
-    for key in nodekeys
+    @inbounds for key in nodekeys
         append!(values, m[key].sources)
     end
     unique(values)
@@ -232,7 +232,7 @@ end
 
 function keys_stochastic(m::Model)::Array{Symbol}
     values = Symbol[]
-    for key in keys(m)
+    @inbounds for key in keys(m)
         if isa(m[key], Stochastic)# || isa(m[key], TreeStochastic)
             push!(values, key)
         end
@@ -246,7 +246,7 @@ end
 
 function keys_target0(m::Model)::Array{Symbol}
     values = Symbol[]
-    for sampler in m.samplers
+    @inbounds for sampler in m.samplers
         append!(values, sampler.targets)
     end
     intersect(keys(m, :dependent), values)
@@ -256,7 +256,7 @@ keys_target(m::Model, nodekey::Symbol)::Array{Symbol} = m[nodekey].targets
 
 function keys_target(m::Model, nodekeys::Vector{Symbol})::Array{Symbol}
     values = Symbol[]
-    for key in nodekeys
+    @inbounds for key in nodekeys
         append!(values, m[key].targets)
     end
     intersect(keys(m, :dependent), values)
@@ -284,7 +284,7 @@ end
 function showf(io::IO, m::Model, f::Function)
     print(io, "Object of type \"$(summary(m))\"\n")
     width = displaysize()[2] - 1
-    for node in keys(m)
+    @inbounds for node in keys(m)
         print(io, string("-"^width, "\n", node, ":\n"))
         f(io, m[node])
         println(io)
@@ -296,7 +296,7 @@ end
 
 function names(m::Model, monitoronly::Bool)
     values = AbstractString[]
-    for key in keys(m, :dependent)
+    @inbounds for key in keys(m, :dependent)
         if monitoronly
             if !isempty(m[key].monitor)
                 nodenames = names(m, key)
@@ -321,7 +321,7 @@ end
 
 function names(m::Model, nodekeys::Vector{Symbol})
     values = AbstractString[]
-    for key in nodekeys
+    @inbounds for key in nodekeys
         append!(values, names(m, key))
     end
     values

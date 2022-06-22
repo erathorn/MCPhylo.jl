@@ -49,7 +49,7 @@ function plot(
     if !isempty(vars)
         indeces = check_vars(c.names, vars)
     else
-        indeces = collect(1:length(c.names)-1)
+        indeces = collect(1:length(c.names))
     end # if / else
     isempty(indeces) &&
         throw(ArgumentError("Input Variables not in Chain object. Exiting function."))

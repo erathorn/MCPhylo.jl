@@ -35,7 +35,7 @@ model = Model(
         chains = 2,
         verbose = false,
     )
-    out = gelmandiag(sim).value
+    out = gelmandiag(sim).value[1:end-1, :, :]
     minv = minimum(x->isnan(x) ? Inf : x, out)
     maxv = maximum(x->isnan(x) ? -Inf : x, out)
     @test 0.9 < minv < 1.1

@@ -118,8 +118,6 @@ function logpdf(m::Model, nodekeys::Vector{Symbol}, transform::Bool = false)
         lp += logpdf(m[key], transform)
         isfinite(lp) || break
     end
-    #m.likelihood = isnan(lp) ? -Inf : lp
-    #m.likelihood
     lp
 end
 
@@ -272,7 +270,7 @@ function logpdf!(
         isnan(lp) && return -Inf
         node = m[key]
         un = update!(node, m)
-        #m[key] = node
+        
         m.nodes[key] = un
         lp += key in params ? logpdf(node, transform) : logpdf(node)
     end
@@ -291,20 +289,14 @@ function mylogpdf!(
     targets = keys(m, :target, block)
     diff = setdiff(params, targets)
     myfun(y) = begin
-        #v = relist(m, x, params, transform)
-        m[params] = relist(m, y, params, transform)
-        #lp = sum(y)
-        
+        m[params] = relist(m, y, params, transform)        
         lp = logpdf(m, diff, transform)
-        # lp = isnan(lp) ? -Inf : lp
-        #lp = 0.0
         for key in targets
             isfinite(lp) || break
             node = m[key]
             update!(node, m)
             lp += key in params ? logpdf(node, transform) : logpdf(node)
         end
-        #lp = 0.0
         lp
     end
     lp = myfun(x)
@@ -415,7 +407,8 @@ function unlist(m::Model, monitoronly::Bool)
             monitoronly ? lvalue[node.monitor] : lvalue
         end
     end
-    r = vcat(map(f, keys(m, :dependent))..., m.likelihood)
+    ll = sum(getfield.([m[k] for k  in keys_output(m)], :lpdf))
+    r = vcat(vmap(f, keys(m, :dependent))...,ll)
     r = [isa(i, ForwardDiff.Dual) ? ForwardDiff.value(i) : i for i in r]
     r
 end
@@ -438,7 +431,7 @@ function unlist(m::Model, nodekeys::Vector{Symbol}; transform::Bool = false)
     f = let m = m, transform = transform
         key -> unlist(m[key], transform)
     end
-    vcat(map(f, nodekeys)...)
+    vcat(vmap(f, nodekeys)...)
 end
 
 """
@@ -481,7 +474,7 @@ function relist(
 
     N = length(x)
     offset = 0
-    for key in nodekeys
+    @inbounds for key in nodekeys
         value, n = relistlength(m[key], view(x, (offset+1):N), transform)
         values[key] = value
         offset += n
@@ -505,7 +498,7 @@ function relist(
 ) where {N<:GeneralNode}
     values = Dict{Symbol,Any}()
     offset = 0
-    for key in nodekeys
+    @inbounds for key in nodekeys
         value, n = relistlength(m[key], x, transform)
         values[key] = value
         offset += n
@@ -527,7 +520,7 @@ function relist!(
 ) where {T<:AbstractVector}
     nodekeys = keys(m, :block, block)
     values = relist(m, x, nodekeys, transform)
-    for key in nodekeys
+    @inbounds for key in nodekeys
         assign!(m, key, values[key])
     end
     update!(m, block)
@@ -549,8 +542,8 @@ function assign!(m::Model, key::Symbol, value::T) where {T<:Array}
         @assert size(m[key].value) == size(value)
         d = similar(m[key].value)
     end
-    for (ind, elem) in enumerate(value)
-        d[ind] = elem
+    @inbounds for ind in eachindex(value)
+        d[ind] = value[ind]
     end
     m[key].value = d
 end
@@ -599,8 +592,8 @@ Returns the model with updated nodes.
 * `nodekeys` : nodes to be updated in the given order.
 """
 function update!(m::Model, nodekeys::Vector{Symbol})
-    for key in nodekeys
-        update!(m[key], m)
+    @inbounds for key_ind in eachindex(nodekeys)
+        update!(m[nodekeys[key_ind]], m)
     end
     m
 end

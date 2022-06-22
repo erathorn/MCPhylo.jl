@@ -130,6 +130,7 @@ mutable struct Stochastic{
     sources::Vector{Symbol}
     targets::Vector{Symbol}
     distr::DistributionStruct
+    lpdf::Float64
 end
 
 const ScalarVariate = Union{Stochastic{<:Real},Logical{<:Real}}

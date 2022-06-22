@@ -59,7 +59,7 @@ function Base.setindex!(v::ScalarVariate, x::Vector{T},
       "tried to assign $nx elements to $ninds destinations"
     ))
 
-  for i in 1:nx
+  @turbo for i in 1:nx
     v[inds[i]] = x[i]
   end
 end

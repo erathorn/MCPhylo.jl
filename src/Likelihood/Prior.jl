@@ -8,13 +8,13 @@ function internal_logpdf(d::CompoundDirichlet, b_lens::Array{T},
     nterm = 0.0
 
 
-    @views for i in eachindex(int_leave_map)
+    @views @inbounds for i in eachindex(int_leave_map)
         if int_leave_map[i] === 1
-            @inbounds blen_int += b_lens[i]
-            @inbounds blen_int_log += log(b_lens[i])
+            blen_int += b_lens[i]
+            blen_int_log += log(b_lens[i])
         else
-            @inbounds blen_leave += b_lens[i]
-            @inbounds blen_leave_log += log(b_lens[i])
+            blen_leave += b_lens[i]
+            blen_leave_log += log(b_lens[i])
             nterm += 1
         end
     end

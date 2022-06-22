@@ -112,18 +112,6 @@ function logpdf_sub(d::Distribution, x, transform::Bool)
     insupport(d, x) ? logpdf(d, x, transform) : -Inf
 end
 
-# function logpdf_sub(d::TreeDistribution, X::AbstractArray{<:Real, 2}, transform::Bool)
-#   # Y = Bijectors.replace_diag(exp, X)
-#   # Y = Bijectors.getpd(Y)
-#   # tol = 1e-7
-#   # Y[Y .< 0.0] .= tol
-#   # #any(Y .< 0.0) && return -Inf
-#   # #all(Y .> tol) && return -Inf
-#   # tr = cov2tree(Y, string.(collect(1:size(Y, 1))), 1:size(Y, 1), tol=tol)
-#   # number_nodes!(tr)
-#   insupport(d, tr) ? logpdf(d, tr, transform) : -Inf
-# end
-
 function logpdf_sub(d::TreeDistribution, X::AbstractArray{<:Real,1}, transform::Bool)
     Y, k = another_relist(X)
     logpdf_sub(d, Y, transform)
@@ -135,12 +123,19 @@ function logpdf_sub(d::DiscreteMatrixDistribution, X::AbstractArray, transform::
 end
 
 function logpdf_sub(d::UnivariateDistribution, X::AbstractArray, transform::Bool)
-    lp = sum([logpdf_sub(d, X[i], transform) for i = 1:length(X)])
+    lp = 0.0
+    @inbounds @fastmath for i in eachindex(X)
+        lp += logpdf_sub(d, X[i], transform)
+    end
+    
     lp
 end
 
 function logpdf_sub(D::Array{UnivariateDistribution}, X::AbstractArray, transform::Bool)
-    @inbounds lp = sum([logpdf_sub(D[i], X[i], transform) for i = 1:length(D)])
+    lp = 0.0
+    @inbounds @fastmath for i in eachindex(X)
+        lp += logpdf_sub(D[i], X[i], transform)
+    end
     lp
 end
 
