@@ -62,7 +62,6 @@ function datafortree(
 
     # iterate through the data frame and get the node information
     for (ind, row) in enumerate(eachrow(df))
-        #data_vec = zeros(Float64, (2, n_sites))
         mn = find_by_name(tree, leave_names[ind])
         mind = mn.num
         for (ind, i) in enumerate(row)
