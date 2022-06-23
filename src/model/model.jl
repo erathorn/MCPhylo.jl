@@ -306,9 +306,6 @@ function names(m::Model, monitoronly::Bool)
             nodenames = names(m, key)
             append!(values, nodenames)
         end
-        #  end
-        #v = monitoronly ? nodenames[m[key].monitor] : nodenames
-        #append!(values, v)
     end
     values
 end
