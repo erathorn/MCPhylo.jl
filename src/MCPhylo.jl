@@ -86,10 +86,6 @@ import StatsBase:
 
 import Bijectors: link
 
-
-# include("distributions/pdmats2.jl")
-# using .PDMats2
-
 #################### Types ####################
 
 ElementOrVector{T} = Union{T,Vector{T}}
