@@ -49,6 +49,6 @@ function create_csvdf(filecontent::Array{String}, separator::AbstractString=",")
         data = append!(data,[i[1] for i in raw])
         nlangs += 1
     end #for
-    #df = DataFrame(Language = language,Data = data)
+
     return language, permutedims(reshape(data, (ntax,nlangs)))
 end # function create_csvdf
