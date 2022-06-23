@@ -38,7 +38,6 @@ Base.stride(v::ArrayVariate, k::Int) = stride(v.value, k)
 #################### Indexing ####################
 
 Base.getindex(v::ScalarVariate, ind::Int) = v.value[ind]
-#Base.getindex(v::TreeVariate, ind::Int) = v.value[ind]
 
 Base.getindex(v::ScalarVariate, inds::Union{StepRange{Int, Int}, Vector{Int}}) =
   Float64[v[i] for i in inds]
