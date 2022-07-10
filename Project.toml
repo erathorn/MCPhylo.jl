@@ -53,7 +53,7 @@ Showoff = "1"
 SpecialFunctions = "1, 2"
 StatsBase = "0.33"
 StatsFuns = "1"
-StatsPlots = "0.14"
+StatsPlots = "0.14, 0.15"
 Zygote = "0.6"
 julia = "1.5, 1.6, 1.7"
 
