@@ -293,16 +293,16 @@ function buildtree(
 
 
     if j == 0
-        xprime = transfer(x)
+        
         nni = 0.0
-        if !xprime.extended
-            nni = refraction!(xprime, pm * epsilon, logfgrad, logfun, delta)
+        if x.extended
+            nni = refraction!(x, pm * epsilon, logfgrad, logfun, delta)
         else
-            nni = xprime.nni
-            xprime.extended = false
+            nni = x.nni
+            x.extended = false
         end
         
-        logpprime = hamiltonian(xprime)
+        logpprime = hamiltonian(x)
 
         log_sum_weight_subtree = logaddexp(log_sum_weight_subtree, logpprime - logp0)
 
@@ -316,12 +316,11 @@ function buildtree(
             meta.accnni += nni
         end
         meta.nalpha += 1
-
+        return x, nprime, sprime, log_sum_weight_subtree
     else
         log_sum_weight_init = -Inf
         log_sum_weight_final = -Inf
-
-        #if sprime
+        
         
         xprime = transfer(x)
         worker = transfer(x)
@@ -340,7 +339,7 @@ function buildtree(
             log_sum_weight_init,
         )
 
-        worker_final, nprime2, sprime2, log_sum_weight_final = buildtree(
+        worker, nprime2, sprime2, log_sum_weight_final = buildtree(
             worker,
             pm,
             j - 1,
@@ -356,11 +355,11 @@ function buildtree(
         
         ls_final = logaddexp(log_sum_weight_init, log_sum_weight_final)
         if log_sum_weight_final > ls_final
-            transfer!(xprime, worker_final)
+            transfer!(xprime, worker)
         else
             accprob = exp(log_sum_weight_final - ls_final)
             if rand() < accprob
-                transfer!(xprime, worker_final)
+                transfer!(xprime, worker)
             end
         end
 
@@ -377,7 +376,7 @@ function buildtree(
 
     end #if j
 
-    xprime, nprime, sprime, log_sum_weight_subtree
+    return xprime, nprime, sprime, log_sum_weight_subtree
 end
 
 
