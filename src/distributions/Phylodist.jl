@@ -5,18 +5,18 @@
     This structure implements a Distribution whos likelihood is calculated
     according to Felsensteins algorithm.
 """
-struct PhyloDist <: DiscreteMatrixDistribution
-    tree::T where T <: GeneralNode
+struct PhyloDist{T<:GeneralNode, F<:Function} <: DiscreteMatrixDistribution
+    tree::T
     base_freq::Vector{Float64}
     substitution_rates::Vector{Float64}
     rates::Vector{Float64}
-    substitution_model::Function
+    substitution_model::F
     nbase::Int64
     nnodes::Int64
 
     function PhyloDist(tree::T, base_freq::A, substitution_rates::A,
-                       rates::A, substitution_model::Function) where {T <: GeneralNode, A<:AbstractArray{<:Real}}
-        new(tree, base_freq, substitution_rates,rates, substitution_model,
+                       rates::A, substitution_model::F) where {T <: GeneralNode, A<:AbstractArray{<:Real}, F<:Function}
+        new{T, F}(tree, base_freq, substitution_rates,rates, substitution_model,
             length(base_freq), length(post_order(tree)))
     end
 
@@ -52,7 +52,7 @@ maximum(d::PhyloDist) = Inf
 
 Base.size(d::PhyloDist) = (d.nbase, 1, d.nnodes)
 
-function logpdf(d::PhyloDist, x::AbstractArray{<:Real,3})::Float64
+function logpdf(d::PhyloDist{T, F}, x::AbstractArray{<:Real,3})::Float64 where {T, F}
     mt = post_order(d.tree)
     
     U, D, Uinv, mu = d.substitution_model(
@@ -69,16 +69,15 @@ function logpdf(d::PhyloDist, x::AbstractArray{<:Real,3})::Float64
     FelsensteinFunction(mt, data_ext, Down, d.base_freq, trans_probs)
 end
 
-function gradlogpdf(d::PhyloDist, x::AbstractArray)
+function gradlogpdf(d::PhyloDist{T, F}, x::AbstractArray) where {T, F}
     mt = post_order(d.tree)
     U, D, Uinv, mu = d.substitution_model(
         d.base_freq,
         d.substitution_rates,
-    )::Tuple{Matrix,Vector,Matrix,Float64}
-    blv = get_branchlength_vector(last(mt))
-    leaveinds = [l.num for l in get_leaves(last(mt))]
-    nleaveinds = [l.num for l in mt if l.nchild > 0]
-    data_ext = my_repeat(x, length(d.rates), leaveinds, nleaveinds)
+    )#::Tuple{Matrix{Float64},Vector{Float64},Matrix{Float64},Float64}
+    blv = get_branchlength_vector(d.tree)
+   
+    data_ext = my_repeat(x, length(d.rates), [l.num for l in get_leaves(d.tree)], [l.num for l in mt if l.nchild > 0])
     Down = deepcopy(data_ext)
     trans_probs = parallel_transition_prob(U, D, Uinv, d.rates, mu, blv)
     ptg = zeros(size(trans_probs))
