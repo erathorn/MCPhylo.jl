@@ -90,7 +90,7 @@ function pmap2(f::Function, lsts::Vector)
     if (nprocs() > 1)
         pmap(f, lsts)
     else
-        map(f, lsts)
+        return f.(lsts)
     end
 end
 

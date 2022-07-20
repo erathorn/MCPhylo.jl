@@ -211,7 +211,7 @@ Returns the resulting gradient vector. Method `gradlogpdf!()` additionally updat
 
   * `:forward` : forward differencing.
 """
-function gradlogpdf(m::Model, targets::Array{Symbol,1})::Tuple{Float64,Array{Float64}}
+function gradlogpdf(m::Model, targets::Vector{Symbol})::Tuple{Float64,Array{Float64}}
     vp = 0.0
     gradp = Array[]
     for key in targets
@@ -328,7 +328,8 @@ Returns the model updated with the MCMC sample and, in the case of `block=0`, th
 """
 function sample!(m::Model)
     m.iter += 1
-    for sampler in m.samplers
+    sams::Vector{Sampler} = m.samplers
+    for sampler in sams
         res = sample!(sampler, m)
         if res !== nothing
             m[sampler.params] = res
@@ -344,11 +345,6 @@ function sample!(s::Sampler{T, R}, m::Model) where {T<:SamplerTune, R}
     sample!(s, lpdf, grlpdf=grlpdf, adapt=m.iter < m.burnin, gen=m.iter, model=m)
     relist(m, s.value, s.params, s.transform)
 end
-
-function my_relist(m, v, p, s)
-    m[p] = relist(m, v, p, s)
-end
-
 
 
 function pseudologpdf!(
@@ -433,6 +429,7 @@ function unlist(m::Model, nodekeys::Vector{Symbol}; transform::Bool = false)
     end
     vcat(vmap(f, nodekeys)...)
 end
+
 
 """
     relist(m::Model, x::AbstractArray{T}, block::Integer=0,

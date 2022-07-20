@@ -119,12 +119,12 @@ end
 #################### Sampling Functions ####################
 
 function sample!(
-    v::PNUTSVariate,
+    v::Sampler{PNUTSTune, Vector{T}},
     logfun::Function;
     grlpdf::Function,
     adapt::Bool = false,
     args...,
-)
+)::Sampler{PNUTSTune, Vector{T}} where T
     tune = v.tune
     adapter = tune.stepsizeadapter
     const_params = tune.stepsizeadapter.params
@@ -162,7 +162,7 @@ function sample!(
 end
 
 
-function setadapt!(v::PNUTSVariate, adapt::Bool)
+function setadapt!(v::Sampler{PNUTSTune, Vector{T}}, adapt::Bool)::Sampler{PNUTSTune, Vector{T}} where T
     tune = v.tune
     if adapt && !tune.adapt
         tune.stepsizeadapter.m = 0
@@ -175,11 +175,11 @@ end
 
 
 function nuts_sub!(
-    v::PNUTSVariate,
+    v::Sampler{PNUTSTune, Vector{T}},
     epsilon::Float64,
     logfgrad::Function,
     logfun::Function,
-)::PNUTSVariate
+)::Sampler{PNUTSTune, Vector{T}} where T
 
 
 
@@ -387,7 +387,7 @@ function nouturn(
     logfgrad::Function,
     logfun::Function,
     delta::Float64,
-)::Bool where {T}
+)::Bool where {T<:GeneralNode}
     _, curr_h = BHV_bounds(xminus.x, xplus.x)
 
     temp = Threads.@spawn refraction!(xminus, -epsilon, logfgrad, logfun, delta)

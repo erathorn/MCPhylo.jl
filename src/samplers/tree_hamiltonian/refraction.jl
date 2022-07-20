@@ -5,7 +5,7 @@ function refraction!(
     logfgrad::Function,
     logf::Function,
     delta::Float64,
-)::Int where T
+)::Int where T<:GeneralNode
 
     blenvec = get_branchlength_vector(s.x)
     fac = scale_fac.(blenvec, delta)
