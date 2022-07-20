@@ -1,5 +1,5 @@
 
-function myred!(out, d1, d2, lind)
+function myred!(out::T, d1::R, d2::S, lind::Int)::Nothing where {T, R, S}
     @tturbo for j in axes(d1, 2), r in axes(d1, 3)
         tmp = zero(eltype(out))
         for i in axes(d1, 1)
@@ -7,10 +7,11 @@ function myred!(out, d1, d2, lind)
         end
         out[j, r] = tmp
     end
+    nothing
 end
 
 
-function mygemmturbo!(C, A, B, lind)
+function mygemmturbo!(C::R, A::T, B::T, lind::Int)::Nothing where {T, R}
     @tturbo for m ∈ axes(A, 1), n ∈ axes(B, 2), r in axes(B, 3)
         Cmn = zero(eltype(C))
         for k ∈ axes(A, 2)
@@ -18,9 +19,10 @@ function mygemmturbo!(C, A, B, lind)
         end
         C[m, n, r] = Cmn
     end
+    nothing
 end
 
-function mygemmturbo_tr!(C, A, B, lind)
+function mygemmturbo_tr!(C::R, A::T, B::T, lind::Int)::Nothing where {T, R}
     @tturbo for m ∈ axes(A, 1), n ∈ axes(B, 2), r in axes(B, 3)
         Cmn = zero(eltype(C))
         for k ∈ axes(A, 2)
@@ -28,12 +30,13 @@ function mygemmturbo_tr!(C, A, B, lind)
         end
         C[m, n, r] = Cmn
     end
+    nothing
 end
 
 
 
 
-function comb(po, data, gradi, lind)
+function comb(po::C, data::Array{B, 4}, gradi::A, lind::Int)::B where {A, B, C}
     res = zero(eltype(data))
     @tturbo for k in axes(data, 3), j in axes(data, 2)
         tmp = zero(eltype(data))
@@ -88,23 +91,20 @@ function by_max!(m::Array, ll::F, nodenum::Int)::F where {F<:Real}
 end
 
 
-function bymax!(out, m, nodenum)
+function bymax!(out::A, m::B, nodenum::Int)::Nothing where {A, B}
     @inbounds maxi = m[:, 1, :]
     @inbounds for r in axes(m, 3), j in axes(m, 2)[2:end], i in axes(m, 1)
         maxi[i, r] = maxi[i, r] < m[i, j, r] ? m[i, j, r] : maxi[i, r]
     end
-
-    @tturbo for r in axes(m, 3), i in axes(m, 1)
-        tmp = 1 / maxi[i, r]
-        for j in axes(m, 2)
-            out[i, j, r, nodenum] = m[i, j, r] * tmp
-        end
+    
+    @tturbo for r in axes(m, 3), j in axes(m, 2), i in axes(m, 1)      
+        out[i, j, r, nodenum] = m[i, j, r] / maxi[i, r]
     end
     nothing
 end
 
 
-function root_sum(data, pi_, lind, ll::F)::F where {F}
+function root_sum(data::T, pi_::S, lind::Int, ll::F)::F where {F, T, S}
 
     @tturbo for k in axes(data, 3), j in axes(data, 2)
         tmp = zero(F)
@@ -118,14 +118,14 @@ function root_sum(data, pi_, lind, ll::F)::F where {F}
 end
 
 
-function diagonalizer!(out, D, blv, mu, rates)::Nothing
+function diagonalizer!(out::B, D::A, blv::A, mu::C, rates::A)::Nothing where {A, B, C}
     @tturbo for i in eachindex(blv), r in eachindex(rates), d in eachindex(D)
         out[d, d, r, i] = exp(mu * blv[i] * D[d] * rates[r])
     end
     nothing
 end
 
-function diagonalizer_ptg!(out, D, blv, mu, rates)::Nothing
+function diagonalizer_ptg!(out::B, D::A, blv::A, mu::C, rates::A)::Nothing where {A, B, C}
     @tturbo for i in eachindex(blv), r in eachindex(rates), d in eachindex(D)
         out[d, d, r, i] = D[d] * rates[r] * mu * exp(mu * blv[i] * D[d] * rates[r])
     end
@@ -133,7 +133,7 @@ function diagonalizer_ptg!(out, D, blv, mu, rates)::Nothing
 end
 
 
-function R_gemmturbo_large!(C, A, B)
+function R_gemmturbo_large!(C::T, A::S, B::T)::Nothing where {T, S}
     @tturbo for m ∈ axes(A, 1), l ∈ axes(B, 4), r ∈ axes(B, 3), n ∈ axes(B, 2)
         Cmn = zero(eltype(C))
         for k ∈ axes(A, 2)
@@ -141,10 +141,11 @@ function R_gemmturbo_large!(C, A, B)
         end
         C[m, n, r, l] = Cmn
     end
+    nothing
 end
 
 
-function L_gemmturbo_large!(C, A, B)
+function L_gemmturbo_large!(C::T, A::T, B::S)::Nothing where {T, S}
     @tturbo for l ∈ axes(A, 4), r ∈ axes(A, 3), m ∈ axes(A, 1), n ∈ axes(B, 2)
         Cmn = zero(eltype(C))
         for k ∈ axes(A, 2)
@@ -152,6 +153,7 @@ function L_gemmturbo_large!(C, A, B)
         end
         C[m, n, r, l] = Cmn
     end
+    nothing
 end
 
 
