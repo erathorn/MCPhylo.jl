@@ -2,15 +2,15 @@
 
 #################### Types and Constructors ####################
 
-struct MISSTune <: SamplerTune
-    logf::Function
+struct MISSTune{F <: Function} <: SamplerTune
+    logf::F
     dims::Tuple
     valueinds::AbstractArray
     distrinds::AbstractArray   
     
 end
 
-function MISSTune(f::Function)
+function MISSTune(f::F) where F
     MISSTune(f, (), Int[], Int[])
 end
 
@@ -71,7 +71,7 @@ end
 #################### Sampling Functions ####################
 
 
-function sample!(v::MISSVariate{T}, get_model::Function; gen::Int, model::Model, kwargs...) where {T}
+function sample!(v::Sampler{MISSTune{F}, T}, get_model::Function; gen::Int, model::Model, kwargs...) where {T, F}
     params = v.params
     if gen == 1
         for key in params

@@ -1,9 +1,9 @@
 #################### Phylogenetic No-U-Turn Sampler ####################
 
 #################### Types and Constructors ####################
-mutable struct PNUTSTune <: SamplerTune
-    logf::Union{Function,Missing}
-    logfgrad::Union{Function,Missing}
+mutable struct PNUTSTune{F<:Function, F2<:Function} <: SamplerTune
+    logf::F
+    logfgrad::F2
     stepsizeadapter::NUTSstepadapter
     adapt::Bool
     epsilon::Float64
@@ -16,20 +16,20 @@ mutable struct PNUTSTune <: SamplerTune
 
 
 
-    PNUTSTune() = new()
+    #PNUTSTune() = new()
 
     function PNUTSTune(
         x::Vector{T},
         epsilon::Float64,
-        logf::Union{Function,Missing},
-        logfgrad::Union{Function,Missing};
+        logf::F,
+        logfgrad::F2;
         target::Real = 0.6,
         tree_depth::Int = 10,
         targetNNI::Float64 = 0.5,
         delta::Float64 = 0.003,
-    ) where {T<:GeneralNode}
+    ) where {T<:GeneralNode, F, F2}
 
-        new(
+        new{F, F2}(
             logf,
             logfgrad,
             NUTSstepadapter(
@@ -71,7 +71,7 @@ PNUTSTune(
     PNUTSTune(x, nutsepsilon(x[1], logfgrad, logf, delta, target), logf, logfgrad; args...)
 
 PNUTSTune(x::Vector; epsilon::Real, args...) =
-    PNUTSTune(x, epsilon, missing, missing, args...)
+    PNUTSTune(x, epsilon, identity, identity, args...)
 
 const PNUTSVariate = Sampler{PNUTSTune,Vector{T}} where {T<:GeneralNode}
 
@@ -119,12 +119,12 @@ end
 #################### Sampling Functions ####################
 
 function sample!(
-    v::Sampler{PNUTSTune, Vector{T}},
+    v::Sampler{PNUTSTune{F, F2}, Vector{T}},
     logfun::Function;
     grlpdf::Function,
     adapt::Bool = false,
     args...,
-)::Sampler{PNUTSTune, Vector{T}} where T
+)::Sampler{PNUTSTune{F, F2}, Vector{T}} where {T, F, F2}
     tune = v.tune
     adapter = tune.stepsizeadapter
     const_params = tune.stepsizeadapter.params
@@ -162,7 +162,7 @@ function sample!(
 end
 
 
-function setadapt!(v::Sampler{PNUTSTune, Vector{T}}, adapt::Bool)::Sampler{PNUTSTune, Vector{T}} where T
+function setadapt!(v::Sampler{PNUTSTune{F, F2}, Vector{T}}, adapt::Bool)::Sampler{PNUTSTune{F, F2}, Vector{T}} where {F, F2, T}
     tune = v.tune
     if adapt && !tune.adapt
         tune.stepsizeadapter.m = 0
@@ -175,11 +175,11 @@ end
 
 
 function nuts_sub!(
-    v::Sampler{PNUTSTune, Vector{T}},
+    v::Sampler{PNUTSTune{F, F2}, Vector{T}},
     epsilon::Float64,
     logfgrad::Function,
     logfun::Function,
-)::Sampler{PNUTSTune, Vector{T}} where T
+)::Sampler{PNUTSTune{F, F2}, Vector{T}} where {F, F2, T}
 
 
 
@@ -294,7 +294,7 @@ function buildtree(
 
     if j == 0
         
-        nni = 0.0
+        nni = zero(Int)
         if x.extended
             nni = refraction!(x, pm * epsilon, logfgrad, logfun, delta)
         else

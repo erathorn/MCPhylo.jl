@@ -1,7 +1,7 @@
 
-mutable struct PPHMCTune <: SamplerTune
-    logf::Union{Function,Missing}
-    logfgrad::Union{Function,Missing}
+mutable struct PPHMCTune{F<:Function, F2<:Function} <: SamplerTune
+    logf::F
+    logfgrad::F2
     epsilon::Float64
     delta::Float64
     nleap::Int64
@@ -10,10 +10,10 @@ mutable struct PPHMCTune <: SamplerTune
     adapter::Float64
     moves::Vector{Int}
 
-    PPHMCTune() = new()
+    #PPHMCTune{F, F2}() where {F, F2} = new{F, F2}()
 
-    function PPHMCTune(x::Vector{T}, logf::Union{Function, Missing}, logfgrad::Union{Function,Missing}, epsilon::Float64, nleap::Int64; delta::Float64=0.003, adapter::Float64=0.4, randomization::Bool=true) where T <: GeneralNode
-        new(logf, logfgrad, epsilon, delta, nleap, 0, randomization, adapter,Int[])
+    function PPHMCTune(x::Vector{T}, logf::F, logfgrad::F2, epsilon::Float64, nleap::Int64; delta::Float64=0.003, adapter::Float64=0.4, randomization::Bool=true) where {T <: GeneralNode, F, F2}
+        new{F, F2}(logf, logfgrad, epsilon, delta, nleap, 0, randomization, adapter,Int[])
     end
 end
 
@@ -54,8 +54,8 @@ function PPHMC(params::ElementOrVector{Symbol}, epsilon::Float64, nleap::Int64; 
 end
 
 
-function sample!(v::PPHMCVariate{<:Vector{<:GeneralNode}}, logfun::Function;
-            grlpdf::Function, adapt::Bool, model::Model, kwargs...)
+function sample!(v::Sampler{PPHMCTune{F, F2}, Vector{T}}, logfun::Function;
+            grlpdf::Function, adapt::Bool, model::Model, kwargs...) where {F, F2, T<:GeneralNode}
     
     bi = model.burnin
     mt = v.value[1]

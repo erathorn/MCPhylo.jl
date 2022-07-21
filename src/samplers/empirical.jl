@@ -3,16 +3,16 @@
 #################### Types and Constructors ####################
 
 
-mutable struct EmpiricalTune <: SamplerTune
-    logf::Function
-    samplerfun::Union{Function, Missing}
+mutable struct EmpiricalTune{F<:Function, F2<:Function} <: SamplerTune
+    logf::F
+    samplerfun::F2
     width::Int64
     replacement::Bool
 
 end
 
-EmpiricalTune(x::Vector, logf::Function, samplerfun::Function, width::Int64, replacement::Bool=false)=
-    EmpiricalTune(logf, samplerfun, width, replacement)
+EmpiricalTune(x::Vector, logf::F, samplerfun::F2, width::Int64, replacement::Bool=false) where {F, F2} =
+    EmpiricalTune{F, F2}(logf, samplerfun, width, replacement)
 
 const EmpiricalVariate = Sampler{EmpiricalTune, T} where T
 
@@ -35,7 +35,7 @@ function Empirical(params::Symbol,
 end
 
 
-function sample!(v::EmpiricalVariate{T}, lpdf::Function; model::Model=model, kwargs...) where T
+function sample!(v::Sampler{EmpiricalTune{F, F2}, T}, lpdf::Function; model::Model=model, kwargs...) where {T, F, F2}
     width = v.tune.width
     samfun = v.tune.samplerfun
     params = v.params

@@ -2,21 +2,21 @@
 
 #################### Types and Constructors ####################
 
-mutable struct SliceSimplexTune <: SamplerTune
-    logf::Union{Function,Missing}
+mutable struct SliceSimplexTune{F<:Function} <: SamplerTune
+    logf::F
     scale::Float64
 
-    SliceSimplexTune() = new()
+    #SliceSimplexTune() = new()
 
-    SliceSimplexTune(x::Vector, logf::Union{Function,Missing}; scale::Real = 1.0) =
-        new(logf, scale)
+    SliceSimplexTune(x::Vector, logf::F; scale::Real = 1.0) where F =
+        new{F}(logf, scale)
 end
 
-SliceSimplexTune(x::Vector; args...) = SliceSimplexTune(x, missing; args...)
+SliceSimplexTune(x::Vector; args...) = SliceSimplexTune(x, identity; args...)
 
 const SliceSimplexVariate = Sampler{SliceSimplexTune,T} where {T}
 
-function validate(v::SliceSimplexVariate)
+function validate(v::Sampler{SliceSimplexTune{F}, T}) where {F, T}
     0 < v.tune.scale <= 1 || throw(ArgumentError("scale is not in (0, 1]"))
     validatesimplex(v)
 end
@@ -70,7 +70,7 @@ end
 
 #################### Sampling Functions ####################
 
-sample!(v::SliceSimplexVariate) = sample!(v, v.tune.logf)
+#sample!(v::SliceSimplexVariate) = sample!(v, v.tune.logf)
 """
     sample!(v::SliceSimplexVariate, logf::Function)
 
@@ -79,7 +79,7 @@ Parameters are assumed to be continuous and constrained to a simplex.
 
 Returns `v` updated with simulated values and associated tuning parameters.
 """
-function sample!(v::SliceSimplexVariate, logf::Function; args...)
+function sample!(v::Sampler{SliceSimplexTune{F}, T}, logf::Function; args...) where {F, T}
 
 
     p0 = logf(v.value) + log(rand())

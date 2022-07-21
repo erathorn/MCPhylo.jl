@@ -2,20 +2,18 @@
 
 #################### Types and Constructors ####################
 
-mutable struct HMCTune <: SamplerTune
-    logf::Union{Function,Missing}
+mutable struct HMCTune{F<:Function} <: SamplerTune
+    logf::F
     epsilon::Float64
     L::Int
     SigmaL::Union{UniformScaling{Bool},LowerTriangular{Float64}}
 
-    HMCTune() = new()
+    HMCTune(x, epsilon::Real, L::Integer) = new{typeof(identity)}(identity, epsilon, L, I)
 
-    HMCTune(x, epsilon::Real, L::Integer) = new(missing, epsilon, L, I)
-
-    HMCTune(x, epsilon::Real, L::Integer, logfgrad::Function) = new(logfgrad, epsilon, L, I)
+    HMCTune(x, epsilon::Real, L::Integer, logfgrad::F) where F = new{F}(logfgrad, epsilon, L, I)
 
     function HMCTune(x, epsilon::Real, L::Integer, Sigma::Matrix{T}) where {T<:Real}
-        new(missing, epsilon, L, cholesky(Sigma).L)
+        new{typeof(identity)}(identity, epsilon, L, cholesky(Sigma).L)
     end
 
     function HMCTune(
@@ -23,9 +21,9 @@ mutable struct HMCTune <: SamplerTune
         epsilon::Real,
         L::Integer,
         Sigma::Matrix{T},
-        logfgrad::Function,
-    ) where {T<:Real}
-        new(logfgrad, epsilon, L, cholesky(Sigma).L)
+        logfgrad::F,
+    ) where {T<:Real, F}
+        new{F}(logfgrad, epsilon, L, cholesky(Sigma).L)
     end
 
     function HMCTune(
@@ -33,20 +31,20 @@ mutable struct HMCTune <: SamplerTune
         epsilon::Real,
         L::Integer,
         Sigma::UniformScaling{Bool},
-        logfgrad::Function,
-    )
-        new(logfgrad, epsilon, L, Sigma)
+        logfgrad::F,
+    ) where F
+        new{F}(logfgrad, epsilon, L, Sigma)
     end
 end
 
 
-const HMCVariate = Sampler{HMCTune,T} where {T}
+const HMCVariate = Sampler{HMCTune{F},T} where {T, F}
 
-validate(v::HMCVariate) = validate(v, v.tune.SigmaL)
+validate(v::Sampler{HMCTune{F},T}) where {F, T} = validate(v, v.tune.SigmaL)
 
-validate(v::HMCVariate, SigmaL::UniformScaling) = v
+validate(v::Sampler{HMCTune{F},T}, SigmaL::UniformScaling) where {F, T} = v
 
-function validate(v::HMCVariate, SigmaL::LowerTriangular)
+function validate(v::Sampler{HMCTune{F},T}, SigmaL::LowerTriangular) where {F, T}
     n = length(v)
     size(SigmaL, 1) == n ||
         throw(ArgumentError("Sigma dimension differs from variate length $n"))
@@ -95,7 +93,7 @@ are assumed to be continuous and unconstrained.
 
 Returns `v` updated with simulated values and associated tuning parameters.
 """
-function sample!(v::HMCVariate, logfgrad::Function; kwargs...)
+function sample!(v::Sampler{HMCTune{F},T}, logfgrad::Function; kwargs...) where {F, T}
     tune = v.tune
 
     x1 = v.value[:]

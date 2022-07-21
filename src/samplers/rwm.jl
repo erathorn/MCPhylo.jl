@@ -2,34 +2,34 @@
 
 #################### Types and Constructors ####################
 
-mutable struct RWMTune <: SamplerTune
-  logf::Union{Function, Missing}
-  scale::Union{Float64, Vector{Float64}}
+mutable struct RWMTune{F<:Function, T<: Union{Float64, Vector{Float64}}} <: SamplerTune
+  logf::F
+  scale::T
   eligible::Vector{Symbol}
   proposal::SymDistributionType
 
-  RWMTune() = new()
+  #RWMTune() = new()
 
-  function RWMTune(x::Vector, scale::Real, logf::Union{Function, Missing}, eligible::Vector{Symbol};
-                   proposal::SymDistributionType=Normal)
-    new(logf, Float64(scale), eligible, proposal)
+  function RWMTune(x::Vector, scale::Real, logf::F, eligible::Vector{Symbol};
+                   proposal::SymDistributionType=Normal) where F
+    new{F, Float64}(logf, Float64(scale), eligible, proposal)
   end
 
   function RWMTune(x::Vector, scale::Vector{T},
-                  logf::Union{Function, Missing},
+                  logf::F,
                   eligible::Vector{Symbol};
-                  proposal::SymDistributionType=Normal) where {T<:Real}
-    new(logf, convert(Vector{Float64}, scale), eligible, proposal)
+                  proposal::SymDistributionType=Normal) where {T<:Real, F}
+    new{F, Vector{Float64}}(logf, convert(Vector{Float64}, scale), eligible, proposal)
   end
 end
 
-const RWMVariate = Sampler{RWMTune, T} where T
+const RWMVariate = Sampler{RWMTune{F, S}, T} where {T, F, S}
 
-validate(v::RWMVariate{T}) where T<:AbstractArray{S} where S<:Union{Real, GeneralNode} = validate(v, v.tune.scale)
+validate(v::Sampler{RWMTune{F, S}, T}) where {F, S, T} = validate(v, v.tune.scale)
 
-validate(v::RWMVariate{T}, scale::Float64) where T<:AbstractArray{S} where S<:Union{Real, GeneralNode} = v 
+validate(v::Sampler{RWMTune{F, S}, T}, scale::Float64) where {F, S, T} = v 
 
-function validate(v::RWMVariate{T}, scale::Vector) where T<:AbstractArray{S} where S<:Union{Real, GeneralNode}
+function validate(v::Sampler{RWMTune{F, S}, T}, scale::Vector) where {F, S, T} 
   n = length(v)
   length(scale) == n ||
     throw(ArgumentError("length(scale) differs from variate length $n"))
@@ -89,7 +89,7 @@ end
 
 #################### Sampling Functions ####################
 
-sample!(v::RWMVariate) = sample!(v, v.tune.logf)
+#sample!(v::RWMVariate) = sample!(v, v.tune.logf)
 
 
 """
@@ -99,7 +99,7 @@ Propose a new tree by randomly performing a move from the ones specified in `mov
 
 Returns `v` updated with simulated values and associated tuning parameters.
 """
-function sample!(v::RWMVariate{Vector{T}}, logf::Function; kwargs...) where T<:GeneralNode
+function sample!(v::Sampler{RWMTune{F, S}, Vector{T}}, logf::Function; kwargs...) where {T<:GeneralNode, F, S}
   tree = v[1]
   tc = deepcopy(tree)
 
@@ -133,7 +133,7 @@ are assumed to be continuous and unconstrained.
 
 Returns `v` updated with simulated values and associated tuning parameters.
 """
-function sample!(v::RWMVariate{T}, logf::Function; kwargs...) where T<:AbstractArray{<:Real}
+function sample!(v::Sampler{RWMTune{F, S}, T}, logf::Function; kwargs...) where {T<:AbstractArray{<:Real}, F, S}
   x = v + v.tune.scale .* rand(v.tune.proposal(0.0, 1.0), length(v))
   if rand() < exp(logf(x) - logf(v.value))
     v[:] = x
