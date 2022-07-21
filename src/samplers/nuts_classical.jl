@@ -1,100 +1,13 @@
-#################### No-U-Turn Sampler ####################
-
-#################### Types and Constructors ####################
-
-mutable struct NUTSTune <: SamplerTune
-  logf::Union{Function, Missing}
-  adapt::Bool
-  alpha::Float64
-  epsilon::Float64
-  epsilonbar::Float64
-  gamma::Float64
-  Hbar::Float64
-  kappa::Float64
-  m::Int
-  mu::Float64
-  nalpha::Int
-  t0::Float64
-  target::Float64
-  tree_depth::Int
-
-  NUTSTune() = new()
-
-  function NUTSTune(x::Vector, epsilon::Real, logfgrad::Union{Function, Missing};
-                    target::Real=0.6, tree_depth::Int=10)
-    new(logfgrad, false, 0.0, epsilon, 1.0, 0.05, 0.0, 0.75, 0, NaN, 0, 10.0,
-        target, tree_depth)
-  end
-end
 
 
-const NUTSVariate = Sampler{NUTSTune, T} where T
 
-
-#################### Sampler Constructor ####################
-
-function NUTS_classical(params::ElementOrVector{Symbol}; epsilon::Real = -Inf, kwargs...)
-  tune = NUTSTune(Float64[], epsilon, logpdfgrad!; kwargs...)
-  Sampler(Float64[], params, tune, Symbol[], true)
-end
-
-
-#################### Sampling Functions ####################
-
-#sample!(v::NUTSVariate; args...) = sample!(v, v.tune.logfgrad; args...)
-"""
-    sample!(v::NUTSVariate, logfgrad::Function; adapt::Bool=false)
-
-Draw one sample from a target distribution using the NUTS sampler. Parameters
-are assumed to be continuous and unconstrained.
-
-Returns `v` updated with simulated values and associated tuning parameters.
-"""
-function sample!(v::NUTSVariate{T}, logfgrad::Function; adapt::Bool=false, kwargs...) where T<: AbstractArray{<: Real}
-  tune = v.tune
-  
-  if tune.m == 0 && isinf(tune.epsilon)
-    tune.epsilon = nutsepsilon(v.value, logfgrad, tune.target)
-  end
-  setadapt!(v, adapt)
-  if tune.adapt
-    tune.m += 1
-    nuts_sub!(v, tune.epsilon, logfgrad)
-    p = 1.0 / (tune.m + tune.t0)
-    ada = tune.alpha / tune.nalpha
-    ada = ada > 1 ? 1.0 : ada
-    tune.Hbar = (1.0 - p) * tune.Hbar +
-                p * (tune.target - ada)
-    tune.epsilon = exp(tune.mu - sqrt(tune.m) * tune.Hbar / tune.gamma)
-    p = tune.m^-tune.kappa
-    tune.epsilonbar = exp(p * log(tune.epsilon) +
-                          (1.0 - p) * log(tune.epsilonbar))
-  else
-    if (tune.m > 0) tune.epsilon = tune.epsilonbar end
-    nuts_sub!(v, tune.epsilon, logfgrad)
-  end
-  v
-end
-
-
-function setadapt!(v::NUTSVariate{T}, adapt::Bool) where T<: AbstractArray{<: Real}
-  tune = v.tune
-  if adapt && !tune.adapt
-    tune.m = 0
-    tune.mu = log(10.0 * tune.epsilon)
-  end
-  tune.adapt = adapt
-  v
-end
-
-
-function nuts_sub!(v::NUTSVariate{T}, epsilon::Real, logfgrad::Function) where T<: AbstractArray{<: Real}
+function nuts_sub!(v::Sampler{NUTSTune{classic_nuts, F}, T}, epsilon::Real, logfgrad::Function) where {T<: AbstractArray{<: Real}, F}
   n = length(v)
   x = deepcopy(v.value)
   logf, grad = logfgrad(x)
   r = randn(n)
   
-  logp0 = logf - 0.5 * dot(r, r)
+  logp0 = logf - 0.5 * turbo_dot(r, r)
   logu0 = logp0 + log(rand())
   xminus = xplus = deepcopy(x)
   rminus = rplus = deepcopy(r)
@@ -119,7 +32,7 @@ function nuts_sub!(v::NUTSVariate{T}, epsilon::Real, logfgrad::Function) where T
     j += 1
     n += nprime
     s = sprime && nouturn(xminus, xplus, rminus, rplus)
-    v.tune.alpha, v.tune.nalpha = alpha, nalpha
+    v.tune.stepsizeadapter.metro_acc_prob = alpha / nalpha
   end
   v
 end
@@ -141,7 +54,7 @@ function buildtree(x::Vector{Float64}, r::Vector{Float64},
   if j == 0
     xprime, rprime, logfprime, gradprime = leapfrog(x, r, grad, pm * epsilon,
                                                     logfgrad)
-    logpprime = logfprime - 0.5 * dot(rprime, rprime)
+    logpprime = logfprime - 0.5 * turbo_dot(rprime, rprime)
     nprime = Int(logu0 < logpprime)
     sprime = logu0 < logpprime + 1000.0
     xminus = xplus = xprime

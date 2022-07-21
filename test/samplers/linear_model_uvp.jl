@@ -99,7 +99,7 @@ end
     inits = [
     Dict{Symbol,Any}(:y => data[:y], :β => rand(Normal(0, 1), 2), :s2 => rand(Gamma(1, 1))) for i = 1:2
 ]
-    samplers = [NUTS([:β, :s2], variant=:classic)]
+    samplers = [NUTS([:β, :s2], classic_nuts)]
     setsamplers!(model, samplers)
 
     sim = mcmc(
@@ -124,7 +124,7 @@ end
     inits = [
     Dict{Symbol,Any}(:y => data[:y], :β => rand(Normal(0, 1), 2), :s2 => rand(Gamma(1, 1))) for i = 1:2
 ]
-    samplers = [NUTS([:β, :s2], variant=:riemann)]
+    samplers = [NUTS([:β, :s2], riemann_nuts)]
     setsamplers!(model, samplers)
 
     sim = mcmc(

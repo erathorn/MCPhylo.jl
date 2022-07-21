@@ -420,7 +420,8 @@ export make_tree_with_data,
     Restriction,
     JC,
     GTR,
-    freeK
+    freeK,
+    classic_nuts, riemann_nuts
 
 
 export cm, inch, mm, pt, px

@@ -1,111 +1,6 @@
-mutable struct NUTS_Rie_Tune <: SamplerTune
-    logf::Union{Function,Missing}
-    stepsizeadapter::NUTSstepadapter
-    adapt::Bool
-    epsilon::Float64
-    tree_depth::Int    
-    acc_p_r::Vector{Int}
-
-    NUTS_Rie_Tune() = new()
-
-    function NUTS_Rie_Tune(
-        x::Vector{<:Real},
-        epsilon::Float64,
-        logfgrad::Union{Function,Missing};
-        target::Real = 0.75,
-        tree_depth::Int = 10,
-    )
-        
-        new(
-            logfgrad,
-            NUTSstepadapter(0,0,0,NUTS_StepParams(0.5,target,0.05,0.75,10,-Inf)),
-            false,
-            epsilon,
-            tree_depth,
-            Int[]
-        )
-    end
-end
-
-const NUTS_Rie_Variate = Sampler{NUTS_Rie_Tune, T} where T
 
 
-#################### Sampler Constructor ####################
-
-
-"""
-    PNUTS(params::ElementOrVector{Symbol}; args...)
-
-Construct a `Sampler` object for PNUTS sampling. The Parameter is assumed to be
-a tree.
-
-Returns a `Sampler{PNUTSTune}` type object.
-
-* params: stochastic node to be updated with the sampler.
-
-* args...: additional keyword arguments to be passed to the PNUTSVariate constructor.
-"""
-function NUTS_Rie(params::ElementOrVector{Symbol}; epsilon::Float64 = -Inf, args...)
-    tune = NUTS_Rie_Tune(Float64[], epsilon, logpdfgrad!; args...)
-    Sampler(params, tune, Symbol[], true)
-end
-
-
-#################### Sampling Functions ####################
-
-
-function sample!(v::NUTS_Rie_Variate{T}, logfgrad::Function; adapt::Bool = false, kwargs...) where T<: AbstractArray{<: Real}
-    tune = v.tune
-    adapter = tune.stepsizeadapter
-    const_params = tune.stepsizeadapter.params
-    if adapter.m == 0 && isinf(tune.epsilon)
-        tune.epsilon = nutsepsilon(v.value, logfgrad, const_params.δ)
-    end
-    setadapt!(v, adapt)
-    
-    if tune.adapt
-        adapter.m += 1
-        
-        nuts_sub!(v, tune.epsilon, logfgrad)
-
-        adaptstat = adapter.metro_acc_prob > 1 ? 1 : adapter.metro_acc_prob
-        
-        adaptstat = const_params.δ - adaptstat
-        
-        η = 1.0/(adapter.m + const_params.t0)
-        
-        adapter.s_bar = (1.0 - η) * adapter.s_bar + η * adaptstat
-        x = const_params.μ - adapter.s_bar * sqrt(adapter.m) / const_params.γ
-        
-        x_η = adapter.m^-const_params.κ
-        adapter.x_bar = (1.0 - x_η) * adapter.x_bar + x_η * x
-        tune.epsilon = exp(x)
-        
-
-    else
-        if (adapter.m > 0)
-            tune.epsilon = exp(adapter.x_bar)
-        end
-
-        nuts_sub!(v, tune.epsilon, logfgrad)
-    end
-    v
-end
-
-
-function setadapt!(v::NUTS_Rie_Variate{T}, adapt::Bool) where T<: AbstractArray{<: Real}
-    tune = v.tune
-    if adapt && !tune.adapt
-        tune.stepsizeadapter.m = 0
-        tune.stepsizeadapter.params = update_step(tune.stepsizeadapter.params, log(10.0 * tune.epsilon))
-    end
-    tune.adapt = adapt
-    v
-end
-
-
-
-function nuts_sub!(v::NUTS_Rie_Variate{T}, epsilon::Float64, logfgrad::Function)  where T<: AbstractArray{<: Real}
+function nuts_sub!(v::Sampler{NUTSTune{riemann_nuts, F}, T}, epsilon::Float64, logfgrad::Function)  where {T<: AbstractArray{<: Real}, F}
     x = v.value
 
     r = randn(size(x))
@@ -143,7 +38,6 @@ function nuts_sub!(v::NUTS_Rie_Variate{T}, epsilon::Float64, logfgrad::Function)
     meta = NUTSMeta()
 
     while depth < v.tune.tree_depth
-        #reset!(meta)
         meta.alpha = 0
         meta.nalpha = 0
         
@@ -157,7 +51,6 @@ function nuts_sub!(v::NUTS_Rie_Variate{T}, epsilon::Float64, logfgrad::Function)
         rho_fwd = zeros(size(x))
         
         if pm == -1
-            #transfer!(z_worker, z_minus)
             z_worker = Ref(z_minus)
             rho_fwd .= rho
             p_fwd_bck .= p_bck_bck
@@ -178,12 +71,9 @@ function nuts_sub!(v::NUTS_Rie_Variate{T}, epsilon::Float64, logfgrad::Function)
                 p_bck_bck,
                 meta
             )
-        
-            #transfer!(z_minus, z_worker)
 
         else
 
-            #transfer!(z_worker, z_plus)
             z_worker = Ref(z_plus)
             rho_bwd .= rho
             p_bck_fwd .= p_fwd_fwd
@@ -205,7 +95,6 @@ function nuts_sub!(v::NUTS_Rie_Variate{T}, epsilon::Float64, logfgrad::Function)
                 meta
             )
             
-            #transfer!(z_plus, z_worker)
         end#if pm
         tnni += meta.nni
         # the subtree is not valid! Further computations are not necessary
@@ -226,9 +115,7 @@ function nuts_sub!(v::NUTS_Rie_Variate{T}, epsilon::Float64, logfgrad::Function)
             end
         end
         log_sum_weight = logaddexp(lsw_t, log_sum_weight)
-        #nni += meta.nni
         
-
         rho = rho_bwd .+ rho_fwd
         
         pers = nouturn(rho, p_sharp_bck_bck, p_sharp_fwd_fwd)
