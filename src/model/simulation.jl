@@ -257,7 +257,7 @@ function logpdf!(
     params::Array{Symbol},
     targets::Array{Symbol},
     transform::Bool = false,
-) where T# {T<:Real}
+) where T
     m[params] = relist(m, x, params, transform)
     
     df = [i for i in params if i ∉ targets]
@@ -269,9 +269,7 @@ function logpdf!(
         isfinite(lp) || break
         isnan(lp) && return -Inf
         node = m[key]
-        un = update!(node, m)
-        
-        m.nodes[key] = un
+        m.nodes[key] = update!(node, m)
         lp += key in params ? logpdf(node, transform) : logpdf(node)
     end
     lp
@@ -340,8 +338,12 @@ end
 
 function sample!(s::Sampler{T, R}, m::Model) where {T<:SamplerTune, R}
     s.value = unlist(m, s.params, transform=s.transform)
-    lpdf(x) = s.tune.logf(m, x, s.params, s.targets, s.transform)
-    grlpdf(x) = s.tune.logfgrad(m, x, s.params, s.targets, s.transform)
+    lpdf(x) = let m = m, p = s.params, ta = s.targets, tr = s.transform
+        s.tune.logf(m, x, p, ta, tr)
+    end
+    grlpdf(x) = let m = m, p = s.params, ta = s.targets, tr = s.transform
+        s.tune.logfgrad(m, x, p, ta, tr)
+    end
     sample!(s, lpdf, grlpdf=grlpdf, adapt=m.iter < m.burnin, gen=m.iter, model=m)
     relist(m, s.value, s.params, s.transform)
 end

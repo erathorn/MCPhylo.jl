@@ -8,7 +8,7 @@ mutable struct Tree_HMC_State{T<:GeneralNode} <: HMC_State
     g::Vector{Float64}
     lf::Float64
     extended::Bool
-    nni::Int64
+    nni::Int
 end
 
 function Tree_HMC_State(tree::T, r::Vector{Float64}, g::Vector{Float64}, lf::Float64)::Tree_HMC_State{T} where T<:GeneralNode
@@ -31,7 +31,7 @@ function transfer(s1::T)::T where T<:Array_HMC_State
     T(s1.x[:], s1.r[:],s1.g[:],s1.lf)
 end
 
-hamiltonian(s::HMC_State) = s.lf - 0.5 * turbo_dot(s.r, s.r)
+hamiltonian(s::HMC_State)::Float64 = s.lf - 0.5 * turbo_dot(s.r, s.r)
 
 function transfer!(s1::Tree_HMC_State{T}, s2::Tree_HMC_State{T}) where T
     s1.x = deepcopy(s2.x)
@@ -63,9 +63,8 @@ struct NUTS_StepParams
     τ::Float64
 end
 
-function update_step(p::NUTS_StepParams, μ::Float64)
-    p1 = NUTS_StepParams(μ, p.δ, p.γ, p.κ, p.t0, p.τ)
-    p1
+function update_step(p::N, μ::Float64)::N where N<:NUTS_StepParams
+    NUTS_StepParams(μ, p.δ, p.γ, p.κ, p.t0, p.τ)
 end
 
 mutable struct NUTSstepadapter
@@ -87,17 +86,18 @@ end
 
 
 mutable struct NUTSMeta
-    nni::Float64
+    nni::Int
     alpha::Float64
     nalpha::Float64
-    accnni::Float64
+    accnni::Int
 end
 
-NUTSMeta() = NUTSMeta(0.0,0.0,0.0,0.0)
+NUTSMeta() = NUTSMeta(0,0.0,0.0,0.0)
 
-function update!(x::NUTSMeta, y::NUTSMeta)
+function update!(x::NUTSMeta, y::NUTSMeta)::Nothing
     x.nni += y.nni
     x.alpha += y.alpha
     x.nalpha += y.nalpha
     x.accnni += y.accnni
+    nothing
 end
