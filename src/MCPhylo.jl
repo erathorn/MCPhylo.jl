@@ -185,7 +185,7 @@ struct ModelState
 end
 
 mutable struct Model
-    nodes::Dict{Symbol,AbstractDependent}
+    nodes::Dict{Symbol,Any}
     samplers::Vector{Sampler}
     states::Vector{ModelState}
     iter::Int

@@ -26,7 +26,7 @@ function Model(;
     nodes...,
 )
 
-    nodedict = Dict{Symbol,AbstractDependent}()
+    nodedict = Dict{Symbol,Any}()
     @inbounds for (key, value) in nodes
         isa(value, AbstractDependent) ||
             throw(ArgumentError("nodes are not all Dependent types"))
