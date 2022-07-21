@@ -294,15 +294,16 @@ function buildtree(
 
     if j == 0
         
-        nni = zero(Int)
-        if x.extended
-            nni = refraction!(x, pm * epsilon, logfgrad, logfun, delta)
+        xprime = transfer(x)
+        nni = 0.0
+        if !xprime.extended
+            nni = refraction!(xprime, pm * epsilon, logfgrad, logfun, delta)
         else
-            nni = x.nni
-            x.extended = false
+            nni = xprime.nni
+            xprime.extended = false
         end
         
-        logpprime = hamiltonian(x)
+        logpprime = hamiltonian(xprime)
 
         log_sum_weight_subtree = logaddexp(log_sum_weight_subtree, logpprime - logp0)
 
@@ -316,7 +317,7 @@ function buildtree(
             meta.accnni += nni
         end
         meta.nalpha += 1
-        return x, nprime, sprime, log_sum_weight_subtree
+        return xprime, nprime, sprime, log_sum_weight_subtree
     else
         log_sum_weight_init = -Inf
         log_sum_weight_final = -Inf
