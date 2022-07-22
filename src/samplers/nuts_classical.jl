@@ -1,7 +1,7 @@
 
 
 
-function nuts_sub!(v::Sampler{NUTSTune{classic_nuts, F}, T}, epsilon::Real, logfgrad::Function) where {T<: AbstractArray{<: Real}, F}
+function nuts_sub!(v::Sampler{NUTSTune{classic_nuts, F}, T}, epsilon::R, logfgrad::Function) where {T<: AbstractArray{<: Real}, F, R<:Real}
   n = length(v)
   x = deepcopy(v.value)
   logf, grad = logfgrad(x)
@@ -50,7 +50,7 @@ end
 
 function buildtree(x::Vector{Float64}, r::Vector{Float64},
                    grad::Vector{Float64}, pm::Integer, j::Integer,
-                   epsilon::Real, logfgrad::Function, logp0::Real, logu0::Real)
+                   epsilon::R, logfgrad::Function, logp0::R, logu0::R) where R<:Real
   if j == 0
     xprime, rprime, logfprime, gradprime = leapfrog(x, r, grad, pm * epsilon,
                                                     logfgrad)

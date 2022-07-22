@@ -151,7 +151,7 @@ function buildtree(
     depth::Integer,
     epsilon::Float64,
     logfgrad::Function,
-    H0::Real,
+    H0::R,
     rho::Vector{Float64},
     log_sum_weight::Vector{Float64},
     p_sharp_beg::Vector{Float64},
@@ -160,7 +160,7 @@ function buildtree(
     p_end::Vector{Float64},
     meta::NUTSMeta
     
-) where T<: Array_HMC_State
+) where {T<: Array_HMC_State, R<:Real}
 
     if depth == 0
         leapfrog!(s_worker[], pm*epsilon, logfgrad)
@@ -256,7 +256,7 @@ end
 
 
 function leapfrog!(d::Array_HMC_State,
-    epsilon::Real, logfgrad::Function)
+    epsilon::R, logfgrad::Function) where R <:Real
     
     d.r += (0.5 * epsilon) * d.g
     d.x += epsilon * d.r

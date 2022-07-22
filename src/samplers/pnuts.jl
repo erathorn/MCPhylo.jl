@@ -124,7 +124,7 @@ function sample!(
     grlpdf::Function,
     adapt::Bool = false,
     args...,
-)::Sampler{PNUTSTune{F, F2}, Vector{T}} where {T, F, F2}
+)::Sampler{PNUTSTune{F, F2}, Vector{T}} where {T<:GeneralNode, F<:Function, F2<:Function}
     tune = v.tune
     adapter = tune.stepsizeadapter
     const_params = tune.stepsizeadapter.params
@@ -284,12 +284,12 @@ function buildtree(
     epsilon::Float64,
     logfgrad::Function,
     logfun::Function,
-    logp0::Real,
-    lu::Real,
+    logp0::R,
+    lu::R,
     delta::Float64,
     meta::NUTSMeta,
     log_sum_weight_subtree::Float64,
-)::Tuple{Tree_HMC_State{T},Int,Bool,Float64} where {T<:GeneralNode}
+)::Tuple{Tree_HMC_State{T},Int,Bool,Float64} where {T<:GeneralNode, R<:Real}
 
 
     if j == 0
