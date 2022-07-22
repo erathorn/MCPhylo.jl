@@ -200,9 +200,10 @@ Returns the result of a call to setmonitor!(l, l.monitor) or setmonitor!(d, d.mo
 
 * `m` : model containing the node.
 """
-function setinits!(l::Logical, m::Model, ::Any = nothing)
+function setinits(l::Logical, m::Model, ::Any = nothing)
     l.value = l.eval(m)
     setmonitor!(l, l.monitor)
+    l
 end
 
 """
@@ -336,11 +337,13 @@ function Stochastic(
     setmonitor!(s, monitor)
 end
 
-function Stochastic(a::Stochastic, value::T)::Stochastic{T} where T
+function Stochastic(a::Stochastic{S, F, D}, value::T)::Stochastic{T, F, D} where {T<:Union{Real,AbstractArray{T1,N} where {T1<:Real,N},GeneralNode}, F<:Function, S<:Union{Real,AbstractArray{T1,N} where {T1<:Real,N},GeneralNode}, D<:DistributionStruct}
     Stochastic(value, a.symbol, a.monitor, a.eval, a.sources, a.targets, a.distr, a.lpdf)
 end
 
-
+function Stochastic(a::Stochastic{T, F, S}, distr::D)::Stochastic{T, F, D} where {T<:Union{Real,AbstractArray{T1,N} where {T1<:Real,N},GeneralNode}, F<:Function, S<:DistributionStruct, D<:DistributionStruct}
+    Stochastic(a.value, a.symbol, a.monitor, a.eval, a.sources, a.targets, distr, a.lpdf)
+end
 #################### Updating ####################
 """
     setinits!(s::ScalarStochastic, m::Model, x::Real)
@@ -355,10 +358,11 @@ Returns the node with its assigned initial values.
 
 * `x` : values to assign to the node.
 """
-function setinits!(s::Stochastic{T}, m::Model, x::R) where R <: Real where T
+function setinits(s::Stochastic{T}, m::Model, x::R) where R <: Real where T
     s.value = convert(Float64, x)
-    s.distr = s.eval(m)
+    s = Stochastic(s, s.eval(m))
     setmonitor!(s, s.monitor)
+    s
 end
 """
     setinits!(s::ArrayStochastic, m::Model, x::DenseArray)
@@ -373,12 +377,9 @@ Returns the node with its assigned initial values.
 
 * `x` : values to assign to the node.
 """
-function setinits!(s::Stochastic{<:DenseArray}, m::Model, x::DenseArray)
+function setinits(s::Stochastic{<:DenseArray}, m::Model, x::DenseArray)
   s.value = convert(typeof(s.value), copy(x))
-  
-  s.distr = s.eval(m)  
-  
-  
+  s = Stochastic(s, s.eval(m))
   if isa(s.distr, PhylogeneticDistribution)
     distrdims = dims(s.distr)
     for (ind, di) in enumerate(dims(s))
@@ -390,6 +391,7 @@ function setinits!(s::Stochastic{<:DenseArray}, m::Model, x::DenseArray)
     throw(DimensionMismatch("incompatible distribution for stochastic node $(s.symbol). Expected $(dims(s.distr)), got$(dims(s))."))
   end
   setmonitor!(s, s.monitor)
+  return s
 end
 
 
@@ -406,13 +408,14 @@ Returns the node with its assigned initial values.
 
 * `x` : values to assign to the node.
 """
-function setinits!(d::Stochastic{T}, m::Model, x::T) where {T<:GeneralNode}
+function setinits(d::Stochastic{T}, m::Model, x::T) where {T<:GeneralNode}
     d.value = deepcopy(x)
-    d.distr = d.eval(m)
+    d = Stochastic(d, d.eval(m))
     insupport(d.distr, x) || throw(
         ArgumentError("The supplied tree does not match the topological tree constraints."),
     )
     setmonitor!(d, d.monitor)
+    d
 end # function
 
 
@@ -428,7 +431,8 @@ Returns the node with its values updated.
 * `m` : model containing the node.
 """
 function update!(s::AbstractStochastic, m::Model)
-    s.distr = s.eval(m)
+    #s.distr = s.eval(m)
+    s = Stochastic(s, s.eval(m))
     s
 end
 

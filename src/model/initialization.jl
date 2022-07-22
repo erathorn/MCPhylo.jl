@@ -20,10 +20,11 @@ function setinits!(m::Model, inits::Dict{Symbol})
         if isa(node, Stochastic)# || isa(node, TreeStochastic{<:GeneralNode})
             haskey(inits, key) ||
                 throw(ArgumentError("missing initial value for node : $key"))
-            setinits!(node, m, inits[key])
+            node = setinits(node, m, inits[key])
         else
-            setinits!(node, m)
+            node = setinits(node, m)
         end
+        m[key] = node
     end
     m.hasinits = true
     m

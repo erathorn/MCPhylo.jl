@@ -104,12 +104,12 @@ const DistributionStruct =
 
 #################### Dependent Types ####################
 
-mutable struct Logical{D<:Union{Real,AbstractArray{T,N} where {T<:Real,N},GeneralNode}} <:
+mutable struct Logical{D<:Union{Real,AbstractArray{T,N} where {T<:Real,N},GeneralNode}, F<:Function} <:
     AbstractVariate
     value::D
     symbol::Symbol
     monitor::Vector{Int}
-    eval::Function
+    eval::F
     sources::Vector{Symbol}
     targets::Vector{Symbol}
 end
@@ -117,35 +117,37 @@ end
 
 
 mutable struct Stochastic{
-    D<:Union{Real,AbstractArray{T,N} where {T<:Real,N},GeneralNode},
+    D<:Union{Real,AbstractArray{T,N} where {T<:Real,N},GeneralNode},F<:Function, DI<:DistributionStruct
 } <: AbstractVariate
     value::D
     symbol::Symbol
     monitor::Vector{Int}
-    eval::Function
+    eval::F
     sources::Vector{Symbol}
     targets::Vector{Symbol}
-    distr::DistributionStruct
+    distr::DI
     lpdf::Float64
 end
 
-const ScalarVariate = Union{Stochastic{<:Real},Logical{<:Real}}
+const ScalarVariate = Union{Stochastic{<:Real, <:Function, <:DistributionStruct},Logical{<:Real, <:Function}}
 const VectorVariate =
-    Union{Stochastic{<:AbstractArray{<:Real,1}},Logical{<:AbstractArray{<:Real,1}}}
+    Union{Stochastic{<:AbstractArray{<:Real,1}, <:Function, <:DistributionStruct},
+    Logical{<:AbstractArray{<:Real,1}, <:Function}}
 const MatrixVariate =
-    Union{Stochastic{<:AbstractArray{<:Real,2}},Logical{<:AbstractArray{<:Real,2}}}
-const TreeVariate = Union{Logical{<:GeneralNode},Stochastic{<:GeneralNode}}
+    Union{Stochastic{<:AbstractArray{<:Real,2}, <:Function, <:DistributionStruct},
+    Logical{<:AbstractArray{<:Real,2}, <:Function}}
+const TreeVariate = Union{Logical{<:GeneralNode, <:Function},Stochastic{<:GeneralNode,<:Function,<:DistributionStruct}}
 
 # General Union
 const ArrayVariate = Union{
-    Stochastic{<:AbstractArray{<:Real,N}} where N,
-    Logical{<:AbstractArray{<:Real,N} where {N}},
+    Stochastic{<:AbstractArray{<:Real,N} where N, <:Function, <:DistributionStruct},
+    Logical{<:AbstractArray{<:Real,N} where {N}, <:Function},
 }
 
 
-const AbstractLogical = Union{Logical{<:Real},Logical{<:AbstractArray{<:Real,N} where {N}}}
+const AbstractLogical = Union{Logical{<:Real, <:Function},Logical{<:AbstractArray{<:Real,N} where {N}, <:Function}}
 const AbstractStochastic =
-    Union{Stochastic{<:Real},Stochastic{<:AbstractArray{<:Real,N} where {N}}}
+    Union{Stochastic{<:Real, <:Function, <:DistributionStruct},Stochastic{<:AbstractArray{<:Real,N} where {N}, <:Function, <:DistributionStruct}}
 const AbstractDependent = Union{AbstractLogical,AbstractStochastic,TreeVariate}
 
 const ConstraintDict{S} = Dict{

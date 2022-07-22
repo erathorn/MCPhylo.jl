@@ -68,6 +68,15 @@ function set_node(node::Stochastic, value::A)::Stochastic{A} where A
 end
 
 
+function set_node(node::Logical, value::Logical)
+    value
+end
+
+function set_node(node::Stochastic, value::Stochastic)
+    value
+end
+
+
 function Base.setindex!(m::Model, values::Dict, nodekeys::Vector{Symbol})
     @inbounds for key in nodekeys
         m[key] = values[key]
