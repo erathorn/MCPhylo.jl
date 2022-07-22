@@ -148,7 +148,7 @@ function logpdf(
     x::AbstractArray{T},
     block::Integer = 0,
     transform::Bool = false,
-) where T #{T<:Real}
+) where T 
     x0 = unlist(m, block)
     lp = logpdf!(m, x, block, transform)
     relist!(m, x0, block)

@@ -195,7 +195,9 @@ function logpdfgrad!(
     # likelihood
     v, grad = gradlogpdf(m, target)
     # prior
-    vp, gradp = gradlogpdf(m[params[1]], x)
+    t_node::Stochastic{T} = m[params[1]]
+    #@show typeof()
+    vp, gradp = gradlogpdf(t_node, x)
 
     vp + v, gradp .+ grad
 end
