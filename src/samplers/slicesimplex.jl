@@ -6,8 +6,6 @@ mutable struct SliceSimplexTune{F<:Function} <: SamplerTune
     logf::F
     scale::Float64
 
-    #SliceSimplexTune() = new()
-
     SliceSimplexTune(x::Vector, logf::F; scale::Real = 1.0) where F =
         new{F}(logf, scale)
 end
@@ -118,7 +116,7 @@ function shrinksimplex!(
     @inbounds @fastmath for i in findall(bc .< bx)
         inds = [1:(i-1); (i+1):size(vertices, 2)]
         vertices[:, inds] += bc[i] * (vertices[:, i] .- vertices[:, inds])
-        bc = vertices \ cc
+        bc = vertices \ cc    
     end
 
     vertices

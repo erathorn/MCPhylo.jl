@@ -60,11 +60,10 @@ struct NUTS_StepParams
     γ::Float64
     κ::Float64
     t0::Int
-    τ::Float64
 end
 
 function update_step(p::N, μ::Float64)::N where N<:NUTS_StepParams
-    NUTS_StepParams(μ, p.δ, p.γ, p.κ, p.t0, p.τ)
+    NUTS_StepParams(μ, p.δ, p.γ, p.κ, p.t0)
 end
 
 mutable struct NUTSstepadapter
@@ -73,14 +72,13 @@ mutable struct NUTSstepadapter
     x_bar::Float64
     params::NUTS_StepParams
     metro_acc_prob::Float64
-    avg_nni::Float64
 
-    function NUTSstepadapter(m, s_bar, x_bar, μ, δ, γ, κ, t0, τ)
-        new(m, s_bar, x_bar, NUTS_StepParams(μ, δ, γ, κ, t0, τ), 0.0, 0.0)
+    function NUTSstepadapter(m, s_bar, x_bar, μ, δ, γ, κ, t0)
+        new(m, s_bar, x_bar, NUTS_StepParams(μ, δ, γ, κ, t0), 0.0)
     end
 
     function NUTSstepadapter(m, s_bar, x_bar, params::NUTS_StepParams)
-        new(m, s_bar, x_bar, params, 0.0, 0.0)
+        new(m, s_bar, x_bar, params, 0.0)
     end
 end
 

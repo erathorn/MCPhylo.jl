@@ -268,9 +268,9 @@ function logpdf!(
     for key in targets
         isfinite(lp) || break
         isnan(lp) && return -Inf
-        node = m[key]
-        m.nodes[key] = update!(node, m)
-        lp += key in params ? logpdf(node, transform) : logpdf(node)
+        #node = m[key]
+        m[key] = update!(m[key], m)
+        lp += key in params ? logpdf(m[key], transform) : logpdf(m[key])
     end
     lp
 end

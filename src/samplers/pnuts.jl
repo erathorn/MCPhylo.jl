@@ -25,7 +25,7 @@ mutable struct PNUTSTune{F<:Function, F2<:Function} <: SamplerTune
         logfgrad::F2;
         target::Real = 0.6,
         tree_depth::Int = 10,
-        targetNNI::Float64 = 0.5,
+        #targetNNI::Float64 = 0.5,
         delta::Float64 = 0.003,
     ) where {T<:GeneralNode, F, F2}
 
@@ -36,7 +36,7 @@ mutable struct PNUTSTune{F<:Function, F2<:Function} <: SamplerTune
                 0,
                 0,
                 0,
-                NUTS_StepParams(0.5, target, 0.05, 0.75, 10, targetNNI),
+                NUTS_StepParams(0.5, target, 0.05, 0.75, 10),
             ),
             false,
             epsilon,
@@ -140,14 +140,14 @@ function sample!(
 
         adaptstat = adapter.metro_acc_prob > 1 ? 1 : adapter.metro_acc_prob
 
-        HT = 1/3 * (const_params.δ - adaptstat) - 1/3 * (const_params.τ - adapter.avg_nni) + v.tune.att_moves[end] < 1 ?  - 1/3 : 1/3
+        HT = const_params.δ - adaptstat
         
         η = 1.0 / (adapter.m + const_params.t0)
         
 
         adapter.s_bar = (1.0 - η) * adapter.s_bar + η * HT
         x = const_params.μ - adapter.s_bar * sqrt(adapter.m) / const_params.γ
-
+        x = x < log(0.5*tune.delta) ? log(0.5*tune.delta) : x
         x_η = adapter.m^-const_params.κ
         adapter.x_bar = (1.0 - x_η) * adapter.x_bar + x_η * x
         tune.epsilon = exp(x)
@@ -265,7 +265,7 @@ function nuts_sub!(
             break
         end
     end
-    v.tune.stepsizeadapter.avg_nni = meta.nni == 0 ? 0.0 : meta.accnni / meta.nni
+    #v.tune.stepsizeadapter.avg_nni = meta.nni == 0 ? 0.0 : meta.accnni / meta.nni
     
     push!(v.tune.moves, nni)
     push!(v.tune.att_moves, tnni)

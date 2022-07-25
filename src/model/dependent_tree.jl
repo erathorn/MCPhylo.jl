@@ -1,6 +1,6 @@
 
-function update!(d::Stochastic{<:GeneralNode}, m::Model)
-    d.distr = d.eval(m)
+function update!(d::Stochastic{N, F, D}, m::Model) where {N<:GeneralNode, F, D}
+    d = Stochastic(d, d.eval(m))
     d
 end
 
