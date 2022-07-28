@@ -56,7 +56,7 @@ Returns a `Sampler{RWMTune}` type object.
 function RWM(params::ElementOrVector{Symbol},
               scale::ElementOrVector{T}; args...) where {T<:Real}
   tune = RWMTune(Float64[], scale, logpdf!, Symbol[])
-  Sampler(params, tune, Symbol[], false)
+  Sampler(params, tune, Symbol[], true)
 end
 
 """
