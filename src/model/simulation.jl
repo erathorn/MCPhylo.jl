@@ -23,6 +23,7 @@ function settune!(m::Model, tune, block::Integer)
     block == 0 && return settune!(m, tune)
     m.samplers[block].tune = tune
 end
+
 """
     settune!(m::Model, tune::Vector{Any})
 
@@ -171,9 +172,9 @@ function logpdf!(
     lp = logpdf(m, setdiff(params, targets), transform)
     for key in targets
         isfinite(lp) || break
-        node = m[key]
-        update!(node, m)
-        lp += key in params ? logpdf(node, transform) : logpdf(node)
+        #node = m[key]
+        m[key] = update!(m[key], m)
+        lp += key in params ? logpdf(m[key], transform) : logpdf(m[key])
     end
     lp
 end
@@ -215,9 +216,8 @@ function gradlogpdf(m::Model, targets::Vector{Symbol})::Tuple{Float64,Array{Floa
     vp = 0.0
     gradp = Array[]
     for key in targets
-        node = m[key]
-        update!(node, m)
-        v, grad = gradlogpdf(node)
+        m[key] = update!(m[key], m)
+        v, grad = gradlogpdf(m[key])
         vp += v
         push!(gradp, grad)
     end
@@ -291,9 +291,9 @@ function mylogpdf!(
         lp = logpdf(m, diff, transform)
         for key in targets
             isfinite(lp) || break
-            node = m[key]
-            update!(node, m)
-            lp += key in params ? logpdf(node, transform) : logpdf(node)
+            #node = m[key]
+            m[key] = update!(m[key], m)
+            lp += key in params ? logpdf(m[key], transform) : logpdf(m[key])
         end
         lp
     end
@@ -363,9 +363,9 @@ function pseudologpdf!(
     lp = 0.0
     for key in targets
         isfinite(lp) || break
-        node = m[key]
-        update!(node, m)
-        lp += key in params ? pseudologpdf(node, y, transform) : pseudologpdf(node, y)
+        #node = m[key]
+        m[key] = update!(m[key], m)
+        lp += key in params ? pseudologpdf(m[key], y, transform) : pseudologpdf(m[key], y)
     end
     lp
 end

@@ -212,13 +212,14 @@ function logpdf!(
 ) where {T<:GeneralNode}
 
     m[params] = relist(m, x, params, transform)
-
-    # likelihood
-    v = logpdf(m, target)
-    # prior
-    vp = logpdf(m[params[1]], x)
-
-    vp + v
+    lp = logpdf(m, setdiff(params, target), transform)
+    for key in target
+        isfinite(lp) || break
+        #node = m[key]
+        m[key] = update!(m[key], m)
+        lp += key in params ? logpdf(m[key], transform) : logpdf(m[key])
+    end
+    lp
 end
 
 
