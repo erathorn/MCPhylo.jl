@@ -59,7 +59,7 @@ function ref_NNI!(
         if intext[ref_index] == 1
 
             set_branchlength_vector!(s.x, molifier.(blv, delta))
-            temp = @spawn logf(v_copy)
+            temp = Threads.@spawn logf(v_copy)
             U_before_nni = logf(s.x)
             v_copy = deepcopy(s.x)
             tmp_NNI_made = NNI!(v_copy, ref_index)
