@@ -148,16 +148,28 @@ function sample!(
         nuts_sub!(v, tune.epsilon, grlpdf, logfun)
 
         adapter_vec[1].metro_acc_prob = adapter_vec[1].metro_acc_prob > 1 ? 1 : adapter_vec[1].metro_acc_prob
-        #adapter_vec[2].metro_acc_prob = adapter_vec[2].metro_acc_prob >= 1 ? adapter_vec[2].params.δ : adapter_vec[2].metro_acc_prob
-        x1 = dual_averaging(adapter_vec[1], tune.delta)
+        adapter_vec[2].metro_acc_prob = adapter_vec[2].metro_acc_prob >= 1 ? 1 : adapter_vec[2].metro_acc_prob
+        #const_params = adapter.params
+        #@show adapter.metro_acc_prob, const_params.δ
+        HT =0.5*(adapter_vec[1].params.δ - adapter_vec[1].metro_acc_prob) + 0.5*(-adapter_vec[2].params.δ + adapter_vec[2].metro_acc_prob)
+            
+        η = 1.0 / (adapter_vec[1].m + adapter_vec[1].params.t0)
+            
+    
+        adapter_vec[1].s_bar = (1.0 - η) * adapter_vec[1].s_bar + η * HT
+        x = adapter_vec[1].params.μ - adapter_vec[1].s_bar * sqrt(adapter_vec[1].m) / adapter_vec[1].params.γ
+        #x = x < log(0.5*delta) ? log(0.5*delta) : x
+        x_η = adapter_vec[1].m^-adapter_vec[1].params.κ
+        adapter_vec[1].x_bar = (1.0 - x_η) * adapter_vec[1].x_bar + x_η * x
+        
+        #x1 = dual_averaging(adapter_vec[1], tune.delta)
         #x2 = dual_averaging(adapter_vec[2], tune.delta)
         
-        tune.epsilon = exp(x1)#mean([exp(x1), exp(x2)])
+        tune.epsilon = exp(x)#mean([exp(x1), exp(x2)])
 
     else
         if (adapter_vec[1].m > 0)
-            tune.epsilon = exp(adapter_vec[1].x_bar)
-            #0.5*exp(adapter_vec[1].x_bar) + 0.5*exp(adapter_vec[2].x_bar)
+            tune.epsilon = exp(adapter_vec[1].x_bar)# + 0.5*exp(adapter_vec[2].x_bar)
         end
         nuts_sub!(v, tune.epsilon, grlpdf, logfun)
     end
@@ -202,7 +214,7 @@ function nuts_sub!(
     logfun::Function,
 )::Sampler{PNUTSTune{F, F2}, Vector{T}} where {F, F2, T}
 
-    
+    #@show epsilon
     x = deepcopy(v.value[1])
     delta = v.tune.delta
     blv = get_branchlength_vector(x)
