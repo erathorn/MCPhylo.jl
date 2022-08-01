@@ -9,10 +9,12 @@ mutable struct Tree_HMC_State{T<:GeneralNode} <: HMC_State
     lf::Float64
     extended::Bool
     nni::Int
+    att_nni::Int
+    pm::Int
 end
 
-function Tree_HMC_State(tree::T, r::Vector{Float64}, g::Vector{Float64}, lf::Float64)::Tree_HMC_State{T} where T<:GeneralNode
-    Tree_HMC_State{T}(tree, r, g, lf, false, 0)
+function Tree_HMC_State(tree::T, r::Vector{Float64}, g::Vector{Float64}, lf::Float64, pm::Int)::Tree_HMC_State{T} where T<:GeneralNode
+    Tree_HMC_State{T}(tree, r, g, lf, false, 0, 0, pm)
 end
 
 
@@ -24,7 +26,7 @@ mutable struct Array_HMC_State{T<:Array{<:Real}} <: HMC_State
 end
 
 function transfer(s1::T)::T where T<:HMC_State
-    T(deepcopy(s1.x), s1.r[:],s1.g[:],s1.lf, s1.extended, s1.nni)
+    T(deepcopy(s1.x), s1.r[:],s1.g[:],s1.lf, s1.extended, s1.nni, s1.att_nni, s1.pm)
 end
 
 function transfer(s1::T)::T where T<:Array_HMC_State
@@ -72,13 +74,14 @@ mutable struct NUTSstepadapter
     x_bar::Float64
     params::NUTS_StepParams
     metro_acc_prob::Float64
+    HTFac::Float64
 
-    function NUTSstepadapter(m, s_bar, x_bar, μ, δ, γ, κ, t0)
-        new(m, s_bar, x_bar, NUTS_StepParams(μ, δ, γ, κ, t0), 0.0)
+    function NUTSstepadapter(m, s_bar, x_bar, μ, δ, γ, κ, t0, HTFac)
+        new(m, s_bar, x_bar, NUTS_StepParams(μ, δ, γ, κ, t0), 0.0, HTFac)
     end
 
-    function NUTSstepadapter(m, s_bar, x_bar, params::NUTS_StepParams)
-        new(m, s_bar, x_bar, params, 0.0)
+    function NUTSstepadapter(m, s_bar, x_bar, HTFac, params::NUTS_StepParams)
+        new(m, s_bar, x_bar, params, 0.0, HTFac)
     end
 end
 
@@ -88,14 +91,16 @@ mutable struct NUTSMeta
     alpha::Float64
     nalpha::Float64
     accnni::Int
+    att_nni::Int
 end
 
-NUTSMeta() = NUTSMeta(0,0.0,0.0,0.0)
+NUTSMeta() = NUTSMeta(0,0.0,0.0,0,0)
 
 function update!(x::NUTSMeta, y::NUTSMeta)::Nothing
     x.nni += y.nni
     x.alpha += y.alpha
     x.nalpha += y.nalpha
     x.accnni += y.accnni
+    x.att_nni += y.att_nni
     nothing
 end

@@ -11,7 +11,7 @@ function nutsepsilon(x::GeneralNode, logfgrad::Function,logf::Function, delta::F
     logf0, gr = logfgrad(x)
     
     r0 = randn(n)
-    x0 = Tree_HMC_State(deepcopy(x), r0, gr, logf0)
+    x0 = Tree_HMC_State(deepcopy(x), r0[:], gr[:], logf0, 1)
     x1 = transfer(x0)
     H0 = hamiltonian(x0)
     epsilon = 1.0

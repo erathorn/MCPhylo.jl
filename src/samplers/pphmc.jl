@@ -66,22 +66,24 @@ function sample!(v::Sampler{PPHMCTune{F, F2}, Vector{T}}, logfun::Function;
     blv = get_branchlength_vector(mt)
     set_branchlength_vector!(mt, molifier.(blv, delta))
     lf, grad = grlpdf(mt)
-    s = Tree_HMC_State(deepcopy(mt), r, grad, lf)
-    
+    grad .*= scale_fac.(blv, delta)
+    s = Tree_HMC_State(deepcopy(mt), r[:], grad[:], lf, 1)
     currH = hamiltonian(s)
     ovnni = 0
     
     
     fac = adapt ? (1-v.tune.adapter)^(1-v.tune.m*1/bi) : 1
     epsilon = v.tune.epsilon * fac
-    nl = v.tune.randomization ? rand(1:v.tune.nleap) : v.tune.nleap
-    
-    for i in 1:nl
-        nni = refraction!(s, epsilon, grlpdf, logfun, delta)
+    leaps = v.tune.randomization ? rand(1:v.tune.nleap) : v.tune.nleap
+    att = 0
+    for i in 1:leaps
+        nni, att_nni = refraction!(s, epsilon, grlpdf, logfun, delta)
         ovnni += nni
+        att += att_nni
     end
     
     push!(v.tune.moves, ovnni)
+    
     propH = hamiltonian(s)
     if log(rand()) < propH - currH
         v.value[1] = s.x
