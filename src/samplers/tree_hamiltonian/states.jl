@@ -62,10 +62,11 @@ struct NUTS_StepParams
     γ::Float64
     κ::Float64
     t0::Int
+    δ_NNI::Float64
 end
 
 function update_step(p::N, μ::Float64)::N where N<:NUTS_StepParams
-    NUTS_StepParams(μ, p.δ, p.γ, p.κ, p.t0)
+    NUTS_StepParams(μ, p.δ, p.γ, p.κ, p.t0,p.δ_NNI)
 end
 
 mutable struct NUTSstepadapter
@@ -74,14 +75,14 @@ mutable struct NUTSstepadapter
     x_bar::Float64
     params::NUTS_StepParams
     metro_acc_prob::Float64
-    HTFac::Float64
+    NNI_stat::Float64
 
-    function NUTSstepadapter(m, s_bar, x_bar, μ, δ, γ, κ, t0, HTFac)
-        new(m, s_bar, x_bar, NUTS_StepParams(μ, δ, γ, κ, t0), 0.0, HTFac)
+    function NUTSstepadapter(m, s_bar, x_bar, μ, δ,δ_NNI, γ, κ, t0)
+        new(m, s_bar, x_bar, NUTS_StepParams(μ, δ, γ, κ, t0, δ_NNI), 0.0, 0.0)
     end
 
-    function NUTSstepadapter(m, s_bar, x_bar, HTFac, params::NUTS_StepParams)
-        new(m, s_bar, x_bar, params, 0.0, HTFac)
+    function NUTSstepadapter(m, s_bar, x_bar, params::NUTS_StepParams)
+        new(m, s_bar, x_bar, params, 0.0, 0.0)
     end
 end
 
@@ -92,9 +93,10 @@ mutable struct NUTSMeta
     nalpha::Float64
     accnni::Int
     att_nni::Int
+    l_NNI::Int
 end
 
-NUTSMeta() = NUTSMeta(0,0.0,0.0,0,0)
+NUTSMeta() = NUTSMeta(0,0.0,0.0,0,0,0)
 
 function update!(x::NUTSMeta, y::NUTSMeta)::Nothing
     x.nni += y.nni
@@ -102,5 +104,6 @@ function update!(x::NUTSMeta, y::NUTSMeta)::Nothing
     x.nalpha += y.nalpha
     x.accnni += y.accnni
     x.att_nni += y.att_nni
+    x.l_NNI += y.l_NNI
     nothing
 end

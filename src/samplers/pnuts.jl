@@ -4,7 +4,7 @@
 mutable struct PNUTSTune{F<:Function, F2<:Function} <: SamplerTune
     logf::F
     logfgrad::F2
-    stepsizeadapter::Vector{NUTSstepadapter}
+    stepsizeadapter::NUTSstepadapter
     adapt::Bool
     epsilon::Float64
     delta::Float64
@@ -32,20 +32,11 @@ mutable struct PNUTSTune{F<:Function, F2<:Function} <: SamplerTune
         new{F, F2}(
             logf,
             logfgrad,
-            [NUTSstepadapter(
-                0,
-                0,
-                0,
-                1,
-                NUTS_StepParams(0.5, target, 0.05, 0.75, 10)
-            ),
             NUTSstepadapter(
                 0,
                 0,
                 0,
-                -1,
-                NUTS_StepParams(0.5, targetNNI, 0.05, 0.75, 10)
-            )],
+                NUTS_StepParams(0.5, target, 0.05, 0.75, 10, targetNNI)),
             false,
             epsilon,
             delta,
@@ -134,53 +125,38 @@ function sample!(
     args...,
 )::Sampler{PNUTSTune{F, F2}, Vector{T}} where {T<:GeneralNode, F<:Function, F2<:Function}
     tune = v.tune
-    adapter_vec = tune.stepsizeadapter
+    adapter = tune.stepsizeadapter
     
-    if adapter_vec[1].m == 0 && isinf(tune.epsilon)
-        tune.epsilon = nutsepsilon(v.value[1], grlpdf, logfun, tune.delta, tune.stepsizeadapter[1].params.δ)
+    if adapter.m == 0 && isinf(tune.epsilon)
+        tune.epsilon = nutsepsilon(v.value[1], grlpdf, logfun, tune.delta, tune.stepsizeadapter.params.δ)
     end
     setadapt!(v, adapt)
     
     if tune.adapt
-        adapter_vec[1].m += 1
-        adapter_vec[2].m += 1
+        adapter.m += 1
+        
 
         nuts_sub!(v, tune.epsilon, grlpdf, logfun)
 
-        adapter_vec[1].metro_acc_prob = adapter_vec[1].metro_acc_prob > 1 ? 1 : adapter_vec[1].metro_acc_prob
-        adapter_vec[2].metro_acc_prob = adapter_vec[2].metro_acc_prob >= 1 ? 1 : adapter_vec[2].metro_acc_prob
-        #const_params = adapter.params
-        #@show adapter.metro_acc_prob, const_params.δ
-        HT =0.5*(adapter_vec[1].params.δ - adapter_vec[1].metro_acc_prob) + 0.5*(-adapter_vec[2].params.δ + adapter_vec[2].metro_acc_prob)
-            
-        η = 1.0 / (adapter_vec[1].m + adapter_vec[1].params.t0)
-            
-    
-        adapter_vec[1].s_bar = (1.0 - η) * adapter_vec[1].s_bar + η * HT
-        x = adapter_vec[1].params.μ - adapter_vec[1].s_bar * sqrt(adapter_vec[1].m) / adapter_vec[1].params.γ
-        #x = x < log(0.5*delta) ? log(0.5*delta) : x
-        x_η = adapter_vec[1].m^-adapter_vec[1].params.κ
-        adapter_vec[1].x_bar = (1.0 - x_η) * adapter_vec[1].x_bar + x_η * x
+        #adapter.metro_acc_prob = adapter.metro_acc_prob# > 1 ? 1 : adapter.metro_acc_prob
+        x = dual_averaging(adapter) 
         
-        #x1 = dual_averaging(adapter_vec[1], tune.delta)
-        #x2 = dual_averaging(adapter_vec[2], tune.delta)
-        
-        tune.epsilon = exp(x)#mean([exp(x1), exp(x2)])
+        tune.epsilon = exp(x)
 
     else
-        if (adapter_vec[1].m > 0)
-            tune.epsilon = exp(adapter_vec[1].x_bar)# + 0.5*exp(adapter_vec[2].x_bar)
+        if (adapter.m > 0)
+            tune.epsilon = exp(adapter.x_bar)
         end
         nuts_sub!(v, tune.epsilon, grlpdf, logfun)
     end
     v
 end
 
-function dual_averaging(adapter::NUTSstepadapter, delta::Float64)
+function dual_averaging(adapter::NUTSstepadapter)
     const_params = adapter.params
-    #@show adapter.metro_acc_prob, const_params.δ
-    HT =adapter.HTFac*(const_params.δ - adapter.metro_acc_prob)
-        
+    
+    HT = (const_params.δ - adapter.metro_acc_prob) - (const_params.δ_NNI - adapter.NNI_stat)
+    
     η = 1.0 / (adapter.m + const_params.t0)
         
 
@@ -196,11 +172,11 @@ end
 function setadapt!(v::Sampler{PNUTSTune{F, F2}, Vector{T}}, adapt::Bool)::Sampler{PNUTSTune{F, F2}, Vector{T}} where {F, F2, T}
     tune = v.tune
     if adapt && !tune.adapt
-        for adapter in tune.stepsizeadapter
-            adapter.m = 0
-            adapter.params =
-                update_step(adapter.params, log(10.0 * tune.epsilon))
-        end
+    
+        tune.stepsizeadapter.m = 0
+        tune.stepsizeadapter.params =
+                update_step(tune.stepsizeadapter.params, log(10.0 * tune.epsilon))
+    
     end
     tune.adapt = adapt
     v
@@ -239,9 +215,13 @@ function nuts_sub!(
     meta = NUTSMeta()
     log_sum_weight = 0.0
     acc_p_r = 0
+    ds = 0
     while j < v.tune.tree_depth
         pm = rand() > 0.5
-        
+        meta.nalpha = 0
+        meta.alpha = 0
+        meta.l_NNI = 0
+
         log_sum_weight_subtree = -Inf
         if pm
             
@@ -275,11 +255,10 @@ function nuts_sub!(
             )
             
         end
+        ds += meta.nalpha
         
-        v.tune.stepsizeadapter[1].metro_acc_prob = meta.alpha / meta.nalpha
-        v.tune.stepsizeadapter[2].metro_acc_prob = meta.nalpha == 0 ? 0.0 : meta.att_nni / meta.nalpha
-        v.tune.stepsizeadapter[2].metro_acc_prob = meta.nalpha == 1 && v.tune.stepsizeadapter[2].metro_acc_prob == 0 ? v.tune.stepsizeadapter[2].params.δ : meta.att_nni / meta.nalpha
-        #v.tune.stepsizeadapter[2].metro_acc_prob = v.tune.stepsizeadapter[2].metro_acc_prob > 2 ? 2 : v.tune.stepsizeadapter[2].metro_acc_prob
+        v.tune.stepsizeadapter.metro_acc_prob = meta.alpha / meta.nalpha > 1 ? 1.0 : meta.alpha / meta.nalpha
+        
         tnni += meta.nni
         if !sprime
             break
@@ -313,9 +292,8 @@ function nuts_sub!(
             break
         end
     end
-    #@show meta.att_nni, nni
-    #v.tune.stepsizeadapter[2].metro_acc_prob = meta.att_nni == 0 ? 0.0 : nni / meta.att_nni
     
+    v.tune.stepsizeadapter.NNI_stat = ds == 0 ? 0 : meta.att_nni/ds
     push!(v.tune.moves, nni)
     push!(v.tune.att_moves, tnni)
     push!(v.tune.tree_depth_trace, j)
@@ -328,8 +306,6 @@ end
 
 function buildtree(
     x::Tree_HMC_State{T},
-    #xprime::Tree_HMC_State{T},
-    #xc::Tree_HMC_State{T},
     pm::Int64,
     j::Integer,
     epsilon::Float64,
@@ -371,6 +347,7 @@ function buildtree(
             meta.accnni += nni
         end
         meta.nalpha += 1
+        meta.l_NNI += att_nni
         xprime = transfer(x)
         xplus = transfer(x)
         xminus = transfer(x)
