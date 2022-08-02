@@ -19,7 +19,7 @@ mutable struct NUTSTune{N<:NUTS_Form, F<:Function} <: SamplerTune
   function NUTSTune{N}(x::Vector, epsilon::Real, logfgrad::F;
                     target::Real=0.75, tree_depth::Int=10) where {N<:NUTS_Form, F}
     new{N, F}(logfgrad,
-    NUTSstepadapter(0,0,0,1,NUTS_StepParams(0.5,target,0.05,0.75,10,)),
+    NUTSstepadapter(0,0,0,NUTS_StepParams(0.5,target,0.05,0.75,10,0)),
     false,
     epsilon,
     tree_depth,
