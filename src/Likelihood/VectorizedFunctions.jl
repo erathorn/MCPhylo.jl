@@ -1,29 +1,61 @@
-
-function myred!(out::T, d1::R, d2::S, lind::Int)::Nothing where {T, R, S}
-    @tturbo check_empty=false for k in eachindex(CartesianIndices(out))
+               #e        f      a        d
+function myred!(out::T, d1::R, C::S, lind::Int)::Nothing where {T, R, S}
+    #@tturbo 
+    for k in axes(out, 1)#eachindex(CartesianIndices(out))
         tmp = zero(eltype(out))
         for i in axes(d1, 1)
-            tmp += d1[i, k, lind] * d2[i, k]
+            tmp += d1[i, k, lind] * C[i, k]
         end
         out[k] = tmp
     end
     nothing
 end
 
-
+                    # a      b     c      d
 function mygemmturbo!(C::R, A::T, B::T, lind::Int)::Nothing where {T, R}
-    @tturbo check_empty=false for m ∈ axes(A, 1), n ∈ axes(B, 2), r in axes(B, 3)
+    #@tturbo 
+    for m ∈ axes(A, 1), n ∈ axes(B, 2)
         Cmn = zero(eltype(C))
         for k ∈ axes(A, 2)
-            Cmn += A[m, k, r, lind] * B[k, n, r, lind]
+            Cmn += A[m, k, 1, lind] * B[k, n, 1, lind]
         end
-        C[m, n, r] = Cmn
+        C[m, n] = Cmn
     end
     nothing
 end
 
+"""
+
+pop                 tmparr       ptg              data           gradi
+(2, 600, 1, 39), (2, 600, 1), (2, 2, 1, 38), (2, 600, 1, 39), (600, 1))
+"""
+function reggemm(tmp_arr::Array{F, 3}, ptg::Array{F, 4}, data::Array{F, 4}, gradi::Array{F, 2}, pop::Array{F, 4}, lind::Int) where F<:Real
+    for m ∈ axes(data, 1), n ∈ axes(data, 2), r in axes(data, 3)
+        
+            Cmn = zero(eltype(tmp_arr))
+            for k ∈ axes(ptg, 2)
+                Cmn += ptg[m, k, r, lind] * data[k, n, r, lind]
+            end
+            tmp_arr[m, n, r] = Cmn
+        
+    end
+    for j in axes(ptg, 2), r in axes(data, 3)
+        tmp = zero(eltype(gradi))
+        for m in axes(data, 1)
+            tmp += pop[m, j, r, lind] * tmp_arr[m,j, r]
+        end
+        gradi[j, r] = tmp
+    end
+    nothing
+end
+
+
+
+
+
+
 function mygemmturbo_tr!(C::R, A::T, B::T, lind::Int)::Nothing where {T, R}
-    @tturbo check_empty=false for m ∈ axes(A, 1), n ∈ axes(B, 2), r in axes(B, 3)
+    for m ∈ axes(A, 1), n ∈ axes(B, 2), r in axes(B, 3)
         Cmn = zero(eltype(C))
         for k ∈ axes(A, 2)
             Cmn += A[k, m, r, lind] * B[k, n, r, lind]
@@ -35,15 +67,14 @@ end
 
 
 
-
 function comb(po::C, data::Array{B, 4}, gradi::A, lind::Int)::B where {A, B, C}
     res = zero(eltype(data))
-    @tturbo check_empty=false for r in eachindex(CartesianIndices(gradi))#k in axes(data, 3), j in axes(data, 2)
+    @tturbo check_empty=false for k in axes(data, 3), j in axes(data, 2)
         tmp = zero(eltype(data))
         for i in axes(data, 1)
-            tmp += data[i, r, lind] * po[i, r]
+            tmp += data[i, k,j, lind] * po[i, k,j]
         end
-        res += gradi[r] / tmp
+        res += gradi[k,j] / tmp
     end
     res
 end
@@ -57,18 +88,17 @@ function my_repeat(
 )::Array{F,4} where {F,N,T}
     x, y, z = size(data)
     out = Array{F,4}(undef, x, y, nrates, z)
+        
     @tturbo check_empty=false for l in eachindex(linds),
         rind in axes(out, 3),
         xs in axes(out, 1),
         ys in axes(out, 2)
-
         out[xs, ys, rind, linds[l]] = data[xs, ys, linds[l]]
     end
     @tturbo check_empty=false for l in eachindex(nlinds),
         rind in axes(out, 3),
         xs in axes(out, 1),
         ys in axes(out, 2)
-
         out[xs, ys, rind, nlinds[l]] = one(eltype(out))
     end
     out
@@ -91,14 +121,14 @@ function by_max!(m::Array, ll::F, nodenum::Int)::F where {F<:Real}
 end
 
 
-function bymax!(out::A, m::B, nodenum::Int)::Nothing where {A, B}
-    @inbounds maxi = m[:, 1, :]
-    @inbounds for r in axes(m, 3), j in axes(m, 2)[2:end], i in axes(m, 1)
-        maxi[i, r] = maxi[i, r] < m[i, j, r] ?  m[i, j, r] : maxi[i, r]
+function bymax!(pre_order_partial::A, nodenum::Int)::Nothing where {A, B}
+    @inbounds maxi = pre_order_partial[1, :,:, nodenum]
+    @inbounds for i in axes(pre_order_partial, 2), j in axes(pre_order_partial, 1)[2:end], r in axes(pre_order_partial, 3)
+        maxi[i,r] = maxi[i,r] < pre_order_partial[j, i, r,nodenum] ?  pre_order_partial[j, i, r,nodenum] : maxi[i, r]
     end
     
-    @tturbo check_empty=false for r in axes(m, 3), j in axes(m, 2), i in axes(m, 1)      
-        out[i, j, r, nodenum] = m[i, j, r] / maxi[i, r]
+    @tturbo check_empty=false for j in axes(pre_order_partial, 2), i in axes(pre_order_partial, 1), r in axes(pre_order_partial, 3)
+        pre_order_partial[i, j, r, nodenum] = pre_order_partial[i, j, r, nodenum] / maxi[i, r]
     end
     nothing
 end
@@ -174,7 +204,7 @@ function parallel_transition_prob(
 end
 
 function turbo_mul!(data::A, tmp_data::A, pnum::D, nums::Vector{D})::Nothing where {A,D}
-    @tturbo check_empty=false for num_ind in eachindex(nums), r in CartesianIndices((axes(tmp_data, 1), axes(tmp_data, 2), axes(tmp_data,3)))
+    @tturbo check_empty=false for num_ind in eachindex(nums), r in CartesianIndices((axes(tmp_data, 1), axes(tmp_data, 2), axes(tmp_data, 3)))
         data[r, pnum] *= tmp_data[r, nums[num_ind]]
     end
     nothing
@@ -211,20 +241,21 @@ function comb_sum_product_loop!(
     nums::Vector{N},
     pnum::N,
 )::Nothing where {A,N}
+    data[:, :, :, pnum] .= 1.0
+    @tturbo check_empty=false inline=true for num_ind in eachindex(nums)
+        for s in axes(data, 1),
+            c in axes(data, 2),
+            r in axes(data, 3)
 
-    @tturbo check_empty=false inline=true for num_ind in eachindex(nums),
-        s in axes(data, 1),
-        c in axes(data, 2),
-        r in axes(data, 3)
-
-        tmp = zero(eltype(data))
-        num = nums[num_ind]
-        mul_red = data[s, c, r, pnum]
-        for s1 in axes(data, 1)
-            tmp += data[s1, c, r, num] * transprobs[s, s1, r, num]
+            tmp = zero(eltype(data))
+            num = nums[num_ind]
+            mul_red = data[s, c, r, pnum]
+            for s1 in axes(data, 1)
+                tmp += data[s1, c, r, num] * transprobs[s, s1, r, num]
+            end
+            tmp_data[s, c, r, num] = tmp
+            data[s, c, r, pnum] = mul_red * tmp
         end
-        tmp_data[s, c, r, num] = tmp
-        data[s, c, r, pnum] = mul_red * tmp
     end
     nothing
 
