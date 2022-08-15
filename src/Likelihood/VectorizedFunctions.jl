@@ -98,8 +98,8 @@ end
 
 #@inline 
 function by_max!(data::Array, ll::F, nodenum::Int)::F where {F<:Real}
-    maxi = fill(-Inf, (size(data, 2), size(data,3)))
-    @tturbo check_empty=false  for k in axes(data, 3), j in axes(data, 2), i in axes(data, 1)#[2:end]
+    maxi = fill(-Inf, size(data, 2), size(data,3))
+    @turbo for k in axes(data, 3), j in axes(data, 2), i in axes(data, 1)#[2:end]
         maxi[j, k] = ifelse(maxi[j, k] < data[i, j, k, nodenum] , data[i, j, k, nodenum] , maxi[j, k])
     end
     @tturbo check_empty=false for i in eachindex(maxi)
