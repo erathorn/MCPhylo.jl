@@ -1,3 +1,4 @@
+using FiniteDiff
 @testset "Felsenstein" begin
 
     ntax, nchar, gap, miss, symbols, df, langs =
