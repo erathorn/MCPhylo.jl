@@ -1,6 +1,7 @@
 using Distributed
 using MCPhylo
 using LinearAlgebra
+using FiniteDiff
 using Random, Test
 include("utils.jl")
 

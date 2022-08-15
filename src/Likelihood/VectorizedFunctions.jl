@@ -99,7 +99,7 @@ end
 #@inline 
 function by_max!(data::Array, ll::F, nodenum::Int)::F where {F<:Real}
     maxi = fill(-Inf, size(data, 2), size(data,3))
-    @turbo for k in axes(data, 3), j in axes(data, 2), i in axes(data, 1)#[2:end]
+    @inbounds @simd for k in axes(data, 3), j in axes(data, 2), i in axes(data, 1)#[2:end]
         maxi[j, k] = ifelse(maxi[j, k] < data[i, j, k, nodenum] , data[i, j, k, nodenum] , maxi[j, k])
     end
     @tturbo check_empty=false for i in eachindex(maxi)
@@ -116,7 +116,7 @@ end
 
 function bymax!(pre_order_partial::A, nodenum::Int)::Nothing where {A}
     maxi = fill(-Inf, size(pre_order_partial, 2), size(pre_order_partial,3))
-    @turbo for r in axes(pre_order_partial, 3), i in axes(pre_order_partial, 2), j in axes(pre_order_partial, 1)
+    @inbounds @simd for r in axes(pre_order_partial, 3), i in axes(pre_order_partial, 2), j in axes(pre_order_partial, 1)
         maxi[i,r] = ifelse(maxi[i,r] < pre_order_partial[j, i, r,nodenum] ,  pre_order_partial[j, i, r,nodenum] , maxi[i, r])
     end
     
