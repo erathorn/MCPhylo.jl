@@ -115,8 +115,8 @@ end
 
 
 function bymax!(pre_order_partial::A, nodenum::Int)::Nothing where {A}
-    maxi = fill(-Inf, (size(pre_order_partial, 2), size(pre_order_partial,3)))
-    @tturbo check_empty=false for i in axes(pre_order_partial, 2), j in axes(pre_order_partial, 1), r in axes(pre_order_partial, 3)
+    maxi = fill(-Inf, size(pre_order_partial, 2), size(pre_order_partial,3))
+    @turbo for r in axes(pre_order_partial, 3), i in axes(pre_order_partial, 2), j in axes(pre_order_partial, 1)
         maxi[i,r] = ifelse(maxi[i,r] < pre_order_partial[j, i, r,nodenum] ,  pre_order_partial[j, i, r,nodenum] , maxi[i, r])
     end
     
