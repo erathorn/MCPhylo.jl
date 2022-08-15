@@ -139,7 +139,7 @@ function sample!(
         nuts_sub!(v, tune.epsilon, grlpdf, logfun)
 
         #adapter.metro_acc_prob = adapter.metro_acc_prob# > 1 ? 1 : adapter.metro_acc_prob
-        x = dual_averaging(adapter) 
+        x = dual_averaging(adapter, tune.delta) 
         
         tune.epsilon = exp(x)
 
@@ -152,7 +152,7 @@ function sample!(
     v
 end
 
-function dual_averaging(adapter::NUTSstepadapter)
+function dual_averaging(adapter::NUTSstepadapter, delta::F)::F where F<:Real
     const_params = adapter.params
     
     HT = (const_params.δ - adapter.metro_acc_prob) - (const_params.δ_NNI - adapter.NNI_stat)
@@ -162,7 +162,14 @@ function dual_averaging(adapter::NUTSstepadapter)
 
     adapter.s_bar = (1.0 - η) * adapter.s_bar + η * HT
     x = const_params.μ - adapter.s_bar * sqrt(adapter.m) / const_params.γ
+    if x < log(0.5 * delta)
+        adapter.s_bar = ((const_params.μ - log(0.5*delta)) * const_params.γ)/sqrt(adapter.m)
+        x = log(0.5*delta)
+    end
     #x = x < log(0.5*delta) ? log(0.5*delta) : x
+
+
+
     x_η = adapter.m^-const_params.κ
     adapter.x_bar = (1.0 - x_η) * adapter.x_bar + x_η * x
     return x
@@ -258,7 +265,7 @@ function nuts_sub!(
         ds += meta.nalpha
         
         v.tune.stepsizeadapter.metro_acc_prob = meta.alpha / meta.nalpha > 1 ? 1.0 : meta.alpha / meta.nalpha
-        
+        #v.tune.stepsizeadapter.NNI_stat = meta.l_NNI/meta.nalpha
         tnni += meta.nni
         if !sprime
             break

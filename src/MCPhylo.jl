@@ -32,9 +32,8 @@ using Bijectors
 using LogExpFunctions
 using LoopVectorization
 using Base.Threads
-
 using PDMats
-
+using IfElse
 import Base: Matrix, names, summary
 
 

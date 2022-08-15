@@ -87,7 +87,7 @@ end
 ## called and will apply its error processing.
 
 function pmap2(f::F, lsts::Vector) where F<:Function
-    if (nprocs() > 1)
+    if (nprocs() > 1) && (length(lsts) > 1)
         pmap(f, lsts)
     else
         map(f, lsts)

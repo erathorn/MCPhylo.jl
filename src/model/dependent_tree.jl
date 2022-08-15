@@ -63,7 +63,6 @@ end
 function invlink_sub(d::TreeDistribution, X::AbstractArray)
     Y = Bijectors.replace_diag(exp, X)
     Y = Bijectors.getpd(Y)
-    #Y[Y .< 0] .= 0
     t = cov2tree(Y, string.(1:size(Y,1)),collect(1:size(Y,1)))
     set_binary!(t)
     number_nodes!(t)

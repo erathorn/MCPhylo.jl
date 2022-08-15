@@ -62,8 +62,8 @@ function logpdf(d::PhyloDist{T, F}, x::AbstractArray{<:Real,3})::Float64 where {
     
     blv = get_branchlength_vector(last(mt))
     leaveinds = [l.num for l in get_leaves(last(mt))]
-    nleaveinds = [l.num for l in mt if l.nchild > 0]
-    data_ext = my_repeat(x, length(d.rates), leaveinds, nleaveinds)
+    
+    data_ext = my_repeat(x, length(d.rates), leaveinds)
     Down = deepcopy(data_ext)
     trans_probs = parallel_transition_prob(U, D, Uinv, d.rates, mu, blv)
     FelsensteinFunction(mt, data_ext, Down, d.base_freq, trans_probs)
@@ -77,13 +77,12 @@ function gradlogpdf(d::PhyloDist{T, F}, x::AbstractArray) where {T, F}
     )#::Tuple{Matrix{Float64},Vector{Float64},Matrix{Float64},Float64}
     blv = get_branchlength_vector(d.tree)
    
-    data_ext = my_repeat(x, length(d.rates), [l.num for l in get_leaves(d.tree)], [l.num for l in mt if l.nchild > 0])
+    data_ext = my_repeat(x, length(d.rates), [l.num for l in get_leaves(d.tree)])
     Down = deepcopy(data_ext)
     trans_probs = parallel_transition_prob(U, D, Uinv, d.rates, mu, blv)
     ptg = zeros(size(trans_probs))
     out2 = similar(ptg)
-    diagonalizer_ptg!(ptg, D, blv, mu, d.rates)
-    R_gemmturbo_large!(out2, U, ptg)
+    R_gemmturbo_large_ptg!(out2, U, mu, blv, D, d.rates)
     L_gemmturbo_large!(ptg, out2, Uinv)
     ll, gr = FelsensteinFunction(mt, data_ext, Down, d.base_freq, trans_probs, ptg)
     ll, gr
