@@ -47,7 +47,7 @@ function FelsensteinFunction(
         end
         
         @inbounds for r in axes(pre_order_partial, 3)
-            mygemmturbo!(tmp, trmat[:, :, r, node.num], pre_order_partial[:, :, r, node.num])
+            mygemmturbo!(tmp, transpose(trmat[:, :, r, node.num]), pre_order_partial[:, :, r, node.num])
             @turbo pre_order_partial[:, :, r, node.num] .= tmp
         end
 
