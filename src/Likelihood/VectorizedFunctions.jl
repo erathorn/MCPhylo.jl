@@ -120,9 +120,9 @@ function bymax!(pre_order_partial::A, nodenum::Int)::Nothing where {A}
         maxi[i,r] = ifelse(maxi[i,r] < pre_order_partial[j, i, r,nodenum] ,  pre_order_partial[j, i, r,nodenum] , maxi[i, r])
     end
     
-    @tturbo check_empty=false for i in axes(pre_order_partial, 1), r in axes(pre_order_partial, 3)
-        tmp = 1/maxi[i, r]
-        for j in axes(pre_order_partial, 2)
+    @tturbo check_empty=false for j in axes(pre_order_partial, 2), r in axes(pre_order_partial, 3)
+        tmp = 1/maxi[j, r]
+        for i in axes(pre_order_partial, 1)
             pre_order_partial[i, j, r, nodenum] *= tmp
         end
     end
