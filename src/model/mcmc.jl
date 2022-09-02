@@ -278,7 +278,6 @@ function track(
     treenodes::Vector{Symbol},
 )::Nothing
     if i > burnin && (i - burnin) % thin == 0
-        @show (i-burnin)/thin
         sim.value[iters2inds(sim, i-burnin), 1:end-1, 1] = unlist(m, true)
         sim.value[iters2inds(sim, i-burnin), end, 1] = final_likelihood(m)
         if store_trees
