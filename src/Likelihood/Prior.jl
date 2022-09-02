@@ -40,13 +40,17 @@ function gradlogpdf(d::CompoundDirichlet, x::GeneralNode)
     f = let d=d, int_ext=int_ext
         y -> internal_logpdf(d, y, int_ext)
     end 
-    r = Zygote.pullback(f, blv)
-    return r[1],r[2](1.0)[1]
+    v, g = withgradient(f, blv)
+    return v, g[1]
 end
 
 function gradlogpdf(d::exponentialBL, x::GeneralNode)
     bl = get_branchlength_vector(x)
-        sum(logpdf.(Exponential(d.scale), bl)), -ones(length(bl))
+    f = let z = d.scale
+        x -> sum(logpdf.(Exponential(z), x))
+    end
+    v, g = withgradient(f, bl)
+    return v, g[1]
 end
 
 function gradlogpdf(t::Union{UniformConstrained, UniformTopology, UniformBranchLength}, 

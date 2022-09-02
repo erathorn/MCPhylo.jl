@@ -278,8 +278,8 @@ function track(
     treenodes::Vector{Symbol},
 )::Nothing
     if i > burnin && (i - burnin) % thin == 0
-        sim[iters2inds(sim, i-burnin), :, 1] = unlist(m, true)
-        sim.value[iters2inds(sim, i-burnin), 2, 1] = final_likelihood(m)
+        sim[iters2inds(sim, i-burnin), 1:end-1, 1] = unlist(m, true)
+        sim.value[iters2inds(sim, i-burnin), end, 1] = final_likelihood(m)
         if store_trees
             for (ind, tree_node) in enumerate(treenodes)
                 sim.trees[iters2inds(sim, i-burnin), ind, 1] = newick(m[tree_node].value)
