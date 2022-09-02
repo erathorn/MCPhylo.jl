@@ -332,9 +332,3 @@ function names(m::Model, nodekeys::Vector{Symbol})
     end
     values
 end
-
-
-function update_likelihood!(m::Model, likelihood::Float64)
-    m.likelihood = likelihood
-    m
-end

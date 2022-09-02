@@ -86,7 +86,7 @@ function sample!(v::Sampler{PPHMCTune{F, F2}, Vector{T}}, logfun::Function;
     
     propH = hamiltonian(s)
     if log(rand()) < propH - currH
-        v.value[1] = s.x
+        v.value[1] = deepcopy(s.x)
     end
     v
 end

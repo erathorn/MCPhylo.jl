@@ -221,10 +221,7 @@ function gradlogpdf(m::Model, targets::Vector{Symbol})::Tuple{Float64,Array{Floa
         vp += v
         push!(gradp, grad)
     end
-    m.likelihood = vp
     gr = .+(gradp...)
-    
-    
     vp, gr
 end
 """
@@ -333,6 +330,7 @@ function sample!(m::Model)
             m[sampler.params] = res
         end
     end
+    #m.likelihood = final_likelihood(m)
     m
 end
 
@@ -384,6 +382,10 @@ end
 
 
 function final_likelihood(model::Model)::Float64
+    targets = keys(model, :dependent)
+    for key in targets
+        model[key] = update!(model[key], model)
+    end
     logpdf(model, keys_output(model))
 end
 """
@@ -405,8 +407,7 @@ function unlist(m::Model, monitoronly::Bool)
             monitoronly ? lvalue[node.monitor] : lvalue
         end
     end
-    ll = sum(getfield.([m[k] for k  in keys_output(m)], :lpdf))
-    r = vcat(vmap(f, keys(m, :dependent))...,ll)
+    r = vcat(vmap(f, keys(m, :dependent))...)
     r = [isa(i, ForwardDiff.Dual) ? ForwardDiff.value(i) : i for i in r]
     r
 end

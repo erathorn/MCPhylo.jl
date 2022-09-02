@@ -119,7 +119,5 @@ end
 
 # placeholder, can be made more elegant using the topology_distr
 function relistlength(d::TreeDistribution, x::AbstractArray)
-    #n = length(x)
-    #(Array(x), n)
     x[1], 1
   end

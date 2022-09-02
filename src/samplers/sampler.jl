@@ -170,13 +170,9 @@ function logpdfgrad!(
             lp
         end
     end
-    #ll1 = lf(x)
-    #grad1 = FiniteDiff.finite_difference_gradient(lf, x)
     chunk = ForwardDiff.Chunk(min(length(x), chunksize))
     config = ForwardDiff.GradientConfig(lf, x, chunk)
     grad = ForwardDiff.gradient!(similar(x), lf, x, config)
-
-    #(ll, ifelse.(isfinite.(grad), grad, 0.0))
     ll, grad
 end
 
@@ -196,7 +192,6 @@ function logpdfgrad!(
     v, grad = gradlogpdf(m, target)
     # prior
     t_node::Stochastic{T} = m[params[1]]
-    #@show typeof()
     vp, gradp = gradlogpdf(t_node, x)
 
     vp + v, gradp .+ grad

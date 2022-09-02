@@ -149,6 +149,7 @@ function sample!(
         end
         nuts_sub!(v, tune.epsilon, grlpdf, logfun)
     end
+    
     v
 end
 
@@ -221,6 +222,7 @@ function nuts_sub!(
     log_sum_weight = 0.0
     acc_p_r = 0
     ds = 0
+    
     while j < v.tune.tree_depth
         pm = rand() > 0.5
         meta.nalpha = 0
@@ -270,17 +272,15 @@ function nuts_sub!(
         end
         #@show nprime, n
         # sprime is true so checking is not necessary
-        if log_sum_weight_subtree > log_sum_weight #rand() < nprime / n#log_sum_weight_subtree > log_sum_weight
+        if log_sum_weight_subtree > log_sum_weight
             acc_p_r += 1
-            v.value[1] = xprime.x#worker.x
-            #meta.accnni += meta.nni
+            v.value[1] = deepcopy(xprime.x)
             nni += meta.nni
         else
             accprob = exp(log_sum_weight_subtree - log_sum_weight)
             if rand() < accprob
                 acc_p_r += 1
-                v.value[1] = xprime.x
-                #meta.accnni += meta.nni
+                v.value[1] = deepcopy(xprime.x)
                 nni += meta.nni
             end
         end
@@ -408,7 +408,7 @@ function buildtree(
         
         
             ls_final = logaddexp(log_sum_weight_init, log_sum_weight_final)
-            #if rand() < nprime2 / (nprime + nprime2)
+            
             if log_sum_weight_final > ls_final
                 transfer!(xprime, worker_final)
             else
@@ -438,7 +438,7 @@ function nouturn(
     delta::Float64,
 )::Bool where {T<:GeneralNode}
     _, curr_h = BHV_bounds(xminus.x, xplus.x)
-    #return proj_euc(xminus, xplus)
+    #curr_h = proj_euc(xminus, xplus)
     if !xminus.extended && !xplus.extended
         temp = Threads.@spawn refraction!(xminus, xminus.pm * epsilon, logfgrad, logfun, delta)
         nni_p, att_nni_p = refraction!(xplus, xplus.pm*epsilon, logfgrad, logfun, delta)
@@ -461,7 +461,7 @@ function nouturn(
         xplus.att_nni = att_nni_p
     end
     curr_t_l, _ = BHV_bounds(xminus.x, xplus.x)
-    #curr_t_l = proj_euc(xminus.x, xplus.x)
+    #curr_t_l = proj_euc(xminus, xplus)
     return curr_h <= curr_t_l
 end
 
@@ -472,7 +472,7 @@ function proj_euc(xminus, xplus)
 
     bv1 = MCPhyloTree.get_bipartitions_as_bitvectors(xplus.x)
     bv2 = MCPhyloTree.get_bipartitions_as_bitvectors(xminus.x)
-    
+    linds = [n.num for n in get_leaves(xplus.x)]
     blv1 =  get_branchlength_vector(xplus.x)
     blv2 = get_branchlength_vector(xminus.x)
     bl = length(blv1)
@@ -483,7 +483,8 @@ function proj_euc(xminus, xplus)
     ctind = 1
     for i in eachindex(bv1)
         if bv1[i] == bv2[i]
-            xdiff[i] = blv1[i] - blv2[i]
+            #if 
+            xdiff[i] = i in linds ? abs(blv1[i] - blv2[i]) : blv1[i] - blv2[i]
             rminus[i] = xminus.r[i]
             rplus[i] = xplus.r[i]
         else
