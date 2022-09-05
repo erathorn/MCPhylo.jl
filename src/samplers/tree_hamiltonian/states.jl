@@ -97,13 +97,3 @@ mutable struct NUTSMeta
 end
 
 NUTSMeta() = NUTSMeta(0,0.0,0.0,0,0,0)
-
-function update!(x::NUTSMeta, y::NUTSMeta)::Nothing
-    x.nni += y.nni
-    x.alpha += y.alpha
-    x.nalpha += y.nalpha
-    x.accnni += y.accnni
-    x.att_nni += y.att_nni
-    x.l_NNI += y.l_NNI
-    nothing
-end
