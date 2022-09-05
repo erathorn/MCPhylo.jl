@@ -2,7 +2,7 @@
 @testset "abc exponential" begin
     gs_p = randn()^2
     
-    data = Dict(
+    data = Dict{Symbol,Any}(
         :y => rand(Exponential(gs_p), 1000)
     )
     
@@ -24,7 +24,7 @@
 
     setsamplers!(mod, scheme)
 
-    sim = mcmc(mod, data, inits, 100000, burnin=25000, thin=10, chains=2)
+    sim = mcmc(mod, data, inits, 100000, burnin=25000, thin=10, chains=2, verbose=false)
     
     while maximum(gelmandiag(sim).value[1,2,:]) > 1.1
         @show maximum(gelmandiag(sim).value[1,2,:])
@@ -41,7 +41,7 @@ end
 @testset "abc Normal" begin
     gs_m = randn()
     gs_s = randn()^2
-    data = Dict(
+    data = Dict{Symbol,Any}(
         :y => rand(Normal(gs_m, gs_s), 1000)
     )
     
@@ -66,7 +66,7 @@ end
 
     setsamplers!(mod, scheme)
 
-    sim = mcmc(mod, data, inits, 100000, burnin=25000, thin=10, chains=2)
+    sim = mcmc(mod, data, inits, 100000, burnin=25000, thin=10, chains=2, verbose=false)
     
     while maximum(gelmandiag(sim).value[1:2,2,:]) > 1.1
         @show maximum(gelmandiag(sim).value[1:2,2,:])
