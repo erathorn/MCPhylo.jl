@@ -8,14 +8,14 @@ const chunksize = 40
 
 struct NullFunction end
 
-struct SamplingBlock
-    model::Model
-    index::Int
-    transform::Bool
+# struct SamplingBlock
+#     model::Model
+#     index::Int
+#     transform::Bool
 
-    SamplingBlock(model::Model, index::Integer = 0, transform::Bool = false) =
-        new(model, index, transform)
-end
+#     SamplingBlock(model::Model, index::Integer = 0, transform::Bool = false) =
+#         new(model, index, transform)
+# end
 
 
 Sampler(param::Symbol, args...) = Sampler([param], args...)
@@ -87,50 +87,50 @@ end
 
 #################### Simulation Methods ####################
 
-function gradlogpdf!(
-    block::SamplingBlock,
-    x::AbstractArray{T},
-    dtype::Symbol = :forward,
-) where {T<:Real}
-    gradlogpdf!(block.model, x, block.index, block.transform, dtype = dtype)
-end
+# function gradlogpdf!(
+#     block::SamplingBlock,
+#     x::AbstractArray{T},
+#     dtype::Symbol = :forward,
+# ) where {T<:Real}
+#     gradlogpdf!(block.model, x, block.index, block.transform, dtype = dtype)
+# end
 
 
-function gradlogpdf!(block::SamplingBlock, x::N) where {N<:GeneralNode}
-    gradlogpdf!(block.model, x, block.index, block.transform)
-end
+# function gradlogpdf!(block::SamplingBlock, x::N) where {N<:GeneralNode}
+#     gradlogpdf!(block.model, x, block.index, block.transform)
+# end
 
-function logpdf!(block::SamplingBlock, x::AbstractArray{T}) where {T<:Real}
-    logpdf!(block.model, x, block.index, block.transform)
-end
+# function logpdf!(block::SamplingBlock, x::AbstractArray{T}) where {T<:Real}
+#     logpdf!(block.model, x, block.index, block.transform)
+# end
 
-function pseudologpdf!(
-    block::SamplingBlock,
-    x::AbstractArray{T},
-    y::AbstractArray,
-) where {T<:Real}
-    pseudologpdf!(block.model, x, y, block.index, block.transform)
-end
+# function pseudologpdf!(
+#     block::SamplingBlock,
+#     x::AbstractArray{T},
+#     y::AbstractArray,
+# ) where {T<:Real}
+#     pseudologpdf!(block.model, x, y, block.index, block.transform)
+# end
 
-function conditional_likelihood!(
-    block::SamplingBlock,
-    x::AbstractArray{T},
-    args...,
-) where {T<:Real}
-    conditional_likelihood!(block.model, x, block.index, args...)
-end
+# function conditional_likelihood!(
+#     block::SamplingBlock,
+#     x::AbstractArray{T},
+#     args...,
+# ) where {T<:Real}
+#     conditional_likelihood!(block.model, x, block.index, args...)
+# end
 
-function logpdf!(block::SamplingBlock, x::AbstractArray{T}) where {T<:GeneralNode}
-    logpdf!(block.model, x[1])
-end
+# function logpdf!(block::SamplingBlock, x::AbstractArray{T}) where {T<:GeneralNode}
+#     logpdf!(block.model, x[1])
+# end
 
-function logpdf!(block::SamplingBlock, x::T) where {T<:GeneralNode}
-    logpdf!(block.model, x, block.index, block.transform)
-end
+# function logpdf!(block::SamplingBlock, x::T) where {T<:GeneralNode}
+#     logpdf!(block.model, x, block.index, block.transform)
+# end
 
-function rand!(block::SamplingBlock, x::Int64)
-    rand!(block.model, x, block.index)
-end
+# function rand!(block::SamplingBlock, x::Int64)
+#     rand!(block.model, x, block.index)
+# end
 
 
 
@@ -143,15 +143,15 @@ function _gradlogpdf!(m::Model, x::AbstractArray, block::Integer, dtype::Symbol 
 
 end
 
-function logpdfgrad!(
-    block::SamplingBlock,
-    x::AbstractVector{T},
-    dtype::Symbol,
-) where {T<:Real}
-    grad = gradlogpdf!(block, x, dtype)
-    logf = logpdf!(block, x)
-    (logf, ifelse.(isfinite.(grad), grad, 0.0))
-end
+# function logpdfgrad!(
+#     block::SamplingBlock,
+#     x::AbstractVector{T},
+#     dtype::Symbol,
+# ) where {T<:Real}
+#     grad = gradlogpdf!(block, x, dtype)
+#     logf = logpdf!(block, x)
+#     (logf, ifelse.(isfinite.(grad), grad, 0.0))
+# end
 
 
 function logpdfgrad!(
@@ -223,13 +223,13 @@ end
 
 #################### unlist and relist functionality ####################
 
-function unlist(block::SamplingBlock)
-    unlist(block.model, block.index, block.transform)
-end
+# function unlist(block::SamplingBlock)
+#     unlist(block.model, block.index, block.transform)
+# end
 
-function relist(block::SamplingBlock, x::AbstractVariate) where {T<:Real}
-    relist(block.model, x.value, block.index, block.transform)
-end
+# function relist(block::SamplingBlock, x::AbstractVariate) where {T<:Real}
+#     relist(block.model, x.value, block.index, block.transform)
+# end
 
 
 #################### Auxiliary Functions ####################

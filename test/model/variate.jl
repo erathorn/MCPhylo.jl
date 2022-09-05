@@ -45,8 +45,8 @@
         y = rand()
         s1 = Stochastic(() -> Normal(), true)
         s1.value = x
-        @test convert(Float64, s1) == s1
-        @test Float64(s1) == s1
+        @test convert(Float64, s1) == x
+        @test Float64(s1) == x
         @test s1 + y == x+y
         @test s1 - y == x-y
         @test s1 * y == x*y
