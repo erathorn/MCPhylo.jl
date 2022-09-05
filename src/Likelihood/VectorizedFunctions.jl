@@ -1,18 +1,5 @@
-               #e        f      a        d
-# function myred!(out::T, d1::R, C::S, lind::Int)::Nothing where {T, R, S}
-#     #@tturbo 
-#     for k in axes(out, 1)#eachindex(CartesianIndices(out))
-#         tmp = zero(eltype(out))
-#         for i in axes(d1, 1)
-#             tmp += d1[i, k, lind] * C[i, k]
-#         end
-#         out[k] = tmp
-#     end
-#     nothing
-# end
 
-
-function mygemmturbo!(C::R, A::S, B::T)::Nothing where {T, R, S}
+@inline function mygemmturbo!(C::R, A::S, B::T)::Nothing where {T, R, S}
     @tturbo for m ∈ axes(A, 1), n ∈ axes(B, 2)
         Cmn = zero(eltype(C))
         for k ∈ axes(A, 2)
@@ -22,62 +9,6 @@ function mygemmturbo!(C::R, A::S, B::T)::Nothing where {T, R, S}
     end
     nothing
 end
-
-# """
-
-# pop                 tmparr       ptg              data           gradi
-# (2, 600, 1, 39), (2, 600, 1), (2, 2, 1, 38), (2, 600, 1, 39), (600, 1))
-# """
-# function reggemm(tmp_arr::Array{F, 3}, ptg::Array{F, 4}, data::Array{F, 4}, gradi::Array{F, 2}, pop::Array{F, 4}, lind::Int) where F<:Real
-#     for m ∈ axes(data, 1), n ∈ axes(data, 2), r in axes(data, 3)
-        
-#             Cmn = zero(eltype(tmp_arr))
-#             for k ∈ axes(ptg, 2)
-#                 Cmn += ptg[m, k, r, lind] * data[k, n, r, lind]
-#             end
-#             tmp_arr[m, n, r] = Cmn
-        
-#     end
-#     for j in axes(ptg, 2), r in axes(data, 3)
-#         tmp = zero(eltype(gradi))
-#         for m in axes(data, 1)
-#             tmp += pop[m, j, r, lind] * tmp_arr[m,j, r]
-#         end
-#         gradi[j, r] = tmp
-#     end
-#     nothing
-# end
-
-
-
-
-
-
-@inline function mygemmturbo_tr!(C::R, A::T, B::T)::Nothing where {T, R}
-    @tturbo check_empty=false for m ∈ axes(A, 1), n ∈ axes(B, 2)
-        Cmn = zero(eltype(C))
-        for k ∈ axes(A, 2)
-            Cmn += A[k, m] * B[k, n]
-        end
-        C[m, n] = Cmn
-    end        
-    nothing
-end
-
-
-
-# function comb(po::C, data::Array{B, 4}, gradi::A, lind::Int)::B where {A, B, C}
-#     res = zero(eltype(data))
-#     @tturbo check_empty=false for k in axes(data, 3), j in axes(data, 2)
-#         tmp = zero(eltype(data))
-#         for i in axes(data, 1)
-#             tmp += data[i, k,j, lind] * po[i, k,j]
-#         end
-#         res += gradi[k,j] / tmp
-#     end
-#     res
-# end
-
 
 function my_repeat(
     data::Array{F,N},
@@ -96,10 +27,9 @@ function my_repeat(
     out
 end
 
-#@inline 
-function by_max!(data::Array, ll::F, nodenum::Int)::F where {F<:Real}
+function by_max!(data::Array{F, 4}, ll::F, nodenum::Int)::F where {F<:Real}
     maxi = fill(-Inf, size(data, 2), size(data,3))
-    @inbounds for k in axes(data, 3), j in axes(data, 2), i in axes(data, 1)#[2:end]
+    @inbounds for k in axes(data, 3), j in axes(data, 2), i in axes(data, 1)
         maxi[j, k] = ifelse(maxi[j, k] < data[i, j, k, nodenum] , data[i, j, k, nodenum] , maxi[j, k])
     end
     @tturbo check_empty=false for i in eachindex(maxi)
@@ -130,7 +60,7 @@ function bymax!(pre_order_partial::A, nodenum::Int)::Nothing where {A}
 end
 
 
-@inline function root_sum(data::T, pi_::S, lind::Int, ll::F)::F where {F, T, S}
+@inline function root_sum(data::Array{F, 4}, pi_::S, lind::Int, ll::F)::F where {F, S}
 
     @tturbo check_empty=false for k in CartesianIndices((axes(data, 2), axes(data, 3)))
         tmp = zero(F)
@@ -142,21 +72,6 @@ end
 
     ll
 end
-
-
-# @inline function diagonalizer!(out::B, D::A, blv::A, mu::C, rates::A)::Nothing where {A, B, C}
-#     @tturbo check_empty=false for i in eachindex(blv), r in eachindex(rates), d in eachindex(D)
-#         out[d, d, r, i] = exp(mu * blv[i] * D[d] * rates[r])
-#     end
-#     nothing
-# end
-
-# @inline function diagonalizer_ptg!(out::B, D::A, blv::A, mu::C, rates::A)::Nothing where {A, B, C}
-#     @tturbo check_empty=false for i in eachindex(blv), r in eachindex(rates), d in eachindex(D)
-#         out[d, d, r, i] = D[d] * rates[r] * mu * exp(mu * blv[i] * D[d] * rates[r])
-#     end
-#     nothing
-# end
 
 function R_gemmturbo_large_ptg!(C::T, A::S, mu::F, blv::V, D::V, rates::V)::Nothing where {T, S, F, V}
     @tturbo check_empty=false for m ∈ axes(A, 1), i in axes(C, 2), l in axes(C, 3),  n in axes(C, 4)
@@ -216,20 +131,6 @@ function turbo_mul!(data::A, tmp_data::A, pnum::D, nums::Vector{D})::Nothing whe
     nothing
 end
 
-
-# function sum_product_loop!(tmp_data::A, data::A, transprobs::A, num::N)::Nothing where {A,N}
-
-#     @tturbo check_empty=false for s in axes(data, 1), c in axes(data, 2), r in axes(data, 3)
-#         tmp = zero(eltype(data))
-#         for s1 in axes(data, 1)
-#             tmp += data[s1, c, r, num] * transprobs[s, s1, r, num]
-#         end
-#         tmp_data[s, c, r, num] = tmp
-#     end
-#     nothing
-# end
-
-
 function turbo_dot(x::Vector{T}, y::Vector{T})::T where {T}
     res = zero(T)
     @turbo check_empty=false for i in eachindex(x, y)
@@ -237,8 +138,6 @@ function turbo_dot(x::Vector{T}, y::Vector{T})::T where {T}
     end
     res
 end
-
-
 
 function comb_sum_product_loop!(
     Down::A,

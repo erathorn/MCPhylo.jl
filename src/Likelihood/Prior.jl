@@ -82,7 +82,6 @@ end
 function insupport(l::LengthDistribution, x::GeneralNode)
     bl = get_branchlength_vector(x)
     all(isfinite.(bl)) && topo_placeholder(x, l) && !any(isnan.(bl)) && all(0.0 .< bl)
-     #&& 
 end 
 
 function insupport(t::UniformConstrained, x::GeneralNode)::Bool

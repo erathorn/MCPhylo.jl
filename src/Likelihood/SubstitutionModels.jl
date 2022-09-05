@@ -1,32 +1,6 @@
 const MCP_TIME_MIN = 1.0E-11
 const MCP_TIME_MAX = 100.0
 
-# import ForwardDiff: Dual
-# import LinearAlgebra: eigvals 
-
-# function eigvals(A::Array{<:Dual{Tg,T,N}}) where {Tg,T<:Real,N}
-#     λ,Q = eigen(Symmetric(getproperty.(parent(A), :value)))
-#     partials = ntuple(j -> diag(Q' * getindex.(getproperty.(A, :partials), j) * Q), N)
-#     Dual{Tg}.(λ, tuple.(partials...))
-# end
-# function _lyap_div!(A, λ)
-#     for (j,μ) in enumerate(λ), (k,λ) in enumerate(λ)
-#         if k ≠ j
-#             A[k,j] /= μ - λ
-#         end
-#     end
-#     A
-# end
-
-# function eigen(A::Array{<:Dual{Tg,T,N}}; permute::Bool=true, scale::Bool=true, sortby) where {Tg,T<:Real,N}
-#     λ = eigvals(A)
-#     _,Q = eigen(Symmetric(ForwardDiff.value.(parent(A))))
-#     parts = ntuple(j -> Q*_lyap_div!(Q' * getindex.(ForwardDiff.partials.(A), j) * Q - Diagonal(getindex.(ForwardDiff.partials.(λ), j)), ForwardDiff.value.(λ)), N)
-#     Eigen(λ,Dual{Tg}.(Q, tuple.(parts...)))
-# end
-
-
-
 """
     Restriction(base_freq::Vector{Float64},
                 SubstitutionRates::Vector{Float64})::Tuple{Array{Float64,2}, Array{Float64,1}, Array{Float64,2}}
@@ -100,7 +74,7 @@ FreeK model of substitution.
 function freeK(
       base_freq::Vector{Float64},
       SubstitutionRates::AbstractArray,
-      )::Tuple{Array, Array, Array, Float64}# where {N <: Number, M <: Number}
+      )::Tuple{Array, Array, Array, Float64}
       Nrates = length(SubstitutionRates)
       Nbases = Int(ceil(sqrt(Nrates)))
       Q = zeros(Nbases, Nbases)
@@ -149,7 +123,6 @@ function calculate_transition(f::typeof(JC), rate::R, mu::R, time::R1, U::A, Uin
         t *= mu
         return (U * diagm(exp.(D .* t))) * Uinv
     end
-    #return_mat
 end
 
 
