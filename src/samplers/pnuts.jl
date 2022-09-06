@@ -13,6 +13,7 @@ mutable struct PNUTSTune{F<:Function, F2<:Function} <: SamplerTune
     tree_depth::Int
     tree_depth_trace::Vector{Int}
     acc_p_r::Vector{Int}
+    jitter::Float64
 
 
 
@@ -27,8 +28,9 @@ mutable struct PNUTSTune{F<:Function, F2<:Function} <: SamplerTune
         tree_depth::Int = 10,
         targetNNI::Float64 = 0.5,
         delta::Float64 = 0.003,
+        jitter::Real = 0.0
     ) where {T<:GeneralNode, F, F2}
-
+        @assert 0.0 <= jitter <= 1.0
         new{F, F2}(
             logf,
             logfgrad,
@@ -45,6 +47,7 @@ mutable struct PNUTSTune{F<:Function, F2<:Function} <: SamplerTune
             tree_depth,
             Int[],
             Int[],
+            jitter
         )
     end
 end
@@ -147,7 +150,7 @@ function sample!(
         if (adapter.m > 0)
             tune.epsilon = exp(adapter.x_bar)
         end
-        nuts_sub!(v, tune.epsilon, grlpdf, logfun)
+        nuts_sub!(v, jitter(tune.epsilon, tune.jitter), grlpdf, logfun)
     end
     
     v

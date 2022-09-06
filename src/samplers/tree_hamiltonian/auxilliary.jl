@@ -1,4 +1,7 @@
 
+function jitter(ϵ::R, jitter::R1)::R where {R<:Real, R1<:Real}
+    ϵ * (1.0 + jitter * (2.0 * rand() - 1.0))
+end
 
 function nutsepsilon(x::GeneralNode, logfgrad::Function,logf::Function, delta::Float64, target::Float64)
     n = size(x)[1] - 1
