@@ -166,10 +166,10 @@ function dual_averaging(adapter::NUTSstepadapter, delta::F)::F where F<:Real
 
     adapter.s_bar = (1.0 - η) * adapter.s_bar + η * HT
     x = const_params.μ - adapter.s_bar * sqrt(adapter.m) / const_params.γ
-    if x < log(0.5 * delta)
-        adapter.s_bar = ((const_params.μ - log(0.5*delta)) * const_params.γ)/sqrt(adapter.m)
-        x = log(0.5*delta)
-    end
+    # if x < log(0.5 * delta)
+    #     adapter.s_bar = ((const_params.μ - log(0.5*delta)) * const_params.γ)/sqrt(adapter.m)
+    #     x = log(0.5*delta)
+    # end
     
 
     x_η = adapter.m^-const_params.κ
