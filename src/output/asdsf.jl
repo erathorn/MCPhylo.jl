@@ -12,8 +12,8 @@ function ASDSF(args::String...; freq::Int64=1, check_leaves::Bool=true,
                )::Vector{Float64}
 
     length(args) < 2 && throw(ArgumentError("At least two input files are needed."))
-    splitsQueue = [Accumulator{Tuple{String, String}, Int64}()]
-    splitsQueues = [Vector{Accumulator{Tuple{String, String}, Int64}}()]
+    splitsQueue = [Accumulator{BitVector, Int64}()]
+    splitsQueues = [Vector{Accumulator{BitVector, Int64}}()]
     for arg in args
         push!(splitsQueues[1], Accumulator{Tuple{Set{String}, Set{String}}, Int64}())
     end # for
@@ -43,8 +43,8 @@ function ASDSF(args::Vector{String}...; freq::Int64=1, check_leaves::Bool=true,
                )::Vector{Float64}
 
     length(args) < 2 && throw(ArgumentError("At least two input arrays are needed."))
-    splitsQueue = [Accumulator{Tuple{String, String}, Int64}()]
-    splitsQueues = [Vector{Accumulator{Tuple{String, String}, Int64}}()]
+    splitsQueue = [Accumulator{BitVector, Int64}()]
+    splitsQueues = [Vector{Accumulator{BitVector, Int64}}()]
     for arg in args
         push!(splitsQueues[1], Accumulator{Tuple{Set{String}, Set{String}}, Int64}())
     end # for
@@ -71,8 +71,8 @@ function ASDSF(model::ModelChains; freq::Int64=1, check_leaves::Bool=true,
                )::Vector{Vector{Float64}}
                
     tree_dims::UnitRange{Int64} = 1:size(model.trees, 2)
-    splitsQueue = [Accumulator{Tuple{String, String}, Int64}() for x in tree_dims]
-    splitsQueues = [Vector{Accumulator{Tuple{String, String}, Int64}}() for x in tree_dims]
+    splitsQueue = [Accumulator{BitVector, Int64}() for x in tree_dims]
+    splitsQueues = [Vector{Accumulator{BitVector, Int64}}() for x in tree_dims]
     nchains = size(model.trees, 3)
     for i in 1:nchains
         for j in tree_dims
@@ -113,11 +113,11 @@ function ASDSF(r_channels::Vector{RemoteChannel{Channel{Array{AbstractString,1}}
     ASDSF_vals::Vector{Vector{Float64}} = [zeros(Int(n_trees)) for x in tree_dims]
     nchains = length(r_channels)
     if isnothing(cs)
-        splitsQueue = [Accumulator{Tuple{String, String}, Int64}() for x in tree_dims]
-        splitsQueues = [Vector{Accumulator{Tuple{String, String}, Int64}}() for x in tree_dims]
+        splitsQueue = [Accumulator{BitVector, Int64}() for x in tree_dims]
+        splitsQueues = [Vector{Accumulator{BitVector, Int64}}() for x in tree_dims]
         for i in 1:nchains
             for j in tree_dims
-                push!(splitsQueues[j], Accumulator{Tuple{Set{String}, Set{String}}, Int64}())
+                push!(splitsQueues[j], Accumulator{BitVector, Int64}())
             end # for
         end # for
         ASDSF_int(splitsQueue, splitsQueues, iter, tree_dims, ASDSF_vals, 1, false,
@@ -147,7 +147,7 @@ function ASDSF_int(splitsQueue, splitsQueues, iter, tree_dims, ASDSF_vals, freq,
                    total_runs::Int64=1, basic=false
                    )::Tuple{Vector{Vector{Float64}}, ConvergenceStorage}
 
-    all_keys = [Set{Tuple{String,String}}() for x in tree_dims]
+    all_keys = [Set{BitVector}() for x in tree_dims]
     
     if show_progress
         prog = ProgressMeter.Progress(length(ASDSF_vals[1]),"Computing ASDSF: ")
@@ -165,7 +165,7 @@ function ASDSF_int(splitsQueue, splitsQueues, iter, tree_dims, ASDSF_vals, freq,
                 check_leaves && check_leafsets(trees)
 
                 # get all bipartitions
-                cmds = Accumulator.(countmap.(get_bipartitions.(trees)))
+                cmds = Accumulator.(countmap.(filter.(x->sum(x) > 1, MCPhyloTree.get_bipartitions_as_bitvectors.(trees))))
                 
                 for (ind,acc) in enumerate(cmds)
                     merge!(splitsQueues[td][ind], acc)

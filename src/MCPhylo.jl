@@ -210,8 +210,8 @@ struct SimulationParameters
 end
 
 struct ConvergenceStorage
-    splitsQueue::Vector{Accumulator{Tuple{String,String},Int64}}
-    splitsQueues::Vector{Vector{Accumulator{Tuple{String,String},Int64}}}
+    splitsQueue::Vector{Accumulator{BitVector,Int64}}
+    splitsQueues::Vector{Vector{Accumulator{BitVector,Int64}}}
     run::Int64
 end
 
