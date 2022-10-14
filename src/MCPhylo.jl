@@ -209,10 +209,15 @@ struct SimulationParameters
     min_splits::Float64
 end
 
-struct ConvergenceStorage
+mutable struct ConvergenceStorage
     splitsQueue::Vector{Accumulator{BitVector,Int64}}
     splitsQueues::Vector{Vector{Accumulator{BitVector,Int64}}}
-    run::Int64
+    n_tree_gens::Int64
+    ASDSF_vals::Vector{Vector{Float64}}
+end
+
+function ConvergenceStorage(splitsQueue, splitsQueues)
+    ConvergenceStorage(splitsQueue, splitsQueues, 0, [Float64[] for i in splitsQueues])
 end
 
 #################### Chains Type ####################
