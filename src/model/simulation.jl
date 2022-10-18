@@ -380,7 +380,7 @@ function conditional_likelihood!(
     targets::Vector{Symbol},
     args...,
 ) where {T<:Real}
-    m[targets] = relist(m, x, targets)
+    m[targets] = relist(m, vec(x), targets)
     conditional_likelihood(m, targets, args...)
 end
 
