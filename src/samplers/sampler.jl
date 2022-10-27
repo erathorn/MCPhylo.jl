@@ -154,7 +154,7 @@ function logpdfgrad!(
 end
 
 
-function logpdf!(m::Model, x::A, t::T) where {A, T<:SamplerTune}
+function logpdf!(m::Model, x::A, t::T) where {A, T<:Sampler}
     logpdf!(m, x, t.params, t.target, t.transform)
 end
 
