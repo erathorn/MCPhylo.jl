@@ -336,11 +336,11 @@ end
 
 function sample!(s::Sampler{T, R}, m::Model) where {T<:SamplerTune, R}
     s.value = unlist(m, s.params, transform=s.transform)
-    lpdf(x) = let m = m, p = s.params, ta = s.targets, tr = s.transform
-        s.tune.logf(m, x, p, ta, tr)
+    lpdf(x) = let m = m, s = s
+        s.tune.logf(m, x, s)#p, ta, tr)
     end
-    grlpdf(x) = let m = m, p = s.params, ta = s.targets, tr = s.transform
-        s.tune.logfgrad(m, x, p, ta, tr)
+    grlpdf(x) = let m = m, s=s#p = s.params, ta = s.targets, tr = s.transform
+        s.tune.logfgrad(m, x, s)#p, ta, tr)
     end
     sample!(s, lpdf, grlpdf=grlpdf, adapt=m.iter < m.burnin, gen=m.iter, model=m)
     relist(m, s.value, s.params, s.transform)
@@ -376,7 +376,7 @@ function conditional_likelihood!(
     targets::Vector{Symbol},
     args...,
 ) where {T<:Real}
-    m[targets] = relist(m, x, targets)
+    m[targets] = relist(m, vec(x), targets)
     conditional_likelihood(m, targets, args...)
 end
 

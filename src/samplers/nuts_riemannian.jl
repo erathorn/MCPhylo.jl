@@ -1,6 +1,6 @@
 
 
-function nuts_sub!(v::Sampler{NUTSTune{riemann_nuts, F}, T}, epsilon::Float64, logfgrad::Function)  where {T<: AbstractArray{<: Real}, F}
+function nuts_sub!(v::Sampler{NUTSTune{riemann_nuts, F, G}, T}, epsilon::Float64, logfgrad::Function)  where {T<: AbstractArray{<: Real}, F, G}
     x = v.value
 
     r = randn(size(x))

@@ -154,9 +154,19 @@ const ConstraintDict{S} = Dict{
     Union{Vector{Vector{S}},Vector{Tuple{Vector{S},Vector{S}}}} where S<:AbstractString,
 }
 
+abstract type classic_nuts end
+abstract type riemann_nuts end
+abstract type fwd end
+abstract type zyg end
+abstract type nograd end
+
+const NUTS_Form = Union{classic_nuts, riemann_nuts}
+const GradType = Union{fwd, zyg,nograd}
+
 #################### Sampler Types ####################
 
 abstract type SamplerTune end
+abstract type GradSampler{G} <:SamplerTune end
 mutable struct Sampler{
     T<:SamplerTune,
     R<:AbstractArray{S} where {S<:Union{Real,GeneralNode}},
@@ -427,7 +437,8 @@ export make_tree_with_data,
     JC,
     GTR,
     freeK,
-    classic_nuts, riemann_nuts
+    classic_nuts, riemann_nuts,
+    fwd, zyg
 
 
 export cm, inch, mm, pt, px

@@ -2,38 +2,38 @@
 
 #################### Types and Constructors ####################
 
-mutable struct HMCTune{F<:Function} <: SamplerTune
+mutable struct HMCTune{F<:Function, G<:GradType} <: GradSampler{G}
     logf::F
     epsilon::Float64
     L::Int
     SigmaL::Union{UniformScaling{Bool},LowerTriangular{Float64}}
 
-    HMCTune(x, epsilon::Real, L::Integer) = new{typeof(identity)}(identity, epsilon, L, I)
+    HMCTune(x, epsilon::Real, L::Integer) = new{typeof(identity), fwd}(identity, epsilon, L, I)
 
-    HMCTune(x, epsilon::Real, L::Integer, logfgrad::F) where F = new{F}(logfgrad, epsilon, L, I)
+    HMCTune(x, epsilon::Real, L::Integer, logfgrad::F) where F = new{F, fwd}(logfgrad, epsilon, L, I)
 
     function HMCTune(x, epsilon::Real, L::Integer, Sigma::Matrix{T}) where {T<:Real}
-        new{typeof(identity)}(identity, epsilon, L, cholesky(Sigma).L)
+        new{typeof(identity), fwd}(identity, epsilon, L, cholesky(Sigma).L)
     end
 
-    function HMCTune(
+    function HMCTune{G}(
         x,
         epsilon::Real,
         L::Integer,
         Sigma::Matrix{T},
         logfgrad::F,
-    ) where {T<:Real, F}
-        new{F}(logfgrad, epsilon, L, cholesky(Sigma).L)
+    ) where {T<:Real, F, G<:GradType}
+        new{F, G}(logfgrad, epsilon, L, cholesky(Sigma).L)
     end
 
-    function HMCTune(
+    function HMCTune{G}(
         x,
         epsilon::Real,
         L::Integer,
         Sigma::UniformScaling{Bool},
         logfgrad::F,
-    ) where F
-        new{F}(logfgrad, epsilon, L, Sigma)
+    ) where {F, G<:GradType}
+        new{F, G}(logfgrad, epsilon, L, Sigma)
     end
 end
 
@@ -70,13 +70,13 @@ Returns a `Sampler{HMCTune}` type object.
 * `Sigma`: covariance matrix for the multivariate normal proposal distribution. The covariance matrix is relative to the unconstrained parameter space, where candidate draws are generated. If omitted, the identity matrix is assumed.
 
 """
-function HMC(params::ElementOrVector{Symbol}, epsilon::Real, L::Int)
-    tune = HMCTune(Float64[], epsilon, L, I, logpdfgrad!)
+function HMC(params::ElementOrVector{Symbol}, epsilon::Real, L::Int, ::Type{G}) where G<:GradType
+    tune = HMCTune{G}(Float64[], epsilon, L, I, logpdfgrad!)
     Sampler(Float64[], params, tune, Symbol[], true)
 end
 
-function HMC(params::ElementOrVector{Symbol}, epsilon::Real, L::Int, Sigma::Matrix{<:Real})
-    tune = HMCTune(Float64[], epsilon, L, Sigma, logpdfgrad!)
+function HMC(params::ElementOrVector{Symbol}, epsilon::Real, L::Int, Sigma::Matrix{<:Real}, ::Type{G}) where G<:GradType
+    tune = HMCTune{G}(Float64[], epsilon, L, Sigma, logpdfgrad!)
     Sampler(Float64[], params, tune, Symbol[], true)
 end
 

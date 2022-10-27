@@ -2,11 +2,8 @@
 
 #################### Types and Constructors ####################
 
-abstract type classic_nuts end
-abstract type riemann_nuts end
 
-const NUTS_Form = Union{classic_nuts, riemann_nuts}
-mutable struct NUTSTune{N<:NUTS_Form, F<:Function} <: SamplerTune
+mutable struct NUTSTune{N<:NUTS_Form, F<:Function, G<:GradType} <: GradSampler{G}
   logf::F
   stepsizeadapter::NUTSstepadapter
   adapt::Bool
@@ -14,11 +11,11 @@ mutable struct NUTSTune{N<:NUTS_Form, F<:Function} <: SamplerTune
   tree_depth::Int
   acc_p_r::Vector{Int}
 
-  NUTSTune{N, F}() where {N<:NUTS_Form, F<:Function} = new{N, F}()
+  NUTSTune{N, F, G}() where {N<:NUTS_Form, F<:Function, G<:GradType} = new{N, F, G}()
 
-  function NUTSTune{N}(x::Vector, epsilon::Real, logfgrad::F;
-                    target::Real=0.75, tree_depth::Int=10) where {N<:NUTS_Form, F}
-    new{N, F}(logfgrad,
+  function NUTSTune{N}(x::Vector, epsilon::Real, logfgrad::F, ::Type{G};
+                    target::Real=0.75, tree_depth::Int=10) where {N<:NUTS_Form, F, G<:GradType}
+    new{N, F, G}(logfgrad,
     NUTSstepadapter(0,0,0,NUTS_StepParams(0.5,target,0.05,0.75,10,0)),
     false,
     epsilon,
@@ -50,9 +47,9 @@ Returns a `Sampler{NUTSTune}` type object.
 
 * `epsilon`: step size which can be presupplied. If the standard (-Inf) is chosen, it will be automatically adapted
 """
-function NUTS(params::ElementOrVector{Symbol},::Type{F} = classic_nuts, epsilon::Real = -Inf, kwargs...) where F<:NUTS_Form
-  tune = NUTSTune{F}(Float64[], epsilon, logpdfgrad!; kwargs...)
-  Sampler(Float64[], params, tune, Symbol[], true)
+function NUTS(params::ElementOrVector{Symbol},::Type{F} = classic_nuts, ::Type{G} = fwd, epsilon::Real = -Inf, kwargs...) where {F<:NUTS_Form, G<:GradType}
+  tune = NUTSTune{F}(Float64[], epsilon, logpdfgrad!, G; kwargs...)
+  Sampler(Float64[], vec(params), tune, Symbol[], true)
 end
 
 
@@ -70,7 +67,7 @@ are assumed to be continuous and unconstrained.
 
 Returns `v` updated with simulated values and associated tuning parameters.
 """
-function sample!(v::Sampler{NUTSTune{N, F}, T}, logfgrad::Function; adapt::Bool = false, kwargs...) where {T<: AbstractArray{<: Real}, N<:NUTS_Form, F<:Function}
+function sample!(v::Sampler{NUTSTune{N, F, G}, T}, logfgrad::Function; adapt::Bool = false, kwargs...) where {T<: AbstractArray{<: Real}, N<:NUTS_Form, F<:Function, G<:GradType}
     tune = v.tune
     adapter = tune.stepsizeadapter
     const_params = tune.stepsizeadapter.params
@@ -109,7 +106,7 @@ function sample!(v::Sampler{NUTSTune{N, F}, T}, logfgrad::Function; adapt::Bool 
 end
 
 
-function setadapt!(v::Sampler{NUTSTune{N, F}, T}, adapt::Bool) where {T<: AbstractArray{<: Real}, N<:NUTS_Form, F<:Function}
+function setadapt!(v::Sampler{NUTSTune{N, F, G}, T}, adapt::Bool) where {T<: AbstractArray{<: Real}, N<:NUTS_Form, F<:Function, G<:GradType}
     tune = v.tune
     if adapt && !tune.adapt
         tune.stepsizeadapter.m = 0
