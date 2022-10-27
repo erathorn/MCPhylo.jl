@@ -158,10 +158,11 @@ abstract type classic_nuts end
 abstract type riemann_nuts end
 abstract type fwd end
 abstract type zyg end
+abstract type provided end
 abstract type nograd end
 
 const NUTS_Form = Union{classic_nuts, riemann_nuts}
-const GradType = Union{fwd, zyg,nograd}
+const GradType = Union{fwd, zyg, nograd, provided}
 
 #################### Sampler Types ####################
 

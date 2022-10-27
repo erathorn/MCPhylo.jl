@@ -16,22 +16,24 @@ mutable struct HMCTune{F<:Function, G<:GradType} <: GradSampler{G}
         new{typeof(identity), fwd}(identity, epsilon, L, cholesky(Sigma).L)
     end
 
-    function HMCTune{G}(
+    function HMCTune(
         x,
         epsilon::Real,
         L::Integer,
         Sigma::Matrix{T},
         logfgrad::F,
+        ::Type{G}
     ) where {T<:Real, F, G<:GradType}
         new{F, G}(logfgrad, epsilon, L, cholesky(Sigma).L)
     end
 
-    function HMCTune{G}(
+    function HMCTune(
         x,
         epsilon::Real,
         L::Integer,
         Sigma::UniformScaling{Bool},
         logfgrad::F,
+        ::Type{G}
     ) where {F, G<:GradType}
         new{F, G}(logfgrad, epsilon, L, Sigma)
     end
@@ -70,13 +72,13 @@ Returns a `Sampler{HMCTune}` type object.
 * `Sigma`: covariance matrix for the multivariate normal proposal distribution. The covariance matrix is relative to the unconstrained parameter space, where candidate draws are generated. If omitted, the identity matrix is assumed.
 
 """
-function HMC(params::ElementOrVector{Symbol}, epsilon::Real, L::Int, ::Type{G}) where G<:GradType
-    tune = HMCTune{G}(Float64[], epsilon, L, I, logpdfgrad!)
+function HMC(params::ElementOrVector{Symbol}, epsilon::Real, L::Int, ::Type{G}=fwd) where G<:GradType
+    tune = HMCTune(Float64[], epsilon, L, I, logpdfgrad!, G)
     Sampler(Float64[], params, tune, Symbol[], true)
 end
 
-function HMC(params::ElementOrVector{Symbol}, epsilon::Real, L::Int, Sigma::Matrix{<:Real}, ::Type{G}) where G<:GradType
-    tune = HMCTune{G}(Float64[], epsilon, L, Sigma, logpdfgrad!)
+function HMC(params::ElementOrVector{Symbol}, epsilon::Real, L::Int, Sigma::Matrix{<:Real}, ::Type{G}=fwd) where G<:GradType
+    tune = HMCTune(Float64[], epsilon, L, Sigma, logpdfgrad!, G)
     Sampler(Float64[], params, tune, Symbol[], true)
 end
 
@@ -93,7 +95,7 @@ are assumed to be continuous and unconstrained.
 
 Returns `v` updated with simulated values and associated tuning parameters.
 """
-function sample!(v::Sampler{HMCTune{F},T}, logfgrad::Function; kwargs...) where {F, T}
+function sample!(v::Sampler{HMCTune{F, G},T}, logfgrad::Function; kwargs...) where {F, T, G}
     tune = v.tune
 
     x1 = v.value[:]

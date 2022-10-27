@@ -9,7 +9,7 @@ splits threshold is 0.1. The progress bar is activated by default.
 """
 function ASDSF(args::String...; freq::Int64=1, check_leaves::Bool=true,
                min_splits::Float64=0.1, show_progress::Bool=true
-               )::Vector{Float64}
+               )#::Vector{Float64}
 
     length(args) < 2 && throw(ArgumentError("At least two input files are needed."))
     splitsQueue = [Accumulator{BitVector, Int64}()]

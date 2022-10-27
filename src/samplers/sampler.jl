@@ -86,7 +86,7 @@ function _gradlogpdf!(m::Model, x::AbstractArray, block::Integer, dtype::Symbol 
 
 end
 
-function logpdfgrad!(m::Model, x::AbstractVector{R}, t::Sampler{GS, X}) where {R<:Real, GS<:GradSampler{G}, X} where G
+function logpdfgrad!(m::Model, x::AbstractVector{R}, t::Sampler{GS, X}) where {R, GS<:GradSampler{G}, X} where G
     logpdfgrad!(G, m, x, t.params, t.targets, t.transform)
 end
 
@@ -134,7 +134,7 @@ function logpdfgrad!(::Type{zyg},
 end
 
 
-function logpdfgrad!(
+function logpdfgrad!(::Type{provided},
     m::Model,
     x::T,
     params::ElementOrVector{Symbol},
@@ -155,7 +155,7 @@ end
 
 
 function logpdf!(m::Model, x::A, t::T) where {A, T<:Sampler}
-    logpdf!(m, x, t.params, t.target, t.transform)
+    logpdf!(m, x, t.params, t.targets, t.transform)
 end
 
 function logpdf!(

@@ -1,5 +1,5 @@
 
-mutable struct PPHMCTune{F<:Function, F2<:Function} <: SamplerTune
+mutable struct PPHMCTune{F<:Function, F2<:Function, G<:GradType} <: GradSampler{G}
     logf::F
     logfgrad::F2
     epsilon::Float64
@@ -12,8 +12,8 @@ mutable struct PPHMCTune{F<:Function, F2<:Function} <: SamplerTune
 
     #PPHMCTune{F, F2}() where {F, F2} = new{F, F2}()
 
-    function PPHMCTune(x::Vector{T}, logf::F, logfgrad::F2, epsilon::Float64, nleap::Int64; delta::Float64=0.003, adapter::Float64=0.4, randomization::Bool=true) where {T <: GeneralNode, F, F2}
-        new{F, F2}(logf, logfgrad, epsilon, delta, nleap, 0, randomization, adapter,Int[])
+    function PPHMCTune(x::Vector{T}, logf::F, logfgrad::F2, epsilon::Float64, nleap::Int64, ::Type{G}; delta::Float64=0.003, adapter::Float64=0.4, randomization::Bool=true) where {T <: GeneralNode, F, F2, G<:GradType}
+        new{F, F2, G}(logf, logfgrad, epsilon, delta, nleap, 0, randomization, adapter,Int[])
     end
 end
 
@@ -46,6 +46,7 @@ function PPHMC(params::ElementOrVector{Symbol}, epsilon::Float64, nleap::Int64; 
         logpdfgrad!,
         epsilon,
         nleap,
+        provided,
         delta=delta,
         adapter=adapter,
         randomization=randomization

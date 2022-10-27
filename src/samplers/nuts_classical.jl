@@ -1,7 +1,7 @@
 
 
 
-function nuts_sub!(v::Sampler{NUTSTune{classic_nuts, F}, T}, epsilon::R, logfgrad::Function) where {T<: AbstractArray{<: Real}, F, R<:Real}
+function nuts_sub!(v::Sampler{NUTSTune{classic_nuts, F, G}, T}, epsilon::R, logfgrad::Function) where {T<: AbstractArray{<: Real}, F, R<:Real, G<:GradType}
   n = length(v)
   x = deepcopy(v.value)
   logf, grad = logfgrad(x)

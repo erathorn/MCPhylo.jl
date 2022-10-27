@@ -1,7 +1,7 @@
 #################### Phylogenetic No-U-Turn Sampler ####################
 
 #################### Types and Constructors ####################
-mutable struct PNUTSTune{F<:Function, F2<:Function} <: SamplerTune
+mutable struct PNUTSTune{F<:Function, F2<:Function, G<:GradType} <: GradSampler{G}
     logf::F
     logfgrad::F2
     stepsizeadapter::NUTSstepadapter
@@ -23,15 +23,16 @@ mutable struct PNUTSTune{F<:Function, F2<:Function} <: SamplerTune
         x::Vector{T},
         epsilon::Float64,
         logf::F,
-        logfgrad::F2;
+        logfgrad::F2,
+        ::Type{G};
         target::Real = 0.6,
         tree_depth::Int = 10,
         targetNNI::Float64 = 0.5,
         delta::Float64 = 0.003,
         jitter::Real = 0.0
-    ) where {T<:GeneralNode, F, F2}
+    ) where {T<:GeneralNode, F, F2, G<:GradType}
         @assert 0.0 <= jitter <= 1.0
-        new{F, F2}(
+        new{F, F2, G}(
             logf,
             logfgrad,
             NUTSstepadapter(
@@ -51,29 +52,6 @@ mutable struct PNUTSTune{F<:Function, F2<:Function} <: SamplerTune
         )
     end
 end
-
-PNUTSTune(
-    x::Vector{T},
-    logf::Function,
-    logfgrad::Function,
-    ::NullFunction,
-    delta::Float64 = 0.003,
-    target::Real = 0.6;
-    args...,
-) where {T<:GeneralNode} =
-    PNUTSTune(x, nutsepsilon(x[1], logfgrad, logf, delta, target), logf, logfgrad; args...)
-
-PNUTSTune(
-    x::Vector{T},
-    logfgrad::Function,
-    delta::Float64,
-    target::Real;
-    args...,
-) where {T<:GeneralNode} =
-    PNUTSTune(x, nutsepsilon(x[1], logfgrad, logf, delta, target), logf, logfgrad; args...)
-
-PNUTSTune(x::Vector; epsilon::Real, args...) =
-    PNUTSTune(x, epsilon, identity, identity, args...)
 
 const PNUTSVariate = Sampler{PNUTSTune,Vector{T}} where {T<:GeneralNode}
 
@@ -105,7 +83,8 @@ function PNUTS(
         GeneralNode[],
         epsilon,
         logpdf!,
-        logpdfgrad!;
+        logpdfgrad!,
+        provided;
         delta = delta,
         target = target,
         args...,
@@ -121,12 +100,12 @@ end
 #################### Sampling Functions ####################
 
 function sample!(
-    v::Sampler{PNUTSTune{F, F2}, Vector{T}},
+    v::Sampler{PNUTSTune{F, F2,G}, Vector{T}},
     logfun::Function;
     grlpdf::Function,
     adapt::Bool = false,
     args...,
-)::Sampler{PNUTSTune{F, F2}, Vector{T}} where {T<:GeneralNode, F<:Function, F2<:Function}
+)::Sampler{PNUTSTune{F, F2, G}, Vector{T}} where {T<:GeneralNode, F<:Function, F2<:Function, G}
     tune = v.tune
     adapter = tune.stepsizeadapter
     
@@ -178,7 +157,7 @@ function dual_averaging(adapter::NUTSstepadapter, delta::F)::F where F<:Real
 end
 
 
-function setadapt!(v::Sampler{PNUTSTune{F, F2}, Vector{T}}, adapt::Bool)::Sampler{PNUTSTune{F, F2}, Vector{T}} where {F, F2, T}
+function setadapt!(v::Sampler{PNUTSTune{F, F2, G}, Vector{T}}, adapt::Bool)::Sampler{PNUTSTune{F, F2, G}, Vector{T}} where {F, F2, T, G}
     tune = v.tune
     if adapt && !tune.adapt
     
@@ -193,11 +172,11 @@ end
 
 
 function nuts_sub!(
-    v::Sampler{PNUTSTune{F, F2}, Vector{T}},
+    v::Sampler{PNUTSTune{F, F2, G}, Vector{T}},
     epsilon::Float64,
     logfgrad::Function,
     logfun::Function,
-)::Sampler{PNUTSTune{F, F2}, Vector{T}} where {F, F2, T}
+)::Sampler{PNUTSTune{F, F2, G}, Vector{T}} where {F, F2, T, G}
 
     #@show epsilon
     x = deepcopy(v.value[1])
