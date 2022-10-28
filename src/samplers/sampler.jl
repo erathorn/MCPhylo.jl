@@ -86,7 +86,7 @@ function _gradlogpdf!(m::Model, x::AbstractArray, block::Integer, dtype::Symbol 
 
 end
 
-function logpdfgrad!(m::Model, x::AbstractVector{R}, t::Sampler{GS, X}) where {R, GS<:GradSampler{G}, X} where G
+function logpdfgrad!(m::Model, x::R, t::Sampler{GS, X}) where {R, GS<:GradSampler{G}, X} where G
     logpdfgrad!(G, m, x, t.params, t.targets, t.transform)
 end
 
