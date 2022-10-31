@@ -47,9 +47,9 @@ Returns a `Sampler{NUTSTune}` type object.
 
 * `epsilon`: step size which can be presupplied. If the standard (-Inf) is chosen, it will be automatically adapted
 """
-function NUTS(params::ElementOrVector{Symbol},::Type{F} = classic_nuts, ::Type{G} = fwd, epsilon::Real = -Inf, kwargs...) where {F<:NUTS_Form, G<:GradType}
-  tune = NUTSTune{F}(Float64[], epsilon, logpdfgrad!, G; kwargs...)
-  Sampler(Float64[], vec(params), tune, Symbol[], true)
+function NUTS(params::ElementOrVector{Symbol},::Type{F} = classic_nuts, ::Type{G} = fwd, epsilon::Real = -Inf, target::R=0.75, tree_depth::Int=10) where {F<:NUTS_Form, G<:GradType, R<:Real}
+  tune = NUTSTune{F}(Float64[], epsilon, logpdfgrad!, G; target=target, tree_depth=tree_depth)
+  Sampler(Float64[], asvec(params), tune, Symbol[], true)
 end
 
 
