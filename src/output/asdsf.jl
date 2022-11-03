@@ -26,7 +26,7 @@ function ASDSF(args::String...; freq::Int64=1, check_leaves::Bool=true,
     # tree_dims is hardcoded to 1 because there are no multiple dims in files
     ASDSF_int!(cv, iter, 1, freq, check_leaves,
               min_splits, show_progress, basic=true)
-    res = cv.ASDSF_vals
+    res = cv.ASDSF_vals[1]
     asdsf_size > nsams ? res[1:end-1] : res
 end # ASDSF
 
@@ -42,7 +42,7 @@ splits threshold is 0.1. The progress bar is activated by default.
 """
 function ASDSF(args::Vector{String}...; freq::Int64=1, check_leaves::Bool=true,
                min_splits::Float64=0.1, show_progress::Bool=true
-               )::Vector{Float64}
+               )#::Vector{Float64}
 
     length(args) < 2 && throw(ArgumentError("At least two input arrays are needed."))
     splitsQueue = [Accumulator{BitVector, Int64}()]
@@ -56,7 +56,7 @@ function ASDSF(args::Vector{String}...; freq::Int64=1, check_leaves::Bool=true,
     # tree_dims is hardcoded to 1 because there are no multiple dims in Vectors
     ASDSF_int!(cv, iter, 1, freq, check_leaves,
               min_splits, show_progress; basic=true)
-    return cv.ASDSF_vals
+    return cv.ASDSF_vals[1]
 end # ASDSF
 
 
