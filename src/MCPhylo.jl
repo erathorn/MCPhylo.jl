@@ -23,6 +23,7 @@ import StatsBase: predict
 using Zygote
 using FiniteDiff
 using ForwardDiff
+using ReverseDiff
 using Showoff: showoff
 using Markdown
 using Random
@@ -158,11 +159,13 @@ abstract type classic_nuts end
 abstract type riemann_nuts end
 abstract type fwd end
 abstract type zyg end
+abstract type rev end
+abstract type fin end
 abstract type provided end
 abstract type nograd end
 
 const NUTS_Form = Union{classic_nuts, riemann_nuts}
-const GradType = Union{fwd, zyg, nograd, provided}
+const GradType = Union{fwd, zyg, fin, rev, nograd, provided}
 
 #################### Sampler Types ####################
 

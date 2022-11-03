@@ -113,6 +113,36 @@ function logpdfgrad!(::Type{fwd},
     ll, grad
 end
 
+function logpdfgrad!(::Type{fin},
+    m::Model,
+    x::AbstractVector{T},
+    params::ElementOrVector{Symbol},
+    target::ElementOrVector{Symbol},
+    transform::Bool,
+) where {T<:Real}
+    function lf(y)
+        let m1 = m, para = params, tar = target, tr = transform
+            logpdf!(m1, y, para, tar, tr)
+        end
+    end
+    f(x), FiniteDiff.finite_difference_gradient(f, x)
+end
+
+function logpdfgrad!(::Type{rev},
+    m::Model,
+    x::AbstractVector{T},
+    params::ElementOrVector{Symbol},
+    target::ElementOrVector{Symbol},
+    transform::Bool,
+) where {T<:Real}
+    function lf(y)
+        let m1 = m, para = params, tar = target, tr = transform
+            logpdf!(m1, y, para, tar, tr)
+        end
+    end
+    ReverseDiff.grad(f, x)
+end
+
 
 function logpdfgrad!(::Type{zyg},
     m::Model,
@@ -121,8 +151,6 @@ function logpdfgrad!(::Type{zyg},
     target::ElementOrVector{Symbol},
     transform::Bool,
 ) where {T<:Real}
-    #ll::Float64 = 0.0
-
     function lf(y)
         let m1 = m, para = params, tar = target, tr = transform
             logpdf!(m1, y, para, tar, tr)
