@@ -55,8 +55,8 @@ function PPHMC(params::ElementOrVector{Symbol}, epsilon::Float64, nleap::Int64; 
 end
 
 
-function sample!(v::Sampler{PPHMCTune{F, F2}, Vector{T}}, logfun::Function;
-            grlpdf::Function, adapt::Bool, model::Model, kwargs...) where {F, F2, T<:GeneralNode}
+function sample!(v::Sampler{PPHMCTune{F, F2, G}, Vector{T}}, logfun::Function;
+            grlpdf::Function, adapt::Bool, model::Model, kwargs...) where {F, F2, T<:GeneralNode, G}
     
     bi = model.burnin
     mt = v.value[1]
