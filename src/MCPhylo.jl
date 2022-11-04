@@ -442,7 +442,7 @@ export make_tree_with_data,
     GTR,
     freeK,
     classic_nuts, riemann_nuts,
-    fwd, zyg, rev, provided, fin
+    fwd, zyg, rev, provided, fin, nograd
 
 
 export cm, inch, mm, pt, px
