@@ -35,6 +35,7 @@ using LoopVectorization
 using Base.Threads
 using PDMats
 using IfElse
+using DiffResults
 import Base: Matrix, names, summary
 
 

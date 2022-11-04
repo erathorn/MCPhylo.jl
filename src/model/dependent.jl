@@ -481,7 +481,7 @@ end # relistlength
 function logpdf(s::AbstractStochastic, transform::Bool=false)
     ll = logpdf(s, s.value, transform)
     
-    s.lpdf = isa(ll, ForwardDiff.Dual) ? ForwardDiff.value(ll) : ll
+    s.lpdf = isa(ll, Float64) ? ll : value(ll)
     ll
 end
 
