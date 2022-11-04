@@ -140,7 +140,7 @@ function logpdfgrad!(::Type{rev},
             logpdf!(m1, y, para, tar, tr)
         end
     end
-    lf(x), ReverseDiff.grad(lf, x)
+    lf(x), ReverseDiff.gradient(lf, x)
 end
 
 
