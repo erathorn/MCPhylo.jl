@@ -359,7 +359,7 @@ export AbstractChains,
     VectorVariate
 
 export BDiagNormal,
-    Flat, SymUniform, CompoundDirichlet, PhyloDist, MultiplePhyloDist, exponentialBL, UniformBranchLength, UniformTopology, UniformConstrained
+    Flat, SymUniform, CompoundDirichlet, PhyloDist, MultiplePhyloDist, exponentialBL, UniformBranchLength, UniformTopology, UniformConstrained, SymBinary
 
 export ASDSF,
     PNUTS_monitor,
