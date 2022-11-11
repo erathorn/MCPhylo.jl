@@ -180,10 +180,10 @@ function ASDSF_int!(conv_store, iter, tree_dims, freq,
                 all_keys[td] = union(all_keys[td], keys(new_splits))
                 merge!(conv_store.splitsQueue[td], new_splits)
                 conv_store.n_tree_gens += 1
-                tmp = 0.0
-                M = 0.0
+                tmp = zero(eltype(conv_store.ASDSF_vals[td]))
+                M = zero(eltype(conv_store.ASDSF_vals[td]))
                 for split in all_keys[td]
-                    tmp_i = 0.0
+                    tmp_i = zero(eltype(tmp))
                     keep = false
                     ova = conv_store.splitsQueue[td][split]/(n_chains*conv_store.n_tree_gens)
                     for chain in conv_store.splitsQueues[td]
@@ -193,8 +193,8 @@ function ASDSF_int!(conv_store, iter, tree_dims, freq,
                     end
                     
                     tmp_i /= (n_chains - 1)
-                    tmp += keep ? sqrt(tmp_i) : 0.0
-                    M += keep ? 1 : 0    
+                    tmp += keep ? sqrt(tmp_i) : zero(eltype(tmp))
+                    M += keep ? one(eltype(M)) : zero(eltype(M))    
                 end
                 push!(conv_store.ASDSF_vals[td],  tmp / M )
 
