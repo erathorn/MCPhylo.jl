@@ -13,7 +13,13 @@ mutable struct Tree_HMC_State{T<:GeneralNode} <: HMC_State
     pm::Int
 end
 
-function Tree_HMC_State(tree::T, r::Vector{Float64}, g::Vector{Float64}, lf::Float64, pm::Int)::Tree_HMC_State{T} where T<:GeneralNode
+function Tree_HMC_State(
+    tree::T,
+    r::Vector{Float64},
+    g::Vector{Float64},
+    lf::Float64,
+    pm::Int,
+)::Tree_HMC_State{T} where {T<:GeneralNode}
     Tree_HMC_State{T}(tree, r, g, lf, false, 0, 0, pm)
 end
 
@@ -25,17 +31,17 @@ mutable struct Array_HMC_State{T<:Array{<:Real}} <: HMC_State
     lf::Float64
 end
 
-function transfer(s1::T)::T where T<:HMC_State
-    T(deepcopy(s1.x), s1.r[:],s1.g[:],s1.lf, s1.extended, s1.nni, s1.att_nni, s1.pm)
+function transfer(s1::T)::T where {T<:HMC_State}
+    T(deepcopy(s1.x), s1.r[:], s1.g[:], s1.lf, s1.extended, s1.nni, s1.att_nni, s1.pm)
 end
 
-function transfer(s1::T)::T where T<:Array_HMC_State
-    T(s1.x[:], s1.r[:],s1.g[:],s1.lf)
+function transfer(s1::T)::T where {T<:Array_HMC_State}
+    T(s1.x[:], s1.r[:], s1.g[:], s1.lf)
 end
 
 hamiltonian(s::HMC_State)::Float64 = s.lf - 0.5 * turbo_dot(s.r, s.r)
 
-function transfer!(s1::Tree_HMC_State{T}, s2::Tree_HMC_State{T}) where T
+function transfer!(s1::Tree_HMC_State{T}, s2::Tree_HMC_State{T}) where {T}
     s1.x = deepcopy(s2.x)
     s1.r[:] .= s2.r[:]
     s1.g[:] .= s2.g[:]
@@ -65,8 +71,8 @@ struct NUTS_StepParams
     δ_NNI::Float64
 end
 
-function update_step(p::N, μ::Float64)::N where N<:NUTS_StepParams
-    NUTS_StepParams(μ, p.δ, p.γ, p.κ, p.t0,p.δ_NNI)
+function update_step(p::N, μ::Float64)::N where {N<:NUTS_StepParams}
+    NUTS_StepParams(μ, p.δ, p.γ, p.κ, p.t0, p.δ_NNI)
 end
 
 mutable struct NUTSstepadapter
@@ -77,7 +83,7 @@ mutable struct NUTSstepadapter
     metro_acc_prob::Float64
     NNI_stat::Float64
 
-    function NUTSstepadapter(m, s_bar, x_bar, μ, δ,δ_NNI, γ, κ, t0)
+    function NUTSstepadapter(m, s_bar, x_bar, μ, δ, δ_NNI, γ, κ, t0)
         new(m, s_bar, x_bar, NUTS_StepParams(μ, δ, γ, κ, t0, δ_NNI), 0.0, 0.0)
     end
 
@@ -96,4 +102,4 @@ mutable struct NUTSMeta
     l_NNI::Int
 end
 
-NUTSMeta() = NUTSMeta(0,0.0,0.0,0,0,0)
+NUTSMeta() = NUTSMeta(0, 0.0, 0.0, 0, 0, 0)

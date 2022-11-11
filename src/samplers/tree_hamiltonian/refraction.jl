@@ -5,10 +5,10 @@ function refraction!(
     logfgrad::Function,
     logf::Function,
     delta::Float64,
-)::Tuple{Int, Int} where T<:GeneralNode
+)::Tuple{Int,Int} where {T<:GeneralNode}
 
     blenvec = get_branchlength_vector(s.x)
-    
+
     @. s.r += (epsilon * 0.5) * s.g
 
     tmpB = @. blenvec + (epsilon * s.r)
@@ -20,7 +20,7 @@ function refraction!(
     set_branchlength_vector!(s.x, blenvec)
 
     logf, grad = logfgrad(s.x)
-    
+
     fac = scale_fac.(blenvec, delta)
     grad .*= fac
     @. s.r += (epsilon * 0.5) * grad
@@ -39,7 +39,7 @@ function ref_NNI!(
     blv::V,
     delta::Float64,
     logf::Function,
-)::Tuple{V, Int, Int} where {V<:AbstractVector{Float64}, T}
+)::Tuple{V,Int,Int} where {V<:AbstractVector{Float64},T}
 
     intext = internal_external(s.x)
     t = 0.0
@@ -79,7 +79,7 @@ function ref_NNI!(
             else
                 _ = fetch(temp) # fetch to free handle
             end #if NNI
-            
+
         end #non leave
 
         t = epsilon + timelist[ref_index]

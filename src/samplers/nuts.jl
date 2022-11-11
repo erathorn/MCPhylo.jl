@@ -3,25 +3,33 @@
 #################### Types and Constructors ####################
 
 
-mutable struct NUTSTune{N<:NUTS_Form, F<:Function, G<:GradType} <: GradSampler{G}
-  logf::F
-  stepsizeadapter::NUTSstepadapter
-  adapt::Bool
-  epsilon::Float64
-  tree_depth::Int
-  acc_p_r::Vector{Int}
+mutable struct NUTSTune{N<:NUTS_Form,F<:Function,G<:GradType} <: GradSampler{G}
+    logf::F
+    stepsizeadapter::NUTSstepadapter
+    adapt::Bool
+    epsilon::Float64
+    tree_depth::Int
+    acc_p_r::Vector{Int}
 
-  NUTSTune{N, F, G}() where {N<:NUTS_Form, F<:Function, G<:GradType} = new{N, F, G}()
+    NUTSTune{N,F,G}() where {N<:NUTS_Form,F<:Function,G<:GradType} = new{N,F,G}()
 
-  function NUTSTune{N}(x::Vector, epsilon::Real, logfgrad::F, ::Type{G};
-                    target::Real=0.75, tree_depth::Int=10) where {N<:NUTS_Form, F, G<:GradType}
-    new{N, F, G}(logfgrad,
-    NUTSstepadapter(0,0,0,NUTS_StepParams(0.5,target,0.05,0.75,10,0)),
-    false,
-    epsilon,
-    tree_depth,
-    Int[])
-  end
+    function NUTSTune{N}(
+        x::Vector,
+        epsilon::Real,
+        logfgrad::F,
+        ::Type{G};
+        target::Real = 0.75,
+        tree_depth::Int = 10,
+    ) where {N<:NUTS_Form,F,G<:GradType}
+        new{N,F,G}(
+            logfgrad,
+            NUTSstepadapter(0, 0, 0, NUTS_StepParams(0.5, target, 0.05, 0.75, 10, 0)),
+            false,
+            epsilon,
+            tree_depth,
+            Int[],
+        )
+    end
 end
 
 
@@ -47,9 +55,23 @@ Returns a `Sampler{NUTSTune}` type object.
 
 * `epsilon`: step size which can be presupplied. If the standard (-Inf) is chosen, it will be automatically adapted
 """
-function NUTS(params::ElementOrVector{Symbol},::Type{F} = classic_nuts, ::Type{G} = fwd; epsilon::Real = -Inf, target::R=0.75, tree_depth::Int=10) where {F<:NUTS_Form, G<:GradType, R<:Real}
-  tune = NUTSTune{F}(Float64[], epsilon, logpdfgrad!, G; target=target, tree_depth=tree_depth)
-  Sampler(Float64[], asvec(params), tune, Symbol[], true)
+function NUTS(
+    params::ElementOrVector{Symbol},
+    ::Type{F} = classic_nuts,
+    ::Type{G} = fwd;
+    epsilon::Real = -Inf,
+    target::R = 0.75,
+    tree_depth::Int = 10,
+) where {F<:NUTS_Form,G<:GradType,R<:Real}
+    tune = NUTSTune{F}(
+        Float64[],
+        epsilon,
+        logpdfgrad!,
+        G;
+        target = target,
+        tree_depth = tree_depth,
+    )
+    Sampler(Float64[], asvec(params), tune, Symbol[], true)
 end
 
 
@@ -67,7 +89,12 @@ are assumed to be continuous and unconstrained.
 
 Returns `v` updated with simulated values and associated tuning parameters.
 """
-function sample!(v::Sampler{NUTSTune{N, F, G}, T}, logfgrad::Function; adapt::Bool = false, kwargs...) where {T<: AbstractArray{<: Real}, N<:NUTS_Form, F<:Function, G<:GradType}
+function sample!(
+    v::Sampler{NUTSTune{N,F,G},T},
+    logfgrad::Function;
+    adapt::Bool = false,
+    kwargs...,
+) where {T<:AbstractArray{<:Real},N<:NUTS_Form,F<:Function,G<:GradType}
     tune = v.tune
     adapter = tune.stepsizeadapter
     const_params = tune.stepsizeadapter.params
@@ -75,25 +102,25 @@ function sample!(v::Sampler{NUTSTune{N, F, G}, T}, logfgrad::Function; adapt::Bo
         tune.epsilon = nutsepsilon(v.value, logfgrad, const_params.δ)
     end
     setadapt!(v, adapt)
-    
+
     if tune.adapt
         adapter.m += 1
-        
+
         nuts_sub!(v, tune.epsilon, logfgrad)
 
         adaptstat = adapter.metro_acc_prob > 1 ? 1 : adapter.metro_acc_prob
-        
+
         adaptstat = const_params.δ - adaptstat
-        
-        η = 1.0/(adapter.m + const_params.t0)
-        
+
+        η = 1.0 / (adapter.m + const_params.t0)
+
         adapter.s_bar = (1.0 - η) * adapter.s_bar + η * adaptstat
         x = const_params.μ - adapter.s_bar * sqrt(adapter.m) / const_params.γ
-        
+
         x_η = adapter.m^-const_params.κ
         adapter.x_bar = (1.0 - x_η) * adapter.x_bar + x_η * x
         tune.epsilon = exp(x)
-        
+
 
     else
         if (adapter.m > 0)
@@ -106,11 +133,15 @@ function sample!(v::Sampler{NUTSTune{N, F, G}, T}, logfgrad::Function; adapt::Bo
 end
 
 
-function setadapt!(v::Sampler{NUTSTune{N, F, G}, T}, adapt::Bool) where {T<: AbstractArray{<: Real}, N<:NUTS_Form, F<:Function, G<:GradType}
+function setadapt!(
+    v::Sampler{NUTSTune{N,F,G},T},
+    adapt::Bool,
+) where {T<:AbstractArray{<:Real},N<:NUTS_Form,F<:Function,G<:GradType}
     tune = v.tune
     if adapt && !tune.adapt
         tune.stepsizeadapter.m = 0
-        tune.stepsizeadapter.params = update_step(tune.stepsizeadapter.params, log(10.0 * tune.epsilon))
+        tune.stepsizeadapter.params =
+            update_step(tune.stepsizeadapter.params, log(10.0 * tune.epsilon))
     end
     tune.adapt = adapt
     v

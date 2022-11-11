@@ -86,12 +86,17 @@ function _gradlogpdf!(m::Model, x::AbstractArray, block::Integer, dtype::Symbol 
 
 end
 
-function logpdfgrad!(m::Model, x::R, t::Sampler{GS, X}) where {R, GS<:GradSampler{G}, X} where G
+function logpdfgrad!(
+    m::Model,
+    x::R,
+    t::Sampler{GS,X},
+) where {R,GS<:GradSampler{G},X} where {G}
     logpdfgrad!(G, m, x, t.params, t.targets, t.transform)
 end
 
 
-function logpdfgrad!(::Type{fwd},
+function logpdfgrad!(
+    ::Type{fwd},
     m::Model,
     x::AbstractVector{T},
     params::ElementOrVector{Symbol},
@@ -113,7 +118,8 @@ function logpdfgrad!(::Type{fwd},
     ll, grad
 end
 
-function logpdfgrad!(::Type{fin},
+function logpdfgrad!(
+    ::Type{fin},
     m::Model,
     x::AbstractVector{T},
     params::ElementOrVector{Symbol},
@@ -128,7 +134,8 @@ function logpdfgrad!(::Type{fin},
     f(x), FiniteDiff.finite_difference_gradient(f, x)
 end
 
-function logpdfgrad!(::Type{rev},
+function logpdfgrad!(
+    ::Type{rev},
     m::Model,
     x::AbstractVector{T},
     params::ElementOrVector{Symbol},
@@ -144,7 +151,8 @@ function logpdfgrad!(::Type{rev},
 end
 
 
-function logpdfgrad!(::Type{zyg},
+function logpdfgrad!(
+    ::Type{zyg},
     m::Model,
     x::AbstractVector{T},
     params::ElementOrVector{Symbol},
@@ -157,11 +165,12 @@ function logpdfgrad!(::Type{zyg},
         end
     end
     ll, grad = withgradient(lf, x)
-    
+
     ll, grad[1]
 end
 
-function logpdfgrad!(::Type{provided},
+function logpdfgrad!(
+    ::Type{provided},
     m::Model,
     x::T,
     params::ElementOrVector{Symbol},
@@ -181,7 +190,7 @@ function logpdfgrad!(::Type{provided},
 end
 
 
-function logpdf!(m::Model, x::A, t::T) where {A, T<:Sampler}
+function logpdf!(m::Model, x::A, t::T) where {A,T<:Sampler}
     logpdf!(m, x, t.params, t.targets, t.transform)
 end
 

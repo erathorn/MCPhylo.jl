@@ -6,15 +6,14 @@ mutable struct SliceSimplexTune{F<:Function} <: SamplerTune
     logf::F
     scale::Float64
 
-    SliceSimplexTune(x::Vector, logf::F; scale::Real = 1.0) where F =
-        new{F}(logf, scale)
+    SliceSimplexTune(x::Vector, logf::F; scale::Real = 1.0) where {F} = new{F}(logf, scale)
 end
 
 SliceSimplexTune(x::Vector; args...) = SliceSimplexTune(x, identity; args...)
 
 const SliceSimplexVariate = Sampler{SliceSimplexTune,T} where {T}
 
-function validate(v::Sampler{SliceSimplexTune{F}, T}) where {F, T}
+function validate(v::Sampler{SliceSimplexTune{F},T}) where {F,T}
     0 < v.tune.scale <= 1 || throw(ArgumentError("scale is not in (0, 1]"))
     validatesimplex(v)
 end
@@ -77,7 +76,7 @@ Parameters are assumed to be continuous and constrained to a simplex.
 
 Returns `v` updated with simulated values and associated tuning parameters.
 """
-function sample!(v::Sampler{SliceSimplexTune{F}, T}, logf::Function; args...) where {F, T}
+function sample!(v::Sampler{SliceSimplexTune{F},T}, logf::Function; args...) where {F,T}
 
 
     p0 = logf(v.value) + log(rand())
@@ -116,7 +115,7 @@ function shrinksimplex!(
     @inbounds @fastmath for i in findall(bc .< bx)
         inds = [1:(i-1); (i+1):size(vertices, 2)]
         vertices[:, inds] += bc[i] * (vertices[:, i] .- vertices[:, inds])
-        bc = vertices \ cc    
+        bc = vertices \ cc
     end
 
     vertices

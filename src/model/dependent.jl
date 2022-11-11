@@ -110,9 +110,9 @@ unlist(d::AbstractDependent, x::AbstractArray, transform::Bool = false) = vec(x)
 relist(d::AbstractDependent, x::AbstractArray, transform::Bool = false) =
     relistlength(d, x, transform)[1]
 
-logpdf(d::AbstractDependent, x=nothing , transform::Bool=false) = 0.0
+logpdf(d::AbstractDependent, x = nothing, transform::Bool = false) = 0.0
 
-gradlogpdf(d::AbstractDependent, x=nothing, transform::Bool=false) = 0.0
+gradlogpdf(d::AbstractDependent, x = nothing, transform::Bool = false) = 0.0
 
 
 
@@ -184,7 +184,7 @@ end
 
 ScalarLogical(x::T) where {T<:Real} = x
 
-function Logical(a::Logical, value::T)::Logical{T} where T
+function Logical(a::Logical, value::T)::Logical{T} where {T}
     Logical(value, a.symbol, a.monitor, a.eval, a.sources, a.targets)
 end
 
@@ -217,7 +217,7 @@ Returns the node with its values updated.
 
 * `m` : model containing the node.
 """
-function update!(l::T, m::Model) where T <: AbstractLogical   
+function update!(l::T, m::Model) where {T<:AbstractLogical}
     l1 = Logical(l.eval(m), l.symbol, l.monitor, l.eval, l.sources, l.targets)
     l1
 end
@@ -227,7 +227,11 @@ end
 
 relistlength(d::Logical{<:Real}, x::AbstractArray, transform::Bool = false) = (x[1], 1)
 
-function relistlength(d::Logical{<:A}, x::A, transform::Bool = false) where  A<:AbstractArray
+function relistlength(
+    d::Logical{<:A},
+    x::A,
+    transform::Bool = false,
+) where {A<:AbstractArray}
     n = length(d)
     value = reshape(x[1:n], size(d))
     (value, n)
@@ -276,7 +280,7 @@ function Stochastic(f::Function, monitor::Union{Bool,Vector{Int}} = true)
         src,
         Symbol[],
         NullUnivariateDistribution(),
-        -Inf
+        -Inf,
     )
     setmonitor!(s, monitor)
 end
@@ -297,7 +301,7 @@ function Stochastic(d::Integer, f::Function, monitor::Union{Bool,Vector{Int}} = 
         src,
         Symbol[],
         NullUnivariateDistribution(),
-        -Inf
+        -Inf,
     )
     setmonitor!(s, monitor)
 end
@@ -337,11 +341,35 @@ function Stochastic(
     setmonitor!(s, monitor)
 end
 
-function Stochastic(a::Stochastic{S, F, D}, value::T)::Stochastic{T, F, D} where {T<:Union{Real,AbstractArray{T1,N} where {T1<:Real,N},GeneralNode}, F<:Function, S<:Union{Real,AbstractArray{T1,N} where {T1<:Real,N},GeneralNode}, D<:DistributionStruct}
+function Stochastic(
+    a::Stochastic{S,F,D},
+    value::T,
+)::Stochastic{
+    T,
+    F,
+    D,
+} where {
+    T<:Union{Real,AbstractArray{T1,N} where {T1<:Real,N},GeneralNode},
+    F<:Function,
+    S<:Union{Real,AbstractArray{T1,N} where {T1<:Real,N},GeneralNode},
+    D<:DistributionStruct,
+}
     Stochastic(value, a.symbol, a.monitor, a.eval, a.sources, a.targets, a.distr, a.lpdf)
 end
 
-function Stochastic(a::Stochastic{T, F, S}, distr::D)::Stochastic{T, F, D} where {T<:Union{Real,AbstractArray{T1,N} where {T1<:Real,N},GeneralNode}, F<:Function, S<:DistributionStruct, D<:DistributionStruct}
+function Stochastic(
+    a::Stochastic{T,F,S},
+    distr::D,
+)::Stochastic{
+    T,
+    F,
+    D,
+} where {
+    T<:Union{Real,AbstractArray{T1,N} where {T1<:Real,N},GeneralNode},
+    F<:Function,
+    S<:DistributionStruct,
+    D<:DistributionStruct,
+}
     Stochastic(a.value, a.symbol, a.monitor, a.eval, a.sources, a.targets, distr, a.lpdf)
 end
 #################### Updating ####################
@@ -358,7 +386,7 @@ Returns the node with its assigned initial values.
 
 * `x` : values to assign to the node.
 """
-function setinits(s::Stochastic{T}, m::Model, x::R) where R <: Real where T
+function setinits(s::Stochastic{T}, m::Model, x::R) where {R<:Real} where {T}
     s.value = convert(Float64, x)
     s = Stochastic(s, s.eval(m))
     setmonitor!(s, s.monitor)
@@ -378,20 +406,26 @@ Returns the node with its assigned initial values.
 * `x` : values to assign to the node.
 """
 function setinits(s::Stochastic{<:DenseArray}, m::Model, x::DenseArray)
-  s.value = convert(typeof(s.value), copy(x))
-  s = Stochastic(s, s.eval(m))
-  if isa(s.distr, PhylogeneticDistribution)
-    distrdims = dims(s.distr)
-    for (ind, di) in enumerate(dims(s))
-      if ind != 2
-        di != distrdims[ind] && throw(DimensionMismatch("incompatible distribution for stochastic node"))
-      end
+    s.value = convert(typeof(s.value), copy(x))
+    s = Stochastic(s, s.eval(m))
+    if isa(s.distr, PhylogeneticDistribution)
+        distrdims = dims(s.distr)
+        for (ind, di) in enumerate(dims(s))
+            if ind != 2
+                di != distrdims[ind] && throw(
+                    DimensionMismatch("incompatible distribution for stochastic node"),
+                )
+            end
+        end
+    elseif !isa(s.distr, UnivariateDistribution) && dims(s) != dims(s.distr)
+        throw(
+            DimensionMismatch(
+                "incompatible distribution for stochastic node $(s.symbol). Expected $(dims(s.distr)), got$(dims(s)).",
+            ),
+        )
     end
-  elseif !isa(s.distr, UnivariateDistribution) && dims(s) != dims(s.distr)
-    throw(DimensionMismatch("incompatible distribution for stochastic node $(s.symbol). Expected $(dims(s.distr)), got$(dims(s))."))
-  end
-  setmonitor!(s, s.monitor)
-  return s
+    setmonitor!(s, s.monitor)
+    return s
 end
 
 
@@ -457,8 +491,7 @@ function relist(s::AbstractStochastic, x::AbstractArray, transform::Bool = false
     relistlength(s, x, transform)[1]
 end
 
-function relistlength(s::AbstractVariate,
-    x::AbstractArray, transform::Bool=false)
+function relistlength(s::AbstractVariate, x::AbstractArray, transform::Bool = false)
     value, n = relistlength_sub(s.distr, s, x)
     if transform
         u = invlink_sub(s.distr, value)
@@ -469,7 +502,7 @@ function relistlength(s::AbstractVariate,
     #(transform ? invlink_sub(s.distr, value) : value, n)
 end
 
-function relistlength(s::TreeVariate, x::N, transform::Bool=false) where N<:GeneralNode
+function relistlength(s::TreeVariate, x::N, transform::Bool = false) where {N<:GeneralNode}
     value, n = relistlength_sub(s.distr, s, x)
     if transform
         return invlink_sub(s.distr, value)
@@ -478,14 +511,13 @@ function relistlength(s::TreeVariate, x::N, transform::Bool=false) where N<:Gene
     end # if/else
 end # relistlength
 
-function logpdf(s::AbstractStochastic, transform::Bool=false)
+function logpdf(s::AbstractStochastic, transform::Bool = false)
     ll = logpdf(s, s.value, transform)
-    
     s.lpdf = isa(ll, Float64) ? ll : ll.value
     ll
 end
 
-function logpdf(s::TreeVariate, transform::Bool=false)
+function logpdf(s::TreeVariate, transform::Bool = false)
     ll = logpdf(s, s.value, transform)
     s.lpdf = ll
     ll
@@ -500,34 +532,40 @@ function conditional_likelihood(s::AbstractStochastic, x::AbstractArray, args...
 end
 
 
-function pseudologpdf(s::AbstractStochastic, x::Union{Real, AbstractArray},
-                      transform::Bool=false)
-  logpdf(s, x, transform)
+function pseudologpdf(
+    s::AbstractStochastic,
+    x::Union{Real,AbstractArray},
+    transform::Bool = false,
+)
+    logpdf(s, x, transform)
 end
 
 function rand(s::AbstractStochastic, x::Int64)
     rand(s.distr, x)
 end
 
-function gradlogpdf(s::Union{AbstractStochastic, AbstractLogical})
-  gradlogpdf(s, s.value)
+function gradlogpdf(s::Union{AbstractStochastic,AbstractLogical})
+    gradlogpdf(s, s.value)
 end
 
-function gradlogpdf(s::TreeVariate, x::N, transform::Bool=false
-                   ) where N <: GeneralNode
-   gradlogpdf(s.distr, x)
+function gradlogpdf(s::TreeVariate, x::N, transform::Bool = false) where {N<:GeneralNode}
+    gradlogpdf(s.distr, x)
 end
 
 function gradlogpdf(s::AbstractStochastic, x::AbstractArray)
     gradlogpdf_sub(s.distr, x)
 end
 
-function logpdf(s::AbstractStochastic, x::Union{AbstractArray, Real}, transform::Bool=false)
-  logpdf_sub(s.distr, x, transform)
+function logpdf(
+    s::AbstractStochastic,
+    x::Union{AbstractArray,Real},
+    transform::Bool = false,
+)
+    logpdf_sub(s.distr, x, transform)
 end
 
-function logpdf(s::TreeVariate, x::GeneralNode, transform::Bool=false)
-  logpdf_sub(s.distr, x, transform)
+function logpdf(s::TreeVariate, x::GeneralNode, transform::Bool = false)
+    logpdf_sub(s.distr, x, transform)
 end
 
 rand(s::AbstractStochastic) = rand_sub(s.distr, s.value)
