@@ -19,7 +19,7 @@ unlist_sub(d::UnivariateDistribution, X) = vec(X)
 
 unlist_sub(D::Array{UnivariateDistribution}, X) = vec(X)
 
-function unlist_sub(D::Array{MultivariateDistribution}, X::A) where A<:AbstractArray
+function unlist_sub(D::Array{MultivariateDistribution}, X::A) where {A<:AbstractArray}
     y = similar(X, length(X))
     offset = 0
     for sub in CartesianIndices(size(D))
@@ -127,7 +127,7 @@ function logpdf_sub(d::UnivariateDistribution, X::AbstractArray, transform::Bool
     @inbounds @fastmath for i in eachindex(X)
         lp += logpdf_sub(d, X[i], transform)
     end
-    
+
     lp
 end
 

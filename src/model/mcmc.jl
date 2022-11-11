@@ -14,10 +14,7 @@ This function simulates additional draws from a model.
 
 * `trees` indicates if the states of the model nodes describing tree structures should be stored as well.
 """
-function mcmc(
-    mc::ModelChains,
-    iters::Integer;
-)::ModelChains
+function mcmc(mc::ModelChains, iters::Integer;)::ModelChains
 
     thin = step(mc)
     last(mc) == div(mc.model.iter, thin) * thin ||
@@ -77,8 +74,8 @@ Simulate MCMC draws from the model `m`.
 """
 function mcmc(
     m::Model,
-    inputs::Dict{Symbol, Any},
-    inits::Vector{Dict{Symbol, Any}},
+    inputs::Dict{Symbol,Any},
+    inits::Vector{Dict{Symbol,Any}},
     iters::Integer;
     burnin::Integer = 0,
     thin::Integer = 1,
@@ -87,7 +84,7 @@ function mcmc(
     trees::Bool = false,
     params::SimulationParameters = SimulationParameters(),
 )::ModelChains
-    
+
     burnin = burnin == 0 ? params.burnin : burnin
     thin = thin == 1 ? params.thin : thin
     chains = chains == 1 ? params.chains : chains
@@ -103,7 +100,7 @@ function mcmc(
         params.freq,
         params.min_splits,
     )
-    
+
     params.asdsf &&
         !params.trees &&
         throw(ArgumentError("ASDSF can not be calculated without trees"))
@@ -114,15 +111,15 @@ function mcmc(
         throw(ArgumentError("burnin is greater than or equal to iters"))
     length(inits) >= params.chains ||
         throw(ArgumentError("fewer initial values than chains"))
-    
+
     mm::Model = deepcopy(m)
-    
+
     setinputs!(mm, inputs)
-    
+
     setinits!(mm, inits[1:params.chains])
-    
+
     mm.burnin = params.burnin
-    
+
     mcmc_master!(mm, 1:iters, params)
 end
 
@@ -155,7 +152,7 @@ function mcmc_master!(
 
     states::Vector{ModelState} = m.states
     m.states = ModelState[]
-    
+
 
     lsts =
         [Any[m, states[k], window, burnin, sp.thin, sp.trees, sp.verbose] for k in chains]
@@ -165,7 +162,7 @@ function mcmc_master!(
         end
     end
 
-    
+
     results::Vector{Tuple{Chains,Model,ModelState}},
     stats::Array{Float64,2},
     statnames::Vector{AbstractString},
@@ -204,13 +201,13 @@ function mcmc_worker!(
     channel::Tuple{RemoteChannel,Int} = args
     llname::AbstractString = "likelihood"
     m.iter = first(window) - 1
-    
+
     relist!(m, state.value)
-    
+
     initialize_samplers!(m)
-    
+
     settune!(m, state.tune)
-    
+
     pnames = vcat(names(m, true), llname)
     treenodes = Symbol[]
     for i in m.nodes
@@ -218,7 +215,7 @@ function mcmc_worker!(
             push!(treenodes, i[1])
         end
     end
-    
+
     sim = Chains(
         last(window),
         length(pnames),
@@ -228,14 +225,14 @@ function mcmc_worker!(
         ntrees = length(treenodes),
         tree_names = treenodes,
     )
-    
+
     for i in window
 
         sample!(m)
-        
+
         track(i, burnin, thin, sim, m, store_trees, treenodes)
-        asdsf_track(rc,m, i, burnin, ASDSF_step, treenodes)
-        
+        asdsf_track(rc, m, i, burnin, ASDSF_step, treenodes)
+
         # send update to RemoteChannel --> while loop in logpdf function updates the ProgressMeter of this chain
         put!(channel[1], channel[2])
     end # for
@@ -248,7 +245,14 @@ function asdsf_track(rc::Nothing, args...)::Nothing
     nothing
 end
 
-function asdsf_track(rc::RemoteChannel,m::Model, i::Int, burnin::Int, ASDSF_step::Int, treenodes::Vector{Symbol})::Nothing
+function asdsf_track(
+    rc::RemoteChannel,
+    m::Model,
+    i::Int,
+    burnin::Int,
+    ASDSF_step::Int,
+    treenodes::Vector{Symbol},
+)::Nothing
     if i > burnin
         if !isnothing(rc) && (i - burnin) % ASDSF_step == 0
             trees::Vector{String} = []
@@ -278,11 +282,11 @@ function track(
     treenodes::Vector{Symbol},
 )::Nothing
     if i > burnin && (i - burnin) % thin == 0
-        sim.value[iters2inds(sim, i-burnin), 1:end-1, 1] = unlist(m, true)
-        sim.value[iters2inds(sim, i-burnin), end, 1] = final_likelihood(m)
+        sim.value[iters2inds(sim, i - burnin), 1:end-1, 1] = unlist(m, true)
+        sim.value[iters2inds(sim, i - burnin), end, 1] = final_likelihood(m)
         if store_trees
             for (ind, tree_node) in enumerate(treenodes)
-                sim.trees[iters2inds(sim, i-burnin), ind, 1] = newick(m[tree_node].value)
+                sim.trees[iters2inds(sim, i - burnin), ind, 1] = newick(m[tree_node].value)
             end # for
         end # if
     end # if

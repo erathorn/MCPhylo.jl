@@ -27,7 +27,9 @@ function ParseNexus(filename::String)
     ntax, nchar, gap, missing_representation, symbols = extract_meta_info(content)
     langs, df = create_nexusdf(content)
 
-    out_symbols = symbols == "NOSYMBOLS" ? get_alphabet(df, gap, missing_representation) : [string(s) for s in symbols]
+    out_symbols =
+        symbols == "NOSYMBOLS" ? get_alphabet(df, gap, missing_representation) :
+        [string(s) for s in symbols]
 
     return ntax, nchar, gap, missing_representation, out_symbols, df, langs
 end # function ParseNexus
@@ -58,7 +60,7 @@ function extract_meta_info(content::Array{String})
     ntax::Int64 = 0
     nchar::Int64 = 0
     gap::String = "-"
-    symbols::String= "NOSYMBOLS"
+    symbols::String = "NOSYMBOLS"
     missing_representation::String = "?"
     while true
         line = popfirst!(content)
@@ -102,7 +104,7 @@ This function creates a DataFrame of the actual data. Used in ParseNexus().
 Returns DataFrame of language names and data derived from NEXUS file.
 * `filecontent` : Array of Strings; Strings are read from NEXUS file in ParseNexus().
 """
-function create_nexusdf(filecontent::Array{String})::Tuple{Array{String}, Array{Char}}
+function create_nexusdf(filecontent::Array{String})::Tuple{Array{String},Array{Char}}
     #df = DataFrame(Language=String[], Data=String[])
     languages = String[]
     data = Char[]
@@ -115,14 +117,14 @@ function create_nexusdf(filecontent::Array{String})::Tuple{Array{String}, Array{
         elseif line[end] == ';'
             break
         else
-            lang, raw = split(line, limit=2)
-            push!(languages,lang)
+            lang, raw = split(line, limit = 2)
+            push!(languages, lang)
             raw = join(strip(raw))
             ntax = length(raw)
-            data = append!(data,raw)
+            data = append!(data, raw)
             nlangs += 1
 
         end # if
     end # while
-    return languages, permutedims(reshape(data, (ntax,nlangs)))
+    return languages, permutedims(reshape(data, (ntax, nlangs)))
 end # function create_nexusdf

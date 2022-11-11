@@ -13,18 +13,19 @@ function FelsensteinFunction(
     pre_order_partial::Array{F,4} = similar(data)
 
     gradi = Array{F,2}(undef, (size(data, 2), size(data, 3)))
-    tmp = Array{F, 2}(undef, (size(data, 1), size(data, 2)))
+    tmp = Array{F,2}(undef, (size(data, 1), size(data, 2)))
 
-    @turbo check_empty=false for k in axes(pre_order_partial, 3),
+    @turbo check_empty = false for k in axes(pre_order_partial, 3),
         j in axes(pre_order_partial, 2),
         i in axes(pre_order_partial, 1)
-        pre_order_partial[i, j, k,  tree_postorder[end].num] = pi_[i]
+
+        pre_order_partial[i, j, k, tree_postorder[end].num] = pi_[i]
     end
 
     for node in reverse(tree_postorder)[2:end]
         mother = get_mother(node)
 
-        @tturbo check_empty=false for r in CartesianIndices((
+        @tturbo check_empty = false for r in CartesianIndices((
             axes(pre_order_partial, 1),
             axes(pre_order_partial, 2),
             axes(pre_order_partial, 3),
@@ -45,9 +46,13 @@ function FelsensteinFunction(
             end
             gradi[n, r] = g
         end
-        
+
         @inbounds for r in axes(pre_order_partial, 3)
-            mygemmturbo!(tmp, transpose(trmat[:, :, r, node.num]), pre_order_partial[:, :, r, node.num])
+            mygemmturbo!(
+                tmp,
+                transpose(trmat[:, :, r, node.num]),
+                pre_order_partial[:, :, r, node.num],
+            )
             @turbo pre_order_partial[:, :, r, node.num] .= tmp
         end
 
@@ -84,7 +89,7 @@ function FelsensteinFunction(
     ll = zero(R)
 
     @views @inbounds for node_ind in eachindex(tree_postorder[1:end-1])
-        
+
         c_node = tree_postorder[node_ind]
         if c_node.nchild > 0
             comb_sum_product_loop!(

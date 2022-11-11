@@ -59,11 +59,11 @@ function Base.setindex!(m::Model, value, nodekey::Symbol)
     m.nodes[nodekey] = set_node(node, value)
 end
 
-function set_node(node::Logical, value::A)::Logical{A} where A
+function set_node(node::Logical, value::A)::Logical{A} where {A}
     Logical(node, value)
 end
 
-function set_node(node::Stochastic, value::A)::Stochastic{A} where A
+function set_node(node::Stochastic, value::A)::Stochastic{A} where {A}
     Stochastic(node, value)
 end
 

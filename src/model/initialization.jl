@@ -89,7 +89,10 @@ end
 function initialize_samplers!(m::Model)
     sam = Sampler[]
     for sampler in m.samplers
-        push!(sam, Sampler(unlist(m, sampler.params, transform=sampler.transform), sampler))
+        push!(
+            sam,
+            Sampler(unlist(m, sampler.params, transform = sampler.transform), sampler),
+        )
     end
     m.samplers = sam
     nothing

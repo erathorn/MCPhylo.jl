@@ -149,7 +149,7 @@ function logpdf(
     x::AbstractArray{T},
     block::Integer = 0,
     transform::Bool = false,
-) where T 
+) where {T}
     x0 = unlist(m, block)
     lp = logpdf!(m, x, block, transform)
     relist!(m, x0, block)
@@ -254,12 +254,12 @@ function logpdf!(
     params::Array{Symbol},
     targets::Array{Symbol},
     transform::Bool = false,
-) where T
+) where {T}
     m[params] = relist(m, x, params, transform)
-    
+
     df = [i for i in params if i ∉ targets]
     lp = logpdf(m, df, transform)
-    
+
     isnan(lp) && return -Inf
 
     for key in targets
@@ -284,7 +284,7 @@ function mylogpdf!(
     targets = keys(m, :target, block)
     diff = setdiff(params, targets)
     myfun(y) = begin
-        m[params] = relist(m, y, params, transform)        
+        m[params] = relist(m, y, params, transform)
         lp = logpdf(m, diff, transform)
         for key in targets
             isfinite(lp) || break
@@ -334,15 +334,17 @@ function sample!(m::Model)
     m
 end
 
-function sample!(s::Sampler{T, R}, m::Model) where {T<:SamplerTune, R}
-    s.value = unlist(m, s.params, transform=s.transform)
-    lpdf(x) = let m = m, s = s
-        s.tune.logf(m, x, s)#p, ta, tr)
-    end
-    grlpdf(x) = let m = m, s=s#p = s.params, ta = s.targets, tr = s.transform
-        s.tune.logfgrad(m, x, s)#p, ta, tr)
-    end
-    sample!(s, lpdf, grlpdf=grlpdf, adapt=m.iter < m.burnin, gen=m.iter, model=m)
+function sample!(s::Sampler{T,R}, m::Model) where {T<:SamplerTune,R}
+    s.value = unlist(m, s.params, transform = s.transform)
+    lpdf(x) =
+        let m = m, s = s
+            s.tune.logf(m, x, s)
+        end
+    grlpdf(x) =
+        let m = m, s = s
+            s.tune.logfgrad(m, x, s)
+        end
+    sample!(s, lpdf, grlpdf = grlpdf, adapt = m.iter < m.burnin, gen = m.iter, model = m)
     relist(m, s.value, s.params, s.transform)
 end
 
@@ -355,8 +357,8 @@ function pseudologpdf!(
     targets::Vector{Symbol},
     transform::Bool = false,
 ) where {T<:Real}
-    
-    
+
+
     m[params] = relist(m, x, params, transform)
     lp = 0.0
     for key in targets
@@ -392,7 +394,7 @@ end
     unlist(m::Model, block::Integer=0, transform::Bool=false)
 """
 function unlist(m::Model, block::Integer = 0; transform::Bool = false)
-    unlist(m, keys(m, :block, block), transform=transform)
+    unlist(m, keys(m, :block, block), transform = transform)
 end
 
 """
@@ -402,8 +404,7 @@ function unlist(m::Model, monitoronly::Bool)
     f = let m = m, monitoronly = monitoronly
         key -> begin
             node = m[key]
-            lvalue =
-                isa(node, TreeVariate) ? unlist_tree(node) : unlist(node)
+            lvalue = isa(node, TreeVariate) ? unlist_tree(node) : unlist(node)
             monitoronly ? lvalue[node.monitor] : lvalue
         end
     end
