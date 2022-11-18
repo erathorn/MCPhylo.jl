@@ -13,9 +13,9 @@ mutable struct RWMTune{F<:Function,T<:Union{Float64,Vector{Float64}}, D<:SymDist
         scale::Real,
         logf::F,
         eligible::Vector{Symbol};
-        proposal::SymDistributionType = Normal,
-    ) where {F}
-        new{F,Float64}(logf, Float64(scale), eligible, proposal)
+        proposal::D = Normal,
+    ) where {F, D<:SymDistributionType}
+        new{F,Float64, D}(logf, Float64(scale), eligible, proposal)
     end
 
     function RWMTune(
@@ -23,19 +23,19 @@ mutable struct RWMTune{F<:Function,T<:Union{Float64,Vector{Float64}}, D<:SymDist
         scale::Vector{T},
         logf::F,
         eligible::Vector{Symbol};
-        proposal::SymDistributionType = Normal,
-    ) where {T<:Real,F}
-        new{F,Vector{Float64}}(logf, convert(Vector{Float64}, scale), eligible, proposal)
+        proposal::D = Normal,
+    ) where {T<:Real,F, D<:SymDistributionType}
+        new{F,Vector{Float64}, D}(logf, convert(Vector{Float64}, scale), eligible, proposal)
     end
 end
 
-const RWMVariate = Sampler{RWMTune{F,S},T} where {T,F,S}
+const RWMVariate = Sampler{RWMTune{F,S, D},T} where {T,F,S, D}
 
-validate(v::Sampler{RWMTune{F,S},T}) where {F,S,T} = validate(v, v.tune.scale)
+validate(v::Sampler{RWMTune{F,S, D},T}) where {F,S,T,D} = validate(v, v.tune.scale)
 
-validate(v::Sampler{RWMTune{F,S},T}, scale::Float64) where {F,S,T} = v
+validate(v::Sampler{RWMTune{F,S, D},T}, scale::Float64) where {F,S,T, D} = v
 
-function validate(v::Sampler{RWMTune{F,S},T}, scale::Vector) where {F,S,T}
+function validate(v::Sampler{RWMTune{F,S, D},T}, scale::Vector) where {F,S,T, D}
     n = length(v)
     length(scale) == n ||
         throw(ArgumentError("length(scale) differs from variate length $n"))
