@@ -2,11 +2,11 @@
 
 #################### Types and Constructors ####################
 
-mutable struct RWMTune{F<:Function,T<:Union{Float64,Vector{Float64}}} <: SamplerTune
+mutable struct RWMTune{F<:Function,T<:Union{Float64,Vector{Float64}}, D<:SymDistributionType} <: SamplerTune
     logf::F
     scale::T
     eligible::Vector{Symbol}
-    proposal::SymDistributionType
+    proposal::D
 
     function RWMTune(
         x::Vector,
@@ -62,9 +62,9 @@ Returns a `Sampler{RWMTune}` type object.
 function RWM(
     params::ElementOrVector{Symbol},
     scale::ElementOrVector{T};
-    args...,
+    proposal::SymDistributionType=Normal
 ) where {T<:Real}
-    tune = RWMTune(Float64[], scale, logpdf!, Symbol[])
+    tune = RWMTune(Float64[], scale, logpdf!, Symbol[], proposal=proposal)
     Sampler(params, tune, Symbol[], true)
 end
 
@@ -108,10 +108,10 @@ Propose a new tree by randomly performing a move from the ones specified in `mov
 Returns `v` updated with simulated values and associated tuning parameters.
 """
 function sample!(
-    v::Sampler{RWMTune{F,S},Vector{T}},
+    v::Sampler{RWMTune{F,S, D},Vector{T}},
     logf::Function;
     kwargs...,
-) where {T<:GeneralNode,F,S}
+) where {T<:GeneralNode,F,S, D}
     tree = v[1]
     tc = deepcopy(tree)
 
@@ -146,11 +146,24 @@ are assumed to be continuous and unconstrained.
 Returns `v` updated with simulated values and associated tuning parameters.
 """
 function sample!(
-    v::Sampler{RWMTune{F,S},T},
+    v::Sampler{RWMTune{F,S, D},T},
     logf::Function;
     kwargs...,
-) where {T<:AbstractArray{<:Real},F,S}
+) where {T<:AbstractArray{<:Real},F,S, D<:ContinuousDistribution}
     x = v + v.tune.scale .* rand(v.tune.proposal(0.0, 1.0), length(v))
+    if rand() < exp(logf(x) - logf(v.value))
+        v[:] = x
+    end
+    v
+end
+
+
+function sample!(
+    v::Sampler{RWMTune{F,S, D},T},
+    logf::Function;
+    kwargs...,
+) where {T<:AbstractArray{<:Real},F,S, D<:DiscreteDistribution}
+    x = v + rand(v.tune.proposal, length(v))
     if rand() < exp(logf(x) - logf(v.value))
         v[:] = x
     end

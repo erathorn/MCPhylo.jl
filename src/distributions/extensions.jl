@@ -28,7 +28,6 @@ struct SymBinary{R<:Real} <: DiscreteUnivariateDistribution
 
     SymBinary() = new{Float64}(0.5)
     SymBinary(w::F) where {F<:Real} = new{F}(w)
-    SymBinary(x, y) = SymBinary()
 end
 
 function rand(r::R, d::SymBinary{F}) where {R<:AbstractRNG,F<:Real}
