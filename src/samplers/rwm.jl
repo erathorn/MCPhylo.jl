@@ -14,8 +14,8 @@ mutable struct RWMTune{F<:Function,T<:Union{Float64,Vector{Float64}}, D<:SymDist
         logf::F,
         eligible::Vector{Symbol};
         proposal::D = Normal,
-    ) where {F, D<:SymDistributionType}
-        new{F,Float64, D}(logf, Float64(scale), eligible, proposal)
+    ) where {F, D}
+        new{F,Float64, Type{proposal}}(logf, Float64(scale), eligible, proposal)
     end
 
     function RWMTune(
@@ -24,18 +24,18 @@ mutable struct RWMTune{F<:Function,T<:Union{Float64,Vector{Float64}}, D<:SymDist
         logf::F,
         eligible::Vector{Symbol};
         proposal::D = Normal,
-    ) where {T<:Real,F, D<:SymDistributionType}
-        new{F,Vector{Float64}, D}(logf, convert(Vector{Float64}, scale), eligible, proposal)
+    ) where {T<:Real,F, D}
+        new{F,Vector{Float64}, Type{proposal}}(logf, convert(Vector{Float64}, scale), eligible, proposal)
     end
 end
 
-const RWMVariate = Sampler{RWMTune{F,S, D},T} where {T,F,S, D}
+const RWMVariate = Sampler{RWMTune{F,S,D},T} where {T,F,S,D}
 
-validate(v::Sampler{RWMTune{F,S, D},T}) where {F,S,T,D} = validate(v, v.tune.scale)
+validate(v::Sampler{RWMTune{F,S,D},T}) where {F,S,T,D} = validate(v, v.tune.scale)
 
-validate(v::Sampler{RWMTune{F,S, D},T}, scale::Float64) where {F,S,T, D} = v
+validate(v::Sampler{RWMTune{F,S,D},T}, scale::Float64) where {F,S,T,D} = v
 
-function validate(v::Sampler{RWMTune{F,S, D},T}, scale::Vector) where {F,S,T, D}
+function validate(v::Sampler{RWMTune{F,S,D},T}, scale::Vector) where {F,S,T,D}
     n = length(v)
     length(scale) == n ||
         throw(ArgumentError("length(scale) differs from variate length $n"))
@@ -62,9 +62,11 @@ Returns a `Sampler{RWMTune}` type object.
 function RWM(
     params::ElementOrVector{Symbol},
     scale::ElementOrVector{T};
-    proposal::SymDistributionType=Normal
+    proposal = Normal,
+    args...,
 ) where {T<:Real}
-    tune = RWMTune(Float64[], scale, logpdf!, Symbol[], proposal=proposal)
+    prop_dist =  proposal
+    tune = RWMTune(Float64[], scale, logpdf!, Symbol[], proposal=prop_dist)
     Sampler(params, tune, Symbol[], true)
 end
 
@@ -108,10 +110,10 @@ Propose a new tree by randomly performing a move from the ones specified in `mov
 Returns `v` updated with simulated values and associated tuning parameters.
 """
 function sample!(
-    v::Sampler{RWMTune{F,S, D},Vector{T}},
+    v::Sampler{RWMTune{F,S,D},Vector{T}},
     logf::Function;
     kwargs...,
-) where {T<:GeneralNode,F,S, D}
+) where {T<:GeneralNode,F,S,D}
     tree = v[1]
     tc = deepcopy(tree)
 
@@ -146,26 +148,21 @@ are assumed to be continuous and unconstrained.
 Returns `v` updated with simulated values and associated tuning parameters.
 """
 function sample!(
-    v::Sampler{RWMTune{F,S, D},T},
+    v::Sampler{RWMTune{F,S,D},T},
     logf::Function;
     kwargs...,
-) where {T<:AbstractArray{<:Real},F,S, D<:ContinuousDistribution}
-    x = v + v.tune.scale .* rand(v.tune.proposal(0.0, 1.0), length(v))
+) where {T<:AbstractArray{<:Real},F,S,D}
+    x = v + propose(v.tune.proposal(), length(v), v.tune.scale)
     if rand() < exp(logf(x) - logf(v.value))
         v[:] = x
     end
     v
 end
 
+function propose(probDist::D, n::Int, scale::ElementOrVector{Float64}) where D<:ContinuousDistribution
+    scale .* rand(probDist, n)
+end
 
-function sample!(
-    v::Sampler{RWMTune{F,S, D},T},
-    logf::Function;
-    kwargs...,
-) where {T<:AbstractArray{<:Real},F,S, D<:DiscreteDistribution}
-    x = v + rand(v.tune.proposal, length(v))
-    if rand() < exp(logf(x) - logf(v.value))
-        v[:] = x
-    end
-    v
+function propose(probDist::D, n::Int, scale::ElementOrVector{Float64}) where D<:DiscreteDistribution
+    rand(probDist, n)
 end
