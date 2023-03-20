@@ -120,7 +120,7 @@ function sample!(
         )
     end
     setadapt!(v, adapt)
-    tune.stepsizeadapter.params.delta = 2*tune.epsilon
+    tune.delta = 2*tune.epsilon
     if tune.adapt
         adapter.m += 1
 
