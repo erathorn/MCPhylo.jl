@@ -42,7 +42,7 @@ function Chains(
     thin::Integer = 1,
     names::Vector{W} = AbstractString[],
     chains::Vector{V} = Int[],
-) where {T<:Real,U<:AbstractString,V<:Integer,W<:AbstractString}
+) where {T<:Real,V<:Integer,W<:AbstractString}
     Chains(
         value,
         Array{String,3}(undef, size(value)),

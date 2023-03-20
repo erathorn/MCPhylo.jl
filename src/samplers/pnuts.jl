@@ -120,7 +120,7 @@ function sample!(
         )
     end
     setadapt!(v, adapt)
-
+    tune.stepsizeadapter.params.delta = 2*tune.epsilon
     if tune.adapt
         adapter.m += 1
 
@@ -145,18 +145,13 @@ end
 function dual_averaging(adapter::NUTSstepadapter, delta::F)::F where {F<:Real}
     const_params = adapter.params
 
-    HT = (const_params.δ - adapter.metro_acc_prob) - (const_params.δ_NNI - adapter.NNI_stat)
+    HT = (const_params.δ - adapter.metro_acc_prob) #- (const_params.δ_NNI - adapter.NNI_stat)
 
     η = 1.0 / (adapter.m + const_params.t0)
 
 
     adapter.s_bar = (1.0 - η) * adapter.s_bar + η * HT
     x = const_params.μ - adapter.s_bar * sqrt(adapter.m) / const_params.γ
-    # if x < log(0.5 * delta)
-    #     adapter.s_bar = ((const_params.μ - log(0.5*delta)) * const_params.γ)/sqrt(adapter.m)
-    #     x = log(0.5*delta)
-    # end
-
 
     x_η = adapter.m^-const_params.κ
     adapter.x_bar = (1.0 - x_η) * adapter.x_bar + x_η * x
@@ -438,7 +433,7 @@ function nouturn(
     delta::Float64,
 )::Bool where {T<:GeneralNode}
     _, curr_h = BHV_bounds(xminus.x, xplus.x)
-    #curr_h = proj_euc(xminus, xplus)
+    
     if !xminus.extended && !xplus.extended
         temp =
             Threads.@spawn refraction!(xminus, xminus.pm * epsilon, logfgrad, logfun, delta)
