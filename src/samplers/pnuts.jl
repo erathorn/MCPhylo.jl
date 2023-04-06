@@ -194,11 +194,11 @@ function nuts_sub!(
     logf, grad = logfgrad(x)
     grad .*= scale_fac.(blv, delta)
 
-    xminus = Tree_HMC_State(deepcopy(x), r[:], grad[:], logf, -1)
-    xplus = Tree_HMC_State(deepcopy(x), r[:], grad[:], logf, 1)
-    x_prime = Tree_HMC_State(deepcopy(x), r[:], grad[:], logf, 1)
+    xminus = Extendend_Tree_HMC_State(deepcopy(x), r[:], grad[:], logf, -1)
+    xplus = Extendend_Tree_HMC_State(deepcopy(x), r[:], grad[:], logf, -1)
+    x_prime = Tree_HMC_State(deepcopy(x), r[:], grad[:], logf)
     lu = log(rand())
-    logp0 = hamiltonian(xminus)
+    logp0 = -hamiltonian(xminus)
 
     nni = 0
     tnni = 0
@@ -221,7 +221,7 @@ function nuts_sub!(
 
             xprime, _, xminus, nprime, sprime, log_sum_weight_subtree = buildtree(
                 xminus,
-                xminus.pm,
+                xminus.direction,
                 j,
                 epsilon,
                 logfgrad,
@@ -236,7 +236,7 @@ function nuts_sub!(
         else
             xprime, xplus, _, nprime, sprime, log_sum_weight_subtree = buildtree(
                 xplus,
-                xplus.pm,
+                xplus.direction,
                 j,
                 epsilon,
                 logfgrad,
@@ -298,7 +298,7 @@ end
 
 
 function buildtree(
-    x::Tree_HMC_State{T},
+    x::Extendend_Tree_HMC_State,
     pm::Int64,
     j::Integer,
     epsilon::Float64,
@@ -309,36 +309,29 @@ function buildtree(
     delta::Float64,
     meta::NUTSMeta,
     log_sum_weight_subtree::Float64,
-)::Tuple{
-    Tree_HMC_State{T},
-    Tree_HMC_State{T},
-    Tree_HMC_State{T},
-    Int,
-    Bool,
-    Float64,
-} where {T<:GeneralNode,R<:Real}
+) where {R<:Real}
 
 
     if j == 0
 
         nni = 0
         att_nni = 0
-        if !x.extended
-            nni, att_nni = refraction!(x, pm * epsilon, logfgrad, logfun, delta)
+        if !x.extended[1]
+            nni, att_nni = refraction!(x.curr_state, pm * epsilon, logfgrad, logfun, delta)
         else
-            nni = x.nni
-            att_nni = x.att_nni
-            x.extended = false
+            unextend!(x)
+            nni = x.curr_state.nni
+            att_nni = x.curr_state.att_nni
         end
 
-        logpprime = hamiltonian(x)
+        logpprime = -hamiltonian(x)
 
-        log_sum_weight_subtree = logaddexp(log_sum_weight_subtree, logpprime - logp0)
+        log_sum_weight_subtree = logaddexp(log_sum_weight_subtree, logp0-logpprime)
 
         meta.att_nni += att_nni
-        sprime = logp0 < logpprime + 1000.0
+        sprime = lu + (logpprime - logp0) < 1000.0
         meta.nni += nni
-        alphaprime = min(1.0, exp(logpprime - logp0))
+        alphaprime = min(1.0, exp(logp0-logpprime))
         alphaprime = isnan(alphaprime) ? -Inf : alphaprime
         meta.alpha += alphaprime
         nprime = 0
@@ -348,7 +341,7 @@ function buildtree(
         end
         meta.nalpha += 1
         meta.l_NNI += att_nni
-        xprime = transfer(x)
+        xprime = transfer(x.curr_state)
         xplus = transfer(x)
         xminus = transfer(x)
         return xprime, xplus, xminus, nprime, sprime, log_sum_weight_subtree
@@ -406,10 +399,12 @@ function buildtree(
 
             if log_sum_weight_final > ls_final
                 transfer!(xprime, worker_final)
+                #nni += meta.nni
             else
                 accprob = exp(log_sum_weight_final - ls_final)
                 if rand() < accprob
                     transfer!(xprime, worker_final)
+                    #nni += meta.nni
                 end
             end
             nprime += nprime2
@@ -425,38 +420,32 @@ end
 
 
 function nouturn(
-    xminus::Tree_HMC_State{T},
-    xplus::Tree_HMC_State{T},
+    xminus::Extendend_Tree_HMC_State,
+    xplus::Extendend_Tree_HMC_State,
     epsilon::Float64,
     logfgrad::Function,
     logfun::Function,
     delta::Float64,
-)::Bool where {T<:GeneralNode}
-    _, curr_h = BHV_bounds(xminus.x, xplus.x)
+)::Bool
+    _, curr_h = BHV_bounds(xminus.curr_state.x, xplus.curr_state.x)
     
-    if !xminus.extended && !xplus.extended
-        temp =
-            Threads.@spawn refraction!(xminus, xminus.pm * epsilon, logfgrad, logfun, delta)
-        nni_p, att_nni_p = refraction!(xplus, xplus.pm * epsilon, logfgrad, logfun, delta)
-        nni_m, att_nni_m = fetch(temp)
-        xminus.extended = true
-        xplus.extended = true
-        xminus.nni = nni_m
-        xplus.nni = nni_p
-        xminus.att_nni = att_nni_m
-        xplus.att_nni = att_nni_p
-    elseif !xminus.extended && xplus.extended
-        nni_m, att_nni_m = refraction!(xminus, xminus.pm * epsilon, logfgrad, logfun, delta)
-        xminus.extended = true
-        xminus.nni = nni_m
-        xminus.att_nni = att_nni_m
-    elseif xminus.extended && !xplus.extended
-        nni_p, att_nni_p = refraction!(xplus, xplus.pm * epsilon, logfgrad, logfun, delta)
-        xplus.extended = true
-        xplus.nni = nni_p
-        xplus.att_nni = att_nni_p
+
+    if !xminus.extended[1]
+        xmt = deepcopy(xminus.curr_state)
+        nni, attnni = refraction!(xmt, xminus.direction * epsilon, logfgrad, logfun, delta)
+        xmt.nni = nni
+        xmt.att_nni = attnni
+        extend!(xminus, xmt)
     end
-    curr_t_l, _ = BHV_bounds(xminus.x, xplus.x)
+    if !xplus.extended[1]
+        xpt = deepcopy(xplus.curr_state)
+        nni, attnni = refraction!(xpt, xplus.direction * epsilon, logfgrad, logfun, delta)
+        xpt.nni = nni
+        xpt.att_nni = attnni
+        extend!(xplus, xpt)
+    end
+    
+    curr_t_l, _ = BHV_bounds(xminus.ext_state.x, xplus.ext_state.x)
     #curr_t_l = proj_euc(xminus, xplus)
     return curr_h <= curr_t_l
 end

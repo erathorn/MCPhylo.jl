@@ -14,31 +14,35 @@ function nutsepsilon(
     log_target = log(target)
 
     # molifier is necessary!
-    blv = get_branchlength_vector(x)
-    set_branchlength_vector!(x, molifier.(blv, delta))
+    #blv = get_branchlength_vector(x)
+    #set_branchlength_vector!(x, molifier.(blv, delta))
 
     logf0, gr = logfgrad(x)
 
     r0 = randn(n)
-    x0 = Tree_HMC_State(deepcopy(x), r0[:], gr[:], logf0, 1)
+    x0 = Tree_HMC_State(deepcopy(x), r0[:], gr[:], logf0)
     x1 = transfer(x0)
-    H0 = hamiltonian(x0)
+    H0 = -hamiltonian(x0)
     epsilon = 1.0
+    delta = 2*epsilon
     _ = refraction!(x0, epsilon, logfgrad, logf, delta)
-    Hp = hamiltonian(x0)
+    Hp = -hamiltonian(x0)
 
-    prob = Hp - H0
+    prob = H0 - Hp
     direction = prob > log_target ? 1 : -1
 
     while direction == 1 ? prob > log_target : prob < log_target
         epsilon = direction == 1 ? 2 * epsilon : 0.5 * epsilon
-
+        
+        x1.r = randn(n)
+        H0 = -hamiltonian(x1)
         x2 = transfer(x1)
+        delta = 2*epsilon
         _ = refraction!(x2, epsilon, logfgrad, logf, delta)
 
-        Hp = hamiltonian(x2)
+        Hp = -hamiltonian(x2)
 
-        prob = Hp - H0
+        prob = H0 - Hp
     end
 
     epsilon

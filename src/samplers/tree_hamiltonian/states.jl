@@ -10,17 +10,31 @@ mutable struct Tree_HMC_State{T<:GeneralNode} <: HMC_State
     extended::Bool
     nni::Int
     att_nni::Int
-    pm::Int
 end
+
+
 
 function Tree_HMC_State(
     tree::T,
     r::Vector{Float64},
     g::Vector{Float64},
     lf::Float64,
-    pm::Int,
 )::Tree_HMC_State{T} where {T<:GeneralNode}
-    Tree_HMC_State{T}(tree, r, g, lf, false, 0, 0, pm)
+    Tree_HMC_State{T}(tree, r, g, lf, false, 0, 0)
+end
+
+
+struct Extendend_Tree_HMC_State{H<:Tree_HMC_State}
+    curr_state::H
+    ext_state::H
+    extended::Vector{Bool}
+    direction::Int
+end
+
+function Extendend_Tree_HMC_State(tree, r, g, lf, direction)
+    t = Tree_HMC_State(deepcopy(tree), deepcopy(r), deepcopy(g), lf)
+    t2 = Tree_HMC_State(deepcopy(tree), deepcopy(r), deepcopy(g), lf)
+    Extendend_Tree_HMC_State(t, t2, [false], direction)
 end
 
 
@@ -32,7 +46,7 @@ mutable struct Array_HMC_State{T<:Array{<:Real}} <: HMC_State
 end
 
 function transfer(s1::T)::T where {T<:HMC_State}
-    T(deepcopy(s1.x), s1.r[:], s1.g[:], s1.lf, s1.extended, s1.nni, s1.att_nni, s1.pm)
+    T(deepcopy(s1.x), s1.r[:], s1.g[:], s1.lf, s1.extended, s1.nni, s1.att_nni)
 end
 
 function transfer(s1::T)::T where {T<:Array_HMC_State}
@@ -58,6 +72,36 @@ function transfer!(s1::Array_HMC_State, s2::Array_HMC_State)
     s1.lf = s2.lf
     nothing
 end
+
+
+
+function unextend!(S::Extendend_Tree_HMC_State)
+    transfer!(S.curr_state, S.ext_state)
+    S.extended[1] = false
+    nothing
+end
+
+function extend!(S::Extendend_Tree_HMC_State{P}, PS::P) where {P}
+    transfer!(S.ext_state, PS)
+    S.extended[1] = true
+    nothing
+end
+
+function transfer(S::Extendend_Tree_HMC_State)
+    deepcopy(S)
+end
+
+function transfer!(S1::Extendend_Tree_HMC_State, S2::Extendend_Tree_HMC_State)
+    @assert S1.direction == S2.direction
+    transfer!(S1.curr_state, S2.curr_state)
+    transfer!(S1.ext_state, S2.ext_state[1])
+    S1.extended[1] = S2.extended[1]
+    nothing
+end
+
+
+hamiltonian(S::Extendend_Tree_HMC_State) = hamiltonian(S.curr_state)
+
 
 
 #### PNUTS Parameter Structs
