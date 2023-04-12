@@ -1,7 +1,7 @@
 name = "MCPhylo"
 uuid = "af0ac7d2-842d-415f-bd76-8183c117c674"
 authors = ["erathorn"]
-version = "0.9.4"
+version = "0.9.5"
 
 [deps]
 Bijectors = "76274a88-744f-5084-9051-94815aaf08c4"
@@ -38,7 +38,7 @@ StatsPlots = "f3b207a7-027a-5e70-b257-86293d7955fd"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [compat]
-Bijectors = "0.10"
+Bijectors = "0.10.8"
 DataStructures = "0.9 - 0.18"
 Distributions = "0.25"
 FiniteDiff = "2"
