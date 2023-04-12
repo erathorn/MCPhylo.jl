@@ -91,7 +91,7 @@ function sample!(
     set_branchlength_vector!(mt, molifier.(blv, delta))
     lf, grad = grlpdf(mt)
     grad .*= scale_fac.(blv, delta)
-    s = Tree_HMC_State(deepcopy(mt), r[:], grad[:], lf, 1)
+    s = Tree_HMC_State(deepcopy(mt), r[:], grad[:], lf)
     currH = hamiltonian(s)
     ovnni = 0
 

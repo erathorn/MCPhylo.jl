@@ -10,13 +10,13 @@ with variable rates over sites: Approximate methods. (https://doi.org/10.1007/BF
 """
 function discrete_gamma_rates(
     α::T,
-    β::S,
+    β::T,
     k::Int64;
     method::Symbol = :mean,
     sig::Int64 = 1,
-)::Array{Float64} where {T<:Real,S<:Real}
-    meanvals = Array{Float64,1}(undef, k)
-    factor::Float64 = α / β * k
+)::Array{T} where T<:Real
+    meanvals = Array{T,1}(undef, k)
+    factor = α / β * k
 
     if method == :median
         meanvals .= median_boundaries(α, β, k)
@@ -39,18 +39,18 @@ end
 
 #### helper functions for boundaries of rate categories ####
 
-function mean_boundaries(α::T, β::S, k::Int64)::Array{Float64} where {T<:Real,S<:Real}
+function mean_boundaries(α::T, β::T, k::Int64)::Array{T} where T<:Real
     ch = Chisq((2 * α) / (2 * β))
-    boundaries = Array{Float64,1}(undef, k)
+    boundaries = Array{T,1}(undef, k)
     @inbounds for i = 1:k-1
         boundaries[i] = quantile(ch, i / k) / (2 * β)
     end
     boundaries
 end
 
-function median_boundaries(α::T, β::S, k::Int64)::Array{Float64} where {T<:Real,S<:Real}
+function median_boundaries(α::T, β::T, k::Int64)::Array{T} where T<:Real
     ch = Chisq((2 * α) / (2 * β))
-    boundaries = Array{Float64,1}(undef, k)
+    boundaries = Array{T,1}(undef, k)
     @inbounds for i = 1:k
         boundaries[i] = quantile(ch, ((i - 1) * 2 + 1) / (2 * k))
     end

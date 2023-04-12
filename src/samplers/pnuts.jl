@@ -120,14 +120,13 @@ function sample!(
         )
     end
     setadapt!(v, adapt)
-    tune.delta = 2*tune.epsilon
+    
     if tune.adapt
         adapter.m += 1
 
-
+        tune.delta = 2*tune.epsilon
         nuts_sub!(v, tune.epsilon, grlpdf, logfun)
 
-        #adapter.metro_acc_prob = adapter.metro_acc_prob# > 1 ? 1 : adapter.metro_acc_prob
         x = dual_averaging(adapter, tune.delta)
 
         tune.epsilon = exp(x)
@@ -136,6 +135,7 @@ function sample!(
         if (adapter.m > 0)
             tune.epsilon = exp(adapter.x_bar)
         end
+        tune.delta = 2*tune.epsilon
         nuts_sub!(v, jitter(tune.epsilon, tune.jitter), grlpdf, logfun)
     end
 
@@ -145,7 +145,7 @@ end
 function dual_averaging(adapter::NUTSstepadapter, delta::F)::F where {F<:Real}
     const_params = adapter.params
 
-    HT = (const_params.δ - adapter.metro_acc_prob) #- (const_params.δ_NNI - adapter.NNI_stat)
+    HT = (const_params.δ - adapter.metro_acc_prob)
 
     η = 1.0 / (adapter.m + const_params.t0)
 

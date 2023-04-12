@@ -1,13 +1,13 @@
 
 
 function FelsensteinFunction(
-    tree_postorder::Vector{N},
+    tree_postorder,
     data::Array{F,4},
     Down::Array{F,4},
     pi_::Array{F},
     trmat::Array{F,4},
     ptg::Array{F,4},
-)::Tuple{F,Vector{F}} where {N<:GeneralNode,F<:Real}
+)::Tuple{F,Vector{F}} where F<:Real
     ll = FelsensteinFunction(tree_postorder, data, Down, pi_, trmat)
     grv = Vector{F}(undef, size(data, 4) - 1)
     pre_order_partial::Array{F,4} = similar(data)
@@ -22,7 +22,7 @@ function FelsensteinFunction(
         pre_order_partial[i, j, k, tree_postorder[end].num] = pi_[i]
     end
 
-    for node in reverse(tree_postorder)[2:end]
+    for node in reverse(collect(tree_postorder))[2:end]
         mother = get_mother(node)
 
         @tturbo check_empty = false for r in CartesianIndices((
@@ -57,7 +57,8 @@ function FelsensteinFunction(
         end
 
         res = zero(eltype(grv))
-        @tturbo check_empty = false for j in axes(data, 2), r in axes(data, 3)
+        
+        for j in axes(data, 2), r in axes(data, 3)
             col = zero(eltype(grv))
             for k in axes(data, 1)
                 col += data[k, j, r, node.num] * pre_order_partial[k, j, r, node.num]
@@ -79,12 +80,12 @@ end
 
 
 function FelsensteinFunction(
-    tree_postorder::Vector{N},
+    tree_postorder,
     data::Array{R,4},
     Down::Array{R,4},
     pi_::Array{R},
     trans_probs::Array{R,4},
-)::R where {N<:GeneralNode{<:Real,<:Integer},R<:Real}
+)::R where R<:Real
 
     ll = zero(R)
 

@@ -1,7 +1,12 @@
 name: CompatHelper
 on:
-  schedule:
-    - cron: 0 0 * * *
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+    tags: '*'
   workflow_dispatch:
 jobs:
   CompatHelper:
