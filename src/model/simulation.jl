@@ -23,6 +23,7 @@ function settune!(m::Model, tune, block::Integer)
     block == 0 && return settune!(m, tune)
     m.samplers[block].tune = tune
 end
+
 """
     settune!(m::Model, tune::Vector{Any})
 
@@ -148,7 +149,7 @@ function logpdf(
     x::AbstractArray{T},
     block::Integer = 0,
     transform::Bool = false,
-) where T #{T<:Real}
+) where {T}
     x0 = unlist(m, block)
     lp = logpdf!(m, x, block, transform)
     relist!(m, x0, block)
@@ -171,9 +172,9 @@ function logpdf!(
     lp = logpdf(m, setdiff(params, targets), transform)
     for key in targets
         isfinite(lp) || break
-        node = m[key]
-        update!(node, m)
-        lp += key in params ? logpdf(node, transform) : logpdf(node)
+        #node = m[key]
+        m[key] = update!(m[key], m)
+        lp += key in params ? logpdf(m[key], transform) : logpdf(m[key])
     end
     lp
 end
@@ -211,20 +212,16 @@ Returns the resulting gradient vector. Method `gradlogpdf!()` additionally updat
 
   * `:forward` : forward differencing.
 """
-function gradlogpdf(m::Model, targets::Array{Symbol,1})::Tuple{Float64,Array{Float64}}
+function gradlogpdf(m::Model, targets::Vector{Symbol})::Tuple{Float64,Array{Float64}}
     vp = 0.0
     gradp = Array[]
     for key in targets
-        node = m[key]
-        update!(node, m)
-        v, grad = gradlogpdf(node)
+        m[key] = update!(m[key], m)
+        v, grad = gradlogpdf(m[key])
         vp += v
         push!(gradp, grad)
     end
-    m.likelihood = vp
     gr = .+(gradp...)
-    
-    
     vp, gr
 end
 """
@@ -257,22 +254,20 @@ function logpdf!(
     params::Array{Symbol},
     targets::Array{Symbol},
     transform::Bool = false,
-) where T# {T<:Real}
+) where {T}
     m[params] = relist(m, x, params, transform)
-    
+
     df = [i for i in params if i ∉ targets]
     lp = logpdf(m, df, transform)
-    
+
     isnan(lp) && return -Inf
 
     for key in targets
         isfinite(lp) || break
         isnan(lp) && return -Inf
-        node = m[key]
-        un = update!(node, m)
-        
-        m.nodes[key] = un
-        lp += key in params ? logpdf(node, transform) : logpdf(node)
+        #node = m[key]
+        m[key] = update!(m[key], m)
+        lp += key in params ? logpdf(m[key], transform) : logpdf(m[key])
     end
     lp
 end
@@ -289,13 +284,13 @@ function mylogpdf!(
     targets = keys(m, :target, block)
     diff = setdiff(params, targets)
     myfun(y) = begin
-        m[params] = relist(m, y, params, transform)        
+        m[params] = relist(m, y, params, transform)
         lp = logpdf(m, diff, transform)
         for key in targets
             isfinite(lp) || break
-            node = m[key]
-            update!(node, m)
-            lp += key in params ? logpdf(node, transform) : logpdf(node)
+            #node = m[key]
+            m[key] = update!(m[key], m)
+            lp += key in params ? logpdf(m[key], transform) : logpdf(m[key])
         end
         lp
     end
@@ -328,27 +323,30 @@ Returns the model updated with the MCMC sample and, in the case of `block=0`, th
 """
 function sample!(m::Model)
     m.iter += 1
-    for sampler in m.samplers
+    sams::Vector{Sampler} = m.samplers
+    for sampler in sams
         res = sample!(sampler, m)
         if res !== nothing
             m[sampler.params] = res
         end
     end
+    #m.likelihood = final_likelihood(m)
     m
 end
 
-function sample!(s::Sampler{T, R}, m::Model) where {T<:SamplerTune, R}
-    s.value = unlist(m, s.params, transform=s.transform)
-    lpdf(x) = s.tune.logf(m, x, s.params, s.targets, s.transform)
-    grlpdf(x) = s.tune.logfgrad(m, x, s.params, s.targets, s.transform)
-    sample!(s, lpdf, grlpdf=grlpdf, adapt=m.iter < m.burnin, gen=m.iter, model=m)
+function sample!(s::Sampler{T,R}, m::Model) where {T<:SamplerTune,R}
+    s.value = unlist(m, s.params, transform = s.transform)
+    lpdf(x) =
+        let m = m, s = s
+            s.tune.logf(m, x, s)
+        end
+    grlpdf(x) =
+        let m = m, s = s
+            s.tune.logfgrad(m, x, s)
+        end
+    sample!(s, lpdf, grlpdf = grlpdf, adapt = m.iter < m.burnin, gen = m.iter, model = m)
     relist(m, s.value, s.params, s.transform)
 end
-
-function my_relist(m, v, p, s)
-    m[p] = relist(m, v, p, s)
-end
-
 
 
 function pseudologpdf!(
@@ -359,15 +357,15 @@ function pseudologpdf!(
     targets::Vector{Symbol},
     transform::Bool = false,
 ) where {T<:Real}
-    
-    
+
+
     m[params] = relist(m, x, params, transform)
     lp = 0.0
     for key in targets
         isfinite(lp) || break
-        node = m[key]
-        update!(node, m)
-        lp += key in params ? pseudologpdf(node, y, transform) : pseudologpdf(node, y)
+        #node = m[key]
+        m[key] = update!(m[key], m)
+        lp += key in params ? pseudologpdf(m[key], y, transform) : pseudologpdf(m[key], y)
     end
     lp
 end
@@ -386,13 +384,17 @@ end
 
 
 function final_likelihood(model::Model)::Float64
+    targets = keys(model, :dependent)
+    for key in targets
+        model[key] = update!(model[key], model)
+    end
     logpdf(model, keys_output(model))
 end
 """
     unlist(m::Model, block::Integer=0, transform::Bool=false)
 """
 function unlist(m::Model, block::Integer = 0; transform::Bool = false)
-    unlist(m, keys(m, :block, block), transform=transform)
+    unlist(m, keys(m, :block, block), transform = transform)
 end
 
 """
@@ -402,13 +404,11 @@ function unlist(m::Model, monitoronly::Bool)
     f = let m = m, monitoronly = monitoronly
         key -> begin
             node = m[key]
-            lvalue =
-                isa(node, TreeVariate) ? unlist_tree(node) : unlist(node)
+            lvalue = isa(node, TreeVariate) ? unlist_tree(node) : unlist(node)
             monitoronly ? lvalue[node.monitor] : lvalue
         end
     end
-    ll = sum(getfield.([m[k] for k  in keys_output(m)], :lpdf))
-    r = vcat(vmap(f, keys(m, :dependent))...,ll)
+    r = vcat(vmap(f, keys(m, :dependent))...)
     r = [isa(i, ForwardDiff.Dual) ? ForwardDiff.value(i) : i for i in r]
     r
 end
@@ -433,6 +433,7 @@ function unlist(m::Model, nodekeys::Vector{Symbol}; transform::Bool = false)
     end
     vcat(vmap(f, nodekeys)...)
 end
+
 
 """
     relist(m::Model, x::AbstractArray{T}, block::Integer=0,

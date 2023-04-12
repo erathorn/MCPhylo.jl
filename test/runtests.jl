@@ -1,6 +1,7 @@
 using Distributed
 using MCPhylo
 using LinearAlgebra
+using FiniteDiff
 using Random, Test
 include("utils.jl")
 
@@ -41,6 +42,7 @@ const parsertests = [
 
 const samplertests = [
     #"abc",
+    "sampler_construction",
     "linear_model_uvp",
     "linear_model_mvp",
     "tree_samplers"

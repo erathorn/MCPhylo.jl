@@ -8,15 +8,6 @@ const chunksize = 40
 
 struct NullFunction end
 
-struct SamplingBlock
-    model::Model
-    index::Int
-    transform::Bool
-
-    SamplingBlock(model::Model, index::Integer = 0, transform::Bool = false) =
-        new(model, index, transform)
-end
-
 
 Sampler(param::Symbol, args...) = Sampler([param], args...)
 """
@@ -54,10 +45,8 @@ end
 
 function Base.show(io::IO, s::Sampler)
     print(io, "An object of type \"$(summary(s))\"\n")
-    print(io, "Sampling Block Nodes:\n")
+    print(io, "Sampling Nodes:\n")
     show(io, s.params)
-    #print(io, "\n\n")
-    #show(io, "text/plain", first(code_typed(s.eval)))
     println(io)
 end
 
@@ -87,52 +76,6 @@ end
 
 #################### Simulation Methods ####################
 
-function gradlogpdf!(
-    block::SamplingBlock,
-    x::AbstractArray{T},
-    dtype::Symbol = :forward,
-) where {T<:Real}
-    gradlogpdf!(block.model, x, block.index, block.transform, dtype = dtype)
-end
-
-
-function gradlogpdf!(block::SamplingBlock, x::N) where {N<:GeneralNode}
-    gradlogpdf!(block.model, x, block.index, block.transform)
-end
-
-function logpdf!(block::SamplingBlock, x::AbstractArray{T}) where {T<:Real}
-    logpdf!(block.model, x, block.index, block.transform)
-end
-
-function pseudologpdf!(
-    block::SamplingBlock,
-    x::AbstractArray{T},
-    y::AbstractArray,
-) where {T<:Real}
-    pseudologpdf!(block.model, x, y, block.index, block.transform)
-end
-
-function conditional_likelihood!(
-    block::SamplingBlock,
-    x::AbstractArray{T},
-    args...,
-) where {T<:Real}
-    conditional_likelihood!(block.model, x, block.index, args...)
-end
-
-function logpdf!(block::SamplingBlock, x::AbstractArray{T}) where {T<:GeneralNode}
-    logpdf!(block.model, x[1])
-end
-
-function logpdf!(block::SamplingBlock, x::T) where {T<:GeneralNode}
-    logpdf!(block.model, x, block.index, block.transform)
-end
-
-function rand!(block::SamplingBlock, x::Int64)
-    rand!(block.model, x, block.index)
-end
-
-
 
 function _gradlogpdf!(m::Model, x::AbstractArray, block::Integer, dtype::Symbol = :provided)
     targets = keys(m, :target, block)
@@ -144,17 +87,16 @@ function _gradlogpdf!(m::Model, x::AbstractArray, block::Integer, dtype::Symbol 
 end
 
 function logpdfgrad!(
-    block::SamplingBlock,
-    x::AbstractVector{T},
-    dtype::Symbol,
-) where {T<:Real}
-    grad = gradlogpdf!(block, x, dtype)
-    logf = logpdf!(block, x)
-    (logf, ifelse.(isfinite.(grad), grad, 0.0))
+    m::Model,
+    x::R,
+    t::Sampler{GS,X},
+) where {R,GS<:GradSampler{G},X} where {G}
+    logpdfgrad!(G, m, x, t.params, t.targets, t.transform)
 end
 
 
 function logpdfgrad!(
+    ::Type{fwd},
     m::Model,
     x::AbstractVector{T},
     params::ElementOrVector{Symbol},
@@ -170,19 +112,65 @@ function logpdfgrad!(
             lp
         end
     end
-    #ll1 = lf(x)
-    #grad1 = FiniteDiff.finite_difference_gradient(lf, x)
     chunk = ForwardDiff.Chunk(min(length(x), chunksize))
     config = ForwardDiff.GradientConfig(lf, x, chunk)
     grad = ForwardDiff.gradient!(similar(x), lf, x, config)
-
-    #(ll, ifelse.(isfinite.(grad), grad, 0.0))
     ll, grad
 end
 
+function logpdfgrad!(
+    ::Type{fin},
+    m::Model,
+    x::AbstractVector{T},
+    params::ElementOrVector{Symbol},
+    target::ElementOrVector{Symbol},
+    transform::Bool,
+) where {T<:Real}
+    function lf(y)
+        let m1 = m, para = params, tar = target, tr = transform
+            logpdf!(m1, y, para, tar, tr)
+        end
+    end
+    f(x), FiniteDiff.finite_difference_gradient(f, x)
+end
+
+function logpdfgrad!(
+    ::Type{rev},
+    m::Model,
+    x::AbstractVector{T},
+    params::ElementOrVector{Symbol},
+    target::ElementOrVector{Symbol},
+    transform::Bool,
+) where {T<:Real}
+    function lf(y)
+        let m1 = m, para = params, tar = target, tr = transform
+            logpdf!(m1, y, para, tar, tr)
+        end
+    end
+    lf(x), ReverseDiff.gradient(lf, x)
+end
 
 
 function logpdfgrad!(
+    ::Type{zyg},
+    m::Model,
+    x::AbstractVector{T},
+    params::ElementOrVector{Symbol},
+    target::ElementOrVector{Symbol},
+    transform::Bool,
+) where {T<:Real}
+    function lf(y)
+        let m1 = m, para = params, tar = target, tr = transform
+            logpdf!(m1, y, para, tar, tr)
+        end
+    end
+    ll, grad = withgradient(lf, x)
+
+    ll, grad[1]
+end
+
+function logpdfgrad!(
+    ::Type{provided},
     m::Model,
     x::T,
     params::ElementOrVector{Symbol},
@@ -195,11 +183,16 @@ function logpdfgrad!(
     # likelihood
     v, grad = gradlogpdf(m, target)
     # prior
-    vp, gradp = gradlogpdf(m[params[1]], x)
+    t_node::Stochastic{T} = m[params[1]]
+    vp, gradp = gradlogpdf(t_node, x)
 
     vp + v, gradp .+ grad
 end
 
+
+function logpdf!(m::Model, x::A, t::T) where {A,T<:Sampler}
+    logpdf!(m, x, t.params, t.targets, t.transform)
+end
 
 function logpdf!(
     m::Model,
@@ -210,29 +203,15 @@ function logpdf!(
 ) where {T<:GeneralNode}
 
     m[params] = relist(m, x, params, transform)
-
-    # likelihood
-    v = logpdf(m, target)
-    # prior
-    vp = logpdf(m[params[1]], x)
-
-    vp + v
+    lp = logpdf(m, setdiff(params, target), transform)
+    for key in target
+        isfinite(lp) || break
+        #node = m[key]
+        m[key] = update!(m[key], m)
+        lp += key in params ? logpdf(m[key], transform) : logpdf(m[key])
+    end
+    lp
 end
-
-
-
-
-
-#################### unlist and relist functionality ####################
-
-function unlist(block::SamplingBlock)
-    unlist(block.model, block.index, block.transform)
-end
-
-function relist(block::SamplingBlock, x::AbstractVariate) where {T<:Real}
-    relist(block.model, x.value, block.index, block.transform)
-end
-
 
 #################### Auxiliary Functions ####################
 

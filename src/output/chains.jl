@@ -42,7 +42,7 @@ function Chains(
     thin::Integer = 1,
     names::Vector{W} = AbstractString[],
     chains::Vector{V} = Int[],
-) where {T<:Real,U<:AbstractString,V<:Integer,W<:AbstractString}
+) where {T<:Real,V<:Integer,W<:AbstractString}
     Chains(
         value,
         Array{String,3}(undef, size(value)),
@@ -146,13 +146,7 @@ function Chains(
     names::U = "Param1",
     chains::Integer = 1,
 ) where {T<:Real,U<:AbstractString}
-    Chains(
-        reshape(value, length(value), 1, 1),
-        start,
-        thin,
-        U[names],
-        Int[chains],
-    )
+    Chains(reshape(value, length(value), 1, 1), start, thin, U[names], Int[chains])
 end
 
 
@@ -176,7 +170,7 @@ A value of `:` can be specified for any of the dimensions to indicate no subsett
 function Base.getindex(c::Chains, window, names, chains)
     inds1 = window2inds(c, window)
     inds2 = names2inds(c, names)
-    if isa(chains, Integer) 
+    if isa(chains, Integer)
         chains = [chains]
     end
     if !isassigned(c.trees, 1)

@@ -2,20 +2,20 @@
 
 #################### Types and Constructors ####################
 
-mutable struct HMCTune <: SamplerTune
-    logf::Union{Function,Missing}
+mutable struct HMCTune{F<:Function,G<:GradType} <: GradSampler{G}
+    logf::F
     epsilon::Float64
     L::Int
     SigmaL::Union{UniformScaling{Bool},LowerTriangular{Float64}}
 
-    HMCTune() = new()
+    HMCTune(x, epsilon::Real, L::Integer) =
+        new{typeof(identity),fwd}(identity, epsilon, L, I)
 
-    HMCTune(x, epsilon::Real, L::Integer) = new(missing, epsilon, L, I)
-
-    HMCTune(x, epsilon::Real, L::Integer, logfgrad::Function) = new(logfgrad, epsilon, L, I)
+    HMCTune(x, epsilon::Real, L::Integer, logfgrad::F) where {F} =
+        new{F,fwd}(logfgrad, epsilon, L, I)
 
     function HMCTune(x, epsilon::Real, L::Integer, Sigma::Matrix{T}) where {T<:Real}
-        new(missing, epsilon, L, cholesky(Sigma).L)
+        new{typeof(identity),fwd}(identity, epsilon, L, cholesky(Sigma).L)
     end
 
     function HMCTune(
@@ -23,9 +23,10 @@ mutable struct HMCTune <: SamplerTune
         epsilon::Real,
         L::Integer,
         Sigma::Matrix{T},
-        logfgrad::Function,
-    ) where {T<:Real}
-        new(logfgrad, epsilon, L, cholesky(Sigma).L)
+        logfgrad::F,
+        ::Type{G},
+    ) where {T<:Real,F,G<:GradType}
+        new{F,G}(logfgrad, epsilon, L, cholesky(Sigma).L)
     end
 
     function HMCTune(
@@ -33,20 +34,21 @@ mutable struct HMCTune <: SamplerTune
         epsilon::Real,
         L::Integer,
         Sigma::UniformScaling{Bool},
-        logfgrad::Function,
-    )
-        new(logfgrad, epsilon, L, Sigma)
+        logfgrad::F,
+        ::Type{G},
+    ) where {F,G<:GradType}
+        new{F,G}(logfgrad, epsilon, L, Sigma)
     end
 end
 
 
-const HMCVariate = Sampler{HMCTune,T} where {T}
+const HMCVariate = Sampler{HMCTune{F},T} where {T,F}
 
-validate(v::HMCVariate) = validate(v, v.tune.SigmaL)
+validate(v::Sampler{HMCTune{F},T}) where {F,T} = validate(v, v.tune.SigmaL)
 
-validate(v::HMCVariate, SigmaL::UniformScaling) = v
+validate(v::Sampler{HMCTune{F},T}, SigmaL::UniformScaling) where {F,T} = v
 
-function validate(v::HMCVariate, SigmaL::LowerTriangular)
+function validate(v::Sampler{HMCTune{F},T}, SigmaL::LowerTriangular) where {F,T}
     n = length(v)
     size(SigmaL, 1) == n ||
         throw(ArgumentError("Sigma dimension differs from variate length $n"))
@@ -72,13 +74,24 @@ Returns a `Sampler{HMCTune}` type object.
 * `Sigma`: covariance matrix for the multivariate normal proposal distribution. The covariance matrix is relative to the unconstrained parameter space, where candidate draws are generated. If omitted, the identity matrix is assumed.
 
 """
-function HMC(params::ElementOrVector{Symbol}, epsilon::Real, L::Int)
-    tune = HMCTune(Float64[], epsilon, L, I, logpdfgrad!)
+function HMC(
+    params::ElementOrVector{Symbol},
+    epsilon::Real,
+    L::Int,
+    ::Type{G} = fwd,
+) where {G<:GradType}
+    tune = HMCTune(Float64[], epsilon, L, I, logpdfgrad!, G)
     Sampler(Float64[], params, tune, Symbol[], true)
 end
 
-function HMC(params::ElementOrVector{Symbol}, epsilon::Real, L::Int, Sigma::Matrix{<:Real})
-    tune = HMCTune(Float64[], epsilon, L, Sigma, logpdfgrad!)
+function HMC(
+    params::ElementOrVector{Symbol},
+    epsilon::Real,
+    L::Int,
+    Sigma::Matrix{<:Real},
+    ::Type{G} = fwd,
+) where {G<:GradType}
+    tune = HMCTune(Float64[], epsilon, L, Sigma, logpdfgrad!, G)
     Sampler(Float64[], params, tune, Symbol[], true)
 end
 
@@ -95,7 +108,7 @@ are assumed to be continuous and unconstrained.
 
 Returns `v` updated with simulated values and associated tuning parameters.
 """
-function sample!(v::HMCVariate, logfgrad::Function; kwargs...)
+function sample!(v::Sampler{HMCTune{F,G},T}, logfgrad::Function; kwargs...) where {F,T,G}
     tune = v.tune
 
     x1 = v.value[:]

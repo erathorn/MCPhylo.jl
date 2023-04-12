@@ -2,15 +2,15 @@
 
 #################### Types and Constructors ####################
 
-struct MISSTune <: SamplerTune
-    logf::Function
+struct MISSTune{F<:Function} <: SamplerTune
+    logf::F
     dims::Tuple
     valueinds::AbstractArray
-    distrinds::AbstractArray   
-    
+    distrinds::AbstractArray
+
 end
 
-function MISSTune(f::Function)
+function MISSTune(f::F) where {F}
     MISSTune(f, (), Int[], Int[])
 end
 
@@ -63,7 +63,7 @@ Returns a `Sampler{Dict{Symbol, MISSTune}}` type object.
 function MISS(params::Symbol)
     lf(m, args...) = m
     params = asvec(params)
-    
+
     Sampler(Float64[], params, MISSTune(lf), Symbol[], false)
 end
 
@@ -71,7 +71,13 @@ end
 #################### Sampling Functions ####################
 
 
-function sample!(v::MISSVariate{T}, get_model::Function; gen::Int, model::Model, kwargs...) where {T}
+function sample!(
+    v::Sampler{MISSTune{F},T},
+    get_model::Function;
+    gen::Int,
+    model::Model,
+    kwargs...,
+) where {T,F}
     params = v.params
     if gen == 1
         for key in params
@@ -80,7 +86,7 @@ function sample!(v::MISSVariate{T}, get_model::Function; gen::Int, model::Model,
     end
     for key in params
         node = model[key]
-        
+
         node[v.tune.valueinds] = rand(node, v.tune)
         update!(model, node.targets)
     end

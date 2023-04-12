@@ -2,8 +2,8 @@
 
 #################### Types and Constructors ####################
 
-mutable struct ABCTune <: SamplerTune
-    logf::Function
+mutable struct ABCTune{F<:Function} <: SamplerTune
+    logf::F
     params::Vector{Symbol}
     datakeys::Vector{Symbol}
     Tsim::Vector{Vector{Float64}}
@@ -24,13 +24,13 @@ mutable struct ABCTune <: SamplerTune
     pi_epsilon0::Float64
 
 
-    function ABCTune()
-        new()
+    function ABCTune{F}() where F
+        new{F}()
     end
 
     function ABCTune(
         x,
-        lf,
+        lf::F,
         params::Vector{Symbol},
         datakeys::Vector{Symbol},
         epsilon::Float64,
@@ -42,8 +42,8 @@ mutable struct ABCTune <: SamplerTune
         decay::Real,
         randeps::Bool,
         summarizenodes::Function,
-    )
-        new(
+    ) where F
+        new{F}(
             lf,
             params,
             datakeys,
@@ -68,7 +68,7 @@ mutable struct ABCTune <: SamplerTune
 
 end
 
-const ABCVariate = Sampler{ABCTune, T} where T
+const ABCVariate = Sampler{ABCTune{F}, T} where {T, F}
 
 #################### Sampler Constructor ####################
 

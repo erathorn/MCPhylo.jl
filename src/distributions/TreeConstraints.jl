@@ -13,11 +13,11 @@ leafs are not allowed to be part of a specific clade.
 e.g.: generate_constraints(mono=[["a", "b"], ["a", "c"]],
                            exc=[(["b", "c"],["d"]])
 """
-function generate_constraints(
-    ; mono::Vector{Vector{S}}=Vector{String}[],
-    not_mono::Vector{Vector{S}}=Vector{String}[],
-    exc::Vector{Tuple{Vector{S}, Vector{S}}}=Tuple{Vector{String}, Vector{String}}[]
-)::ConstraintDict where S<:AbstractString
+function generate_constraints(;
+    mono::Vector{Vector{S}} = Vector{String}[],
+    not_mono::Vector{Vector{S}} = Vector{String}[],
+    exc::Vector{Tuple{Vector{S},Vector{S}}} = Tuple{Vector{String},Vector{String}}[],
+)::ConstraintDict where {S<:AbstractString}
 
     constraints_dict = ConstraintDict()
     lengths = [length(mono), length(not_mono), length(exc)]
@@ -53,14 +53,15 @@ end # generate_constraints
 Function that adds further constraints to an existing dictionary of constraints.
 See basic generate_constraints function for more info.
 """
-function generate_constraints!(constraints::ConstraintDict;
-                               mono::Vector{Vector{S}}=Vector{String}[],
-                               not_mono::Vector{Vector{S}}=Vector{String}[],
-                               exc::Vector{Tuple{Vector{S}, Vector{S}}}=Tuple{Vector{String}, Vector{String}}[]
-                               )::ConstraintDict where S<:AbstractString
+function generate_constraints!(
+    constraints::ConstraintDict;
+    mono::Vector{Vector{S}} = Vector{String}[],
+    not_mono::Vector{Vector{S}} = Vector{String}[],
+    exc::Vector{Tuple{Vector{S},Vector{S}}} = Tuple{Vector{String},Vector{String}}[],
+)::ConstraintDict where {S<:AbstractString}
 
 
-    constraints2 = generate_constraints(mono=mono, not_mono=not_mono, exc=exc)
+    constraints2 = generate_constraints(mono = mono, not_mono = not_mono, exc = exc)
     # make sure entries are unique for each constraint category
     for key in keys(constraints)
         constraints[key] = union(constraints[key], constraints2[key])
@@ -87,7 +88,7 @@ See basic generate_constraints function for more info.
 """
 function generate_constraints(filename::String)
     mono, not_mono, exc = parse_constraints(filename)
-    generate_constraints(mono=mono, not_mono=not_mono, exc=exc)
+    generate_constraints(mono = mono, not_mono = not_mono, exc = exc)
 end # generate_constraints
 
 
@@ -100,7 +101,7 @@ generate_constraints function on a file for more info.
 """
 function generate_constraints!(constraints::ConstraintDict, filename::String)
     mono, not_mono, exc = parse_constraints(filename)
-    generate_constraints!(constraints; mono=mono, not_mono=not_mono, exc=exc)
+    generate_constraints!(constraints; mono = mono, not_mono = not_mono, exc = exc)
 end # generate_constraints!
 
 
@@ -115,17 +116,25 @@ end # generate_constraints!
 --- INTERNAL ---
 Helper function that reads constraints out of a file
 """
-function parse_constraints(filename::S)::Tuple{Vector{Vector{S}}, Vector{Vector{S}}, Vector{Tuple{Vector{S}, Vector{S}}}} where S<:AbstractString
+function parse_constraints(
+    filename::S,
+)::Tuple{
+    Vector{Vector{S}},
+    Vector{Vector{S}},
+    Vector{Tuple{Vector{S},Vector{S}}},
+} where {S<:AbstractString}
 
     mono, not_mono = [Vector{String}[] for _ = 1:2]
-    exc = Vector{Tuple{Vector{AbstractString}, Vector{AbstractString}}}()
+    exc = Vector{Tuple{Vector{AbstractString},Vector{AbstractString}}}()
     for line in eachline(filename)
         # remove whitespace
         line = filter(x -> !isspace(x), line)
         # skip comment lines
         startswith(line, "#") && continue
-        split_l::Vector{AbstractString} = split(line,":")
-        length(split_l) != 2 && throw(FileSyntaxError("There should be exactly one colon in each non-comment line."))
+        split_l::Vector{AbstractString} = split(line, ":")
+        length(split_l) != 2 && throw(
+            FileSyntaxError("There should be exactly one colon in each non-comment line."),
+        )
         constraints::Vector{AbstractString} = split(split_l[2], ";")
         if split_l[1] == "mono"
             for constraint in constraints
@@ -142,9 +151,12 @@ function parse_constraints(filename::S)::Tuple{Vector{Vector{S}}, Vector{Vector{
             for constraint in constraints
                 constraint == "" && continue
                 exc_constraint::Vector{AbstractString} = split(constraint, "!")
-                length(exc_constraint) != 2 && throw(FileSyntaxError("There should be exactly one exclamation mark in each 'exc' type constraint."))
-                push!(exc, (split(exc_constraint[1], ","),
-                            split(exc_constraint[2], ",")))
+                length(exc_constraint) != 2 && throw(
+                    FileSyntaxError(
+                        "There should be exactly one exclamation mark in each 'exc' type constraint.",
+                    ),
+                )
+                push!(exc, (split(exc_constraint[1], ","), split(exc_constraint[2], ",")))
             end # for
         else
             @warn "Skipped line with unsupported constraint type '$split_l[1]'.

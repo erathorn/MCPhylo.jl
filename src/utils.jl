@@ -86,8 +86,8 @@ end
 ## instead to avoid the error handling issue.  In multi-processor mode, pmap is
 ## called and will apply its error processing.
 
-function pmap2(f::Function, lsts::Vector)
-    if (nprocs() > 1)
+function pmap2(f::F, lsts::Vector) where F<:Function
+    if (nprocs() > 1) && (length(lsts) > 1)
         pmap(f, lsts)
     else
         map(f, lsts)
@@ -229,19 +229,3 @@ end
 ind2sub(dims, ind) = Tuple(CartesianIndices(dims)[ind])
 
 showall(v) = showall(stdout, v)
-
-
-"""
-    lcp(str1::T, str2::T)::T where T <: AbstractString
-
-Get the longest common prefix.
-"""
-function lcp(str1::T, str2::T)::T where {T<:AbstractString}
-    minl::Int64 = min(length(str1), length(str2))
-    outs::T = ""
-    minl == 0 && return outs
-    for i = 1:minl
-        str1[i] == str2[i] ? outs *= str1[i] : return outs
-    end # for
-    return outs
-end

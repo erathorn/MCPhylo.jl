@@ -52,8 +52,10 @@ function datafortree(
     symbols::Vector{C},
     gap::A,
     miss::A;
-    log_space::Bool=false
-)::Array{Float64} where {T<:GeneralNode, A<:AbstractString, B<:AbstractString, C<:AbstractString}
+    log_space::Bool = false,
+)::Array{
+    Float64,
+} where {T<:GeneralNode,A<:AbstractString,C<:AbstractString}
     n_nodes = length(post_order(tree))
     n_states = length(symbols)
     n_sites = size(df, 2)

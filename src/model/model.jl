@@ -59,12 +59,21 @@ function Base.setindex!(m::Model, value, nodekey::Symbol)
     m.nodes[nodekey] = set_node(node, value)
 end
 
-function set_node(node::Logical, value::A)::Logical{A} where A
+function set_node(node::Logical, value::A)::Logical{A} where {A}
     Logical(node, value)
 end
 
-function set_node(node::Stochastic, value::A)::Stochastic{A} where A
+function set_node(node::Stochastic, value::A)::Stochastic{A} where {A}
     Stochastic(node, value)
+end
+
+
+function set_node(node::Logical, value::Logical)
+    value
+end
+
+function set_node(node::Stochastic, value::Stochastic)
+    value
 end
 
 
@@ -322,10 +331,4 @@ function names(m::Model, nodekeys::Vector{Symbol})
         append!(values, names(m, key))
     end
     values
-end
-
-
-function update_likelihood!(m::Model, likelihood::Float64)
-    m.likelihood = likelihood
-    m
 end

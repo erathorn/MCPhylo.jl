@@ -20,10 +20,11 @@ function setinits!(m::Model, inits::Dict{Symbol})
         if isa(node, Stochastic)# || isa(node, TreeStochastic{<:GeneralNode})
             haskey(inits, key) ||
                 throw(ArgumentError("missing initial value for node : $key"))
-            setinits!(node, m, inits[key])
+            node = setinits(node, m, inits[key])
         else
-            setinits!(node, m)
+            node = setinits(node, m)
         end
+        m[key] = node
     end
     m.hasinits = true
     m
@@ -88,7 +89,10 @@ end
 function initialize_samplers!(m::Model)
     sam = Sampler[]
     for sampler in m.samplers
-        push!(sam, Sampler(unlist(m, sampler.params, transform=sampler.transform), sampler))
+        push!(
+            sam,
+            Sampler(unlist(m, sampler.params, transform = sampler.transform), sampler),
+        )
     end
     m.samplers = sam
     nothing
