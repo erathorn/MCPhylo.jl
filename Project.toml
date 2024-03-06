@@ -38,7 +38,7 @@ StatsPlots = "f3b207a7-027a-5e70-b257-86293d7955fd"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [compat]
-Bijectors = "0.10.8, 0.12"
+Bijectors = "0.10.8, 0.12, 0.13"
 DataStructures = "0.9 - 0.18"
 DiffResults = "1.1"
 Distributions = "0.25"
