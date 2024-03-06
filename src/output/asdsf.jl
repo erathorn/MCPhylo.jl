@@ -190,7 +190,7 @@ function ASDSF_int!(
     all_keys = [Set{BitVector}() for x in tree_dims]
 
     if show_progress
-        prog = ProgressMeter.Progress(length(conv_store.ASDSF_vals[1]), "Computing ASDSF: ")
+        prog = ProgressMeter.Progress(length(conv_store.ASDSF_vals[1]); desc="Computing ASDSF: ")
     end # if
 
     n_chains = size(conv_store.splitsQueues[1], 1)
