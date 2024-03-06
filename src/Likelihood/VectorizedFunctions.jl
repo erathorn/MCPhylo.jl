@@ -18,7 +18,7 @@ function my_repeat(
     x, y, z = size(data)
     out = Array{F,4}(undef, x, y, nrates, z)
 
-    @tturbo check_empty = false for l in axes(data, 3),
+    @turbo check_empty = false for l in axes(out, 4),
         rind in axes(out, 3),
         xs in axes(out, 1),
         ys in axes(out, 2)
